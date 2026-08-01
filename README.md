@@ -36,6 +36,28 @@ the data is available:
 - List of the package's own dependencies
 - A "load this package's table" button (see below)
 
+## Transitive dependency resolution
+
+Direct `dependencies`/`devDependencies` are only the tip of what a package
+manager actually installs. To show the real footprint of a `package.json`,
+the app recursively walks each package's own dependency tree — fetching each
+dependency's `package.json` in turn, then its dependencies' `package.json`
+files, and so on — the same way a package manager would resolve the tree.
+
+This should be done gracefully:
+
+- **Deduplicate** shared dependencies encountered multiple times across the
+  tree, so they're only counted once (mirroring how a package manager
+  hoists/dedupes).
+- **Cap recursion depth / detect cycles** so a malformed or circular
+  dependency graph can't cause runaway fetching.
+- **Tolerate partial failures** — if a nested package's metadata can't be
+  fetched (rate limits, missing registry entry, network error), skip it and
+  continue rather than failing the whole resolution.
+- **Surface the total resolved dependency count** (direct + transitive) as
+  a summary figure, distinct from the direct dependency count already shown
+  per row.
+
 ## Package drill-down / history
 
 Every row has a button to load that package's own `package.json` as the new
