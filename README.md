@@ -69,6 +69,52 @@ input for the table. Clicking it:
    forth between previously loaded tables (similar to browser back/forward)
    without re-fetching or losing earlier results.
 
+## Optional / nice-to-have features
+
+Ideas beyond the core goals above, not committed to — for later review and
+pick-and-choose.
+
+### Input
+
+- **Multiple package managers** — parse `pnpm-lock.yaml` / `yarn.lock` /
+  `package-lock.json` when present, to show actually-resolved versions
+  instead of semver ranges.
+- **Monorepo / workspaces support** — detect `workspaces` and let the user
+  pick which workspace's `package.json` to summarize, or merge them.
+- **Drag-and-drop file upload**, in addition to the file picker.
+- **Paste a GitHub/GitLab/Codeberg repo URL directly** (not just a raw git
+  URL), and have the app locate `package.json` in the default branch.
+
+### Table / data
+
+- **Sorting and filtering** on any column (e.g. sort by weekly downloads,
+  filter to packages not updated in over a year).
+- **Health/risk score** per package, combining staleness, open issue ratio,
+  maintainer count, etc. into a single glanceable indicator.
+- **License column**, with a warning badge for copyleft or missing licenses.
+- **Outdated version indicator** — compare the installed/semver-range
+  version against the latest published version.
+- **Security advisories** — surface known vulnerabilities (e.g. via the
+  npm/OSV advisory databases) per package.
+- **Bundle size** (min+gzip) per package, e.g. via Bundlephobia-style data.
+- **Maintainer/publisher info** — who currently owns/publishes the package
+  on npm.
+- **Deprecation warnings** — flag packages marked deprecated on npm.
+
+### UX
+
+- **Dark mode.**
+- **Shareable table state** — encode the loaded source + drill-down history
+  in the URL so a table view can be linked/bookmarked.
+- **Export** the table as CSV/JSON/Markdown.
+- **Diff view** — compare two `package.json` files (e.g. before/after an
+  upgrade) side by side.
+- **Search box** to jump to a specific package by name within a large table.
+- **Caching** of fetched registry/repo metadata (with visible "last checked"
+  timestamps and a manual refresh) to avoid re-hitting rate limits.
+- **Offline-tolerant mode** — show whatever data is cached/known even if
+  live lookups fail, clearly marked as stale.
+
 ## Status
 
 This repository currently only contains the project goals and scaffolding.
