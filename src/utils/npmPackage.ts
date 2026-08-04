@@ -85,7 +85,6 @@ export async function fetchPackageInfo(
   const versionDate = times[version] ?? null;
   const latestReleaseDate = latestVersion ? (times[latestVersion] ?? null) : null;
   const latestUpdateDate = times["modified"] ?? null;
-  console.log('im here...')
 
   // ── 2. Extract GitHub slug from npm metadata ────────────────────────────────
 
