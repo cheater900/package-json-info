@@ -69,10 +69,39 @@ input for the table. Clicking it:
    forth between previously loaded tables (similar to browser back/forward)
    without re-fetching or losing earlier results.
 
+## Desired features (must-have)
+
+Beyond the core goals above, these are required for a first usable version —
+not optional extras to consider later.
+
+### Table / input data
+
+- **Sorting and filtering** on any column (e.g. sort by weekly downloads,
+  filter to packages not updated in over a year).
+- **Search box** to jump to a specific package by name within a large table.
+- **Validation of malformed/invalid input** — a broken `package.json` (bad
+  JSON, missing `dependencies`/`devDependencies`) shows a clear inline error
+  instead of a crash or a blank table.
+- **Graceful per-field fallback** — when a data point can't be fetched for a
+  package (e.g. no npm downloads data, no repo URL), the row still renders
+  with that cell clearly marked as unavailable, rather than breaking the row
+  or the table.
+
+### UX
+
+- **Loading states** while data is being fetched, both for the initial table
+  and for per-row/per-field lookups that resolve asynchronously.
+- **Clear error messaging** for failed input loads (bad git URL, unreachable
+  file URL, invalid upload) and for failed per-package metadata lookups.
+- **Responsive layout** — the table stays usable on mobile/narrow viewports.
+- **Keyboard-accessible interactions and semantic markup** (proper focus
+  order, ARIA labels where needed) for the input controls, table, and
+  drill-down/history navigation.
+
 ## Optional / nice-to-have features
 
-Ideas beyond the core goals above, not committed to — for later review and
-pick-and-choose.
+Ideas beyond the core goals and must-haves above, not committed to — lower
+priority, for later review and pick-and-choose, may not be implemented.
 
 ### Input
 
@@ -87,8 +116,6 @@ pick-and-choose.
 
 ### Table / data
 
-- **Sorting and filtering** on any column (e.g. sort by weekly downloads,
-  filter to packages not updated in over a year).
 - **Health/risk score** per package, combining staleness, open issue ratio,
   maintainer count, etc. into a single glanceable indicator.
 - **License column**, with a warning badge for copyleft or missing licenses.
@@ -109,7 +136,6 @@ pick-and-choose.
 - **Export** the table as CSV/JSON/Markdown.
 - **Diff view** — compare two `package.json` files (e.g. before/after an
   upgrade) side by side.
-- **Search box** to jump to a specific package by name within a large table.
 - **Caching** of fetched registry/repo metadata (with visible "last checked"
   timestamps and a manual refresh) to avoid re-hitting rate limits.
 - **Offline-tolerant mode** — show whatever data is cached/known even if
