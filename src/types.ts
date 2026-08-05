@@ -15,9 +15,10 @@ export type PackageInfo = {
   sourceCode: string | null;
   gitStars: number | null;
   openPRs: number | null;
+  closedPRs: number | null;
   openIssues: number | null;
-  totalPRs: number | null;
-  totalIssues: number | null;
+  closedIssues: number | null;
+  dependencies: string[] | null;
 }
 
 export type PackageError = {

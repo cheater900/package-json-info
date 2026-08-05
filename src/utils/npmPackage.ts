@@ -27,11 +27,16 @@ type NpmRepository = {
   url?: string;
 }
 
+type NpmVersionData = {
+  dependencies?: Record<string, string>;
+}
+
 type NpmRegistryData = {
   "dist-tags"?: Record<string, string>;
   time?: Record<string, string>;
   repository?: NpmRepository | string;
   homepage?: string;
+  versions?: Record<string, NpmVersionData>;
 }
 
 type NpmDownloadsData = {
@@ -86,6 +91,13 @@ export async function fetchPackageInfo(
   const latestReleaseDate = latestVersion ? (times[latestVersion] ?? null) : null;
   const latestUpdateDate = times["modified"] ?? null;
 
+  const versionData =
+    npmData?.versions?.[version] ??
+    (latestVersion ? npmData?.versions?.[latestVersion] : undefined);
+  const dependencies = versionData?.dependencies
+    ? Object.keys(versionData.dependencies)
+    : null;
+
   // ── 2. Extract GitHub slug from npm metadata ────────────────────────────────
 
   const slug = extractGithubSlug(npmData);
@@ -102,15 +114,15 @@ export async function fetchPackageInfo(
 
   let stars: number | null = null;
   let openPRs: number | null = null;
+  let closedPRs: number | null = null;
   let openIssues: number | null = null;
-  let totalPRs: number | null = null;
-  let totalIssues: number | null = null;
+  let closedIssues: number | null = null;
 
   if (slug != null) {
     const searchUrl = (q: string): string =>
       `https://api.github.com/search/issues?q=repo:${slug}+${q}&per_page=1`;
 
-    const [repoData, openPRRes, openIssueRes, totalPRRes, totalIssueRes] =
+    const [repoData, openPRRes, closedPRRes, openIssueRes, closedIssueRes] =
       await Promise.all([
         fetchJson<GithubRepoData>(
           `https://api.github.com/repos/${slug}`,
@@ -121,18 +133,24 @@ export async function fetchPackageInfo(
           githubHeaders
         ),
         fetchJson<GithubSearchData>(
+          searchUrl("is:pr+is:closed"),
+          githubHeaders
+        ),
+        fetchJson<GithubSearchData>(
           searchUrl("is:issue+is:open"),
           githubHeaders
         ),
-        fetchJson<GithubSearchData>(searchUrl("is:pr"), githubHeaders),
-        fetchJson<GithubSearchData>(searchUrl("is:issue"), githubHeaders),
+        fetchJson<GithubSearchData>(
+          searchUrl("is:issue+is:closed"),
+          githubHeaders
+        ),
       ]);
 
     stars = repoData?.stargazers_count ?? null;
     openPRs = openPRRes?.total_count ?? null;
+    closedPRs = closedPRRes?.total_count ?? null;
     openIssues = openIssueRes?.total_count ?? null;
-    totalPRs = totalPRRes?.total_count ?? null;
-    totalIssues = totalIssueRes?.total_count ?? null;
+    closedIssues = closedIssueRes?.total_count ?? null;
   }
 
   return {
@@ -146,9 +164,10 @@ export async function fetchPackageInfo(
     sourceCode: sourceCodeUrl,
     gitStars: stars,
     openPRs,
+    closedPRs,
     openIssues,
-    totalPRs,
-    totalIssues,
+    closedIssues,
+    dependencies,
   };
 }
 

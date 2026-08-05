@@ -11,11 +11,10 @@
       <th>Source code</th>
       <th>Git stars</th>
       <th>Open PRs</th>
+      <th>Closed PRs</th>
       <th>Open issues</th>
-      <th>Total PRs</th>
-      <th>Total issues</th>
-      <th>Latest issue date</th>
-      <th>Latest issue date</th>
+      <th>Closed issues</th>
+      <th>Dependencies</th>
     </thead>
     <tbody>
       <tr
@@ -25,16 +24,20 @@
         <td>{{ dependency.name }}</td>
         <td>{{ dependency.version }}</td>
         <td>{{ fmtDate(dependency.versionDate) }}</td>
-        <td>{{ dependency.latestVersion }}</td>
+        <td>{{ dependency.latestVersion ?? '-' }}</td>
         <td>{{ fmtDate(dependency.latestReleaseDate) }}</td>
         <td>{{ fmtDate(dependency.latestUpdateDate) }}</td>
-        <td>{{ dependency.weeklyDownloads }}</td>
-        <td><a :href="dependency.sourceCode">link</a></td>
-        <td>{{ dependency.gitStars }}</td>
-        <td>{{ dependency.openPRs }}</td>
-        <td>{{ dependency.openIssues }}</td>
-        <td>{{ dependency.totalPRs }}</td>
-        <td>{{ dependency.totalIssues }}</td>
+        <td>{{ dependency.weeklyDownloads ?? '-' }}</td>
+        <td>
+          <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>
+          <template v-else>-</template>
+        </td>
+        <td>{{ dependency.gitStars ?? '-' }}</td>
+        <td>{{ dependency.openPRs ?? '-' }}</td>
+        <td>{{ dependency.closedPRs ?? '-' }}</td>
+        <td>{{ dependency.openIssues ?? '-' }}</td>
+        <td>{{ dependency.closedIssues ?? '-' }}</td>
+        <td>{{ fmtDependencies(dependency.dependencies) }}</td>
       </tr>
     </tbody>
   </table>
@@ -57,6 +60,11 @@ function fmtDate(dateStr) {
   } catch {
     return dateStr
   }
+}
+
+function fmtDependencies(dependencyNames) {
+  if (! dependencyNames || dependencyNames.length === 0) return '-'
+  return dependencyNames.join(', ')
 }
 </script>
 
