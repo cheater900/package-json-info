@@ -1,20 +1,22 @@
 <template>
   <table class="deps">
     <thead>
-      <th>Name</th>
-      <th>Version</th>
-      <th>Version Date</th>
-      <th>Latest version</th>
-      <th>Latest release date</th>
-      <th>Latest update date</th>
-      <th>Weekly downloads</th>
-      <th>Source code</th>
-      <th>Git stars</th>
-      <th>Open PRs</th>
-      <th>Closed PRs</th>
-      <th>Open issues</th>
-      <th>Closed issues</th>
-      <th>Dependencies</th>
+      <tr>
+        <th>Name</th>
+        <th>Version</th>
+        <th>Version Date</th>
+        <th>Latest version</th>
+        <th>Latest release date</th>
+        <th>Latest update date</th>
+        <th>Weekly downloads</th>
+        <th>Source code</th>
+        <th>Git stars</th>
+        <th>Open PRs</th>
+        <th>Closed PRs</th>
+        <th>Open issues</th>
+        <th>Closed issues</th>
+        <th>Dependencies</th>
+      </tr>
     </thead>
     <tbody>
       <tr
@@ -44,8 +46,6 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps } from "vue"
-
 const { dependencies } = defineProps({
   dependencies: {
     type: Array,
