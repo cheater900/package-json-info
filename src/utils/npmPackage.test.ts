@@ -110,6 +110,50 @@ describe("fetchPackageInfo", () => {
     expect(info.dependencies).toBeNull();
   });
 
+  it("resolves stars from GitLab for a package with a GitLab repository, and leaves PR/issue counts null", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/gl-pkg": {
+          "dist-tags": { latest: "1.0.0" },
+          time: {},
+          repository: { type: "git", url: "git+https://gitlab.com/some-group/gl-pkg.git" },
+        },
+        "api.npmjs.org/downloads": { downloads: 7 },
+        "gitlab.com/api/v4/projects/some-group%2Fgl-pkg": { star_count: 55 },
+      })
+    );
+
+    const info = await fetchPackageInfo("gl-pkg", "1.0.0");
+
+    expect(info.sourceCode).toBe("https://gitlab.com/some-group/gl-pkg");
+    expect(info.gitStars).toBe(55);
+    expect(info.openPRs).toBeNull();
+    expect(info.closedPRs).toBeNull();
+    expect(info.openIssues).toBeNull();
+    expect(info.closedIssues).toBeNull();
+  });
+
+  it("resolves stars from Codeberg for a package with a Codeberg repository", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/cb-pkg": {
+          "dist-tags": { latest: "1.0.0" },
+          time: {},
+          repository: { type: "git", url: "https://codeberg.org/some-org/cb-pkg" },
+        },
+        "api.npmjs.org/downloads": { downloads: 3 },
+        "codeberg.org/api/v1/repos/some-org/cb-pkg": { stars_count: 12 },
+      })
+    );
+
+    const info = await fetchPackageInfo("cb-pkg", "1.0.0");
+
+    expect(info.sourceCode).toBe("https://codeberg.org/some-org/cb-pkg");
+    expect(info.gitStars).toBe(12);
+  });
+
   it("falls back to the npm homepage when there's no GitHub repository", async () => {
     vi.stubGlobal(
       "fetch",

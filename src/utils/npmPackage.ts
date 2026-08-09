@@ -51,6 +51,24 @@ type GithubSearchData = {
   total_count?: number;
 }
 
+type GitlabProjectData = {
+  star_count?: number;
+}
+
+type CodebergRepoData = {
+  stars_count?: number;
+}
+
+/** A parsed `{ host, owner, repo }` reference to a source code repository. */
+type RepoSlug = {
+  host: string;
+  owner: string;
+  repo: string;
+}
+
+/** Hosts we know how to pull a star count from. */
+const STAR_SUPPORTED_HOSTS = ["github.com", "gitlab.com", "codeberg.org"];
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -98,19 +116,19 @@ export async function fetchPackageInfo(
     ? Object.keys(versionData.dependencies)
     : null;
 
-  // ── 2. Extract GitHub slug from npm metadata ────────────────────────────────
+  // ── 2. Extract a repo slug (any of GitHub/GitLab/Codeberg) from npm metadata ─
 
-  const slug = extractGithubSlug(npmData);
+  const slug = extractRepoSlug(npmData);
   const repoUrl =
     typeof npmData?.repository === "string"
       ? npmData.repository
       : npmData?.repository?.url;
   const sourceCodeUrl =
     slug != null
-      ? `https://github.com/${slug}`
+      ? `https://${slug.host}/${slug.owner}/${slug.repo}`
       : (normaliseRepoUrl(repoUrl) ?? npmData?.homepage ?? null);
 
-  // ── 3. GitHub data (all in parallel, only if we have a slug) ───────────────
+  // ── 3. Stars (any supported host) + GitHub-only PR/issue counts ────────────
 
   let stars: number | null = null;
   let openPRs: number | null = null;
@@ -118,14 +136,15 @@ export async function fetchPackageInfo(
   let openIssues: number | null = null;
   let closedIssues: number | null = null;
 
-  if (slug != null) {
+  if (slug?.host === "github.com") {
+    const githubSlug = `${slug.owner}/${slug.repo}`;
     const searchUrl = (q: string): string =>
-      `https://api.github.com/search/issues?q=repo:${slug}+${q}&per_page=1`;
+      `https://api.github.com/search/issues?q=repo:${githubSlug}+${q}&per_page=1`;
 
     const [repoData, openPRRes, closedPRRes, openIssueRes, closedIssueRes] =
       await Promise.all([
         fetchJson<GithubRepoData>(
-          `https://api.github.com/repos/${slug}`,
+          `https://api.github.com/repos/${githubSlug}`,
           githubHeaders
         ),
         fetchJson<GithubSearchData>(
@@ -151,6 +170,16 @@ export async function fetchPackageInfo(
     closedPRs = closedPRRes?.total_count ?? null;
     openIssues = openIssueRes?.total_count ?? null;
     closedIssues = closedIssueRes?.total_count ?? null;
+  } else if (slug?.host === "gitlab.com") {
+    const projectData = await fetchJson<GitlabProjectData>(
+      `https://gitlab.com/api/v4/projects/${encodeURIComponent(`${slug.owner}/${slug.repo}`)}`
+    );
+    stars = projectData?.star_count ?? null;
+  } else if (slug?.host === "codeberg.org") {
+    const repoData = await fetchJson<CodebergRepoData>(
+      `https://codeberg.org/api/v1/repos/${slug.owner}/${slug.repo}`
+    );
+    stars = repoData?.stars_count ?? null;
   }
 
   return {
@@ -231,27 +260,37 @@ async function fetchJson<T>(
 }
 
 /**
- * Extracts an "owner/repo" GitHub slug from npm registry data.
- * Handles git+https://, git://, ssh://git@, and shorthand github:owner/repo.
+ * Extracts a `{ host, owner, repo }` slug from npm registry data, for any
+ * of the hosts we can pull a star count from (GitHub, GitLab, Codeberg).
+ * Handles git+https://, git://, ssh://git@, git@host:owner/repo (scp-like),
+ * and the shorthand github:owner/repo.
  */
-function extractGithubSlug(npmData: NpmRegistryData | null): string | null {
+function extractRepoSlug(npmData: NpmRegistryData | null): RepoSlug | null {
   if (npmData == null) return null;
   const repo = npmData.repository;
   if (repo == null) return null;
   const raw = typeof repo === "string" ? repo : (repo.url ?? "");
-  return parseGithubSlug(raw);
+  return parseRepoSlug(raw);
 }
 
-function parseGithubSlug(raw: string): string | null {
+function parseRepoSlug(raw: string): RepoSlug | null {
   if (!raw) return null;
   const normalised = raw
     .replace(/^git\+/, "")
     .replace(/\.git$/, "")
-    .replace(/^git:\/\/github\.com\//, "https://github.com/")
-    .replace(/^ssh:\/\/git@github\.com\//, "https://github.com/")
+    .replace(/^git:\/\//, "https://")
+    .replace(/^ssh:\/\/git@/, "https://")
+    .replace(/^git@([^:]+):/, "https://$1/")
     .replace(/^github:/, "https://github.com/");
-  const match = normalised.match(/github\.com\/([^/]+\/[^/?#\s]+)/i);
-  return match ? match[1] : null;
+
+  for (const host of STAR_SUPPORTED_HOSTS) {
+    const pattern = new RegExp(`${host.replace(/\./g, "\\.")}/([^/]+)/([^/?#\\s]+)`, "i");
+    const match = normalised.match(pattern);
+    if (match) {
+      return { host, owner: match[1], repo: match[2] };
+    }
+  }
+  return null;
 }
 
 function normaliseRepoUrl(raw: string | undefined): string | null {
