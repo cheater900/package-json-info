@@ -52,7 +52,7 @@
       <div class="input-method">
         <h3>Git URL</h3>
         <form @submit.prevent="fetchRepoPackageJson">
-          <label for="repo-url">Enter repo url (github.com)</label>
+          <label for="repo-url">Enter repo url (GitHub, GitLab, or Codeberg)</label>
           <input v-model="repoUrlInput" type="text" id="repo-url" />
           <button type="submit" :disabled="isLoadingInput">FETCH</button>
         </form>
@@ -73,6 +73,7 @@
 <script lang="ts" setup>
 import { ref, watch } from "vue";
 import { fetchPackagesInfo } from "./utils/npmPackage.ts"
+import { fetchPackageJsonFromRepo } from "./utils/repoPackageJson.ts"
 import DependenciesTable from "./components/DependenciesTable.vue"
 import packageJson from '../package.json'
 
@@ -194,18 +195,10 @@ async function fetchFromFileUrl() {
 }
 
 async function fetchRepoPackageJson() {
-  const repoUrl = repoUrlInput.value
   isLoadingInput.value = true
   loadError.value = null
   try {
-    const handlersByPattern = [
-      ["github.com", fetchPackageJsonFromGithubRepo],
-    ]
-    const handler = handlersByPattern.find(([pattern]) => repoUrl.includes(pattern))
-    if (!handler) {
-      throw new Error("Unsupported git host. Only github.com repositories are supported right now.")
-    }
-    const content = await handler[1](repoUrl)
+    const content = await fetchPackageJsonFromRepo(repoUrlInput.value)
     if (!content) {
       throw new Error("Could not find a package.json in that repository.")
     }
@@ -215,32 +208,6 @@ async function fetchRepoPackageJson() {
   } finally {
     isLoadingInput.value = false
   }
-}
-
-async function fetchPackageJsonFromGithubRepo(githubUrl) {
-  const githubPattern =
-    /^https:\/\/github\.com\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)(?:\/.*)?$/;
-  const match = githubUrl.match(githubPattern);
-
-  if (!match) {
-    throw new Error(
-      "Invalid GitHub URL. Must be in format: https://github.com/username/repo-name",
-    );
-  }
-
-  const [_, username, repoName] = match;
-  const repoPath = `${username}/${repoName}`;
-
-  const branches = ["main", "master"]
-  for (const branch of branches) {
-    const packageJsonUrl = `https://raw.githubusercontent.com/${repoPath}/${branch}/package.json`;
-    const response = await fetch(packageJsonUrl);
-    if (!response.ok) {
-      continue
-    }
-    return response.text()
-  }
-  return null
 }
 </script>
 
