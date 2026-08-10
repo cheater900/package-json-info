@@ -94,3 +94,89 @@ describe("DependenciesTable", () => {
     expect(wrapper.findAll("tbody tr")).toHaveLength(0);
   });
 });
+
+describe("DependenciesTable sorting", () => {
+  const pkgA = { ...sparseDependency, name: "aaa", weeklyDownloads: 100, gitStars: 5 };
+  const pkgB = { ...sparseDependency, name: "bbb", weeklyDownloads: 300, gitStars: null };
+  const pkgC = { ...sparseDependency, name: "ccc", weeklyDownloads: 200, gitStars: 15 };
+
+  function names(wrapper) {
+    return wrapper.findAll("tbody tr td:first-child").map((td) => td.text());
+  }
+
+  function sortButton(wrapper, label) {
+    const button = wrapper.findAll("th button").find((b) => b.text().startsWith(label));
+    if (!button) throw new Error(`No sort button found for column "${label}"`);
+    return button;
+  }
+
+  it("keeps the original prop order until a column header is clicked", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [pkgC, pkgA, pkgB] },
+    });
+
+    expect(names(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
+  });
+
+  it("sorts ascending on first click and descending on a second click of the same column", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [pkgC, pkgA, pkgB] },
+    });
+
+    await sortButton(wrapper, "Weekly downloads").trigger("click");
+    expect(names(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
+
+    await sortButton(wrapper, "Weekly downloads").trigger("click");
+    expect(names(wrapper)).toEqual(["bbb", "ccc", "aaa"]);
+  });
+
+  it("shows an ascending/descending indicator only on the active sort column", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [pkgC, pkgA, pkgB] },
+    });
+
+    await sortButton(wrapper, "Name").trigger("click");
+    expect(sortButton(wrapper, "Name").text()).toBe("Name ▲");
+    expect(sortButton(wrapper, "Weekly downloads").text()).toBe("Weekly downloads");
+
+    await sortButton(wrapper, "Name").trigger("click");
+    expect(sortButton(wrapper, "Name").text()).toBe("Name ▼");
+  });
+
+  it("switching to a different column resets to ascending", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [pkgC, pkgA, pkgB] },
+    });
+
+    await sortButton(wrapper, "Weekly downloads").trigger("click");
+    await sortButton(wrapper, "Weekly downloads").trigger("click");
+    await sortButton(wrapper, "Name").trigger("click");
+
+    expect(names(wrapper)).toEqual(["aaa", "bbb", "ccc"]);
+    expect(sortButton(wrapper, "Name").text()).toBe("Name ▲");
+  });
+
+  it("always sorts missing values last, in both directions", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [pkgC, pkgA, pkgB] },
+    });
+
+    await sortButton(wrapper, "Git stars").trigger("click");
+    expect(names(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
+
+    await sortButton(wrapper, "Git stars").trigger("click");
+    expect(names(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
+  });
+
+  it("does not render a sort button for non-sortable columns", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [pkgA] },
+    });
+
+    const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headerTexts).toContain("Version");
+    expect(headerTexts).toContain("Source code");
+    expect(headerTexts).toContain("Dependencies");
+    expect(wrapper.findAll("th button").some((b) => b.text() === "Version")).toBe(false);
+  });
+});

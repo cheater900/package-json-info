@@ -2,25 +2,25 @@
   <table class="deps">
     <thead>
       <tr>
-        <th>Name</th>
+        <th><button type="button" @click="toggleSort('name')">Name{{ sortIndicator('name') }}</button></th>
         <th>Version</th>
-        <th>Version Date</th>
+        <th><button type="button" @click="toggleSort('versionDate')">Version Date{{ sortIndicator('versionDate') }}</button></th>
         <th>Latest version</th>
-        <th>Latest release date</th>
-        <th>Latest update date</th>
-        <th>Weekly downloads</th>
+        <th><button type="button" @click="toggleSort('latestReleaseDate')">Latest release date{{ sortIndicator('latestReleaseDate') }}</button></th>
+        <th><button type="button" @click="toggleSort('latestUpdateDate')">Latest update date{{ sortIndicator('latestUpdateDate') }}</button></th>
+        <th><button type="button" @click="toggleSort('weeklyDownloads')">Weekly downloads{{ sortIndicator('weeklyDownloads') }}</button></th>
         <th>Source code</th>
-        <th>Git stars</th>
-        <th>Open PRs</th>
-        <th>Closed PRs</th>
-        <th>Open issues</th>
-        <th>Closed issues</th>
+        <th><button type="button" @click="toggleSort('gitStars')">Git stars{{ sortIndicator('gitStars') }}</button></th>
+        <th><button type="button" @click="toggleSort('openPRs')">Open PRs{{ sortIndicator('openPRs') }}</button></th>
+        <th><button type="button" @click="toggleSort('closedPRs')">Closed PRs{{ sortIndicator('closedPRs') }}</button></th>
+        <th><button type="button" @click="toggleSort('openIssues')">Open issues{{ sortIndicator('openIssues') }}</button></th>
+        <th><button type="button" @click="toggleSort('closedIssues')">Closed issues{{ sortIndicator('closedIssues') }}</button></th>
         <th>Dependencies</th>
       </tr>
     </thead>
     <tbody>
       <tr
-        v-for="(dependency) in dependencies"
+        v-for="(dependency) in sortedDependencies"
         :key="dependency.name"
       >
         <td>{{ dependency.name }}</td>
@@ -46,11 +46,60 @@
 </template>
 
 <script lang="ts" setup>
+import { ref, computed } from "vue"
+
 const { dependencies } = defineProps({
   dependencies: {
     type: Array,
     required: true
   }
+})
+
+// Columns whose values are meaningful to sort by (excludes the source-code
+// link, the raw semver ranges, and the dependency list).
+const SORT_ACCESSORS = {
+  name: (d) => d.name,
+  versionDate: (d) => d.versionDate,
+  latestReleaseDate: (d) => d.latestReleaseDate,
+  latestUpdateDate: (d) => d.latestUpdateDate,
+  weeklyDownloads: (d) => d.weeklyDownloads,
+  gitStars: (d) => d.gitStars,
+  openPRs: (d) => d.openPRs,
+  closedPRs: (d) => d.closedPRs,
+  openIssues: (d) => d.openIssues,
+  closedIssues: (d) => d.closedIssues,
+}
+
+const sortKey = ref(null)
+const sortDir = ref('asc')
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
+
+function sortIndicator(key) {
+  if (sortKey.value !== key) return ''
+  return sortDir.value === 'asc' ? ' ▲' : ' ▼'
+}
+
+/** Missing values always sort last, regardless of direction. */
+function compareValues(a, b, dir) {
+  if (a == null && b == null) return 0
+  if (a == null) return 1
+  if (b == null) return -1
+  const cmp = typeof a === 'string' ? a.localeCompare(b) : (a < b ? -1 : a > b ? 1 : 0)
+  return dir === 'desc' ? -cmp : cmp
+}
+
+const sortedDependencies = computed(() => {
+  if (! sortKey.value) return dependencies
+  const accessor = SORT_ACCESSORS[sortKey.value]
+  return [...dependencies].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir.value))
 })
 
 function fmtDate(dateStr) {

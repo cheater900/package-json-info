@@ -77,3 +77,42 @@ test("pasting invalid JSON shows an inline error instead of crashing", async ({ 
   await expect(page.getByRole("alert")).toContainText("not valid JSON")
   await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible()
 })
+
+test("clicking a column header sorts the table, and clicking again reverses it", async ({ page }) => {
+  const weeklyDownloadsByPackage: Record<string, number> = {
+    "aaa-pkg": 100,
+    "bbb-pkg": 300,
+    "ccc-pkg": 200,
+  }
+  await page.route("https://api.npmjs.org/downloads/point/last-week/**", async (route) => {
+    const name = decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop() ?? "")
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ downloads: weeklyDownloadsByPackage[name] ?? 0 }),
+    })
+  })
+
+  await page.goto("/")
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "ccc-pkg": "^1.0.0", "aaa-pkg": "^1.0.0", "bbb-pkg": "^1.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  // Only one populated table (devDependencies is empty), but scope to it
+  // explicitly since the empty Dev Deps table also renders a header row.
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable.locator("tbody tr")).toHaveCount(3)
+
+  const packageNameColumn = () => depsTable.locator("tbody tr td:first-child")
+  await expect(packageNameColumn()).toHaveText(["ccc-pkg", "aaa-pkg", "bbb-pkg"])
+
+  await depsTable.getByRole("button", { name: /^Weekly downloads/ }).click()
+  await expect(packageNameColumn()).toHaveText(["aaa-pkg", "ccc-pkg", "bbb-pkg"])
+
+  await depsTable.getByRole("button", { name: /^Weekly downloads/ }).click()
+  await expect(packageNameColumn()).toHaveText(["bbb-pkg", "ccc-pkg", "aaa-pkg"])
+})
