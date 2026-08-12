@@ -3,6 +3,7 @@ import type {
   PackageInput,
   PackageError,
 } from "../types";
+import { isVersionOutdated } from "./semver";
 
 // ── Internal npm / GitHub response shapes ────────────────────────────────────
 
@@ -27,8 +28,13 @@ type NpmRepository = {
   url?: string;
 }
 
+/** npm's license field can be a string, `{ type }`, or (in old packages) an array of either. */
+type NpmLicenseField = string | { type?: string } | Array<string | { type?: string }>;
+
 type NpmVersionData = {
   dependencies?: Record<string, string>;
+  license?: NpmLicenseField;
+  deprecated?: string;
 }
 
 type NpmRegistryData = {
@@ -37,10 +43,20 @@ type NpmRegistryData = {
   repository?: NpmRepository | string;
   homepage?: string;
   versions?: Record<string, NpmVersionData>;
+  license?: NpmLicenseField;
+  maintainers?: Array<{ name?: string }>;
 }
 
 type NpmDownloadsData = {
   downloads?: number;
+}
+
+type OsvQueryResponse = {
+  vulns?: Array<{ id: string }>;
+}
+
+type BundlephobiaData = {
+  gzip?: number;
 }
 
 type GithubRepoData = {
@@ -92,15 +108,17 @@ export async function fetchPackageInfo(
     githubHeaders['Authorization'] = `Bearer ${githubToken}`
   }
 
-  // ── 1. NPM registry + weekly downloads (parallel) ──────────────────────────
+  // ── 1. NPM registry + weekly downloads + advisories + bundle size (parallel) ─
 
-  const [npmData, downloads] = await Promise.all([
+  const [npmData, downloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
     fetchJson<NpmRegistryData>(
       `https://registry.npmjs.org/${encodeURIComponent(name)}`
     ),
     fetchJson<NpmDownloadsData>(
       `https://api.npmjs.org/downloads/point/last-week/${encodeURIComponent(name)}`
     ).then((d) => d?.downloads ?? null),
+    fetchVulnerabilityCount(name),
+    fetchBundleGzipSize(name, version),
   ]);
 
   const times: Record<string, string> = npmData?.time ?? {};
@@ -115,6 +133,14 @@ export async function fetchPackageInfo(
   const dependencies = versionData?.dependencies
     ? Object.keys(versionData.dependencies)
     : null;
+
+  const license = extractLicense(versionData?.license) ?? extractLicense(npmData?.license);
+  const deprecated = versionData?.deprecated ?? null;
+  const isOutdated = isVersionOutdated(version, latestVersion);
+  const maintainerNames = npmData?.maintainers
+    ?.map((m) => m.name)
+    .filter((n): n is string => Boolean(n));
+  const maintainers = maintainerNames && maintainerNames.length > 0 ? maintainerNames : null;
 
   // ── 2. Extract a repo slug (any of GitHub/GitLab/Codeberg) from npm metadata ─
 
@@ -197,6 +223,12 @@ export async function fetchPackageInfo(
     openIssues,
     closedIssues,
     dependencies,
+    license,
+    isOutdated,
+    deprecated,
+    vulnerabilityCount,
+    bundleSizeGzip,
+    maintainers,
   };
 }
 
@@ -300,4 +332,58 @@ function normaliseRepoUrl(raw: string | undefined): string | null {
     .replace(/^git:\/\//, "https://")
     .replace(/^ssh:\/\/git@/, "https://")
     .replace(/\.git$/, "");
+}
+
+/**
+ * Normalises npm's license field, which can be an SPDX string, a legacy
+ * `{ type }` object, or (in very old packages) an array of either.
+ */
+function extractLicense(value: NpmLicenseField | undefined): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    const names = value.map(extractLicense).filter((v): v is string => Boolean(v));
+    return names.length > 0 ? names.join(" OR ") : null;
+  }
+  return value.type ?? null;
+}
+
+/**
+ * Looks up known security advisories for a package via the OSV database.
+ * Best-effort: the OSV API isn't guaranteed to be reachable from a browser
+ * (rate limits, CORS, network errors), so any failure resolves to null
+ * (unknown) rather than failing the whole package lookup.
+ */
+async function fetchVulnerabilityCount(name: string): Promise<number | null> {
+  try {
+    const response = await fetch("https://api.osv.dev/v1/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ package: { name, ecosystem: "npm" } }),
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as OsvQueryResponse;
+    return data.vulns?.length ?? 0;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Looks up the min+gzip bundle size for a package via Bundlephobia.
+ * Best-effort, same reasoning as fetchVulnerabilityCount: Bundlephobia's
+ * API isn't guaranteed to allow cross-origin browser requests, so any
+ * failure resolves to null (unknown).
+ */
+async function fetchBundleGzipSize(name: string, version: string): Promise<number | null> {
+  try {
+    const pinnedVersion = version.match(/\d+\.\d+\.\d+/)?.[0];
+    const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
+    const data = await fetchJson<BundlephobiaData>(
+      `https://bundlephobia.com/api/size?package=${encodeURIComponent(packageSpec)}`
+    );
+    return data?.gzip ?? null;
+  } catch {
+    return null;
+  }
 }

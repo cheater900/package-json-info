@@ -64,6 +64,12 @@ describe("fetchPackageInfo", () => {
       openIssues: 3,
       closedIssues: 20,
       dependencies: ["tiny-dep"],
+      license: null,
+      isOutdated: true,
+      deprecated: null,
+      vulnerabilityCount: null,
+      bundleSizeGzip: null,
+      maintainers: null,
     });
   });
 
@@ -108,6 +114,11 @@ describe("fetchPackageInfo", () => {
     expect(info.openIssues).toBeNull();
     expect(info.closedIssues).toBeNull();
     expect(info.dependencies).toBeNull();
+    expect(info.license).toBeNull();
+    expect(info.deprecated).toBeNull();
+    expect(info.vulnerabilityCount).toBeNull();
+    expect(info.bundleSizeGzip).toBeNull();
+    expect(info.maintainers).toBeNull();
   });
 
   it("resolves stars from GitLab for a package with a GitLab repository, and leaves PR/issue counts null", async () => {
@@ -152,6 +163,134 @@ describe("fetchPackageInfo", () => {
 
     expect(info.sourceCode).toBe("https://codeberg.org/some-org/cb-pkg");
     expect(info.gitStars).toBe(12);
+  });
+
+  it("extracts license, deprecation notice, and maintainers from the registry response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/rich-meta": {
+          "dist-tags": { latest: "1.0.0" },
+          time: {},
+          maintainers: [{ name: "alice" }, { name: "bob" }],
+          versions: {
+            "1.0.0": { license: "MIT", deprecated: "use rich-meta-v2 instead" },
+          },
+        },
+        "api.npmjs.org/downloads": { downloads: 0 },
+      })
+    );
+
+    const info = await fetchPackageInfo("rich-meta", "1.0.0");
+
+    expect(info.license).toBe("MIT");
+    expect(info.deprecated).toBe("use rich-meta-v2 instead");
+    expect(info.maintainers).toEqual(["alice", "bob"]);
+  });
+
+  it("falls back to the package-level license when the resolved version has none", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/pkg-level-license": {
+          "dist-tags": { latest: "1.0.0" },
+          time: {},
+          license: "Apache-2.0",
+          versions: { "1.0.0": {} },
+        },
+        "api.npmjs.org/downloads": { downloads: 0 },
+      })
+    );
+
+    const info = await fetchPackageInfo("pkg-level-license", "1.0.0");
+
+    expect(info.license).toBe("Apache-2.0");
+  });
+
+  it("marks the package up to date when the declared version matches the latest", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/current-pkg": {
+          "dist-tags": { latest: "2.0.0" },
+          time: {},
+        },
+        "api.npmjs.org/downloads": { downloads: 0 },
+      })
+    );
+
+    const info = await fetchPackageInfo("current-pkg", "^2.0.0");
+
+    expect(info.isOutdated).toBe(false);
+  });
+
+  it("reports the vulnerability count from OSV", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/vulnerable-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+        "api.npmjs.org/downloads": { downloads: 0 },
+        "api.osv.dev/v1/query": { vulns: [{ id: "GHSA-aaaa-bbbb-cccc" }, { id: "GHSA-dddd-eeee-ffff" }] },
+      })
+    );
+
+    const info = await fetchPackageInfo("vulnerable-pkg", "1.0.0");
+
+    expect(info.vulnerabilityCount).toBe(2);
+  });
+
+  it("reports zero vulnerabilities (not null) when OSV responds with none", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/clean-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+        "api.npmjs.org/downloads": { downloads: 0 },
+        "api.osv.dev/v1/query": { vulns: [] },
+      })
+    );
+
+    const info = await fetchPackageInfo("clean-pkg", "1.0.0");
+
+    expect(info.vulnerabilityCount).toBe(0);
+  });
+
+  it("reports the gzip bundle size from Bundlephobia", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/sized-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+        "api.npmjs.org/downloads": { downloads: 0 },
+        "bundlephobia.com/api/size": { gzip: 2048 },
+      })
+    );
+
+    const info = await fetchPackageInfo("sized-pkg", "1.0.0");
+
+    expect(info.bundleSizeGzip).toBe(2048);
+  });
+
+  it("resolves vulnerabilityCount and bundleSizeGzip to null, without failing the whole lookup, when those APIs error out", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("registry.npmjs.org/flaky-pkg")) {
+          return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} });
+        }
+        if (url.includes("api.npmjs.org/downloads")) {
+          return jsonResponse({ downloads: 0 });
+        }
+        if (url.includes("api.osv.dev") || url.includes("bundlephobia.com")) {
+          throw new Error("network error");
+        }
+        return jsonResponse(null, false);
+      })
+    );
+
+    const info = await fetchPackageInfo("flaky-pkg", "1.0.0");
+
+    expect(info.vulnerabilityCount).toBeNull();
+    expect(info.bundleSizeGzip).toBeNull();
+    expect(info.name).toBe("flaky-pkg");
   });
 
   it("falls back to the npm homepage when there's no GitHub repository", async () => {

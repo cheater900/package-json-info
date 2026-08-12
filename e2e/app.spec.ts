@@ -43,6 +43,22 @@ async function mockExternalApis(page: Page) {
       body: JSON.stringify({ total_count: 3 }),
     })
   })
+
+  await page.route("https://api.osv.dev/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ vulns: [] }),
+    })
+  })
+
+  await page.route("https://bundlephobia.com/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ gzip: 1024 }),
+    })
+  })
 }
 
 test.beforeEach(async ({ page }) => {
@@ -115,4 +131,54 @@ test("clicking a column header sorts the table, and clicking again reverses it",
 
   await depsTable.getByRole("button", { name: /^Weekly downloads/ }).click()
   await expect(packageNameColumn()).toHaveText(["bbb-pkg", "ccc-pkg", "aaa-pkg"])
+})
+
+test("renders license, outdated, deprecated, vulnerability, bundle size, and maintainer data", async ({ page }) => {
+  await page.route("https://registry.npmjs.org/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        "dist-tags": { latest: "2.0.0" },
+        time: { "1.0.0": "2023-01-01T00:00:00.000Z", "2.0.0": "2024-01-01T00:00:00.000Z", modified: "2024-06-01T00:00:00.000Z" },
+        maintainers: [{ name: "alice" }, { name: "bob" }],
+        versions: {
+          "1.0.0": { license: "GPL-3.0", deprecated: "please upgrade" },
+        },
+      }),
+    })
+  })
+  await page.route("https://api.osv.dev/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ vulns: [{ id: "GHSA-xxxx-xxxx-xxxx" }] }),
+    })
+  })
+  await page.route("https://bundlephobia.com/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ gzip: 2048 }),
+    })
+  })
+
+  await page.goto("/")
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "enriched-pkg": "1.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  const depsTable = page.locator("table.deps").first()
+  const row = depsTable.locator("tbody tr").filter({ hasText: "enriched-pkg" })
+
+  await expect(row.getByRole("cell", { name: "GPL-3.0 ⚠", exact: true })).toBeVisible()
+  await expect(row.getByRole("cell", { name: "Yes", exact: true })).toBeVisible()
+  await expect(row.getByRole("cell", { name: "please upgrade", exact: true })).toBeVisible()
+  await expect(row.getByRole("cell", { name: "1", exact: true })).toBeVisible()
+  await expect(row.getByRole("cell", { name: "2.0 KB", exact: true })).toBeVisible()
+  await expect(row.getByRole("cell", { name: "alice, bob", exact: true })).toBeVisible()
 })

@@ -19,6 +19,12 @@ export type PackageInfo = {
   openIssues: number | null;
   closedIssues: number | null;
   dependencies: string[] | null;
+  license: string | null;
+  isOutdated: boolean | null;
+  deprecated: string | null;
+  vulnerabilityCount: number | null;
+  bundleSizeGzip: number | null;
+  maintainers: string[] | null;
 }
 
 export type PackageError = {

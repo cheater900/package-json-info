@@ -17,6 +17,12 @@ const fullDependency = {
   openIssues: 3,
   closedIssues: 20,
   dependencies: ["a", "b"],
+  license: "MIT",
+  isOutdated: true,
+  deprecated: null,
+  vulnerabilityCount: 0,
+  bundleSizeGzip: 15360,
+  maintainers: ["alice", "bob"],
 };
 
 const sparseDependency = {
@@ -34,6 +40,12 @@ const sparseDependency = {
   openIssues: null,
   closedIssues: null,
   dependencies: null,
+  license: null,
+  isOutdated: null,
+  deprecated: null,
+  vulnerabilityCount: null,
+  bundleSizeGzip: null,
+  maintainers: null,
 };
 
 describe("DependenciesTable", () => {
@@ -61,7 +73,13 @@ describe("DependenciesTable", () => {
     expect(text).toContain("4242");
     expect(text).toContain("99");
     expect(text).toContain("a, b");
+    expect(text).toContain("MIT");
+    expect(text).toContain("Yes"); // outdated
+    expect(text).toContain("15.0 KB");
+    expect(text).toContain("alice, bob");
     expect(wrapper.find('a[href="https://github.com/left-pad/left-pad"]').exists()).toBe(true);
+    // MIT is permissive: no license warning marker
+    expect(text).not.toContain("MIT ⚠");
   });
 
   it("renders '-' placeholders for every missing field instead of blank cells", () => {
@@ -69,12 +87,20 @@ describe("DependenciesTable", () => {
       props: { dependencies: [sparseDependency] },
     });
 
+    const headerLabels = wrapper.findAll("thead th").map((th) => th.text().replace(/[▲▼]$/, "").trim());
     const cells = wrapper.findAll("tbody td");
-    // name/version are always present; every other cell should fall back to '-'
-    const fallbackCells = cells.slice(2);
-    for (const cell of fallbackCells) {
-      expect(cell.text()).toBe("-");
-    }
+    const licenseIndex = headerLabels.indexOf("License");
+
+    // name/version are always present; every other cell should fall back to
+    // '-', except License, which marks a missing license with a warning.
+    cells.forEach((cell, index) => {
+      if (index === 0 || index === 1) return;
+      if (index === licenseIndex) {
+        expect(cell.text()).toBe("- ⚠");
+      } else {
+        expect(cell.text()).toBe("-");
+      }
+    });
     expect(wrapper.find("tbody a").exists()).toBe(false);
   });
 
@@ -174,9 +200,22 @@ describe("DependenciesTable sorting", () => {
     });
 
     const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
-    expect(headerTexts).toContain("Version");
-    expect(headerTexts).toContain("Source code");
-    expect(headerTexts).toContain("Dependencies");
-    expect(wrapper.findAll("th button").some((b) => b.text() === "Version")).toBe(false);
+    for (const label of ["Version", "Source code", "Dependencies", "License", "Deprecated", "Maintainers"]) {
+      expect(headerTexts).toContain(label);
+      expect(wrapper.findAll("th button").some((b) => b.text() === label)).toBe(false);
+    }
+  });
+
+  it("sorts by vulnerability count, keeping unknown counts last", async () => {
+    const withVulns = { ...sparseDependency, name: "aaa", vulnerabilityCount: 3 };
+    const withoutVulns = { ...sparseDependency, name: "bbb", vulnerabilityCount: 0 };
+    const unknownVulns = { ...sparseDependency, name: "ccc", vulnerabilityCount: null };
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [withVulns, withoutVulns, unknownVulns] },
+    });
+
+    await sortButton(wrapper, "Vulnerabilities").trigger("click");
+
+    expect(names(wrapper)).toEqual(["bbb", "aaa", "ccc"]);
   });
 });
