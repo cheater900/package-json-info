@@ -182,3 +182,30 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
   await expect(row.getByRole("cell", { name: "2.0 KB", exact: true })).toBeVisible()
   await expect(row.getByRole("cell", { name: "alice, bob", exact: true })).toBeVisible()
 })
+
+test("the column visibility panel hides/shows columns and never drops below two visible", async ({ page }) => {
+  await page.goto("/")
+  const depsTable = page.locator("table.deps").first()
+
+  await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible()
+
+  await page.getByLabel("License", { exact: true }).uncheck()
+  await expect(depsTable.getByRole("columnheader", { name: "License" })).toHaveCount(0)
+
+  await page.getByLabel("License", { exact: true }).check()
+  await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible()
+
+  // Hide every toggleable column except "Version" to hit the two-column floor.
+  const allLabels = (await page.locator(".column-visibility-panel label").allTextContents()).map((t) =>
+    t.trim()
+  )
+  for (const label of allLabels) {
+    if (label === "Version") continue
+    await page.getByLabel(label, { exact: true }).uncheck()
+  }
+
+  await expect(page.getByLabel("Version", { exact: true })).toBeDisabled()
+  await expect(depsTable.getByRole("columnheader", { name: "Name" })).toBeVisible()
+  await expect(depsTable.getByRole("columnheader", { name: "Version", exact: true })).toBeVisible()
+  await expect(depsTable.locator("thead th")).toHaveCount(2)
+})

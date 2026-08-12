@@ -3,25 +3,25 @@
     <thead>
       <tr>
         <th><button type="button" @click="toggleSort('name')">Name{{ sortIndicator('name') }}</button></th>
-        <th>Version</th>
-        <th><button type="button" @click="toggleSort('versionDate')">Version Date{{ sortIndicator('versionDate') }}</button></th>
-        <th>Latest version</th>
-        <th><button type="button" @click="toggleSort('latestReleaseDate')">Latest release date{{ sortIndicator('latestReleaseDate') }}</button></th>
-        <th><button type="button" @click="toggleSort('latestUpdateDate')">Latest update date{{ sortIndicator('latestUpdateDate') }}</button></th>
-        <th><button type="button" @click="toggleSort('isOutdated')">Outdated{{ sortIndicator('isOutdated') }}</button></th>
-        <th><button type="button" @click="toggleSort('weeklyDownloads')">Weekly downloads{{ sortIndicator('weeklyDownloads') }}</button></th>
-        <th>Source code</th>
-        <th><button type="button" @click="toggleSort('gitStars')">Git stars{{ sortIndicator('gitStars') }}</button></th>
-        <th><button type="button" @click="toggleSort('openPRs')">Open PRs{{ sortIndicator('openPRs') }}</button></th>
-        <th><button type="button" @click="toggleSort('closedPRs')">Closed PRs{{ sortIndicator('closedPRs') }}</button></th>
-        <th><button type="button" @click="toggleSort('openIssues')">Open issues{{ sortIndicator('openIssues') }}</button></th>
-        <th><button type="button" @click="toggleSort('closedIssues')">Closed issues{{ sortIndicator('closedIssues') }}</button></th>
-        <th>Dependencies</th>
-        <th>License</th>
-        <th>Deprecated</th>
-        <th><button type="button" @click="toggleSort('vulnerabilityCount')">Vulnerabilities{{ sortIndicator('vulnerabilityCount') }}</button></th>
-        <th><button type="button" @click="toggleSort('bundleSizeGzip')">Bundle size (gzip){{ sortIndicator('bundleSizeGzip') }}</button></th>
-        <th>Maintainers</th>
+        <th v-if="isVisible('version')">Version</th>
+        <th v-if="isVisible('versionDate')"><button type="button" @click="toggleSort('versionDate')">Version Date{{ sortIndicator('versionDate') }}</button></th>
+        <th v-if="isVisible('latestVersion')">Latest version</th>
+        <th v-if="isVisible('latestReleaseDate')"><button type="button" @click="toggleSort('latestReleaseDate')">Latest release date{{ sortIndicator('latestReleaseDate') }}</button></th>
+        <th v-if="isVisible('latestUpdateDate')"><button type="button" @click="toggleSort('latestUpdateDate')">Latest update date{{ sortIndicator('latestUpdateDate') }}</button></th>
+        <th v-if="isVisible('isOutdated')"><button type="button" @click="toggleSort('isOutdated')">Outdated{{ sortIndicator('isOutdated') }}</button></th>
+        <th v-if="isVisible('weeklyDownloads')"><button type="button" @click="toggleSort('weeklyDownloads')">Weekly downloads{{ sortIndicator('weeklyDownloads') }}</button></th>
+        <th v-if="isVisible('sourceCode')">Source code</th>
+        <th v-if="isVisible('gitStars')"><button type="button" @click="toggleSort('gitStars')">Git stars{{ sortIndicator('gitStars') }}</button></th>
+        <th v-if="isVisible('openPRs')"><button type="button" @click="toggleSort('openPRs')">Open PRs{{ sortIndicator('openPRs') }}</button></th>
+        <th v-if="isVisible('closedPRs')"><button type="button" @click="toggleSort('closedPRs')">Closed PRs{{ sortIndicator('closedPRs') }}</button></th>
+        <th v-if="isVisible('openIssues')"><button type="button" @click="toggleSort('openIssues')">Open issues{{ sortIndicator('openIssues') }}</button></th>
+        <th v-if="isVisible('closedIssues')"><button type="button" @click="toggleSort('closedIssues')">Closed issues{{ sortIndicator('closedIssues') }}</button></th>
+        <th v-if="isVisible('dependencies')">Dependencies</th>
+        <th v-if="isVisible('license')">License</th>
+        <th v-if="isVisible('deprecated')">Deprecated</th>
+        <th v-if="isVisible('vulnerabilityCount')"><button type="button" @click="toggleSort('vulnerabilityCount')">Vulnerabilities{{ sortIndicator('vulnerabilityCount') }}</button></th>
+        <th v-if="isVisible('bundleSizeGzip')"><button type="button" @click="toggleSort('bundleSizeGzip')">Bundle size (gzip){{ sortIndicator('bundleSizeGzip') }}</button></th>
+        <th v-if="isVisible('maintainers')">Maintainers</th>
       </tr>
     </thead>
     <tbody>
@@ -30,28 +30,28 @@
         :key="dependency.name"
       >
         <td>{{ dependency.name }}</td>
-        <td>{{ dependency.version }}</td>
-        <td>{{ fmtDate(dependency.versionDate) }}</td>
-        <td>{{ dependency.latestVersion ?? '-' }}</td>
-        <td>{{ fmtDate(dependency.latestReleaseDate) }}</td>
-        <td>{{ fmtDate(dependency.latestUpdateDate) }}</td>
-        <td>{{ fmtOutdated(dependency.isOutdated) }}</td>
-        <td>{{ dependency.weeklyDownloads ?? '-' }}</td>
-        <td>
+        <td v-if="isVisible('version')">{{ dependency.version }}</td>
+        <td v-if="isVisible('versionDate')">{{ fmtDate(dependency.versionDate) }}</td>
+        <td v-if="isVisible('latestVersion')">{{ dependency.latestVersion ?? '-' }}</td>
+        <td v-if="isVisible('latestReleaseDate')">{{ fmtDate(dependency.latestReleaseDate) }}</td>
+        <td v-if="isVisible('latestUpdateDate')">{{ fmtDate(dependency.latestUpdateDate) }}</td>
+        <td v-if="isVisible('isOutdated')">{{ fmtOutdated(dependency.isOutdated) }}</td>
+        <td v-if="isVisible('weeklyDownloads')">{{ dependency.weeklyDownloads ?? '-' }}</td>
+        <td v-if="isVisible('sourceCode')">
           <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>
           <template v-else>-</template>
         </td>
-        <td>{{ dependency.gitStars ?? '-' }}</td>
-        <td>{{ dependency.openPRs ?? '-' }}</td>
-        <td>{{ dependency.closedPRs ?? '-' }}</td>
-        <td>{{ dependency.openIssues ?? '-' }}</td>
-        <td>{{ dependency.closedIssues ?? '-' }}</td>
-        <td>{{ fmtList(dependency.dependencies) }}</td>
-        <td>{{ fmtLicense(dependency.license) }}</td>
-        <td>{{ dependency.deprecated ?? '-' }}</td>
-        <td>{{ dependency.vulnerabilityCount ?? '-' }}</td>
-        <td>{{ fmtBundleSize(dependency.bundleSizeGzip) }}</td>
-        <td>{{ fmtList(dependency.maintainers) }}</td>
+        <td v-if="isVisible('gitStars')">{{ dependency.gitStars ?? '-' }}</td>
+        <td v-if="isVisible('openPRs')">{{ dependency.openPRs ?? '-' }}</td>
+        <td v-if="isVisible('closedPRs')">{{ dependency.closedPRs ?? '-' }}</td>
+        <td v-if="isVisible('openIssues')">{{ dependency.openIssues ?? '-' }}</td>
+        <td v-if="isVisible('closedIssues')">{{ dependency.closedIssues ?? '-' }}</td>
+        <td v-if="isVisible('dependencies')">{{ fmtList(dependency.dependencies) }}</td>
+        <td v-if="isVisible('license')">{{ fmtLicense(dependency.license) }}</td>
+        <td v-if="isVisible('deprecated')">{{ dependency.deprecated ?? '-' }}</td>
+        <td v-if="isVisible('vulnerabilityCount')">{{ dependency.vulnerabilityCount ?? '-' }}</td>
+        <td v-if="isVisible('bundleSizeGzip')">{{ fmtBundleSize(dependency.bundleSizeGzip) }}</td>
+        <td v-if="isVisible('maintainers')">{{ fmtList(dependency.maintainers) }}</td>
       </tr>
     </tbody>
   </table>
@@ -60,13 +60,22 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue"
 import { hasLicenseWarning } from "../utils/license"
+import { isColumnVisible } from "../utils/tableColumns"
 
-const { dependencies } = defineProps({
+const props = defineProps({
   dependencies: {
     type: Array,
     required: true
+  },
+  hiddenColumns: {
+    type: Set,
+    default: () => new Set()
   }
 })
+
+function isVisible(key) {
+  return isColumnVisible(props.hiddenColumns, key)
+}
 
 // Columns whose values are meaningful to sort by (excludes the source-code
 // link, the raw semver ranges, and list-valued columns).
@@ -113,9 +122,9 @@ function compareValues(a, b, dir) {
 }
 
 const sortedDependencies = computed(() => {
-  if (! sortKey.value) return dependencies
+  if (! sortKey.value) return props.dependencies
   const accessor = SORT_ACCESSORS[sortKey.value]
-  return [...dependencies].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir.value))
+  return [...props.dependencies].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir.value))
 })
 
 function fmtDate(dateStr) {

@@ -59,11 +59,16 @@
       </div>
     </section>
 
+    <column-visibility-panel
+      :hidden-columns="hiddenColumns"
+      @toggle-column="onToggleColumn"
+    />
+
     <div>
       <h3>Deps<span v-if="isLoadingDeps"> (loading…)</span></h3>
-      <dependencies-table :dependencies="deps" />
+      <dependencies-table :dependencies="deps" :hidden-columns="hiddenColumns" />
       <h3>Dev Deps<span v-if="isLoadingDevDeps"> (loading…)</span></h3>
-      <dependencies-table :dependencies="devDeps" />
+      <dependencies-table :dependencies="devDeps" :hidden-columns="hiddenColumns" />
     </div>
     <div>
       <pre>{{ packageJsonContent }}</pre>
@@ -74,7 +79,9 @@
 import { ref, watch } from "vue";
 import { fetchPackagesInfo } from "./utils/npmPackage.ts"
 import { fetchPackageJsonFromRepo } from "./utils/repoPackageJson.ts"
+import { toggleColumnVisibility } from "./utils/tableColumns.ts"
 import DependenciesTable from "./components/DependenciesTable.vue"
+import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue"
 import packageJson from '../package.json'
 
 const packageJsonContent = ref(JSON.stringify(packageJson, null, 2))
@@ -91,6 +98,12 @@ const repoUrlInput = ref("")
 
 const deps = ref([])
 const devDeps = ref([])
+
+const hiddenColumns = ref(new Set())
+
+function onToggleColumn(key) {
+  hiddenColumns.value = toggleColumnVisibility(hiddenColumns.value, key)
+}
 
 watch(pkg, async () => {
   const rawDeps = toPackageInputs(pkg.value?.dependencies)

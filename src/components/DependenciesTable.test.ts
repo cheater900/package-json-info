@@ -121,6 +121,53 @@ describe("DependenciesTable", () => {
   });
 });
 
+describe("DependenciesTable column visibility", () => {
+  it("shows every column by default", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [fullDependency] },
+    });
+
+    const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headerTexts).toContain("License");
+    expect(headerTexts).toContain("Maintainers");
+  });
+
+  it("hides a column named in hiddenColumns, from both the header and every row", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [fullDependency, sparseDependency], hiddenColumns: new Set(["license"]) },
+    });
+
+    const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headerTexts).toContain("Maintainers");
+    expect(headerTexts.some((t) => t.startsWith("License"))).toBe(false);
+    expect(wrapper.text()).not.toContain("MIT");
+  });
+
+  it("never hides the Name column even if asked to", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [fullDependency], hiddenColumns: new Set(["name"]) },
+    });
+
+    const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headerTexts.some((t) => t.startsWith("Name"))).toBe(true);
+    expect(wrapper.find("tbody td").text()).toBe("left-pad");
+  });
+
+  it("keeps header and row cell counts in sync when columns are hidden", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: {
+        dependencies: [fullDependency],
+        hiddenColumns: new Set(["license", "maintainers", "sourceCode"]),
+      },
+    });
+
+    const headerCount = wrapper.findAll("thead th").length;
+    const rowCellCount = wrapper.findAll("tbody td").length;
+    expect(headerCount).toBe(rowCellCount);
+    expect(headerCount).toBeLessThan(20);
+  });
+});
+
 describe("DependenciesTable sorting", () => {
   const pkgA = { ...sparseDependency, name: "aaa", weeklyDownloads: 100, gitStars: 5 };
   const pkgB = { ...sparseDependency, name: "bbb", weeklyDownloads: 300, gitStars: null };
