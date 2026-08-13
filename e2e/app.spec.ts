@@ -65,6 +65,29 @@ test.beforeEach(async ({ page }) => {
   await mockExternalApis(page)
 })
 
+test("the dependency table scrolls horizontally, since it has more columns than fit on screen", async ({ page }) => {
+  await page.goto("/")
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable).toBeVisible()
+
+  const overflowX = await depsTable.evaluate((el) => getComputedStyle(el).overflowX)
+  expect(["scroll", "auto"]).toContain(overflowX)
+
+  const { scrollWidth, clientWidth } = await depsTable.evaluate((el) => ({
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+  }))
+  expect(scrollWidth).toBeGreaterThan(clientWidth)
+
+  // A genuinely scrollable element accepts a scrollLeft up to its overflow
+  // amount; a non-scrollable one clamps straight back to 0.
+  const scrolledLeft = await depsTable.evaluate((el) => {
+    el.scrollLeft = el.scrollWidth
+    return el.scrollLeft
+  })
+  expect(scrolledLeft).toBeGreaterThan(0)
+})
+
 test("loads the app and renders the default package.json dependency table", async ({ page }) => {
   await page.goto("/")
   await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible()
