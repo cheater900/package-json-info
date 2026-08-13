@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchPackageInfo, fetchPackagesInfo } from "./npmPackage";
+import { fetchPackageInfo, fetchPackagesInfo, clearPackageInfoCache } from "./npmPackage";
 
 function jsonResponse(body: unknown, ok = true) {
   return {
@@ -23,6 +23,7 @@ function mockFetchByUrl(handlers: Record<string, unknown>) {
 
 beforeEach(() => {
   vi.unstubAllGlobals();
+  clearPackageInfoCache();
 });
 
 describe("fetchPackageInfo", () => {
@@ -309,6 +310,129 @@ describe("fetchPackageInfo", () => {
     const info = await fetchPackageInfo("homepage-only", "1.0.0");
 
     expect(info.sourceCode).toBe("https://example.com/homepage-only");
+  });
+});
+
+describe("fetchPackageInfo caching", () => {
+  function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
+    return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
+  }
+
+  it("reuses a cached result for a repeated exact name+version instead of refetching", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/cached-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 1 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const first = await fetchPackageInfo("cached-pkg", "1.0.0");
+    const second = await fetchPackageInfo("cached-pkg", "1.0.0");
+
+    expect(second).toBe(first);
+    expect(countCalls(fetchMock, "registry.npmjs.org/cached-pkg")).toBe(1);
+  });
+
+  it("coalesces concurrent requests for the same name+version into a single network round", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/concurrent-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 1 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const [first, second] = await Promise.all([
+      fetchPackageInfo("concurrent-pkg", "1.0.0"),
+      fetchPackageInfo("concurrent-pkg", "1.0.0"),
+    ]);
+
+    expect(second).toBe(first);
+    expect(countCalls(fetchMock, "registry.npmjs.org/concurrent-pkg")).toBe(1);
+  });
+
+  it("shares name-scoped lookups (registry, downloads, advisories) across different versions of the same package", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/multi-version-pkg": {
+        "dist-tags": { latest: "2.0.0" },
+        time: {},
+        versions: {
+          "1.0.0": { dependencies: { a: "^1.0.0" } },
+          "2.0.0": { dependencies: { b: "^1.0.0" } },
+        },
+      },
+      "api.npmjs.org/downloads": { downloads: 1 },
+      "api.osv.dev/v1/query": { vulns: [] },
+      "bundlephobia.com/api/size": { gzip: 100 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const v1 = await fetchPackageInfo("multi-version-pkg", "1.0.0");
+    const v2 = await fetchPackageInfo("multi-version-pkg", "2.0.0");
+
+    expect(v1.dependencies).toEqual(["a"]);
+    expect(v2.dependencies).toEqual(["b"]);
+    expect(countCalls(fetchMock, "registry.npmjs.org/multi-version-pkg")).toBe(1);
+    expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
+    expect(countCalls(fetchMock, "api.osv.dev")).toBe(1);
+    // Bundle size is genuinely version-scoped, so it's fetched for each version.
+    expect(countCalls(fetchMock, "bundlephobia.com")).toBe(2);
+  });
+
+  it("shares repo metadata across different npm package names pointing at the same repository", async () => {
+    const sharedRepo = {
+      repository: { type: "git", url: "git+https://github.com/shared-org/shared-repo.git" },
+    };
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("registry.npmjs.org/pkg-a")) {
+        return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {}, ...sharedRepo });
+      }
+      if (url.includes("registry.npmjs.org/pkg-b")) {
+        return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {}, ...sharedRepo });
+      }
+      if (url.includes("api.npmjs.org/downloads")) {
+        return jsonResponse({ downloads: 1 });
+      }
+      if (url.includes("api.github.com/repos/shared-org/shared-repo")) {
+        return jsonResponse({ stargazers_count: 777 });
+      }
+      if (url.includes("api.github.com/search/issues")) {
+        return jsonResponse({ total_count: 0 });
+      }
+      return jsonResponse(null, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const a = await fetchPackageInfo("pkg-a", "1.0.0");
+    const b = await fetchPackageInfo("pkg-b", "1.0.0");
+
+    expect(a.gitStars).toBe(777);
+    expect(b.gitStars).toBe(777);
+    expect(countCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
+  });
+
+  it("does not cache a failed lookup - the next call for the same key retries", async () => {
+    let registryAttempts = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("registry.npmjs.org/retry-pkg")) {
+          registryAttempts++;
+          if (registryAttempts === 1) {
+            throw new Error("network down");
+          }
+          return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} });
+        }
+        if (url.includes("api.npmjs.org/downloads")) {
+          return jsonResponse({ downloads: 1 });
+        }
+        return jsonResponse(null, false);
+      })
+    );
+
+    await expect(fetchPackageInfo("retry-pkg", "1.0.0")).rejects.toThrow("network down");
+
+    const info = await fetchPackageInfo("retry-pkg", "1.0.0");
+
+    expect(info.name).toBe("retry-pkg");
+    expect(registryAttempts).toBe(2);
   });
 });
 

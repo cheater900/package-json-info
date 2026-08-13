@@ -88,6 +88,33 @@ test("the dependency table scrolls horizontally, since it has more columns than 
   expect(scrolledLeft).toBeGreaterThan(0)
 })
 
+test("caches metadata so a package listed in both dependencies and devDependencies is only fetched once", async ({ page }) => {
+  let registryRequests = 0
+  await page.route("https://registry.npmjs.org/shared-pkg", async (route) => {
+    registryRequests++
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
+    })
+  })
+
+  await page.goto("/")
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "shared-pkg": "1.0.0" },
+    devDependencies: { "shared-pkg": "1.0.0" },
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  // Both tables render their own row for the package; once both are up,
+  // both watchers' fetches have settled.
+  await expect(page.getByRole("cell", { name: "shared-pkg", exact: true })).toHaveCount(2)
+
+  expect(registryRequests).toBe(1)
+})
+
 test("loads the app and renders the default package.json dependency table", async ({ page }) => {
   await page.goto("/")
   await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible()
