@@ -105,7 +105,7 @@ function onToggleColumn(key) {
   hiddenColumns.value = toggleColumnVisibility(hiddenColumns.value, key)
 }
 
-watch(pkg, async () => {
+watch([pkg, hiddenColumns], async () => {
   const rawDeps = toPackageInputs(pkg.value?.dependencies)
   if (rawDeps.length === 0) {
     deps.value = []
@@ -113,13 +113,13 @@ watch(pkg, async () => {
   }
   isLoadingDeps.value = true
   try {
-    deps.value = await fetchPackagesInfo(rawDeps)
+    deps.value = await fetchPackagesInfo(rawDeps, { hiddenColumns: hiddenColumns.value })
   } finally {
     isLoadingDeps.value = false
   }
 }, { immediate: true, deep: true })
 
-watch(pkg, async () => {
+watch([pkg, hiddenColumns], async () => {
   const rawDeps = toPackageInputs(pkg.value?.devDependencies)
   if (rawDeps.length === 0) {
     devDeps.value = []
@@ -127,7 +127,7 @@ watch(pkg, async () => {
   }
   isLoadingDevDeps.value = true
   try {
-    devDeps.value = await fetchPackagesInfo(rawDeps)
+    devDeps.value = await fetchPackagesInfo(rawDeps, { hiddenColumns: hiddenColumns.value })
   } finally {
     isLoadingDevDeps.value = false
   }

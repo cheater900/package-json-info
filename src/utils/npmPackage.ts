@@ -4,11 +4,19 @@ import type {
   PackageError,
 } from "../types";
 import { isVersionOutdated } from "./semver";
+import { isColumnVisible } from "./tableColumns";
 
 // ── Internal npm / GitHub response shapes ────────────────────────────────────
 
 export type FetchPackageOptions = {
   githubToken?: string;
+  /**
+   * Columns currently hidden in the UI. Any network call that exists only
+   * to back a hidden column is skipped entirely (see the column-gating
+   * notes near NPM_DATA_DEPENDENT_COLUMNS below). Omit to fetch everything
+   * (equivalent to an empty set - nothing hidden).
+   */
+  hiddenColumns?: ReadonlySet<string>;
 }
 
 export type FetchPackagesOptions = FetchPackageOptions & {
@@ -113,8 +121,7 @@ const STAR_SUPPORTED_HOSTS = ["github.com", "gitlab.com", "codeberg.org"];
 // advisories) or by the resolved repo slug alone (stars/PR/issue counts —
 // several npm packages can even share one repo, e.g. a monorepo), not by
 // the caller's declared version. So each of those is cached independently
-// by its own natural key, in addition to caching the fully-assembled
-// PackageInfo by "name@version" for the very common exact-duplicate case.
+// by its own natural key.
 //
 // Every cache holds *promises*, not just resolved values: these lookups
 // routinely fire concurrently (e.g. the same package appearing in both
@@ -124,6 +131,14 @@ const STAR_SUPPORTED_HOSTS = ["github.com", "gitlab.com", "codeberg.org"];
 // Caching the in-flight promise means every later caller for the same key
 // just awaits the first caller's request. All caches are scoped to this
 // module's lifetime (i.e. the page load), not persisted across reloads.
+//
+// There is deliberately no top-level "whole PackageInfo" cache on top of
+// these: which fields get fetched at all depends on which columns are
+// visible (see column gating below), and that can change from one call to
+// the next as the user toggles the column panel. Re-deriving the composed
+// object per call is cheap - it's just a handful of already-cached (or
+// newly-needed) sub-fetches plus synchronous field mapping - so the real
+// deduplication work all happens at the sub-fetch level below.
 
 function memoizeAsync<T>(
   cache: Map<string, Promise<T>>,
@@ -141,7 +156,6 @@ function memoizeAsync<T>(
   return request;
 }
 
-const packageInfoCache = new Map<string, Promise<PackageInfo>>();
 const registryDataCache = new Map<string, Promise<NpmRegistryData | null>>();
 const weeklyDownloadsCache = new Map<string, Promise<number | null>>();
 const vulnerabilityCountCache = new Map<string, Promise<number | null>>();
@@ -158,7 +172,6 @@ function repoSlugKey(slug: RepoSlug): string {
 
 /** Clears every in-memory metadata cache. Exposed for tests. */
 export function clearPackageInfoCache(): void {
-  packageInfoCache.clear();
   registryDataCache.clear();
   weeklyDownloadsCache.clear();
   vulnerabilityCountCache.clear();
@@ -166,33 +179,48 @@ export function clearPackageInfoCache(): void {
   repoMetadataCache.clear();
 }
 
+// ── Column gating ────────────────────────────────────────────────────────────
+//
+// Fetching data to back a column nobody can currently see is wasted work -
+// and for the security-advisory and bundle-size lookups in particular,
+// wasted external API calls against services with their own rate limits.
+// So before fetching anything, work out which of the four independently
+// skippable network calls are actually needed for the columns that are
+// currently visible.
+
+/** Columns whose value comes from the npm registry document (directly, or
+ * indirectly via the repo slug it's used to derive for repo metadata). */
+const NPM_DATA_DEPENDENT_COLUMNS = [
+  "versionDate", "latestVersion", "latestReleaseDate", "latestUpdateDate",
+  "dependencies", "license", "deprecated", "isOutdated", "maintainers", "sourceCode",
+  "gitStars", "openPRs", "closedPRs", "openIssues", "closedIssues",
+];
+
+/** Columns backed by the stars/PR/issue-count lookup against the repo host. */
+const REPO_METADATA_COLUMNS = ["gitStars", "openPRs", "closedPRs", "openIssues", "closedIssues"];
+
+function anyColumnVisible(hiddenColumns: ReadonlySet<string>, keys: string[]): boolean {
+  return keys.some((key) => isColumnVisible(hiddenColumns, key));
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Fetches enriched metadata for a single npm package, reusing in-flight or
- * already-completed requests wherever the underlying data is shared with
- * another package (see the caching notes above).
+ * Fetches enriched metadata for a single npm package, skipping any network
+ * call that exists only to back a currently-hidden column, and reusing
+ * in-flight or already-completed requests wherever the underlying data is
+ * shared with another package (see the caching notes above).
  *
  * @param name    - The npm package name (e.g. "lodash")
  * @param version - The version you currently use (e.g. "4.17.21")
- * @param options - Optional config including a GitHub token
+ * @param options - Optional config: GitHub token, hidden columns
  */
-export function fetchPackageInfo(
+export async function fetchPackageInfo(
   name: string,
   version: string,
   options: FetchPackageOptions = {}
 ): Promise<PackageInfo> {
-  return memoizeAsync(packageInfoCache, nameVersionKey(name, version), () =>
-    fetchPackageInfoUncached(name, version, options)
-  );
-}
-
-async function fetchPackageInfoUncached(
-  name: string,
-  version: string,
-  options: FetchPackageOptions = {}
-): Promise<PackageInfo> {
-  const { githubToken } = options;
+  const { githubToken, hiddenColumns = new Set<string>() } = options;
 
   const githubHeaders: Record<string, string> = {
     Accept: "application/vnd.github+json",
@@ -203,11 +231,16 @@ async function fetchPackageInfoUncached(
 
   // ── 1. NPM registry + weekly downloads + advisories + bundle size (parallel) ─
 
+  const needsRegistryData = anyColumnVisible(hiddenColumns, NPM_DATA_DEPENDENT_COLUMNS);
+  const needsDownloads = isColumnVisible(hiddenColumns, "weeklyDownloads");
+  const needsVulnerabilityCount = isColumnVisible(hiddenColumns, "vulnerabilityCount");
+  const needsBundleSize = isColumnVisible(hiddenColumns, "bundleSizeGzip");
+
   const [npmData, downloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
-    fetchRegistryData(name),
-    fetchWeeklyDownloads(name),
-    fetchVulnerabilityCount(name),
-    fetchBundleGzipSize(name, version),
+    needsRegistryData ? fetchRegistryData(name) : Promise.resolve(null),
+    needsDownloads ? fetchWeeklyDownloads(name) : Promise.resolve(null),
+    needsVulnerabilityCount ? fetchVulnerabilityCount(name) : Promise.resolve(null),
+    needsBundleSize ? fetchBundleGzipSize(name, version) : Promise.resolve(null),
   ]);
 
   const times: Record<string, string> = npmData?.time ?? {};
@@ -245,7 +278,7 @@ async function fetchPackageInfoUncached(
 
   // ── 3. Stars (any supported host) + GitHub-only PR/issue counts ────────────
 
-  const repoMetadata = slug != null
+  const repoMetadata = slug != null && anyColumnVisible(hiddenColumns, REPO_METADATA_COLUMNS)
     ? await fetchRepoMetadata(slug, githubHeaders)
     : EMPTY_REPO_METADATA;
 

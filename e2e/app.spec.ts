@@ -233,6 +233,52 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
   await expect(row.getByRole("cell", { name: "alice, bob", exact: true })).toBeVisible()
 })
 
+test("hiding a column skips its network request, and re-showing it fetches the missing data", async ({ page }) => {
+  const osvRequestedNames: string[] = []
+  await page.route("https://api.osv.dev/v1/query", async (route) => {
+    const body = route.request().postDataJSON() as { package: { name: string } }
+    osvRequestedNames.push(body.package.name)
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ vulns: [{ id: "GHSA-test" }] }),
+    })
+  })
+  await page.route("https://registry.npmjs.org/gated-pkg", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
+    })
+  })
+
+  await page.goto("/")
+
+  // Hide the Vulnerabilities column before loading the package under test.
+  await page.getByLabel("Vulnerabilities", { exact: true }).uncheck()
+
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "gated-pkg": "1.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable.getByRole("cell", { name: "gated-pkg", exact: true })).toBeVisible()
+
+  expect(osvRequestedNames).not.toContain("gated-pkg")
+  await expect(depsTable.getByRole("columnheader", { name: "Vulnerabilities" })).toHaveCount(0)
+
+  // Re-showing the column should fetch the data that was never requested.
+  await page.getByLabel("Vulnerabilities", { exact: true }).check()
+
+  const row = depsTable.locator("tbody tr").filter({ hasText: "gated-pkg" })
+  await expect(row.getByRole("cell", { name: "1", exact: true })).toBeVisible()
+  expect(osvRequestedNames).toContain("gated-pkg")
+})
+
 test("the column visibility panel hides/shows columns and never drops below two visible", async ({ page }) => {
   await page.goto("/")
   const depsTable = page.locator("table.deps").first()

@@ -318,7 +318,7 @@ describe("fetchPackageInfo caching", () => {
     return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
   }
 
-  it("reuses a cached result for a repeated exact name+version instead of refetching", async () => {
+  it("reuses cached sub-fetches for a repeated exact name+version instead of refetching", async () => {
     const fetchMock = mockFetchByUrl({
       "registry.npmjs.org/cached-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
       "api.npmjs.org/downloads": { downloads: 1 },
@@ -328,7 +328,10 @@ describe("fetchPackageInfo caching", () => {
     const first = await fetchPackageInfo("cached-pkg", "1.0.0");
     const second = await fetchPackageInfo("cached-pkg", "1.0.0");
 
-    expect(second).toBe(first);
+    // Not the same object reference - each call composes its own result from
+    // (cached) sub-fetches, since which fields get fetched can vary call to
+    // call depending on hiddenColumns - but no duplicate network request.
+    expect(second).toEqual(first);
     expect(countCalls(fetchMock, "registry.npmjs.org/cached-pkg")).toBe(1);
   });
 
@@ -344,7 +347,7 @@ describe("fetchPackageInfo caching", () => {
       fetchPackageInfo("concurrent-pkg", "1.0.0"),
     ]);
 
-    expect(second).toBe(first);
+    expect(second).toEqual(first);
     expect(countCalls(fetchMock, "registry.npmjs.org/concurrent-pkg")).toBe(1);
   });
 
@@ -433,6 +436,125 @@ describe("fetchPackageInfo caching", () => {
 
     expect(info.name).toBe("retry-pkg");
     expect(registryAttempts).toBe(2);
+  });
+});
+
+describe("fetchPackageInfo column gating", () => {
+  function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
+    return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
+  }
+
+  it("skips the security-advisory request when the Vulnerabilities column is hidden", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/no-vuln-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 1 },
+      "api.osv.dev/v1/query": { vulns: [{ id: "GHSA-should-not-be-fetched" }] },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const info = await fetchPackageInfo("no-vuln-check", "1.0.0", {
+      hiddenColumns: new Set(["vulnerabilityCount"]),
+    });
+
+    expect(info.vulnerabilityCount).toBeNull();
+    expect(countCalls(fetchMock, "api.osv.dev")).toBe(0);
+  });
+
+  it("skips the Bundlephobia request when the Bundle size column is hidden", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/no-bundle-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 1 },
+      "bundlephobia.com/api/size": { gzip: 4096 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const info = await fetchPackageInfo("no-bundle-check", "1.0.0", {
+      hiddenColumns: new Set(["bundleSizeGzip"]),
+    });
+
+    expect(info.bundleSizeGzip).toBeNull();
+    expect(countCalls(fetchMock, "bundlephobia.com")).toBe(0);
+  });
+
+  it("skips the npm downloads request when the Weekly downloads column is hidden", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/no-downloads-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 99999 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const info = await fetchPackageInfo("no-downloads-check", "1.0.0", {
+      hiddenColumns: new Set(["weeklyDownloads"]),
+    });
+
+    expect(info.weeklyDownloads).toBeNull();
+    expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(0);
+  });
+
+  it("skips the repo metadata request (stars/PR/issues) when all of those columns are hidden but License stays visible", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("registry.npmjs.org/license-only")) {
+        return jsonResponse({
+          "dist-tags": { latest: "1.0.0" },
+          time: {},
+          repository: { type: "git", url: "git+https://github.com/some-org/some-repo.git" },
+          versions: { "1.0.0": { license: "MIT" } },
+        });
+      }
+      if (url.includes("api.npmjs.org/downloads")) {
+        return jsonResponse({ downloads: 1 });
+      }
+      return jsonResponse(null, false);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const info = await fetchPackageInfo("license-only", "1.0.0", {
+      hiddenColumns: new Set(["gitStars", "openPRs", "closedPRs", "openIssues", "closedIssues"]),
+    });
+
+    expect(info.license).toBe("MIT");
+    expect(info.gitStars).toBeNull();
+    expect(countCalls(fetchMock, "registry.npmjs.org/license-only")).toBe(1);
+    expect(countCalls(fetchMock, "api.github.com")).toBe(0);
+  });
+
+  it("skips the npm registry request entirely when every column it backs is hidden", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/registry-not-needed": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 1 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const info = await fetchPackageInfo("registry-not-needed", "1.0.0", {
+      hiddenColumns: new Set([
+        "versionDate", "latestVersion", "latestReleaseDate", "latestUpdateDate",
+        "dependencies", "license", "deprecated", "isOutdated", "maintainers", "sourceCode",
+        "gitStars", "openPRs", "closedPRs", "openIssues", "closedIssues",
+      ]),
+    });
+
+    expect(info.sourceCode).toBeNull();
+    expect(info.latestVersion).toBeNull();
+    expect(countCalls(fetchMock, "registry.npmjs.org/registry-not-needed")).toBe(0);
+    // Weekly downloads wasn't hidden, so that call still goes out independently.
+    expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
+  });
+
+  it("fetches everything when hiddenColumns is omitted, matching the pre-existing default behaviour", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/default-visible": { "dist-tags": { latest: "1.0.0" }, time: {} },
+      "api.npmjs.org/downloads": { downloads: 1 },
+      "api.osv.dev/v1/query": { vulns: [] },
+      "bundlephobia.com/api/size": { gzip: 10 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const info = await fetchPackageInfo("default-visible", "1.0.0");
+
+    expect(info.weeklyDownloads).toBe(1);
+    expect(info.vulnerabilityCount).toBe(0);
+    expect(info.bundleSizeGzip).toBe(10);
+    expect(countCalls(fetchMock, "registry.npmjs.org/default-visible")).toBe(1);
   });
 });
 
