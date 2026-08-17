@@ -30,6 +30,20 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
 /** The Name column is always visible; every other column can be hidden. */
 export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter((c) => c.key !== "name");
 
+/**
+ * Columns hidden by default. Every other column's data comes from either
+ * the npm registry (registry.npmjs.org + api.npmjs.org) or a supported
+ * repository host (GitHub, GitLab, Codeberg) - domains this app talks to
+ * for most of its data anyway. These two instead depend on genuinely
+ * third-party services (OSV for security advisories, Bundlephobia for
+ * bundle size) that the app wouldn't otherwise need to contact, so they
+ * start opt-in rather than firing on every load.
+ */
+export const DEFAULT_HIDDEN_COLUMNS: ReadonlySet<string> = new Set([
+  "vulnerabilityCount",
+  "bundleSizeGzip",
+]);
+
 /** At least this many columns (Name included) must stay visible at all times. */
 export const MIN_VISIBLE_COLUMNS = 2;
 

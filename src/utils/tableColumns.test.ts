@@ -3,6 +3,7 @@ import {
   DEPENDENCY_TABLE_COLUMNS,
   TOGGLEABLE_COLUMNS,
   MIN_VISIBLE_COLUMNS,
+  DEFAULT_HIDDEN_COLUMNS,
   isColumnVisible,
   wouldViolateMinVisible,
   toggleColumnVisibility,
@@ -12,6 +13,31 @@ describe("TOGGLEABLE_COLUMNS", () => {
   it("excludes the Name column", () => {
     expect(TOGGLEABLE_COLUMNS.some((c) => c.key === "name")).toBe(false);
     expect(TOGGLEABLE_COLUMNS.length).toBe(DEPENDENCY_TABLE_COLUMNS.length - 1);
+  });
+});
+
+describe("DEFAULT_HIDDEN_COLUMNS", () => {
+  it("hides only the columns backed by a non-npm, non-repo-host service", () => {
+    expect(DEFAULT_HIDDEN_COLUMNS).toEqual(new Set(["vulnerabilityCount", "bundleSizeGzip"]));
+  });
+
+  it("keeps every npm-registry- and repo-host-backed column visible by default", () => {
+    const expectedVisibleByDefault = [
+      "versionDate", "latestVersion", "latestReleaseDate", "latestUpdateDate",
+      "isOutdated", "weeklyDownloads", "sourceCode", "gitStars", "openPRs",
+      "closedPRs", "openIssues", "closedIssues", "dependencies", "license",
+      "deprecated", "maintainers",
+    ];
+    for (const key of expectedVisibleByDefault) {
+      expect(isColumnVisible(DEFAULT_HIDDEN_COLUMNS, key)).toBe(true);
+    }
+  });
+
+  it("only hides columns that actually exist", () => {
+    const columnKeys = new Set(DEPENDENCY_TABLE_COLUMNS.map((c) => c.key));
+    for (const key of DEFAULT_HIDDEN_COLUMNS) {
+      expect(columnKeys.has(key)).toBe(true);
+    }
   });
 });
 

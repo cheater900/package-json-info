@@ -79,7 +79,7 @@
 import { ref, watch } from "vue";
 import { fetchPackagesInfo } from "./utils/npmPackage.ts"
 import { fetchPackageJsonFromRepo } from "./utils/repoPackageJson.ts"
-import { toggleColumnVisibility } from "./utils/tableColumns.ts"
+import { toggleColumnVisibility, DEFAULT_HIDDEN_COLUMNS } from "./utils/tableColumns.ts"
 import DependenciesTable from "./components/DependenciesTable.vue"
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue"
 import packageJson from '../package.json'
@@ -99,7 +99,7 @@ const repoUrlInput = ref("")
 const deps = ref([])
 const devDeps = ref([])
 
-const hiddenColumns = ref(new Set())
+const hiddenColumns = ref(new Set(DEFAULT_HIDDEN_COLUMNS))
 
 function onToggleColumn(key) {
   hiddenColumns.value = toggleColumnVisibility(hiddenColumns.value, key)

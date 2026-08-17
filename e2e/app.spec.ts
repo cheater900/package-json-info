@@ -115,6 +115,36 @@ test("caches metadata so a package listed in both dependencies and devDependenci
   expect(registryRequests).toBe(1)
 })
 
+test("hides third-party-backed columns by default and never contacts those services on a fresh load", async ({ page }) => {
+  let osvRequests = 0
+  let bundlephobiaRequests = 0
+  await page.route("https://api.osv.dev/**", async (route) => {
+    osvRequests++
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ vulns: [] }) })
+  })
+  await page.route("https://bundlephobia.com/**", async (route) => {
+    bundlephobiaRequests++
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ gzip: 1 }) })
+  })
+
+  await page.goto("/")
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
+
+  await expect(depsTable.getByRole("columnheader", { name: "Vulnerabilities" })).toHaveCount(0)
+  await expect(depsTable.getByRole("columnheader", { name: "Bundle size (gzip)" })).toHaveCount(0)
+  expect(await page.getByLabel("Vulnerabilities", { exact: true }).isChecked()).toBe(false)
+  expect(await page.getByLabel("Bundle size (gzip)", { exact: true }).isChecked()).toBe(false)
+
+  expect(osvRequests).toBe(0)
+  expect(bundlephobiaRequests).toBe(0)
+
+  // The npm registry and repo-host columns, in contrast, are on by default
+  // and their data is already showing.
+  await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible()
+  await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible()
+})
+
 test("loads the app and renders the default package.json dependency table", async ({ page }) => {
   await page.goto("/")
   await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible()
@@ -221,6 +251,11 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
   })
   await page.getByLabel("Paste package.json content").fill(json)
   await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  // Vulnerabilities and Bundle size are third-party-backed columns hidden
+  // by default; opt into them to check their data too.
+  await page.getByLabel("Vulnerabilities", { exact: true }).check()
+  await page.getByLabel("Bundle size (gzip)", { exact: true }).check()
 
   const depsTable = page.locator("table.deps").first()
   const row = depsTable.locator("tbody tr").filter({ hasText: "enriched-pkg" })
