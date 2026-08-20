@@ -66,9 +66,17 @@
 
     <div>
       <h3>Deps<span v-if="isLoadingDeps"> (loading…)</span></h3>
-      <dependencies-table :dependencies="deps" :hidden-columns="hiddenColumns" />
+      <dependencies-table
+        :dependencies="deps"
+        :hidden-columns="hiddenColumns"
+        @load-package="onLoadPackage"
+      />
       <h3>Dev Deps<span v-if="isLoadingDevDeps"> (loading…)</span></h3>
-      <dependencies-table :dependencies="devDeps" :hidden-columns="hiddenColumns" />
+      <dependencies-table
+        :dependencies="devDeps"
+        :hidden-columns="hiddenColumns"
+        @load-package="onLoadPackage"
+      />
     </div>
     <div>
       <pre>{{ packageJsonContent }}</pre>
@@ -77,7 +85,7 @@
 </template>
 <script lang="ts" setup>
 import { ref, watch } from "vue";
-import { fetchPackagesInfo } from "./utils/npmPackage.ts"
+import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts"
 import { fetchPackageJsonFromRepo } from "./utils/repoPackageJson.ts"
 import { toggleColumnVisibility, DEFAULT_HIDDEN_COLUMNS } from "./utils/tableColumns.ts"
 import DependenciesTable from "./components/DependenciesTable.vue"
@@ -202,6 +210,22 @@ async function fetchFromFileUrl() {
     loadPackageJsonText(text)
   } catch (err) {
     loadError.value = `Could not fetch package.json from that URL: ${err.message}`
+  } finally {
+    isLoadingInput.value = false
+  }
+}
+
+async function onLoadPackage({ name, version }) {
+  isLoadingInput.value = true
+  loadError.value = null
+  try {
+    const content = await fetchPackageJsonForVersion(name, version)
+    if (!content) {
+      throw new Error(`Could not find package.json data for "${name}".`)
+    }
+    loadPackageJsonText(content)
+  } catch (err) {
+    loadError.value = err.message
   } finally {
     isLoadingInput.value = false
   }

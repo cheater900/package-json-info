@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchPackageInfo, fetchPackagesInfo, clearPackageInfoCache } from "./npmPackage";
+import {
+  fetchPackageInfo,
+  fetchPackagesInfo,
+  fetchPackageJsonForVersion,
+  clearPackageInfoCache,
+} from "./npmPackage";
 
 function jsonResponse(body: unknown, ok = true) {
   return {
@@ -555,6 +560,86 @@ describe("fetchPackageInfo column gating", () => {
     expect(info.vulnerabilityCount).toBe(0);
     expect(info.bundleSizeGzip).toBe(10);
     expect(countCalls(fetchMock, "registry.npmjs.org/default-visible")).toBe(1);
+  });
+});
+
+describe("fetchPackageJsonForVersion", () => {
+  it("returns the exact version's manifest, including fields fetchPackageInfo doesn't parse (e.g. devDependencies)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/drill-pkg": {
+          "dist-tags": { latest: "2.0.0" },
+          time: {},
+          versions: {
+            "1.0.0": {
+              name: "drill-pkg",
+              version: "1.0.0",
+              dependencies: { a: "^1.0.0" },
+              devDependencies: { b: "^1.0.0" },
+            },
+            "2.0.0": { name: "drill-pkg", version: "2.0.0" },
+          },
+        },
+      })
+    );
+
+    const json = await fetchPackageJsonForVersion("drill-pkg", "1.0.0");
+
+    expect(JSON.parse(json!)).toEqual({
+      name: "drill-pkg",
+      version: "1.0.0",
+      dependencies: { a: "^1.0.0" },
+      devDependencies: { b: "^1.0.0" },
+    });
+  });
+
+  it("falls back to the latest version when the declared version (e.g. a semver range) isn't a registry key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchByUrl({
+        "registry.npmjs.org/drill-pkg-2": {
+          "dist-tags": { latest: "3.0.0" },
+          time: {},
+          versions: {
+            "3.0.0": { name: "drill-pkg-2", version: "3.0.0", dependencies: { c: "^1.0.0" } },
+          },
+        },
+      })
+    );
+
+    const json = await fetchPackageJsonForVersion("drill-pkg-2", "^2.0.0");
+
+    expect(JSON.parse(json!)).toMatchObject({ version: "3.0.0" });
+  });
+
+  it("returns null when the package can't be resolved at all", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(null, false)));
+
+    const json = await fetchPackageJsonForVersion("missing-pkg", "1.0.0");
+
+    expect(json).toBeNull();
+  });
+
+  it("reuses the same cached registry fetch as fetchPackageInfo, issuing no extra network request", async () => {
+    const fetchMock = mockFetchByUrl({
+      "registry.npmjs.org/shared-drill-pkg": {
+        "dist-tags": { latest: "1.0.0" },
+        time: {},
+        versions: { "1.0.0": { name: "shared-drill-pkg", version: "1.0.0" } },
+      },
+      "api.npmjs.org/downloads": { downloads: 1 },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchPackageInfo("shared-drill-pkg", "1.0.0");
+    const json = await fetchPackageJsonForVersion("shared-drill-pkg", "1.0.0");
+
+    expect(JSON.parse(json!)).toMatchObject({ name: "shared-drill-pkg" });
+    const registryCalls = fetchMock.mock.calls.filter(([url]: [string]) =>
+      url.includes("registry.npmjs.org/shared-drill-pkg")
+    );
+    expect(registryCalls).toHaveLength(1);
   });
 });
 

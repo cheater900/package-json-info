@@ -165,6 +165,51 @@ test("pasting valid package.json JSON replaces the table", async ({ page }) => {
   await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible()
 })
 
+test("clicking a row's Load button loads that package's package.json as the new input", async ({ page }) => {
+  await page.route("https://registry.npmjs.org/left-pad", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        "dist-tags": { latest: "1.0.0" },
+        time: { "1.0.0": "2020-01-01T00:00:00.000Z", modified: "2020-01-01T00:00:00.000Z" },
+        versions: {
+          "1.0.0": {
+            name: "left-pad",
+            version: "1.0.0",
+            dependencies: { "nested-dep": "^1.0.0" },
+          },
+        },
+      }),
+    })
+  })
+  await page.route("https://registry.npmjs.org/nested-dep", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
+    })
+  })
+
+  await page.goto("/")
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "left-pad": "^1.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  const depsTable = page.locator("table.deps").first()
+  const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" })
+  await row.getByRole("button", { name: "Load" }).click()
+
+  // The table now reflects left-pad's own package.json: its dependency
+  // shows up, and left-pad itself is no longer the input's own dependency.
+  await expect(depsTable.getByRole("cell", { name: "nested-dep", exact: true })).toBeVisible()
+  await expect(depsTable.getByRole("cell", { name: "left-pad", exact: true })).toHaveCount(0)
+})
+
 test("pasting invalid JSON shows an inline error instead of crashing", async ({ page }) => {
   await page.goto("/")
   await page.getByLabel("Paste package.json content").fill("{ not valid json")
@@ -314,7 +359,7 @@ test("hiding a column skips its network request, and re-showing it fetches the m
   expect(osvRequestedNames).toContain("gated-pkg")
 })
 
-test("the column visibility panel hides/shows columns and never drops below two visible", async ({ page }) => {
+test("the column visibility panel hides/shows columns and never drops below the floor", async ({ page }) => {
   await page.goto("/")
   const depsTable = page.locator("table.deps").first()
 
@@ -326,7 +371,9 @@ test("the column visibility panel hides/shows columns and never drops below two 
   await page.getByLabel("License", { exact: true }).check()
   await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible()
 
-  // Hide every toggleable column except "Version" to hit the two-column floor.
+  // Hide every toggleable column except "Version" to hit the floor: Name
+  // and Load are always visible, so this should bottom out at those two
+  // plus Version (three total), not fewer.
   const allLabels = (await page.locator(".column-visibility-panel label").allTextContents()).map((t) =>
     t.trim()
   )
@@ -338,5 +385,6 @@ test("the column visibility panel hides/shows columns and never drops below two 
   await expect(page.getByLabel("Version", { exact: true })).toBeDisabled()
   await expect(depsTable.getByRole("columnheader", { name: "Name" })).toBeVisible()
   await expect(depsTable.getByRole("columnheader", { name: "Version", exact: true })).toBeVisible()
-  await expect(depsTable.locator("thead th")).toHaveCount(2)
+  await expect(depsTable.getByRole("columnheader", { name: "Load" })).toBeVisible()
+  await expect(depsTable.locator("thead th")).toHaveCount(3)
 })

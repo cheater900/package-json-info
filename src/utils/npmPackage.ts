@@ -307,6 +307,39 @@ export async function fetchPackageInfo(
 }
 
 /**
+ * Fetches the package.json-shaped manifest for a specific package version -
+ * npm's per-version registry data is essentially that package's own
+ * package.json (name, dependencies, devDependencies, scripts, etc.) -
+ * serialized as JSON text ready to feed back into the app as new input.
+ * This is the "load this package's table" drill-down action.
+ *
+ * Falls back to the latest published version if `version` (typically a
+ * semver range, e.g. "^3.5.34") isn't itself a resolvable registry key,
+ * same fallback fetchPackageInfo uses for versionData elsewhere.
+ *
+ * Reuses the same cached registry-document fetch as fetchPackageInfo, so
+ * drilling into a package already shown in the table costs no extra
+ * network request.
+ *
+ * @returns The package.json text, or null if the package/version couldn't
+ *          be resolved.
+ */
+export async function fetchPackageJsonForVersion(
+  name: string,
+  version: string
+): Promise<string | null> {
+  const npmData = await fetchRegistryData(name);
+  const latestVersion = npmData?.["dist-tags"]?.latest;
+  const versionData =
+    npmData?.versions?.[version] ??
+    (latestVersion ? npmData?.versions?.[latestVersion] : undefined);
+  if (!versionData) {
+    return null;
+  }
+  return JSON.stringify(versionData, null, 2);
+}
+
+/**
  * Fetches enriched metadata for multiple packages, with bounded parallelism.
  *
  * @param packages - Array of `{ name, version }` objects

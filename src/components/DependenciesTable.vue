@@ -22,6 +22,7 @@
         <th v-if="isVisible('vulnerabilityCount')"><button type="button" @click="toggleSort('vulnerabilityCount')">Vulnerabilities{{ sortIndicator('vulnerabilityCount') }}</button></th>
         <th v-if="isVisible('bundleSizeGzip')"><button type="button" @click="toggleSort('bundleSizeGzip')">Bundle size (gzip){{ sortIndicator('bundleSizeGzip') }}</button></th>
         <th v-if="isVisible('maintainers')">Maintainers</th>
+        <th>Load</th>
       </tr>
     </thead>
     <tbody>
@@ -52,6 +53,14 @@
         <td v-if="isVisible('vulnerabilityCount')">{{ dependency.vulnerabilityCount ?? '-' }}</td>
         <td v-if="isVisible('bundleSizeGzip')">{{ fmtBundleSize(dependency.bundleSizeGzip) }}</td>
         <td v-if="isVisible('maintainers')">{{ fmtList(dependency.maintainers) }}</td>
+        <td>
+          <button
+            type="button"
+            @click="$emit('load-package', { name: dependency.name, version: dependency.version })"
+          >
+            Load
+          </button>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -72,6 +81,8 @@ const props = defineProps({
     default: () => new Set()
   }
 })
+
+defineEmits(["load-package"])
 
 function isVisible(key) {
   return isColumnVisible(props.hiddenColumns, key)

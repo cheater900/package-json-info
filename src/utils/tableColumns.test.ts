@@ -10,9 +10,10 @@ import {
 } from "./tableColumns";
 
 describe("TOGGLEABLE_COLUMNS", () => {
-  it("excludes the Name column", () => {
+  it("excludes the always-visible Name and Load columns", () => {
     expect(TOGGLEABLE_COLUMNS.some((c) => c.key === "name")).toBe(false);
-    expect(TOGGLEABLE_COLUMNS.length).toBe(DEPENDENCY_TABLE_COLUMNS.length - 1);
+    expect(TOGGLEABLE_COLUMNS.some((c) => c.key === "loadAction")).toBe(false);
+    expect(TOGGLEABLE_COLUMNS.length).toBe(DEPENDENCY_TABLE_COLUMNS.length - 2);
   });
 });
 
@@ -42,14 +43,24 @@ describe("DEFAULT_HIDDEN_COLUMNS", () => {
 });
 
 describe("isColumnVisible", () => {
-  it("is always true for the Name column, even if somehow present in the hidden set", () => {
+  it("is always true for the Name and Load columns, even if somehow present in the hidden set", () => {
     expect(isColumnVisible(new Set(["name"]), "name")).toBe(true);
     expect(isColumnVisible(new Set(), "name")).toBe(true);
+    expect(isColumnVisible(new Set(["loadAction"]), "loadAction")).toBe(true);
+    expect(isColumnVisible(new Set(), "loadAction")).toBe(true);
   });
 
   it("reflects membership in the hidden set for other columns", () => {
     expect(isColumnVisible(new Set(["license"]), "license")).toBe(false);
     expect(isColumnVisible(new Set(["license"]), "version")).toBe(true);
+  });
+});
+
+describe("MIN_VISIBLE_COLUMNS", () => {
+  it("is one more than the number of always-visible columns, so at least one real data column always shows", () => {
+    // Name + Load are always visible; the floor must still force at least
+    // one further (toggleable) column to stay visible alongside them.
+    expect(MIN_VISIBLE_COLUMNS).toBe(3);
   });
 });
 
@@ -73,9 +84,10 @@ describe("wouldViolateMinVisible", () => {
 });
 
 describe("toggleColumnVisibility", () => {
-  it("never hides the Name column", () => {
+  it("never hides the Name or Load columns", () => {
     const result = toggleColumnVisibility(new Set(), "name");
     expect(result.has("name")).toBe(false);
+    expect(toggleColumnVisibility(new Set(), "loadAction").has("loadAction")).toBe(false);
   });
 
   it("hides a currently-visible column", () => {

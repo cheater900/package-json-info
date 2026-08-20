@@ -90,11 +90,13 @@ describe("DependenciesTable", () => {
     const headerLabels = wrapper.findAll("thead th").map((th) => th.text().replace(/[▲▼]$/, "").trim());
     const cells = wrapper.findAll("tbody td");
     const licenseIndex = headerLabels.indexOf("License");
+    const loadIndex = headerLabels.indexOf("Load");
 
     // name/version are always present; every other cell should fall back to
-    // '-', except License, which marks a missing license with a warning.
+    // '-', except License (marks a missing license with a warning) and
+    // Load (always renders its button, regardless of dependency data).
     cells.forEach((cell, index) => {
-      if (index === 0 || index === 1) return;
+      if (index === 0 || index === 1 || index === loadIndex) return;
       if (index === licenseIndex) {
         expect(cell.text()).toBe("- ⚠");
       } else {
@@ -118,6 +120,40 @@ describe("DependenciesTable", () => {
     });
 
     expect(wrapper.findAll("tbody tr")).toHaveLength(0);
+  });
+});
+
+describe("DependenciesTable load-as-input action", () => {
+  it("renders a Load column as the last header, with a Load button per row", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [fullDependency] },
+    });
+
+    const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headerTexts[headerTexts.length - 1]).toBe("Load");
+
+    const lastCell = wrapper.find("tbody tr").findAll("td").at(-1)!;
+    expect(lastCell.find("button").text()).toBe("Load");
+  });
+
+  it("emits load-package with the row's name and version when clicked", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [fullDependency] },
+    });
+
+    const lastCell = wrapper.find("tbody tr").findAll("td").at(-1)!;
+    await lastCell.find("button").trigger("click");
+
+    expect(wrapper.emitted("load-package")).toEqual([[{ name: "left-pad", version: "1.2.0" }]]);
+  });
+
+  it("stays visible even if 'loadAction' is passed in hiddenColumns", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [fullDependency], hiddenColumns: new Set(["loadAction"]) },
+    });
+
+    const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
+    expect(headerTexts).toContain("Load");
   });
 });
 
