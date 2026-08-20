@@ -1,4 +1,13 @@
 <template>
+  <div class="table-controls">
+    <label :for="searchInputId">Search by name</label>
+    <input
+      :id="searchInputId"
+      type="text"
+      v-model="searchQuery"
+      placeholder="Filter by package name"
+    />
+  </div>
   <table class="deps">
     <thead>
       <tr>
@@ -67,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from "vue"
+import { ref, computed, useId } from "vue"
 import { hasLicenseWarning } from "../utils/license"
 import { isColumnVisible } from "../utils/tableColumns"
 
@@ -83,6 +92,15 @@ const props = defineProps({
 })
 
 defineEmits(["load-package"])
+
+const searchInputId = useId()
+const searchQuery = ref("")
+
+const filteredDependencies = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (! query) return props.dependencies
+  return props.dependencies.filter((d) => d.name?.toLowerCase().includes(query))
+})
 
 function isVisible(key) {
   return isColumnVisible(props.hiddenColumns, key)
@@ -133,9 +151,9 @@ function compareValues(a, b, dir) {
 }
 
 const sortedDependencies = computed(() => {
-  if (! sortKey.value) return props.dependencies
+  if (! sortKey.value) return filteredDependencies.value
   const accessor = SORT_ACCESSORS[sortKey.value]
-  return [...props.dependencies].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir.value))
+  return [...filteredDependencies.value].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir.value))
 })
 
 function fmtDate(dateStr) {
@@ -169,6 +187,13 @@ function fmtBundleSize(gzipBytes) {
 </script>
 
 <style>
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 table.deps {
   display: block;
   overflow-x: scroll;

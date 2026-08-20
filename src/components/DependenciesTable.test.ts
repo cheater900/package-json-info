@@ -302,3 +302,76 @@ describe("DependenciesTable sorting", () => {
     expect(names(wrapper)).toEqual(["bbb", "aaa", "ccc"]);
   });
 });
+
+describe("DependenciesTable search", () => {
+  const react = { ...sparseDependency, name: "react" };
+  const reactDom = { ...sparseDependency, name: "react-dom" };
+  const vue = { ...sparseDependency, name: "vue" };
+
+  function names(wrapper) {
+    return wrapper.findAll("tbody tr td:first-child").map((td) => td.text());
+  }
+
+  function searchInput(wrapper) {
+    return wrapper.get('input[type="text"]');
+  }
+
+  it("shows every row when the search box is empty", () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [react, reactDom, vue] },
+    });
+
+    expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
+  });
+
+  it("filters rows to names containing the query, case-insensitively", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [react, reactDom, vue] },
+    });
+
+    await searchInput(wrapper).setValue("REACT");
+
+    expect(names(wrapper)).toEqual(["react", "react-dom"]);
+  });
+
+  it("matches a substring anywhere in the name, not just a prefix", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [react, reactDom, vue] },
+    });
+
+    await searchInput(wrapper).setValue("dom");
+
+    expect(names(wrapper)).toEqual(["react-dom"]);
+  });
+
+  it("shows no rows when nothing matches", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [react, reactDom, vue] },
+    });
+
+    await searchInput(wrapper).setValue("no-such-package");
+
+    expect(wrapper.findAll("tbody tr")).toHaveLength(0);
+  });
+
+  it("treats a whitespace-only query as empty", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [react, reactDom, vue] },
+    });
+
+    await searchInput(wrapper).setValue("   ");
+
+    expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
+  });
+
+  it("applies sorting on top of the filtered results", async () => {
+    const wrapper = mount(DependenciesTable, {
+      props: { dependencies: [reactDom, react] },
+    });
+
+    await searchInput(wrapper).setValue("react");
+    await wrapper.findAll("th button").find((b) => b.text().startsWith("Name"))!.trigger("click");
+
+    expect(names(wrapper)).toEqual(["react", "react-dom"]);
+  });
+});

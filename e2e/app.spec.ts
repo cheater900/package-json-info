@@ -360,6 +360,33 @@ test("clicking a column header sorts the table, and clicking again reverses it",
   await expect(packageNameColumn()).toHaveText(["bbb-pkg", "ccc-pkg", "aaa-pkg"])
 })
 
+test("the search box filters the table by package name", async ({ page }) => {
+  await page.goto("/")
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "react": "^18.0.0", "react-dom": "^18.0.0", "vue": "^3.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  // DependenciesTable renders its search box and table as sibling root
+  // nodes (no wrapping element), so scope to the first "Search by name"
+  // box specifically - it precedes the Deps table in DOM order.
+  const depsTable = page.locator("table.deps").first()
+  const depsSearchInput = page.locator(".table-controls").first().getByLabel("Search by name")
+  await expect(depsTable.locator("tbody tr")).toHaveCount(3)
+
+  await depsSearchInput.fill("react")
+  await expect(depsTable.locator("tbody tr td:first-child")).toHaveText(["react", "react-dom"])
+
+  await depsSearchInput.fill("no-such-package")
+  await expect(depsTable.locator("tbody tr")).toHaveCount(0)
+
+  await depsSearchInput.fill("")
+  await expect(depsTable.locator("tbody tr")).toHaveCount(3)
+})
+
 test("renders license, outdated, deprecated, vulnerability, bundle size, and maintainer data", async ({ page }) => {
   await page.route("https://registry.npmjs.org/**", async (route) => {
     await route.fulfill({
