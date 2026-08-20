@@ -59,6 +59,12 @@
       </div>
     </section>
 
+    <section class="history-controls">
+      <button type="button" @click="goBack" :disabled="!canGoBack">← Back</button>
+      <span>{{ historyIndex + 1 }} / {{ history.length }}</span>
+      <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
+    </section>
+
     <column-visibility-panel
       :hidden-columns="hiddenColumns"
       @toggle-column="onToggleColumn"
@@ -84,16 +90,23 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts"
 import { fetchPackageJsonFromRepo } from "./utils/repoPackageJson.ts"
 import { toggleColumnVisibility, DEFAULT_HIDDEN_COLUMNS } from "./utils/tableColumns.ts"
+import {
+  createHistoryEntry,
+  pushHistoryEntry,
+  canGoBack as canGoBackPure,
+  canGoForward as canGoForwardPure,
+  isEntryCacheValid,
+} from "./utils/packageJsonHistory.ts"
 import DependenciesTable from "./components/DependenciesTable.vue"
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue"
 import packageJson from '../package.json'
 
-const packageJsonContent = ref(JSON.stringify(packageJson, null, 2))
-const pkg = ref(packageJson)
+const packageJsonContent = ref("")
+const pkg = ref(null)
 
 const loadError = ref(null)
 const isLoadingInput = ref(false)
@@ -109,37 +122,25 @@ const devDeps = ref([])
 
 const hiddenColumns = ref(new Set(DEFAULT_HIDDEN_COLUMNS))
 
+// Each loaded package.json becomes a history entry, caching its own
+// fetched deps/devDeps. Navigating back/forward restores an entry's cached
+// data directly (no request) when it's still valid for the current
+// hiddenColumns; otherwise (never fetched, or fetched under a different
+// column set) it fetches - but even then, npmPackage's own name/slug-level
+// caching means only genuinely new data triggers a request.
+const history = ref([])
+const historyIndex = ref(-1)
+
+const canGoBack = computed(() => canGoBackPure(historyIndex.value))
+const canGoForward = computed(() => canGoForwardPure(history.value, historyIndex.value))
+
 function onToggleColumn(key) {
   hiddenColumns.value = toggleColumnVisibility(hiddenColumns.value, key)
 }
 
-watch([pkg, hiddenColumns], async () => {
-  const rawDeps = toPackageInputs(pkg.value?.dependencies)
-  if (rawDeps.length === 0) {
-    deps.value = []
-    return
-  }
-  isLoadingDeps.value = true
-  try {
-    deps.value = await fetchPackagesInfo(rawDeps, { hiddenColumns: hiddenColumns.value })
-  } finally {
-    isLoadingDeps.value = false
-  }
-}, { immediate: true, deep: true })
-
-watch([pkg, hiddenColumns], async () => {
-  const rawDeps = toPackageInputs(pkg.value?.devDependencies)
-  if (rawDeps.length === 0) {
-    devDeps.value = []
-    return
-  }
-  isLoadingDevDeps.value = true
-  try {
-    devDeps.value = await fetchPackagesInfo(rawDeps, { hiddenColumns: hiddenColumns.value })
-  } finally {
-    isLoadingDevDeps.value = false
-  }
-}, { immediate: true, deep: true })
+watch(hiddenColumns, () => {
+  applyCurrentHistoryEntry()
+}, { deep: true })
 
 function toPackageInputs(dependencies) {
   if (!dependencies || typeof dependencies !== "object") {
@@ -149,9 +150,9 @@ function toPackageInputs(dependencies) {
 }
 
 /**
- * Validates and applies raw package.json text as the new input.
- * Returns true on success; on failure, sets loadError and leaves the
- * previous content untouched.
+ * Validates raw package.json text and, on success, records it as a new
+ * history entry and applies it. Returns true on success; on failure, sets
+ * loadError and leaves the previous content untouched.
  */
 function loadPackageJsonText(text) {
   let parsed
@@ -166,9 +167,79 @@ function loadPackageJsonText(text) {
     return false
   }
   loadError.value = null
-  packageJsonContent.value = text
-  pkg.value = parsed
+
+  const pushed = pushHistoryEntry(history.value, historyIndex.value, createHistoryEntry(text, parsed))
+  history.value = pushed.history
+  historyIndex.value = pushed.index
+  applyCurrentHistoryEntry()
   return true
+}
+
+function goBack() {
+  if (!canGoBack.value) return
+  historyIndex.value -= 1
+  applyCurrentHistoryEntry()
+}
+
+function goForward() {
+  if (!canGoForward.value) return
+  historyIndex.value += 1
+  applyCurrentHistoryEntry()
+}
+
+function applyCurrentHistoryEntry() {
+  const entry = history.value[historyIndex.value]
+  if (!entry) return
+
+  packageJsonContent.value = entry.content
+  pkg.value = entry.pkg
+
+  if (isEntryCacheValid(entry, hiddenColumns.value)) {
+    deps.value = entry.deps
+    devDeps.value = entry.devDeps
+    isLoadingDeps.value = false
+    isLoadingDevDeps.value = false
+    return
+  }
+
+  fetchEntryDependencies(entry, historyIndex.value)
+}
+
+/**
+ * Fetches (or re-fetches, if hiddenColumns has changed) an entry's
+ * deps/devDeps, caches the result on the entry itself, and - only if the
+ * user hasn't navigated elsewhere in the meantime - applies it to the
+ * visible state.
+ */
+async function fetchEntryDependencies(entry, index) {
+  const rawDeps = toPackageInputs(entry.pkg?.dependencies)
+  const rawDevDeps = toPackageInputs(entry.pkg?.devDependencies)
+  const hiddenColumnsAtFetchTime = new Set(hiddenColumns.value)
+
+  if (historyIndex.value === index) {
+    isLoadingDeps.value = rawDeps.length > 0
+    isLoadingDevDeps.value = rawDevDeps.length > 0
+  }
+
+  const [depsResult, devDepsResult] = await Promise.all([
+    rawDeps.length > 0
+      ? fetchPackagesInfo(rawDeps, { hiddenColumns: hiddenColumnsAtFetchTime })
+      : Promise.resolve([]),
+    rawDevDeps.length > 0
+      ? fetchPackagesInfo(rawDevDeps, { hiddenColumns: hiddenColumnsAtFetchTime })
+      : Promise.resolve([]),
+  ])
+
+  entry.deps = depsResult
+  entry.devDeps = devDepsResult
+  entry.hiddenColumnsSnapshot = hiddenColumnsAtFetchTime
+
+  if (historyIndex.value === index) {
+    deps.value = depsResult
+    devDeps.value = devDepsResult
+    isLoadingDeps.value = false
+    isLoadingDevDeps.value = false
+  }
 }
 
 function loadFromPaste() {
@@ -246,6 +317,9 @@ async function fetchRepoPackageJson() {
     isLoadingInput.value = false
   }
 }
+
+// Bootstrap with this app's own package.json as the first history entry.
+loadPackageJsonText(JSON.stringify(packageJson, null, 2))
 </script>
 
 <style>
@@ -293,5 +367,12 @@ textarea {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+}
+
+.history-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 </style>

@@ -210,6 +210,108 @@ test("clicking a row's Load button loads that package's package.json as the new 
   await expect(depsTable.getByRole("cell", { name: "left-pad", exact: true })).toHaveCount(0)
 })
 
+test("back/forward buttons navigate between loaded package.json states", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.getByText("1 / 1", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
+  await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled()
+
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "history-pkg": "1.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable.getByRole("cell", { name: "history-pkg", exact: true })).toBeVisible()
+  await expect(page.getByText("2 / 2", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "← Back" })).toBeEnabled()
+  await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled()
+
+  await page.getByRole("button", { name: "← Back" }).click()
+  await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
+  await expect(page.getByText("1 / 2", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
+  await expect(page.getByRole("button", { name: "Forward →" })).toBeEnabled()
+
+  await page.getByRole("button", { name: "Forward →" }).click()
+  await expect(depsTable.getByRole("cell", { name: "history-pkg", exact: true })).toBeVisible()
+  await expect(page.getByText("2 / 2", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled()
+})
+
+test("navigating history back and forward reuses cached data instead of refetching", async ({ page }) => {
+  let vueRequests = 0
+  await page.route("https://registry.npmjs.org/vue", async (route) => {
+    vueRequests++
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ "dist-tags": { latest: "3.5.34" }, time: {} }),
+    })
+  })
+  let cachedPkgRequests = 0
+  await page.route("https://registry.npmjs.org/cached-history-pkg", async (route) => {
+    cachedPkgRequests++
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
+    })
+  })
+
+  await page.goto("/")
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
+  expect(vueRequests).toBe(1)
+
+  const json = JSON.stringify({
+    name: "demo",
+    dependencies: { "cached-history-pkg": "1.0.0" },
+    devDependencies: {},
+  })
+  await page.getByLabel("Paste package.json content").fill(json)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+  await expect(depsTable.getByRole("cell", { name: "cached-history-pkg", exact: true })).toBeVisible()
+  expect(cachedPkgRequests).toBe(1)
+
+  await page.getByRole("button", { name: "← Back" }).click()
+  await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
+  expect(vueRequests).toBe(1)
+
+  await page.getByRole("button", { name: "Forward →" }).click()
+  await expect(depsTable.getByRole("cell", { name: "cached-history-pkg", exact: true })).toBeVisible()
+  expect(cachedPkgRequests).toBe(1)
+})
+
+test("loading new content while navigated back discards the old forward history", async ({ page }) => {
+  await page.goto("/")
+
+  const jsonA = JSON.stringify({ name: "a", dependencies: { "state-a-pkg": "1.0.0" }, devDependencies: {} })
+  await page.getByLabel("Paste package.json content").fill(jsonA)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+  await expect(page.getByText("2 / 2", { exact: true })).toBeVisible()
+
+  await page.getByRole("button", { name: "← Back" }).click()
+  await expect(page.getByText("1 / 2", { exact: true })).toBeVisible()
+
+  const jsonB = JSON.stringify({ name: "b", dependencies: { "state-b-pkg": "1.0.0" }, devDependencies: {} })
+  await page.getByLabel("Paste package.json content").fill(jsonB)
+  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  const depsTable = page.locator("table.deps").first()
+  await expect(depsTable.getByRole("cell", { name: "state-b-pkg", exact: true })).toBeVisible()
+  await expect(page.getByText("2 / 2", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled()
+
+  await page.getByRole("button", { name: "← Back" }).click()
+  await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
+})
+
 test("pasting invalid JSON shows an inline error instead of crashing", async ({ page }) => {
   await page.goto("/")
   await page.getByLabel("Paste package.json content").fill("{ not valid json")
