@@ -30,9 +30,6 @@ const toggleableColumns = TOGGLEABLE_COLUMNS
 
 <style>
 .column-visibility-panel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
   margin-bottom: 16px;
 }
 

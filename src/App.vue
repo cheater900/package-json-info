@@ -331,7 +331,6 @@ loadPackageJsonText(JSON.stringify(packageJson, null, 2))
 input,
 textarea {
   display: block;
-  width: 400px;
   box-sizing: border-box;
 }
 
@@ -353,9 +352,6 @@ textarea {
 }
 
 .input-methods {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
   margin-bottom: 24px;
 }
 
@@ -364,8 +360,6 @@ textarea {
 }
 
 .input-method-actions {
-  display: flex;
-  gap: 8px;
   margin-top: 8px;
 }
 
