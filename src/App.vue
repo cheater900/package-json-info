@@ -65,25 +65,31 @@
       <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
     </section>
 
-    <column-visibility-panel
-      :hidden-columns="hiddenColumns"
-      @toggle-column="onToggleColumn"
-    />
+    <details class="accordion" open>
+      <summary>Columns</summary>
+      <column-visibility-panel
+        :hidden-columns="hiddenColumns"
+        @toggle-column="onToggleColumn"
+      />
+    </details>
 
-    <div>
-      <h3>Deps<span v-if="isLoadingDeps"> (loading…)</span></h3>
+    <details class="accordion" open>
+      <summary>Deps<span v-if="isLoadingDeps"> (loading…)</span></summary>
       <dependencies-table
         :dependencies="deps"
         :hidden-columns="hiddenColumns"
         @load-package="onLoadPackage"
       />
-      <h3>Dev Deps<span v-if="isLoadingDevDeps"> (loading…)</span></h3>
+    </details>
+
+    <details class="accordion" open>
+      <summary>Dev Deps<span v-if="isLoadingDevDeps"> (loading…)</span></summary>
       <dependencies-table
         :dependencies="devDeps"
         :hidden-columns="hiddenColumns"
         @load-package="onLoadPackage"
       />
-    </div>
+    </details>
     <div>
       <pre>{{ packageJsonContent }}</pre>
     </div>
@@ -368,5 +374,15 @@ textarea {
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.accordion {
+  margin-bottom: 16px;
+}
+
+.accordion > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
 }
 </style>

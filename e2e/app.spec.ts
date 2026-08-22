@@ -115,7 +115,7 @@ test("caches metadata so a package listed in both dependencies and devDependenci
   expect(registryRequests).toBe(1)
 })
 
-test("hides third-party-backed columns by default and never contacts those services on a fresh load", async ({ page }) => {
+test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never contacts the third-party services on a fresh load", async ({ page }) => {
   let osvRequests = 0
   let bundlephobiaRequests = 0
   await page.route("https://api.osv.dev/**", async (route) => {
@@ -133,8 +133,10 @@ test("hides third-party-backed columns by default and never contacts those servi
 
   await expect(depsTable.getByRole("columnheader", { name: "Vulnerabilities" })).toHaveCount(0)
   await expect(depsTable.getByRole("columnheader", { name: "Bundle size (gzip)" })).toHaveCount(0)
+  await expect(depsTable.getByRole("columnheader", { name: "Maintainers" })).toHaveCount(0)
   expect(await page.getByLabel("Vulnerabilities", { exact: true }).isChecked()).toBe(false)
   expect(await page.getByLabel("Bundle size (gzip)", { exact: true }).isChecked()).toBe(false)
+  expect(await page.getByLabel("Maintainers", { exact: true }).isChecked()).toBe(false)
 
   expect(osvRequests).toBe(0)
   expect(bundlephobiaRequests).toBe(0)
@@ -143,6 +145,35 @@ test("hides third-party-backed columns by default and never contacts those servi
   // and their data is already showing.
   await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible()
   await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible()
+})
+
+test("Columns, Deps, and Dev Deps sections are collapsible accordions, open by default", async ({ page }) => {
+  await page.goto("/")
+
+  const columnsSection = page.locator("details.accordion").nth(0)
+  const depsSection = page.locator("details.accordion").nth(1)
+  const devDepsSection = page.locator("details.accordion").nth(2)
+
+  await expect(columnsSection).toHaveJSProperty("open", true)
+  await expect(depsSection).toHaveJSProperty("open", true)
+  await expect(devDepsSection).toHaveJSProperty("open", true)
+  await expect(depsSection.locator("table.deps")).toBeVisible()
+
+  // Collapsing Deps hides its table but leaves the other sections alone.
+  await depsSection.locator("summary").click()
+  await expect(depsSection).toHaveJSProperty("open", false)
+  await expect(depsSection.locator("table.deps")).not.toBeVisible()
+  await expect(devDepsSection).toHaveJSProperty("open", true)
+
+  // Reopening restores it.
+  await depsSection.locator("summary").click()
+  await expect(depsSection).toHaveJSProperty("open", true)
+  await expect(depsSection.locator("table.deps")).toBeVisible()
+
+  // Same collapse/expand behaviour for the Columns panel.
+  await columnsSection.locator("summary").click()
+  await expect(columnsSection).toHaveJSProperty("open", false)
+  await expect(columnsSection.locator(".column-visibility-panel")).not.toBeVisible()
 })
 
 test("loads the app and renders the default package.json dependency table", async ({ page }) => {
@@ -426,10 +457,11 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
   await page.getByLabel("Paste package.json content").fill(json)
   await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
-  // Vulnerabilities and Bundle size are third-party-backed columns hidden
-  // by default; opt into them to check their data too.
+  // Vulnerabilities, Bundle size, and Maintainers are hidden by default;
+  // opt into them to check their data too.
   await page.getByLabel("Vulnerabilities", { exact: true }).check()
   await page.getByLabel("Bundle size (gzip)", { exact: true }).check()
+  await page.getByLabel("Maintainers", { exact: true }).check()
 
   const depsTable = page.locator("table.deps").first()
   const row = depsTable.locator("tbody tr").filter({ hasText: "enriched-pkg" })

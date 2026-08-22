@@ -18,16 +18,18 @@ describe("TOGGLEABLE_COLUMNS", () => {
 });
 
 describe("DEFAULT_HIDDEN_COLUMNS", () => {
-  it("hides only the columns backed by a non-npm, non-repo-host service", () => {
-    expect(DEFAULT_HIDDEN_COLUMNS).toEqual(new Set(["vulnerabilityCount", "bundleSizeGzip"]));
+  it("hides the third-party-service columns and Maintainers", () => {
+    expect(DEFAULT_HIDDEN_COLUMNS).toEqual(
+      new Set(["vulnerabilityCount", "bundleSizeGzip", "maintainers"])
+    );
   });
 
-  it("keeps every npm-registry- and repo-host-backed column visible by default", () => {
+  it("keeps every other column visible by default", () => {
     const expectedVisibleByDefault = [
       "versionDate", "latestVersion", "latestReleaseDate", "latestUpdateDate",
       "isOutdated", "weeklyDownloads", "sourceCode", "gitStars", "openPRs",
       "closedPRs", "openIssues", "closedIssues", "dependencies", "license",
-      "deprecated", "maintainers",
+      "deprecated",
     ];
     for (const key of expectedVisibleByDefault) {
       expect(isColumnVisible(DEFAULT_HIDDEN_COLUMNS, key)).toBe(true);

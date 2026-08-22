@@ -40,17 +40,18 @@ export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter(
 );
 
 /**
- * Columns hidden by default. Every other column's data comes from either
- * the npm registry (registry.npmjs.org + api.npmjs.org) or a supported
- * repository host (GitHub, GitLab, Codeberg) - domains this app talks to
- * for most of its data anyway. These two instead depend on genuinely
- * third-party services (OSV for security advisories, Bundlephobia for
- * bundle size) that the app wouldn't otherwise need to contact, so they
- * start opt-in rather than firing on every load.
+ * Columns hidden by default.
+ *
+ * vulnerabilityCount and bundleSizeGzip depend on genuinely third-party
+ * services (OSV, Bundlephobia) rather than the npm registry or a
+ * repository host, so they start opt-in rather than firing on every load.
+ * maintainers is hidden simply to keep the table's default view narrower -
+ * its data still comes from the npm registry like most other columns.
  */
 export const DEFAULT_HIDDEN_COLUMNS: ReadonlySet<string> = new Set([
   "vulnerabilityCount",
   "bundleSizeGzip",
+  "maintainers",
 ]);
 
 /**
