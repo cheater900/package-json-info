@@ -10,52 +10,28 @@
     </div>
 
     <section class="input-methods">
-      <div class="input-method">
-        <h3>Paste JSON</h3>
-        <label for="paste-input">Paste package.json content</label>
-        <textarea
-          id="paste-input"
-          v-model="pasteText"
-          rows="6"
-          placeholder="{ &quot;name&quot;: &quot;my-app&quot;, ... }"
-        ></textarea>
-        <div class="input-method-actions">
-          <button type="button" @click="loadFromPaste" :disabled="isLoadingInput">
-            Load pasted JSON
-          </button>
-          <button type="button" @click="loadFromClipboard" :disabled="isLoadingInput">
-            Read from clipboard
-          </button>
-        </div>
-      </div>
+      <form class="url-fetch-row" @submit.prevent="fetchFromUrlInput">
+        <label for="url-input" class="visually-hidden">
+          Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL
+        </label>
+        <input id="url-input" v-model="urlInput" type="text" placeholder="Enter url..." />
+        <button type="submit" :disabled="isLoadingInput">FETCH</button>
+      </form>
 
-      <div class="input-method">
-        <h3>Upload file</h3>
-        <label for="file-input">Upload a package.json file</label>
+      <div class="input-method-actions">
         <input
-          id="file-input"
+          ref="fileInputRef"
+          class="hidden-file-input"
           type="file"
           accept=".json,application/json"
           @change="onFileSelected"
         />
-      </div>
-
-      <div class="input-method">
-        <h3>File URL</h3>
-        <form @submit.prevent="fetchFromFileUrl">
-          <label for="file-url">Enter a URL to a package.json file</label>
-          <input v-model="fileUrlInput" type="text" id="file-url" />
-          <button type="submit" :disabled="isLoadingInput">FETCH</button>
-        </form>
-      </div>
-
-      <div class="input-method">
-        <h3>Git URL</h3>
-        <form @submit.prevent="fetchRepoPackageJson">
-          <label for="repo-url">Enter repo url (GitHub, GitLab, or Codeberg)</label>
-          <input v-model="repoUrlInput" type="text" id="repo-url" />
-          <button type="submit" :disabled="isLoadingInput">FETCH</button>
-        </form>
+        <button type="button" @click="fileInputRef?.click()" :disabled="isLoadingInput">
+          Upload file
+        </button>
+        <button type="button" @click="loadFromClipboard" :disabled="isLoadingInput">
+          Paste from clipboard
+        </button>
       </div>
     </section>
 
@@ -98,7 +74,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from "vue";
 import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts"
-import { fetchPackageJsonFromRepo } from "./utils/repoPackageJson.ts"
+import { fetchPackageJsonFromRepo, isRepoHostUrl } from "./utils/repoPackageJson.ts"
 import { toggleColumnVisibility, DEFAULT_HIDDEN_COLUMNS } from "./utils/tableColumns.ts"
 import {
   createHistoryEntry,
@@ -119,9 +95,8 @@ const isLoadingInput = ref(false)
 const isLoadingDeps = ref(false)
 const isLoadingDevDeps = ref(false)
 
-const pasteText = ref("")
-const fileUrlInput = ref("")
-const repoUrlInput = ref("")
+const urlInput = ref("")
+const fileInputRef = ref(null)
 
 const deps = ref([])
 const devDeps = ref([])
@@ -248,17 +223,13 @@ async function fetchEntryDependencies(entry, index) {
   }
 }
 
-function loadFromPaste() {
-  loadPackageJsonText(pasteText.value)
-}
-
 async function loadFromClipboard() {
+  loadError.value = null
   try {
     const text = await navigator.clipboard.readText()
-    pasteText.value = text
     loadPackageJsonText(text)
   } catch (err) {
-    loadError.value = "Could not read the clipboard. Paste into the text box instead."
+    loadError.value = "Could not read the clipboard. Check the browser's clipboard permission and try again."
   }
 }
 
@@ -275,30 +246,22 @@ function onFileSelected(event) {
   reader.readAsText(file)
 }
 
-async function fetchFromFileUrl() {
+/**
+ * Fetches the single URL input's content, routing between a repo host
+ * (GitHub/GitLab/Codeberg - resolved via fetchPackageJsonFromRepo, which
+ * locates package.json on the repo's default branch) and any other URL
+ * (fetched directly as the package.json content).
+ */
+async function fetchFromUrlInput() {
   isLoadingInput.value = true
   loadError.value = null
   try {
-    const response = await fetch(fileUrlInput.value)
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`)
-    }
-    const text = await response.text()
-    loadPackageJsonText(text)
-  } catch (err) {
-    loadError.value = `Could not fetch package.json from that URL: ${err.message}`
-  } finally {
-    isLoadingInput.value = false
-  }
-}
-
-async function onLoadPackage({ name, version }) {
-  isLoadingInput.value = true
-  loadError.value = null
-  try {
-    const content = await fetchPackageJsonForVersion(name, version)
+    const url = urlInput.value
+    const content = isRepoHostUrl(url)
+      ? await fetchPackageJsonFromRepo(url)
+      : await fetchUrlAsText(url)
     if (!content) {
-      throw new Error(`Could not find package.json data for "${name}".`)
+      throw new Error("Could not find a package.json at that URL.")
     }
     loadPackageJsonText(content)
   } catch (err) {
@@ -308,13 +271,21 @@ async function onLoadPackage({ name, version }) {
   }
 }
 
-async function fetchRepoPackageJson() {
+async function fetchUrlAsText(url) {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`)
+  }
+  return response.text()
+}
+
+async function onLoadPackage({ name, version }) {
   isLoadingInput.value = true
   loadError.value = null
   try {
-    const content = await fetchPackageJsonFromRepo(repoUrlInput.value)
+    const content = await fetchPackageJsonForVersion(name, version)
     if (!content) {
-      throw new Error("Could not find a package.json in that repository.")
+      throw new Error(`Could not find package.json data for "${name}".`)
     }
     loadPackageJsonText(content)
   } catch (err) {
@@ -358,15 +329,40 @@ textarea {
 }
 
 .input-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 24px;
 }
 
-.input-method {
-  flex: 1 1 260px;
+.url-fetch-row {
+  display: flex;
+  gap: 8px;
+}
+
+.url-fetch-row input {
+  flex: 1;
 }
 
 .input-method-actions {
-  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .history-controls {

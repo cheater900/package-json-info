@@ -65,6 +65,21 @@ test.beforeEach(async ({ page }) => {
   await mockExternalApis(page)
 })
 
+/**
+ * Loads arbitrary JSON as the app's input via the file-upload control (the
+ * hidden <input type="file"> still accepts setInputFiles regardless of its
+ * own visibility). Used throughout as a fast, permission-free way to get a
+ * package.json into the app for tests that aren't themselves about a
+ * specific input method.
+ */
+async function loadJson(page: Page, data: unknown) {
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "package.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(data)),
+  })
+}
+
 test("the dependency table scrolls horizontally, since it has more columns than fit on screen", async ({ page }) => {
   await page.goto("/")
   const depsTable = page.locator("table.deps").first()
@@ -100,13 +115,11 @@ test("caches metadata so a package listed in both dependencies and devDependenci
   })
 
   await page.goto("/")
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "shared-pkg": "1.0.0" },
     devDependencies: { "shared-pkg": "1.0.0" },
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   // Both tables render their own row for the package; once both are up,
   // both watchers' fetches have settled.
@@ -182,16 +195,55 @@ test("loads the app and renders the default package.json dependency table", asyn
   await expect(page.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
 })
 
-test("pasting valid package.json JSON replaces the table", async ({ page }) => {
+test("the URL input fetches from a repo host (GitHub/GitLab/Codeberg) via its raw-file API", async ({ page }) => {
+  await page.route(
+    "https://raw.githubusercontent.com/some-owner/some-repo/main/package.json",
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ name: "some-repo", dependencies: { "repo-dep": "1.0.0" } }),
+      })
+    }
+  )
+
   await page.goto("/")
-  const json = JSON.stringify({
+  await page
+    .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
+    .fill("https://github.com/some-owner/some-repo")
+  await page.getByRole("button", { name: "FETCH" }).click()
+
+  await expect(page.getByRole("cell", { name: "repo-dep", exact: true })).toBeVisible()
+})
+
+test("the URL input fetches a plain URL directly when its host isn't a supported repo host", async ({ page }) => {
+  await page.route("https://example.com/some/package.json", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ name: "remote-pkg", dependencies: { "remote-dep": "1.0.0" } }),
+    })
+  })
+
+  await page.goto("/")
+  await page
+    .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
+    .fill("https://example.com/some/package.json")
+  await page.getByRole("button", { name: "FETCH" }).click()
+
+  await expect(page.getByRole("cell", { name: "remote-dep", exact: true })).toBeVisible()
+})
+
+test("the paste-from-clipboard button reads the clipboard and replaces the table", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"])
+  await page.goto("/")
+
+  await page.evaluate((text) => navigator.clipboard.writeText(text), JSON.stringify({
     name: "demo",
     dependencies: { "left-pad": "^1.0.0" },
     devDependencies: {},
-  })
-
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+  }))
+  await page.getByRole("button", { name: "Paste from clipboard" }).click()
 
   await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible()
 })
@@ -223,13 +275,11 @@ test("clicking a row's Load button loads that package's package.json as the new 
   })
 
   await page.goto("/")
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "left-pad": "^1.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   const depsTable = page.locator("table.deps").first()
   const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" })
@@ -248,13 +298,11 @@ test("back/forward buttons navigate between loaded package.json states", async (
   await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
   await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled()
 
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "history-pkg": "1.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   const depsTable = page.locator("table.deps").first()
   await expect(depsTable.getByRole("cell", { name: "history-pkg", exact: true })).toBeVisible()
@@ -299,13 +347,11 @@ test("navigating history back and forward reuses cached data instead of refetchi
   await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
   expect(vueRequests).toBe(1)
 
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "cached-history-pkg": "1.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
   await expect(depsTable.getByRole("cell", { name: "cached-history-pkg", exact: true })).toBeVisible()
   expect(cachedPkgRequests).toBe(1)
 
@@ -321,17 +367,13 @@ test("navigating history back and forward reuses cached data instead of refetchi
 test("loading new content while navigated back discards the old forward history", async ({ page }) => {
   await page.goto("/")
 
-  const jsonA = JSON.stringify({ name: "a", dependencies: { "state-a-pkg": "1.0.0" }, devDependencies: {} })
-  await page.getByLabel("Paste package.json content").fill(jsonA)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+  await loadJson(page, { name: "a", dependencies: { "state-a-pkg": "1.0.0" }, devDependencies: {} })
   await expect(page.getByText("2 / 2", { exact: true })).toBeVisible()
 
   await page.getByRole("button", { name: "← Back" }).click()
   await expect(page.getByText("1 / 2", { exact: true })).toBeVisible()
 
-  const jsonB = JSON.stringify({ name: "b", dependencies: { "state-b-pkg": "1.0.0" }, devDependencies: {} })
-  await page.getByLabel("Paste package.json content").fill(jsonB)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+  await loadJson(page, { name: "b", dependencies: { "state-b-pkg": "1.0.0" }, devDependencies: {} })
 
   const depsTable = page.locator("table.deps").first()
   await expect(depsTable.getByRole("cell", { name: "state-b-pkg", exact: true })).toBeVisible()
@@ -343,10 +385,12 @@ test("loading new content while navigated back discards the old forward history"
   await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
 })
 
-test("pasting invalid JSON shows an inline error instead of crashing", async ({ page }) => {
+test("pasting invalid JSON from the clipboard shows an inline error instead of crashing", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"])
   await page.goto("/")
-  await page.getByLabel("Paste package.json content").fill("{ not valid json")
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
+
+  await page.evaluate(() => navigator.clipboard.writeText("{ not valid json"))
+  await page.getByRole("button", { name: "Paste from clipboard" }).click()
 
   await expect(page.getByRole("alert")).toContainText("not valid JSON")
   await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible()
@@ -368,13 +412,11 @@ test("clicking a column header sorts the table, and clicking again reverses it",
   })
 
   await page.goto("/")
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "ccc-pkg": "^1.0.0", "aaa-pkg": "^1.0.0", "bbb-pkg": "^1.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   // Only one populated table (devDependencies is empty), but scope to it
   // explicitly since the empty Dev Deps table also renders a header row.
@@ -393,13 +435,11 @@ test("clicking a column header sorts the table, and clicking again reverses it",
 
 test("the search box filters the table by package name", async ({ page }) => {
   await page.goto("/")
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "react": "^18.0.0", "react-dom": "^18.0.0", "vue": "^3.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   // DependenciesTable renders its search box and table as sibling root
   // nodes (no wrapping element), so scope to the first "Search by name"
@@ -449,13 +489,11 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
   })
 
   await page.goto("/")
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "enriched-pkg": "1.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   // Vulnerabilities, Bundle size, and Maintainers are hidden by default;
   // opt into them to check their data too.
@@ -498,13 +536,11 @@ test("hiding a column skips its network request, and re-showing it fetches the m
   // Hide the Vulnerabilities column before loading the package under test.
   await page.getByLabel("Vulnerabilities", { exact: true }).uncheck()
 
-  const json = JSON.stringify({
+  await loadJson(page, {
     name: "demo",
     dependencies: { "gated-pkg": "1.0.0" },
     devDependencies: {},
   })
-  await page.getByLabel("Paste package.json content").fill(json)
-  await page.getByRole("button", { name: "Load pasted JSON" }).click()
 
   const depsTable = page.locator("table.deps").first()
   await expect(depsTable.getByRole("cell", { name: "gated-pkg", exact: true })).toBeVisible()

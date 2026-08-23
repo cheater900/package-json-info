@@ -17,6 +17,21 @@ export const SUPPORTED_REPO_HOSTS = Object.keys(REPO_HOST_RAW_URL_BUILDERS);
 
 const REPO_URL_PATTERN = /^https:\/\/([^/]+)\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(?:\/.*)?$/;
 
+/**
+ * True if `url`'s host is one of SUPPORTED_REPO_HOSTS - used to route a
+ * single URL input between fetchPackageJsonFromRepo (a repo URL) and a
+ * plain "fetch this URL as text" (any other URL). Never throws: an
+ * unparseable URL is treated as "not a repo URL" rather than an error,
+ * leaving that error to surface from whichever fetch actually runs.
+ */
+export function isRepoHostUrl(url: string): boolean {
+  try {
+    return SUPPORTED_REPO_HOSTS.includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 const BRANCHES_TO_TRY = ["main", "master"];
 
 /**

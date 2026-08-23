@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchPackageJsonFromRepo, SUPPORTED_REPO_HOSTS } from "./repoPackageJson";
+import { fetchPackageJsonFromRepo, SUPPORTED_REPO_HOSTS, isRepoHostUrl } from "./repoPackageJson";
 
 function jsonResponse(body: unknown, ok = true) {
   return { ok, status: ok ? 200 : 404, text: async () => JSON.stringify(body) };
@@ -100,5 +100,25 @@ describe("fetchPackageJsonFromRepo", () => {
     expect(SUPPORTED_REPO_HOSTS).toEqual(
       expect.arrayContaining(["github.com", "gitlab.com", "codeberg.org"])
     );
+  });
+});
+
+describe("isRepoHostUrl", () => {
+  it("is true for a URL on any supported repo host", () => {
+    expect(isRepoHostUrl("https://github.com/owner/repo")).toBe(true);
+    expect(isRepoHostUrl("https://gitlab.com/owner/repo")).toBe(true);
+    expect(isRepoHostUrl("https://codeberg.org/owner/repo")).toBe(true);
+  });
+
+  it("is false for a URL on any other host", () => {
+    expect(isRepoHostUrl("https://example.com/package.json")).toBe(false);
+    expect(isRepoHostUrl("https://raw.githubusercontent.com/owner/repo/main/package.json")).toBe(
+      false
+    );
+  });
+
+  it("is false, not throwing, for an unparseable URL", () => {
+    expect(isRepoHostUrl("not a url")).toBe(false);
+    expect(isRepoHostUrl("")).toBe(false);
   });
 });
