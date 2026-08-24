@@ -80,8 +80,25 @@ async function loadJson(page: Page, data: unknown) {
   })
 }
 
+/**
+ * Deps and Dev Deps start collapsed; expand both so their content is
+ * visible/interactable. The accordions' open state is plain DOM state,
+ * independent of the loaded package.json, so one call per test (right
+ * after page.goto) covers everything that test does afterwards.
+ */
+async function expandDepsSections(page: Page) {
+  for (const index of [1, 2]) {
+    const section = page.locator("details.accordion").nth(index)
+    const isOpen = await section.evaluate((el) => (el as HTMLDetailsElement).open)
+    if (!isOpen) {
+      await section.locator("summary").click()
+    }
+  }
+}
+
 test("the dependency table scrolls horizontally, since it has more columns than fit on screen", async ({ page }) => {
   await page.goto("/")
+  await expandDepsSections(page)
   const depsTable = page.locator("table.deps").first()
   await expect(depsTable).toBeVisible()
 
@@ -115,6 +132,7 @@ test("caches metadata so a package listed in both dependencies and devDependenci
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   await loadJson(page, {
     name: "demo",
     dependencies: { "shared-pkg": "1.0.0" },
@@ -141,6 +159,7 @@ test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never 
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   const depsTable = page.locator("table.deps").first()
   await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
 
@@ -160,7 +179,7 @@ test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never 
   await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible()
 })
 
-test("Columns, Deps, and Dev Deps sections are collapsible accordions, open by default", async ({ page }) => {
+test("Columns, Deps, and Dev Deps are collapsible accordions - Columns open by default, Deps/Dev Deps collapsed", async ({ page }) => {
   await page.goto("/")
 
   const columnsSection = page.locator("details.accordion").nth(0)
@@ -168,20 +187,20 @@ test("Columns, Deps, and Dev Deps sections are collapsible accordions, open by d
   const devDepsSection = page.locator("details.accordion").nth(2)
 
   await expect(columnsSection).toHaveJSProperty("open", true)
-  await expect(depsSection).toHaveJSProperty("open", true)
-  await expect(devDepsSection).toHaveJSProperty("open", true)
-  await expect(depsSection.locator("table.deps")).toBeVisible()
+  await expect(depsSection).toHaveJSProperty("open", false)
+  await expect(devDepsSection).toHaveJSProperty("open", false)
+  await expect(depsSection.locator("table.deps")).not.toBeVisible()
 
-  // Collapsing Deps hides its table but leaves the other sections alone.
+  // Expanding Deps reveals its table but leaves Dev Deps collapsed.
+  await depsSection.locator("summary").click()
+  await expect(depsSection).toHaveJSProperty("open", true)
+  await expect(depsSection.locator("table.deps")).toBeVisible()
+  await expect(devDepsSection).toHaveJSProperty("open", false)
+
+  // Collapsing it again hides the table.
   await depsSection.locator("summary").click()
   await expect(depsSection).toHaveJSProperty("open", false)
   await expect(depsSection.locator("table.deps")).not.toBeVisible()
-  await expect(devDepsSection).toHaveJSProperty("open", true)
-
-  // Reopening restores it.
-  await depsSection.locator("summary").click()
-  await expect(depsSection).toHaveJSProperty("open", true)
-  await expect(depsSection.locator("table.deps")).toBeVisible()
 
   // Same collapse/expand behaviour for the Columns panel.
   await columnsSection.locator("summary").click()
@@ -191,6 +210,7 @@ test("Columns, Deps, and Dev Deps sections are collapsible accordions, open by d
 
 test("loads the app and renders the default package.json dependency table", async ({ page }) => {
   await page.goto("/")
+  await expandDepsSections(page)
   await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible()
   await expect(page.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
 })
@@ -208,6 +228,7 @@ test("the URL input fetches from a repo host (GitHub/GitLab/Codeberg) via its ra
   )
 
   await page.goto("/")
+  await expandDepsSections(page)
   await page
     .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
     .fill("https://github.com/some-owner/some-repo")
@@ -226,6 +247,7 @@ test("the URL input fetches a plain URL directly when its host isn't a supported
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   await page
     .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
     .fill("https://example.com/some/package.json")
@@ -237,6 +259,7 @@ test("the URL input fetches a plain URL directly when its host isn't a supported
 test("the paste-from-clipboard button reads the clipboard and replaces the table", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"])
   await page.goto("/")
+  await expandDepsSections(page)
 
   await page.evaluate((text) => navigator.clipboard.writeText(text), JSON.stringify({
     name: "demo",
@@ -275,6 +298,7 @@ test("clicking a row's Load button loads that package's package.json as the new 
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   await loadJson(page, {
     name: "demo",
     dependencies: { "left-pad": "^1.0.0" },
@@ -293,6 +317,7 @@ test("clicking a row's Load button loads that package's package.json as the new 
 
 test("back/forward buttons navigate between loaded package.json states", async ({ page }) => {
   await page.goto("/")
+  await expandDepsSections(page)
 
   await expect(page.getByText("1 / 1", { exact: true })).toBeVisible()
   await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
@@ -343,6 +368,7 @@ test("navigating history back and forward reuses cached data instead of refetchi
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   const depsTable = page.locator("table.deps").first()
   await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible()
   expect(vueRequests).toBe(1)
@@ -366,6 +392,7 @@ test("navigating history back and forward reuses cached data instead of refetchi
 
 test("loading new content while navigated back discards the old forward history", async ({ page }) => {
   await page.goto("/")
+  await expandDepsSections(page)
 
   await loadJson(page, { name: "a", dependencies: { "state-a-pkg": "1.0.0" }, devDependencies: {} })
   await expect(page.getByText("2 / 2", { exact: true })).toBeVisible()
@@ -412,6 +439,7 @@ test("clicking a column header sorts the table, and clicking again reverses it",
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   await loadJson(page, {
     name: "demo",
     dependencies: { "ccc-pkg": "^1.0.0", "aaa-pkg": "^1.0.0", "bbb-pkg": "^1.0.0" },
@@ -435,6 +463,7 @@ test("clicking a column header sorts the table, and clicking again reverses it",
 
 test("the search box filters the table by package name", async ({ page }) => {
   await page.goto("/")
+  await expandDepsSections(page)
   await loadJson(page, {
     name: "demo",
     dependencies: { "react": "^18.0.0", "react-dom": "^18.0.0", "vue": "^3.0.0" },
@@ -489,6 +518,7 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
   await loadJson(page, {
     name: "demo",
     dependencies: { "enriched-pkg": "1.0.0" },
@@ -532,6 +562,7 @@ test("hiding a column skips its network request, and re-showing it fetches the m
   })
 
   await page.goto("/")
+  await expandDepsSections(page)
 
   // Hide the Vulnerabilities column before loading the package under test.
   await page.getByLabel("Vulnerabilities", { exact: true }).uncheck()
@@ -558,6 +589,7 @@ test("hiding a column skips its network request, and re-showing it fetches the m
 
 test("the column visibility panel hides/shows columns and never drops below the floor", async ({ page }) => {
   await page.goto("/")
+  await expandDepsSections(page)
   const depsTable = page.locator("table.deps").first()
 
   await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible()

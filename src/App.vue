@@ -49,7 +49,7 @@
       />
     </details>
 
-    <details class="accordion" open>
+    <details class="accordion">
       <summary>Deps<span v-if="isLoadingDeps"> (loading…)</span></summary>
       <dependencies-table
         :dependencies="deps"
@@ -58,7 +58,7 @@
       />
     </details>
 
-    <details class="accordion" open>
+    <details class="accordion">
       <summary>Dev Deps<span v-if="isLoadingDevDeps"> (loading…)</span></summary>
       <dependencies-table
         :dependencies="devDeps"
