@@ -228,9 +228,9 @@ test("back/forward buttons navigate between loaded package.json states", async (
   await page.goto("/")
   await expandDepsSections(page)
 
-  await expect(page.getByText("1 / 1", { exact: true })).toBeVisible()
-  await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled()
-  await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled()
+  // Only one history entry so far, so the history controls don't render at all.
+  await expect(page.getByRole("button", { name: "← Back" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Forward →" })).toHaveCount(0)
 
   await loadJson(page, {
     name: "demo",

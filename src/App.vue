@@ -35,12 +35,6 @@
       </div>
     </section>
 
-    <section class="history-controls">
-      <button type="button" @click="goBack" :disabled="!canGoBack">← Back</button>
-      <span>{{ historyIndex + 1 }} / {{ history.length }}</span>
-      <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
-    </section>
-
     <details class="accordion" open>
       <summary>Columns</summary>
       <column-visibility-panel
@@ -48,6 +42,12 @@
         @toggle-column="onToggleColumn"
       />
     </details>
+
+    <section v-if="history.length > 1" class="history-controls">
+      <button type="button" @click="goBack" :disabled="!canGoBack">← Back</button>
+      <span>{{ historyIndex + 1 }} / {{ history.length }}</span>
+      <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
+    </section>
 
     <details class="accordion">
       <summary>Deps<span v-if="isLoadingDeps"> (loading…)</span></summary>
