@@ -77,13 +77,14 @@ export async function loadJson(page: Page, data: unknown) {
 }
 
 /**
- * Deps and Dev Deps start collapsed; expand both so their content is
- * visible/interactable. The accordions' open state is plain DOM state,
- * independent of the loaded package.json, so one call (right after
- * page.goto) covers everything done afterwards.
+ * Columns, Deps, and Dev Deps all start collapsed; expand them so their
+ * content (checkboxes, table rows) is visible/interactable. The
+ * accordions' open state is plain DOM state, independent of the loaded
+ * package.json, so one call (right after page.goto) covers everything
+ * done afterwards.
  */
-export async function expandDepsSections(page: Page) {
-  for (const index of [1, 2]) {
+export async function expandAllSections(page: Page) {
+  for (const index of [0, 1, 2]) {
     const section = page.locator("details.accordion").nth(index)
     const isOpen = await section.evaluate((el) => (el as HTMLDetailsElement).open)
     if (!isOpen) {

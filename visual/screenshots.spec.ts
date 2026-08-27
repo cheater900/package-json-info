@@ -1,5 +1,5 @@
 import { test } from "@playwright/test"
-import { mockExternalApis, loadJson, expandDepsSections } from "../e2e/helpers"
+import { mockExternalApis, loadJson, expandAllSections } from "../e2e/helpers"
 
 /**
  * Not part of the regular e2e suite (this file lives outside playwright
@@ -20,7 +20,7 @@ test("default view - fresh load, Deps/Dev Deps collapsed", async ({ page }) => {
 
 test("deps expanded - a small package.json loaded, both tables open", async ({ page }) => {
   await page.goto("/")
-  await expandDepsSections(page)
+  await expandAllSections(page)
   await loadJson(page, {
     name: "demo",
     dependencies: { "left-pad": "^1.0.0", "react": "^18.0.0" },

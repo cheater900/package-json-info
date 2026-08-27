@@ -35,7 +35,7 @@
       </div>
     </section>
 
-    <details class="accordion" open>
+    <details class="accordion">
       <summary>Columns</summary>
       <column-visibility-panel
         :hidden-columns="hiddenColumns"
