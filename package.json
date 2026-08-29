@@ -1,26 +1,31 @@
 {
-  "name": "package-jso-info",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test --project=chromium",
-    "screenshots": "playwright test --project=screenshots"
-  },
-  "dependencies": {
-    "vue": "^3.5.34"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.62.1",
-    "@vitejs/plugin-vue": "^6.0.6",
-    "@vue/test-utils": "^2.5.0",
-    "jsdom": "^30.0.1",
-    "vite": "^8.0.12",
-    "vitest": "^4.1.11"
-  }
+    "name": "package-jso-info",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:e2e": "playwright test --project=chromium",
+        "screenshots": "playwright test --project=screenshots",
+        "lint": "oxlint",
+        "format": "oxfmt --write",
+        "format:check": "oxfmt --check"
+    },
+    "dependencies": {
+        "vue": "^3.5.34"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.62.1",
+        "@vitejs/plugin-vue": "^6.0.6",
+        "@vue/test-utils": "^2.5.0",
+        "jsdom": "^30.0.1",
+        "oxfmt": "^0.65.0",
+        "oxlint": "^1.80.0",
+        "vite": "^8.0.12",
+        "vitest": "^4.1.11"
+    }
 }
