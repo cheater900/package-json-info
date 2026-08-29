@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import DependenciesTable from "./DependenciesTable.vue";
+import DependenciesTable from "../../../src/components/DependenciesTable.vue";
 
 const fullDependency = {
   name: "left-pad",

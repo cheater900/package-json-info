@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isCopyleftLicense, hasLicenseWarning } from "./license";
+import { isCopyleftLicense, hasLicenseWarning } from "../../../src/utils/license";
 
 describe("isCopyleftLicense", () => {
   it("flags GPL-family SPDX identifiers", () => {

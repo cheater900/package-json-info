@@ -6,7 +6,7 @@ import {
   canGoForward,
   hiddenColumnsEqual,
   isEntryCacheValid,
-} from "./packageJsonHistory";
+} from "../../../src/utils/packageJsonHistory";
 
 describe("createHistoryEntry", () => {
   it("starts with unfetched deps/devDeps and no hiddenColumns snapshot", () => {

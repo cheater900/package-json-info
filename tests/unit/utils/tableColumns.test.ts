@@ -7,7 +7,7 @@ import {
   isColumnVisible,
   wouldViolateMinVisible,
   toggleColumnVisibility,
-} from "./tableColumns";
+} from "../../../src/utils/tableColumns";
 
 describe("TOGGLEABLE_COLUMNS", () => {
   it("excludes the always-visible Name and Load columns", () => {

@@ -14,8 +14,8 @@ export default defineConfig({
   // targets chromium/e2e explicitly, `npm run screenshots` targets
   // screenshots/visual explicitly.
   projects: [
-    { name: "chromium", testDir: "./e2e", use: { ...devices["Desktop Chrome"] } },
-    { name: "screenshots", testDir: "./visual", use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testDir: "./tests/e2e", testIgnore: "**/visual/**", use: { ...devices["Desktop Chrome"] } },
+    { name: "screenshots", testDir: "./tests/e2e/visual", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
     command: "npm run dev -- --port 4173 --strictPort",

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import ColumnVisibilityPanel from "./ColumnVisibilityPanel.vue";
-import { TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
+import ColumnVisibilityPanel from "../../../src/components/ColumnVisibilityPanel.vue";
+import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
 describe("ColumnVisibilityPanel", () => {
   it("renders one checkbox per toggleable column, and none for Name", () => {

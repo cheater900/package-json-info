@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchPackageJsonFromRepo, SUPPORTED_REPO_HOSTS, isRepoHostUrl } from "./repoPackageJson";
+import { fetchPackageJsonFromRepo, SUPPORTED_REPO_HOSTS, isRepoHostUrl } from "../../../src/utils/repoPackageJson";
 
 function jsonResponse(body: unknown, ok = true) {
   return { ok, status: ok ? 200 : 404, text: async () => JSON.stringify(body) };

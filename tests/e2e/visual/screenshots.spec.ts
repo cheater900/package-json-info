@@ -1,5 +1,5 @@
 import { test } from "@playwright/test"
-import { mockExternalApis, loadJson, expandAllSections } from "../e2e/helpers"
+import { mockExternalApis, loadJson, expandAllSections } from "../helpers"
 
 /**
  * Not part of the regular e2e suite (this file lives outside playwright

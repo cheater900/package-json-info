@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isVersionOutdated } from "./semver";
+import { isVersionOutdated } from "../../../src/utils/semver";
 
 describe("isVersionOutdated", () => {
   it("returns false when the declared version matches the latest", () => {

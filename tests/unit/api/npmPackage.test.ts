@@ -4,7 +4,7 @@ import {
   fetchPackagesInfo,
   fetchPackageJsonForVersion,
   clearPackageInfoCache,
-} from "./npmPackage";
+} from "../../../src/utils/npmPackage";
 
 function jsonResponse(body: unknown, ok = true) {
   return {
