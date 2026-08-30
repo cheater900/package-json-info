@@ -351,7 +351,7 @@ export async function fetchPackagesInfo(
 ): Promise<Array<PackageInfo | PackageError>> {
     const { concurrency = 5, onProgress, ...fetchOptions } = options;
 
-    const results = new Array<PackageInfo | PackageError>(packages.length);
+    const results = Array.from<PackageInfo | PackageError>({ length: packages.length });
     let index = 0;
 
     // Worker: pulls the next package off the shared queue and fetches it
