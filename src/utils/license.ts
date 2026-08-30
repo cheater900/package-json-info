@@ -6,11 +6,11 @@
 const COPYLEFT_LICENSE_PATTERN = /(^|-)(gpl|agpl|lgpl|mpl|epl|cddl|osl|eupl|sspl)(-|$|v)/i;
 
 export function isCopyleftLicense(license: string | null | undefined): boolean {
-  if (!license) return false;
-  return COPYLEFT_LICENSE_PATTERN.test(license);
+    if (!license) return false;
+    return COPYLEFT_LICENSE_PATTERN.test(license);
 }
 
 /** True when a license is missing, or is a copyleft license worth flagging. */
 export function hasLicenseWarning(license: string | null | undefined): boolean {
-  return !license || isCopyleftLicense(license);
+    return !license || isCopyleftLicense(license);
 }

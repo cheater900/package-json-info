@@ -1,16 +1,16 @@
 type SemverTuple = [number, number, number];
 
 function parseLeadingSemver(raw: string): SemverTuple | null {
-  const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
-  if (!match) return null;
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
+    const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
+    if (!match) return null;
+    return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
 function compareSemver(a: SemverTuple, b: SemverTuple): number {
-  for (let i = 0; i < 3; i++) {
-    if (a[i] !== b[i]) return a[i] - b[i];
-  }
-  return 0;
+    for (let i = 0; i < 3; i++) {
+        if (a[i] !== b[i]) return a[i] - b[i];
+    }
+    return 0;
 }
 
 /**
@@ -25,12 +25,12 @@ function compareSemver(a: SemverTuple, b: SemverTuple): number {
  *          couldn't be parsed as a leading semver.
  */
 export function isVersionOutdated(
-  declared: string | null | undefined,
-  latest: string | null | undefined
+    declared: string | null | undefined,
+    latest: string | null | undefined,
 ): boolean | null {
-  if (!declared || !latest) return null;
-  const declaredSemver = parseLeadingSemver(declared);
-  const latestSemver = parseLeadingSemver(latest);
-  if (!declaredSemver || !latestSemver) return null;
-  return compareSemver(declaredSemver, latestSemver) < 0;
+    if (!declared || !latest) return null;
+    const declaredSemver = parseLeadingSemver(declared);
+    const latestSemver = parseLeadingSemver(latest);
+    if (!declaredSemver || !latestSemver) return null;
+    return compareSemver(declaredSemver, latestSemver) < 0;
 }

@@ -5,15 +5,15 @@
  * the cached data still covers every currently-visible column.
  */
 export type HistoryEntry = {
-  content: string;
-  pkg: Record<string, unknown>;
-  deps: unknown[] | null;
-  devDeps: unknown[] | null;
-  hiddenColumnsSnapshot: ReadonlySet<string> | null;
-}
+    content: string;
+    pkg: Record<string, unknown>;
+    deps: unknown[] | null;
+    devDeps: unknown[] | null;
+    hiddenColumnsSnapshot: ReadonlySet<string> | null;
+};
 
 export function createHistoryEntry(content: string, pkg: Record<string, unknown>): HistoryEntry {
-  return { content, pkg, deps: null, devDeps: null, hiddenColumnsSnapshot: null };
+    return { content, pkg, deps: null, devDeps: null, hiddenColumnsSnapshot: null };
 }
 
 /**
@@ -23,33 +23,33 @@ export function createHistoryEntry(content: string, pkg: Record<string, unknown>
  * the old future.
  */
 export function pushHistoryEntry(
-  history: HistoryEntry[],
-  index: number,
-  entry: HistoryEntry
+    history: HistoryEntry[],
+    index: number,
+    entry: HistoryEntry,
 ): { history: HistoryEntry[]; index: number } {
-  const next = [...history.slice(0, index + 1), entry];
-  return { history: next, index: next.length - 1 };
+    const next = [...history.slice(0, index + 1), entry];
+    return { history: next, index: next.length - 1 };
 }
 
 export function canGoBack(index: number): boolean {
-  return index > 0;
+    return index > 0;
 }
 
 export function canGoForward(history: HistoryEntry[], index: number): boolean {
-  return index < history.length - 1;
+    return index < history.length - 1;
 }
 
 /** True if two hidden-column sets have exactly the same members. */
 export function hiddenColumnsEqual(
-  a: ReadonlySet<string> | null,
-  b: ReadonlySet<string> | null
+    a: ReadonlySet<string> | null,
+    b: ReadonlySet<string> | null,
 ): boolean {
-  if (a == null || b == null) return false;
-  if (a.size !== b.size) return false;
-  for (const key of a) {
-    if (!b.has(key)) return false;
-  }
-  return true;
+    if (a == null || b == null) return false;
+    if (a.size !== b.size) return false;
+    for (const key of a) {
+        if (!b.has(key)) return false;
+    }
+    return true;
 }
 
 /**
@@ -61,12 +61,12 @@ export function hiddenColumnsEqual(
  * missing).
  */
 export function isEntryCacheValid(
-  entry: HistoryEntry,
-  hiddenColumns: ReadonlySet<string>
+    entry: HistoryEntry,
+    hiddenColumns: ReadonlySet<string>,
 ): boolean {
-  return (
-    entry.deps !== null &&
-    entry.devDeps !== null &&
-    hiddenColumnsEqual(entry.hiddenColumnsSnapshot, hiddenColumns)
-  );
+    return (
+        entry.deps !== null &&
+        entry.devDeps !== null &&
+        hiddenColumnsEqual(entry.hiddenColumnsSnapshot, hiddenColumns)
+    );
 }
