@@ -28,7 +28,7 @@ type NpmRepository = {
 };
 
 /** npm's license field can be a string, `{ type }`, or (in old packages) an array of either. */
-type NpmLicenseField = string | { type?: string } | Array<string | { type?: string }>;
+export type NpmLicenseField = string | { type?: string } | Array<string | { type?: string }>;
 
 type NpmVersionData = {
     dependencies?: Record<string, string>;
@@ -75,7 +75,7 @@ type CodebergRepoData = {
 };
 
 /** A parsed `{ host, owner, repo }` reference to a source code repository. */
-type RepoSlug = {
+export type RepoSlug = {
     host: string;
     owner: string;
     repo: string;
@@ -131,7 +131,8 @@ const STAR_SUPPORTED_HOSTS = ["github.com", "gitlab.com", "codeberg.org"];
 // newly-needed) sub-fetches plus synchronous field mapping - so the real
 // deduplication work all happens at the sub-fetch level below.
 
-function memoizeAsync<T>(
+/** Caches in-flight/completed promises by key; a rejected promise is evicted so the next call retries. */
+export function memoizeAsync<T>(
     cache: Map<string, Promise<T>>,
     key: string,
     fn: () => Promise<T>,
@@ -528,7 +529,13 @@ function extractRepoSlug(npmData: NpmRegistryData | null): RepoSlug | null {
     return parseRepoSlug(raw);
 }
 
-function parseRepoSlug(raw: string): RepoSlug | null {
+/**
+ * Parses a `{ host, owner, repo }` slug out of a raw git URL/shorthand, for
+ * any of the hosts we can pull a star count from (GitHub, GitLab, Codeberg).
+ * Handles git+https://, git://, ssh://git@, git@host:owner/repo (scp-like),
+ * and the shorthand github:owner/repo.
+ */
+export function parseRepoSlug(raw: string): RepoSlug | null {
     if (!raw) return null;
     const normalised = raw
         .replace(/^git\+/, "")
@@ -548,7 +555,7 @@ function parseRepoSlug(raw: string): RepoSlug | null {
     return null;
 }
 
-function normaliseRepoUrl(raw: string | undefined): string | null {
+export function normaliseRepoUrl(raw: string | undefined): string | null {
     if (!raw) return null;
     return raw
         .replace(/^git\+/, "")
@@ -561,7 +568,7 @@ function normaliseRepoUrl(raw: string | undefined): string | null {
  * Normalises npm's license field, which can be an SPDX string, a legacy
  * `{ type }` object, or (in very old packages) an array of either.
  */
-function extractLicense(value: NpmLicenseField | undefined): string | null {
+export function extractLicense(value: NpmLicenseField | undefined): string | null {
     if (!value) return null;
     if (typeof value === "string") return value;
     if (Array.isArray(value)) {

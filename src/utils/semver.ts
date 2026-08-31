@@ -1,12 +1,14 @@
-type SemverTuple = [number, number, number];
+export type SemverTuple = [number, number, number];
 
-function parseLeadingSemver(raw: string): SemverTuple | null {
+/** Extracts the leading `major.minor.patch` from a version or range string. */
+export function parseLeadingSemver(raw: string): SemverTuple | null {
     const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
     if (!match) return null;
     return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
-function compareSemver(a: SemverTuple, b: SemverTuple): number {
+/** Compares two parsed semver tuples: negative if `a` < `b`, positive if `a` > `b`, 0 if equal. */
+export function compareSemver(a: SemverTuple, b: SemverTuple): number {
     for (let i = 0; i < 3; i++) {
         if (a[i] !== b[i]) return a[i] - b[i];
     }

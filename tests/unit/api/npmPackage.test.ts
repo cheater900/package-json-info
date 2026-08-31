@@ -4,6 +4,10 @@ import {
     fetchPackagesInfo,
     fetchPackageJsonForVersion,
     clearPackageInfoCache,
+    parseRepoSlug,
+    normaliseRepoUrl,
+    extractLicense,
+    memoizeAsync,
 } from "../../../src/utils/npmPackage";
 
 function jsonResponse(body: unknown, ok = true) {
@@ -733,5 +737,181 @@ describe("fetchPackagesInfo", () => {
         );
 
         expect(onProgress).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("parseRepoSlug", () => {
+    it("parses a plain https GitHub URL", () => {
+        expect(parseRepoSlug("https://github.com/owner/repo")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("parses a git+https URL with a .git suffix", () => {
+        expect(parseRepoSlug("git+https://github.com/owner/repo.git")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("parses a git:// protocol URL", () => {
+        expect(parseRepoSlug("git://github.com/owner/repo.git")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("parses an ssh://git@ URL", () => {
+        expect(parseRepoSlug("ssh://git@github.com/owner/repo.git")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("parses an scp-like git@host:owner/repo URL", () => {
+        expect(parseRepoSlug("git@github.com:owner/repo.git")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("parses the github: shorthand", () => {
+        expect(parseRepoSlug("github:owner/repo")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("parses GitLab and Codeberg URLs", () => {
+        expect(parseRepoSlug("https://gitlab.com/owner/repo")).toEqual({
+            host: "gitlab.com",
+            owner: "owner",
+            repo: "repo",
+        });
+        expect(parseRepoSlug("https://codeberg.org/owner/repo")).toEqual({
+            host: "codeberg.org",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+
+    it("returns null for an empty string or an unsupported host", () => {
+        expect(parseRepoSlug("")).toBeNull();
+        expect(parseRepoSlug("https://bitbucket.org/owner/repo")).toBeNull();
+    });
+});
+
+describe("normaliseRepoUrl", () => {
+    it("returns null for a missing URL", () => {
+        expect(normaliseRepoUrl(undefined)).toBeNull();
+        expect(normaliseRepoUrl("")).toBeNull();
+    });
+
+    it("strips the git+ prefix and .git suffix", () => {
+        expect(normaliseRepoUrl("git+https://example.com/owner/repo.git")).toBe(
+            "https://example.com/owner/repo",
+        );
+    });
+
+    it("rewrites git:// and ssh://git@ to https://", () => {
+        expect(normaliseRepoUrl("git://example.com/owner/repo")).toBe(
+            "https://example.com/owner/repo",
+        );
+        expect(normaliseRepoUrl("ssh://git@example.com/owner/repo")).toBe(
+            "https://example.com/owner/repo",
+        );
+    });
+
+    it("leaves an already-https URL untouched", () => {
+        expect(normaliseRepoUrl("https://example.com/owner/repo")).toBe(
+            "https://example.com/owner/repo",
+        );
+    });
+});
+
+describe("extractLicense", () => {
+    it("returns null for a missing value", () => {
+        expect(extractLicense(undefined)).toBeNull();
+    });
+
+    it("passes through a plain SPDX string", () => {
+        expect(extractLicense("MIT")).toBe("MIT");
+    });
+
+    it("reads the legacy { type } object shape", () => {
+        expect(extractLicense({ type: "MIT" })).toBe("MIT");
+    });
+
+    it("returns null for a { type } object with no type", () => {
+        expect(extractLicense({})).toBeNull();
+    });
+
+    it("joins an array of licenses with OR", () => {
+        expect(extractLicense(["MIT", { type: "Apache-2.0" }])).toBe("MIT OR Apache-2.0");
+    });
+
+    it("returns null for an array with no resolvable entries", () => {
+        expect(extractLicense([{}, {}])).toBeNull();
+    });
+});
+
+describe("memoizeAsync", () => {
+    it("caches a resolved value under its key, calling fn only once", async () => {
+        const cache = new Map<string, Promise<number>>();
+        const fn = vi.fn(async () => 42);
+
+        const first = await memoizeAsync(cache, "key", fn);
+        const second = await memoizeAsync(cache, "key", fn);
+
+        expect(first).toBe(42);
+        expect(second).toBe(42);
+        expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("coalesces concurrent calls for the same key into a single fn invocation", async () => {
+        const cache = new Map<string, Promise<number>>();
+        let resolveFn: (value: number) => void;
+        const fn = vi.fn(
+            () =>
+                new Promise<number>((resolve) => {
+                    resolveFn = resolve;
+                }),
+        );
+
+        const first = memoizeAsync(cache, "key", fn);
+        const second = memoizeAsync(cache, "key", fn);
+        resolveFn!(7);
+
+        expect(await first).toBe(7);
+        expect(await second).toBe(7);
+        expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not share the cache across different keys", async () => {
+        const cache = new Map<string, Promise<number>>();
+        const fn = vi.fn(async () => 1);
+
+        await memoizeAsync(cache, "a", fn);
+        await memoizeAsync(cache, "b", fn);
+
+        expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it("evicts a failed lookup so the next call for the same key retries", async () => {
+        const cache = new Map<string, Promise<number>>();
+        const fn = vi.fn().mockRejectedValueOnce(new Error("fail")).mockResolvedValueOnce(9);
+
+        await expect(memoizeAsync(cache, "key", fn)).rejects.toThrow("fail");
+        const result = await memoizeAsync(cache, "key", fn);
+
+        expect(result).toBe(9);
+        expect(fn).toHaveBeenCalledTimes(2);
     });
 });
