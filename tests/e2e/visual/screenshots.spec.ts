@@ -44,3 +44,10 @@ test("narrow viewport - default view at mobile width", async ({ page }) => {
     await page.goto("/");
     await page.screenshot({ path: "screenshots/04-narrow-viewport.png", fullPage: true });
 });
+
+test("package.json viewer expanded - vue-json-pretty tree view", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("details.accordion").last().locator("summary").click();
+    await page.getByText('"dependencies"').waitFor();
+    await page.screenshot({ path: "screenshots/05-json-viewer.png", fullPage: true });
+});

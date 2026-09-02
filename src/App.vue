@@ -70,9 +70,10 @@
                 @load-package="onLoadPackage"
             />
         </details>
-        <div>
-            <pre>{{ packageJsonContent }}</pre>
-        </div>
+        <details class="accordion">
+            <summary>package.json</summary>
+            <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
+        </details>
     </div>
 </template>
 <script lang="ts" setup>
@@ -89,9 +90,10 @@ import {
 } from "./utils/packageJsonHistory.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
+import VueJsonPretty from "vue-json-pretty";
+import "vue-json-pretty/lib/styles.css";
 import packageJson from "../package.json";
 
-const packageJsonContent = ref("");
 const pkg = ref(null);
 
 const loadError = ref(null);
@@ -184,7 +186,6 @@ function applyCurrentHistoryEntry() {
     const entry = history.value[historyIndex.value];
     if (!entry) return;
 
-    packageJsonContent.value = entry.content;
     pkg.value = entry.pkg;
 
     if (isEntryCacheValid(entry, hiddenColumns.value)) {
