@@ -189,6 +189,26 @@ test("the URL input fetches a plain URL directly when its host isn't a supported
     await expect(page.getByRole("cell", { name: "remote-dep", exact: true })).toBeVisible();
 });
 
+test("the URL input stays in sync with the ?inputUrl= query param", async ({ page }) => {
+    // Loading with the param already set pre-fills the input.
+    await page.goto("/?inputUrl=https%3A%2F%2Fexample.com%2Fpackage.json");
+    const urlInputField = page.getByLabel(
+        "Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL",
+    );
+    await expect(urlInputField).toHaveValue("https://example.com/package.json");
+
+    // Typing into it updates the query param (via replaceState, so this
+    // doesn't push a new browser history entry for every keystroke).
+    await urlInputField.fill("https://example.com/other.json");
+    await expect
+        .poll(() => page.evaluate(() => window.location.search))
+        .toBe("?inputUrl=https%3A%2F%2Fexample.com%2Fother.json");
+
+    // Clearing it removes the param entirely rather than leaving it empty.
+    await urlInputField.fill("");
+    await expect.poll(() => page.evaluate(() => window.location.search)).toBe("");
+});
+
 test("the paste-from-clipboard button reads the clipboard and replaces the table", async ({
     page,
     context,

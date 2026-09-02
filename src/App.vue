@@ -88,6 +88,7 @@ import {
     canGoForward as canGoForwardPure,
     isEntryCacheValid,
 } from "./utils/packageJsonHistory.ts";
+import { readInputUrlParam, withInputUrlParam } from "./utils/urlInputSync.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import VueJsonPretty from "vue-json-pretty";
@@ -101,8 +102,17 @@ const isLoadingInput = ref(false);
 const isLoadingDeps = ref(false);
 const isLoadingDevDeps = ref(false);
 
-const urlInput = ref("");
+// Kept in sync with the ?inputUrl= query param: read on load, written back
+// (via replaceState, so typing doesn't spam browser history) on every
+// change. Lets the URL-fetch input's text be shared/bookmarked/reloaded.
+const urlInput = ref(readInputUrlParam(window.location.search));
 const fileInputRef = ref(null);
+
+watch(urlInput, (value) => {
+    const search = withInputUrlParam(window.location.search, value);
+    const url = `${window.location.pathname}${search}${window.location.hash}`;
+    window.history.replaceState(null, "", url);
+});
 
 const deps = ref([]);
 const devDeps = ref([]);
