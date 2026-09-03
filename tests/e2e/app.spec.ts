@@ -613,3 +613,28 @@ test("the column visibility panel hides/shows columns and never drops below the 
     await expect(depsTable.getByRole("columnheader", { name: "Load" })).toBeVisible();
     await expect(depsTable.locator("thead th")).toHaveCount(3);
 });
+
+test("column visibility preferences persist in localStorage across a page reload", async ({
+    page,
+}) => {
+    await page.goto("/");
+    await expandAllSections(page);
+    const depsTable = page.locator("table.deps").first();
+
+    await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible();
+    await expect(depsTable.getByRole("columnheader", { name: "Maintainers" })).toHaveCount(0);
+
+    // Flip both: hide a default-visible column, show a default-hidden one.
+    await page.getByLabel("License", { exact: true }).uncheck();
+    await page.getByLabel("Maintainers", { exact: true }).check();
+    await expect(depsTable.getByRole("columnheader", { name: "License" })).toHaveCount(0);
+    await expect(depsTable.getByRole("columnheader", { name: "Maintainers" })).toBeVisible();
+
+    await page.reload();
+    await expandAllSections(page);
+
+    await expect(depsTable.getByRole("columnheader", { name: "License" })).toHaveCount(0);
+    await expect(depsTable.getByRole("columnheader", { name: "Maintainers" })).toBeVisible();
+    expect(await page.getByLabel("License", { exact: true }).isChecked()).toBe(false);
+    expect(await page.getByLabel("Maintainers", { exact: true }).isChecked()).toBe(true);
+});

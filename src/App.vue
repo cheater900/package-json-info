@@ -80,7 +80,7 @@
 import { ref, computed, watch } from "vue";
 import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "./utils/repoPackageJson.ts";
-import { toggleColumnVisibility, DEFAULT_HIDDEN_COLUMNS } from "./utils/tableColumns.ts";
+import { toggleColumnVisibility } from "./utils/tableColumns.ts";
 import {
     createHistoryEntry,
     pushHistoryEntry,
@@ -89,6 +89,7 @@ import {
     isEntryCacheValid,
 } from "./utils/packageJsonHistory.ts";
 import { readInputUrlParam, withInputUrlParam } from "./utils/urlInputSync.ts";
+import { loadHiddenColumns, saveHiddenColumns } from "./utils/columnPreferencesStorage.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import VueJsonPretty from "vue-json-pretty";
@@ -117,7 +118,17 @@ watch(urlInput, (value) => {
 const deps = ref([]);
 const devDeps = ref([]);
 
-const hiddenColumns = ref(new Set(DEFAULT_HIDDEN_COLUMNS));
+// Persisted to localStorage on every change, so column visibility survives
+// a page reload.
+const hiddenColumns = ref(loadHiddenColumns());
+
+watch(
+    hiddenColumns,
+    (value) => {
+        saveHiddenColumns(value);
+    },
+    { deep: true },
+);
 
 // Each loaded package.json becomes a history entry, caching its own
 // fetched deps/devDeps. Navigating back/forward restores an entry's cached
