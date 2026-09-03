@@ -30,29 +30,34 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
 
 /**
  * Columns that can never be hidden: Name (identity) and the drill-down
- * "load this package's table" action, which needs to stay reachable.
+ * "load this package's table" action, which needs to stay reachable. Not
+ * tracked in a visibleColumns set at all - isColumnVisible treats them as
+ * visible unconditionally.
  */
 const ALWAYS_VISIBLE_COLUMNS = new Set(["name", "loadAction"]);
 
-/** Every column except the always-visible ones above can be hidden. */
+/** Every column except the always-visible ones above can be toggled. */
 export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter(
     (c) => !ALWAYS_VISIBLE_COLUMNS.has(c.key),
 );
 
 /**
- * Columns hidden by default.
- *
- * vulnerabilityCount and bundleSizeGzip depend on genuinely third-party
- * services (OSV, Bundlephobia) rather than the npm registry or a
- * repository host, so they start opt-in rather than firing on every load.
+ * Toggleable columns kept hidden until the user opts in: vulnerabilityCount
+ * and bundleSizeGzip depend on genuinely third-party services (OSV,
+ * Bundlephobia) rather than the npm registry or a repository host, and
  * maintainers is hidden simply to keep the table's default view narrower -
  * its data still comes from the npm registry like most other columns.
  */
-export const DEFAULT_HIDDEN_COLUMNS: ReadonlySet<string> = new Set([
+const INITIALLY_HIDDEN_COLUMN_KEYS = new Set([
     "vulnerabilityCount",
     "bundleSizeGzip",
     "maintainers",
 ]);
+
+/** Toggleable columns visible by default - every other toggleable column. */
+export const DEFAULT_VISIBLE_COLUMNS: ReadonlySet<string> = new Set(
+    TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !INITIALLY_HIDDEN_COLUMN_KEYS.has(key)),
+);
 
 /**
  * At least this many columns must stay visible at all times: the
@@ -62,39 +67,52 @@ export const DEFAULT_HIDDEN_COLUMNS: ReadonlySet<string> = new Set([
  */
 export const MIN_VISIBLE_COLUMNS = ALWAYS_VISIBLE_COLUMNS.size + 1;
 
-export function isColumnVisible(hiddenColumns: ReadonlySet<string>, key: string): boolean {
-    return ALWAYS_VISIBLE_COLUMNS.has(key) || !hiddenColumns.has(key);
+export function isColumnVisible(visibleColumns: ReadonlySet<string>, key: string): boolean {
+    return ALWAYS_VISIBLE_COLUMNS.has(key) || visibleColumns.has(key);
+}
+
+/**
+ * True if `visibleColumns` (the currently-shown toggleable column keys)
+ * still meets MIN_VISIBLE_COLUMNS once the always-visible columns are
+ * counted in alongside it.
+ */
+export function meetsMinVisible(visibleColumns: ReadonlySet<string>): boolean {
+    return ALWAYS_VISIBLE_COLUMNS.size + visibleColumns.size >= MIN_VISIBLE_COLUMNS;
 }
 
 /**
  * True if `key` is currently visible and hiding it would drop the total
- * visible column count below MIN_VISIBLE_COLUMNS. Already-hidden columns
- * never violate the minimum (showing a column can only ever increase the
+ * visible column count below MIN_VISIBLE_COLUMNS. A column that's already
+ * hidden never violates the minimum (showing it can only increase the
  * visible count).
  */
-export function wouldViolateMinVisible(hiddenColumns: ReadonlySet<string>, key: string): boolean {
+export function wouldViolateMinVisible(visibleColumns: ReadonlySet<string>, key: string): boolean {
     if (ALWAYS_VISIBLE_COLUMNS.has(key)) return false;
-    if (hiddenColumns.has(key)) return false;
-    const visibleCountAfterHiding = DEPENDENCY_TABLE_COLUMNS.length - hiddenColumns.size - 1;
-    return visibleCountAfterHiding < MIN_VISIBLE_COLUMNS;
+    if (!visibleColumns.has(key)) return false;
+    const next = new Set(visibleColumns);
+    next.delete(key);
+    return !meetsMinVisible(next);
 }
 
 /**
- * Returns a new hidden-columns set with `key` toggled. Always-visible
- * columns can never be hidden, and a toggle that would violate
+ * Returns a new visible-columns set with `key` toggled. Always-visible
+ * columns are never added or removed (they're implicitly visible
+ * regardless of set membership), and hiding a column that would violate
  * MIN_VISIBLE_COLUMNS is ignored (the returned set is unchanged, same
  * reference-inequality contract as a normal toggle so callers can always
  * just reassign).
  */
 export function toggleColumnVisibility(
-    hiddenColumns: ReadonlySet<string>,
+    visibleColumns: ReadonlySet<string>,
     key: string,
 ): Set<string> {
-    const next = new Set(hiddenColumns);
+    const next = new Set(visibleColumns);
     if (ALWAYS_VISIBLE_COLUMNS.has(key)) return next;
     if (next.has(key)) {
-        next.delete(key);
-    } else if (!wouldViolateMinVisible(hiddenColumns, key)) {
+        if (!wouldViolateMinVisible(visibleColumns, key)) {
+            next.delete(key);
+        }
+    } else {
         next.add(key);
     }
     return next;

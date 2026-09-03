@@ -1,19 +1,19 @@
 /**
  * One visited package.json state. `deps`/`devDeps` start out null (not yet
- * fetched); once fetched they're cached here, tagged with the hiddenColumns
- * set that was active at fetch time, so a later revisit can tell whether
- * the cached data still covers every currently-visible column.
+ * fetched); once fetched they're cached here, tagged with the
+ * visibleColumns set that was active at fetch time, so a later revisit can
+ * tell whether the cached data still covers every currently-visible column.
  */
 export type HistoryEntry = {
     content: string;
     pkg: Record<string, unknown>;
     deps: unknown[] | null;
     devDeps: unknown[] | null;
-    hiddenColumnsSnapshot: ReadonlySet<string> | null;
+    visibleColumnsSnapshot: ReadonlySet<string> | null;
 };
 
 export function createHistoryEntry(content: string, pkg: Record<string, unknown>): HistoryEntry {
-    return { content, pkg, deps: null, devDeps: null, hiddenColumnsSnapshot: null };
+    return { content, pkg, deps: null, devDeps: null, visibleColumnsSnapshot: null };
 }
 
 /**
@@ -39,8 +39,8 @@ export function canGoForward(history: HistoryEntry[], index: number): boolean {
     return index < history.length - 1;
 }
 
-/** True if two hidden-column sets have exactly the same members. */
-export function hiddenColumnsEqual(
+/** True if two visible-column sets have exactly the same members. */
+export function visibleColumnsEqual(
     a: ReadonlySet<string> | null,
     b: ReadonlySet<string> | null,
 ): boolean {
@@ -54,7 +54,7 @@ export function hiddenColumnsEqual(
 
 /**
  * True if a history entry's cached deps/devDeps are still good for the
- * given hiddenColumns - i.e. they were already fetched, under the same
+ * given visibleColumns - i.e. they were already fetched, under the same
  * column visibility that's active now - so navigating to this entry needs
  * no fetch at all. False for a never-fetched entry, or one fetched under a
  * different column set (some currently-visible column's data might be
@@ -62,11 +62,11 @@ export function hiddenColumnsEqual(
  */
 export function isEntryCacheValid(
     entry: HistoryEntry,
-    hiddenColumns: ReadonlySet<string>,
+    visibleColumns: ReadonlySet<string>,
 ): boolean {
     return (
         entry.deps !== null &&
         entry.devDeps !== null &&
-        hiddenColumnsEqual(entry.hiddenColumnsSnapshot, hiddenColumns)
+        visibleColumnsEqual(entry.visibleColumnsSnapshot, visibleColumns)
     );
 }

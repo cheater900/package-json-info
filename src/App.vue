@@ -36,7 +36,7 @@
         <details class="accordion">
             <summary>Columns</summary>
             <column-visibility-panel
-                :hidden-columns="hiddenColumns"
+                :visible-columns="visibleColumns"
                 @toggle-column="onToggleColumn"
             />
         </details>
@@ -54,7 +54,7 @@
             </summary>
             <dependencies-table
                 :dependencies="deps"
-                :hidden-columns="hiddenColumns"
+                :visible-columns="visibleColumns"
                 @load-package="onLoadPackage"
             />
         </details>
@@ -66,7 +66,7 @@
             </summary>
             <dependencies-table
                 :dependencies="devDeps"
-                :hidden-columns="hiddenColumns"
+                :visible-columns="visibleColumns"
                 @load-package="onLoadPackage"
             />
         </details>
@@ -89,7 +89,7 @@ import {
     isEntryCacheValid,
 } from "./utils/packageJsonHistory.ts";
 import { readInputUrlParam, withInputUrlParam } from "./utils/urlInputSync.ts";
-import { loadHiddenColumns, saveHiddenColumns } from "./utils/columnPreferencesStorage.ts";
+import { loadVisibleColumns, saveVisibleColumns } from "./utils/columnPreferencesStorage.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import VueJsonPretty from "vue-json-pretty";
@@ -120,12 +120,12 @@ const devDeps = ref([]);
 
 // Persisted to localStorage on every change, so column visibility survives
 // a page reload.
-const hiddenColumns = ref(loadHiddenColumns());
+const visibleColumns = ref(loadVisibleColumns());
 
 watch(
-    hiddenColumns,
+    visibleColumns,
     (value) => {
-        saveHiddenColumns(value);
+        saveVisibleColumns(value);
     },
     { deep: true },
 );
@@ -133,7 +133,7 @@ watch(
 // Each loaded package.json becomes a history entry, caching its own
 // fetched deps/devDeps. Navigating back/forward restores an entry's cached
 // data directly (no request) when it's still valid for the current
-// hiddenColumns; otherwise (never fetched, or fetched under a different
+// visibleColumns; otherwise (never fetched, or fetched under a different
 // column set) it fetches - but even then, npmPackage's own name/slug-level
 // caching means only genuinely new data triggers a request.
 const history = ref([]);
@@ -143,11 +143,11 @@ const canGoBack = computed(() => canGoBackPure(historyIndex.value));
 const canGoForward = computed(() => canGoForwardPure(history.value, historyIndex.value));
 
 function onToggleColumn(key) {
-    hiddenColumns.value = toggleColumnVisibility(hiddenColumns.value, key);
+    visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);
 }
 
 watch(
-    hiddenColumns,
+    visibleColumns,
     () => {
         applyCurrentHistoryEntry();
     },
@@ -209,7 +209,7 @@ function applyCurrentHistoryEntry() {
 
     pkg.value = entry.pkg;
 
-    if (isEntryCacheValid(entry, hiddenColumns.value)) {
+    if (isEntryCacheValid(entry, visibleColumns.value)) {
         deps.value = entry.deps;
         devDeps.value = entry.devDeps;
         isLoadingDeps.value = false;
@@ -221,7 +221,7 @@ function applyCurrentHistoryEntry() {
 }
 
 /**
- * Fetches (or re-fetches, if hiddenColumns has changed) an entry's
+ * Fetches (or re-fetches, if visibleColumns has changed) an entry's
  * deps/devDeps, caches the result on the entry itself, and - only if the
  * user hasn't navigated elsewhere in the meantime - applies it to the
  * visible state.
@@ -229,7 +229,7 @@ function applyCurrentHistoryEntry() {
 async function fetchEntryDependencies(entry, index) {
     const rawDeps = toPackageInputs(entry.pkg?.dependencies);
     const rawDevDeps = toPackageInputs(entry.pkg?.devDependencies);
-    const hiddenColumnsAtFetchTime = new Set(hiddenColumns.value);
+    const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
 
     if (historyIndex.value === index) {
         isLoadingDeps.value = rawDeps.length > 0;
@@ -238,16 +238,16 @@ async function fetchEntryDependencies(entry, index) {
 
     const [depsResult, devDepsResult] = await Promise.all([
         rawDeps.length > 0
-            ? fetchPackagesInfo(rawDeps, { hiddenColumns: hiddenColumnsAtFetchTime })
+            ? fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime })
             : Promise.resolve([]),
         rawDevDeps.length > 0
-            ? fetchPackagesInfo(rawDevDeps, { hiddenColumns: hiddenColumnsAtFetchTime })
+            ? fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime })
             : Promise.resolve([]),
     ]);
 
     entry.deps = depsResult;
     entry.devDeps = devDepsResult;
-    entry.hiddenColumnsSnapshot = hiddenColumnsAtFetchTime;
+    entry.visibleColumnsSnapshot = visibleColumnsAtFetchTime;
 
     if (historyIndex.value === index) {
         deps.value = depsResult;

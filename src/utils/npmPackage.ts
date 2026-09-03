@@ -1,18 +1,22 @@
 import type { PackageInfo, PackageInput, PackageError } from "../types";
 import { isVersionOutdated } from "./semver";
-import { isColumnVisible } from "./tableColumns";
+import { isColumnVisible, TOGGLEABLE_COLUMNS } from "./tableColumns";
 
 // ── Internal npm / GitHub response shapes ────────────────────────────────────
+
+/** "Everything visible" - the default when a caller doesn't specify visibleColumns. */
+const ALL_TOGGLEABLE_COLUMN_KEYS = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
 
 export type FetchPackageOptions = {
     githubToken?: string;
     /**
-     * Columns currently hidden in the UI. Any network call that exists only
-     * to back a hidden column is skipped entirely (see the column-gating
-     * notes near NPM_DATA_DEPENDENT_COLUMNS below). Omit to fetch everything
-     * (equivalent to an empty set - nothing hidden).
+     * Columns currently visible in the UI. Any network call that exists
+     * only to back a column that isn't in this set is skipped entirely
+     * (see the column-gating notes near NPM_DATA_DEPENDENT_COLUMNS below).
+     * Omit to fetch everything (equivalent to a set of every toggleable
+     * column key - nothing hidden).
      */
-    hiddenColumns?: ReadonlySet<string>;
+    visibleColumns?: ReadonlySet<string>;
 };
 
 export type FetchPackagesOptions = FetchPackageOptions & {
@@ -203,28 +207,28 @@ const NPM_DATA_DEPENDENT_COLUMNS = [
 /** Columns backed by the stars/PR/issue-count lookup against the repo host. */
 const REPO_METADATA_COLUMNS = ["gitStars", "openPRs", "closedPRs", "openIssues", "closedIssues"];
 
-function anyColumnVisible(hiddenColumns: ReadonlySet<string>, keys: string[]): boolean {
-    return keys.some((key) => isColumnVisible(hiddenColumns, key));
+function anyColumnVisible(visibleColumns: ReadonlySet<string>, keys: string[]): boolean {
+    return keys.some((key) => isColumnVisible(visibleColumns, key));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
  * Fetches enriched metadata for a single npm package, skipping any network
- * call that exists only to back a currently-hidden column, and reusing
- * in-flight or already-completed requests wherever the underlying data is
- * shared with another package (see the caching notes above).
+ * call that exists only to back a column that isn't currently visible, and
+ * reusing in-flight or already-completed requests wherever the underlying
+ * data is shared with another package (see the caching notes above).
  *
  * @param name    - The npm package name (e.g. "lodash")
  * @param version - The version you currently use (e.g. "4.17.21")
- * @param options - Optional config: GitHub token, hidden columns
+ * @param options - Optional config: GitHub token, visible columns
  */
 export async function fetchPackageInfo(
     name: string,
     version: string,
     options: FetchPackageOptions = {},
 ): Promise<PackageInfo> {
-    const { githubToken, hiddenColumns = new Set<string>() } = options;
+    const { githubToken, visibleColumns = ALL_TOGGLEABLE_COLUMN_KEYS } = options;
 
     const githubHeaders: Record<string, string> = {
         Accept: "application/vnd.github+json",
@@ -235,10 +239,10 @@ export async function fetchPackageInfo(
 
     // ── 1. NPM registry + weekly downloads + advisories + bundle size (parallel) ─
 
-    const needsRegistryData = anyColumnVisible(hiddenColumns, NPM_DATA_DEPENDENT_COLUMNS);
-    const needsDownloads = isColumnVisible(hiddenColumns, "weeklyDownloads");
-    const needsVulnerabilityCount = isColumnVisible(hiddenColumns, "vulnerabilityCount");
-    const needsBundleSize = isColumnVisible(hiddenColumns, "bundleSizeGzip");
+    const needsRegistryData = anyColumnVisible(visibleColumns, NPM_DATA_DEPENDENT_COLUMNS);
+    const needsDownloads = isColumnVisible(visibleColumns, "weeklyDownloads");
+    const needsVulnerabilityCount = isColumnVisible(visibleColumns, "vulnerabilityCount");
+    const needsBundleSize = isColumnVisible(visibleColumns, "bundleSizeGzip");
 
     const [npmData, downloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
         needsRegistryData ? fetchRegistryData(name) : Promise.resolve(null),
@@ -279,7 +283,7 @@ export async function fetchPackageInfo(
     // ── 3. Stars (any supported host) + GitHub-only PR/issue counts ────────────
 
     const repoMetadata =
-        slug != null && anyColumnVisible(hiddenColumns, REPO_METADATA_COLUMNS)
+        slug != null && anyColumnVisible(visibleColumns, REPO_METADATA_COLUMNS)
             ? await fetchRepoMetadata(slug, githubHeaders)
             : EMPTY_REPO_METADATA;
 

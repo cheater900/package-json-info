@@ -4,19 +4,19 @@ import {
     pushHistoryEntry,
     canGoBack,
     canGoForward,
-    hiddenColumnsEqual,
+    visibleColumnsEqual,
     isEntryCacheValid,
 } from "../../../src/utils/packageJsonHistory";
 
 describe("createHistoryEntry", () => {
-    it("starts with unfetched deps/devDeps and no hiddenColumns snapshot", () => {
+    it("starts with unfetched deps/devDeps and no visibleColumns snapshot", () => {
         const entry = createHistoryEntry("{}", { name: "demo" });
         expect(entry).toEqual({
             content: "{}",
             pkg: { name: "demo" },
             deps: null,
             devDeps: null,
-            hiddenColumnsSnapshot: null,
+            visibleColumnsSnapshot: null,
         });
     });
 });
@@ -74,23 +74,23 @@ describe("canGoBack / canGoForward", () => {
     });
 });
 
-describe("hiddenColumnsEqual", () => {
+describe("visibleColumnsEqual", () => {
     it("is true for two sets with the same members, regardless of insertion order", () => {
-        expect(hiddenColumnsEqual(new Set(["a", "b"]), new Set(["b", "a"]))).toBe(true);
+        expect(visibleColumnsEqual(new Set(["a", "b"]), new Set(["b", "a"]))).toBe(true);
     });
 
     it("is false for sets of different sizes", () => {
-        expect(hiddenColumnsEqual(new Set(["a"]), new Set(["a", "b"]))).toBe(false);
+        expect(visibleColumnsEqual(new Set(["a"]), new Set(["a", "b"]))).toBe(false);
     });
 
     it("is false for same-size sets with different members", () => {
-        expect(hiddenColumnsEqual(new Set(["a"]), new Set(["b"]))).toBe(false);
+        expect(visibleColumnsEqual(new Set(["a"]), new Set(["b"]))).toBe(false);
     });
 
     it("is false if either side is null", () => {
-        expect(hiddenColumnsEqual(null, new Set())).toBe(false);
-        expect(hiddenColumnsEqual(new Set(), null)).toBe(false);
-        expect(hiddenColumnsEqual(null, null)).toBe(false);
+        expect(visibleColumnsEqual(null, new Set())).toBe(false);
+        expect(visibleColumnsEqual(new Set(), null)).toBe(false);
+        expect(visibleColumnsEqual(null, null)).toBe(false);
     });
 });
 
@@ -100,20 +100,20 @@ describe("isEntryCacheValid", () => {
         expect(isEntryCacheValid(entry, new Set())).toBe(false);
     });
 
-    it("is true once fetched under the exact same hiddenColumns", () => {
+    it("is true once fetched under the exact same visibleColumns", () => {
         const entry = createHistoryEntry("{}", {});
         entry.deps = [];
         entry.devDeps = [];
-        entry.hiddenColumnsSnapshot = new Set(["vulnerabilityCount"]);
+        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
 
         expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(true);
     });
 
-    it("is false when hiddenColumns has changed since the entry was fetched", () => {
+    it("is false when visibleColumns has changed since the entry was fetched", () => {
         const entry = createHistoryEntry("{}", {});
         entry.deps = [];
         entry.devDeps = [];
-        entry.hiddenColumnsSnapshot = new Set(["vulnerabilityCount"]);
+        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
 
         expect(isEntryCacheValid(entry, new Set())).toBe(false);
     });

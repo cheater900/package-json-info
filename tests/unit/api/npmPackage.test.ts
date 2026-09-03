@@ -9,6 +9,12 @@ import {
     extractLicense,
     memoizeAsync,
 } from "../../../src/utils/npmPackage";
+import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+
+/** Every toggleable column key except the given ones - i.e. "everything visible except these". */
+function visibleColumnsExcept(...excluded: string[]): Set<string> {
+    return new Set(TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !excluded.includes(key)));
+}
 
 function jsonResponse(body: unknown, ok = true) {
     return {
@@ -351,7 +357,7 @@ describe("fetchPackageInfo caching", () => {
 
         // Not the same object reference - each call composes its own result from
         // (cached) sub-fetches, since which fields get fetched can vary call to
-        // call depending on hiddenColumns - but no duplicate network request.
+        // call depending on visibleColumns - but no duplicate network request.
         expect(second).toEqual(first);
         expect(countCalls(fetchMock, "registry.npmjs.org/cached-pkg")).toBe(1);
     });
@@ -474,7 +480,7 @@ describe("fetchPackageInfo column gating", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         const info = await fetchPackageInfo("no-vuln-check", "1.0.0", {
-            hiddenColumns: new Set(["vulnerabilityCount"]),
+            visibleColumns: visibleColumnsExcept("vulnerabilityCount"),
         });
 
         expect(info.vulnerabilityCount).toBeNull();
@@ -490,7 +496,7 @@ describe("fetchPackageInfo column gating", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         const info = await fetchPackageInfo("no-bundle-check", "1.0.0", {
-            hiddenColumns: new Set(["bundleSizeGzip"]),
+            visibleColumns: visibleColumnsExcept("bundleSizeGzip"),
         });
 
         expect(info.bundleSizeGzip).toBeNull();
@@ -505,7 +511,7 @@ describe("fetchPackageInfo column gating", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         const info = await fetchPackageInfo("no-downloads-check", "1.0.0", {
-            hiddenColumns: new Set(["weeklyDownloads"]),
+            visibleColumns: visibleColumnsExcept("weeklyDownloads"),
         });
 
         expect(info.weeklyDownloads).toBeNull();
@@ -533,13 +539,13 @@ describe("fetchPackageInfo column gating", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         const info = await fetchPackageInfo("license-only", "1.0.0", {
-            hiddenColumns: new Set([
+            visibleColumns: visibleColumnsExcept(
                 "gitStars",
                 "openPRs",
                 "closedPRs",
                 "openIssues",
                 "closedIssues",
-            ]),
+            ),
         });
 
         expect(info.license).toBe("MIT");
@@ -559,7 +565,7 @@ describe("fetchPackageInfo column gating", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         const info = await fetchPackageInfo("registry-not-needed", "1.0.0", {
-            hiddenColumns: new Set([
+            visibleColumns: visibleColumnsExcept(
                 "versionDate",
                 "latestVersion",
                 "latestReleaseDate",
@@ -575,7 +581,7 @@ describe("fetchPackageInfo column gating", () => {
                 "closedPRs",
                 "openIssues",
                 "closedIssues",
-            ]),
+            ),
         });
 
         expect(info.sourceCode).toBeNull();
@@ -585,7 +591,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
     });
 
-    it("fetches everything when hiddenColumns is omitted, matching the pre-existing default behaviour", async () => {
+    it("fetches everything when visibleColumns is omitted, matching the pre-existing default behaviour", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/default-visible": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 1 },

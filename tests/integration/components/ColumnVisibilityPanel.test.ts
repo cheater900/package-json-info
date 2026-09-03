@@ -6,7 +6,7 @@ import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 describe("ColumnVisibilityPanel", () => {
     it("renders one checkbox per toggleable column, and none for Name", () => {
         const wrapper = mount(ColumnVisibilityPanel, {
-            props: { hiddenColumns: new Set() },
+            props: { visibleColumns: new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)) },
         });
 
         const checkboxes = wrapper.findAll('input[type="checkbox"]');
@@ -15,8 +15,11 @@ describe("ColumnVisibilityPanel", () => {
     });
 
     it("checks a column's box when it's visible, unchecks it when hidden", () => {
+        const visible = new Set(
+            TOGGLEABLE_COLUMNS.map((c) => c.key).filter((k) => k !== "license"),
+        );
         const wrapper = mount(ColumnVisibilityPanel, {
-            props: { hiddenColumns: new Set(["license"]) },
+            props: { visibleColumns: visible },
         });
 
         const labels = wrapper.findAll("label");
@@ -29,7 +32,7 @@ describe("ColumnVisibilityPanel", () => {
 
     it("emits toggle-column with the column key when a checkbox changes", async () => {
         const wrapper = mount(ColumnVisibilityPanel, {
-            props: { hiddenColumns: new Set() },
+            props: { visibleColumns: new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)) },
         });
 
         const licenseCheckbox = wrapper
@@ -43,9 +46,9 @@ describe("ColumnVisibilityPanel", () => {
     });
 
     it("disables the checkbox for the last remaining visible non-name column", () => {
-        const allButOne = new Set(TOGGLEABLE_COLUMNS.slice(1).map((c) => c.key));
+        const onlyOneVisible = new Set([TOGGLEABLE_COLUMNS[0].key]);
         const wrapper = mount(ColumnVisibilityPanel, {
-            props: { hiddenColumns: allButOne },
+            props: { visibleColumns: onlyOneVisible },
         });
 
         const lastVisibleLabel = TOGGLEABLE_COLUMNS[0].label;
@@ -58,8 +61,11 @@ describe("ColumnVisibilityPanel", () => {
     });
 
     it("does not disable checkboxes for already-hidden columns", () => {
+        const visible = new Set(
+            TOGGLEABLE_COLUMNS.map((c) => c.key).filter((k) => k !== "license"),
+        );
         const wrapper = mount(ColumnVisibilityPanel, {
-            props: { hiddenColumns: new Set(["license"]) },
+            props: { visibleColumns: visible },
         });
 
         const checkbox = wrapper

@@ -140,16 +140,16 @@
 <script lang="ts" setup>
 import { ref, computed, useId } from "vue";
 import { hasLicenseWarning } from "../utils/license";
-import { isColumnVisible } from "../utils/tableColumns";
+import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 
 const props = defineProps({
     dependencies: {
         type: Array,
         required: true,
     },
-    hiddenColumns: {
+    visibleColumns: {
         type: Set,
-        default: () => new Set(),
+        default: () => new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)),
     },
 });
 
@@ -165,7 +165,7 @@ const filteredDependencies = computed(() => {
 });
 
 function isVisible(key) {
-    return isColumnVisible(props.hiddenColumns, key);
+    return isColumnVisible(props.visibleColumns, key);
 }
 
 // Columns whose values are meaningful to sort by (excludes the source-code

@@ -4,8 +4,8 @@
         <label v-for="col in toggleableColumns" :key="col.key">
             <input
                 type="checkbox"
-                :checked="!hiddenColumns.has(col.key)"
-                :disabled="wouldViolateMinVisible(hiddenColumns, col.key)"
+                :checked="visibleColumns.has(col.key)"
+                :disabled="wouldViolateMinVisible(visibleColumns, col.key)"
                 @change="$emit('toggle-column', col.key)"
             />
             {{ col.label }}
@@ -17,7 +17,7 @@
 import { TOGGLEABLE_COLUMNS, wouldViolateMinVisible } from "../utils/tableColumns";
 
 defineProps({
-    hiddenColumns: {
+    visibleColumns: {
         type: Set,
         required: true,
     },

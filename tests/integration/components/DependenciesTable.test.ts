@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
+import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+
+/** Every toggleable column key except the given ones - i.e. "everything visible except these". */
+function visibleColumnsExcept(...excluded) {
+    return new Set(TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !excluded.includes(key)));
+}
 
 const fullDependency = {
     name: "left-pad",
@@ -152,9 +158,9 @@ describe("DependenciesTable load-as-input action", () => {
         expect(wrapper.emitted("load-package")).toEqual([[{ name: "left-pad", version: "1.2.0" }]]);
     });
 
-    it("stays visible even if 'loadAction' is passed in hiddenColumns", () => {
+    it("stays visible even with an empty visibleColumns set", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], hiddenColumns: new Set(["loadAction"]) },
+            props: { dependencies: [fullDependency], visibleColumns: new Set() },
         });
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
@@ -173,11 +179,11 @@ describe("DependenciesTable column visibility", () => {
         expect(headerTexts).toContain("Maintainers");
     });
 
-    it("hides a column named in hiddenColumns, from both the header and every row", () => {
+    it("hides a column not named in visibleColumns, from both the header and every row", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency, sparseDependency],
-                hiddenColumns: new Set(["license"]),
+                visibleColumns: visibleColumnsExcept("license"),
             },
         });
 
@@ -189,7 +195,7 @@ describe("DependenciesTable column visibility", () => {
 
     it("never hides the Name column even if asked to", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], hiddenColumns: new Set(["name"]) },
+            props: { dependencies: [fullDependency], visibleColumns: new Set() },
         });
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
@@ -201,7 +207,7 @@ describe("DependenciesTable column visibility", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency],
-                hiddenColumns: new Set(["license", "maintainers", "sourceCode"]),
+                visibleColumns: visibleColumnsExcept("license", "maintainers", "sourceCode"),
             },
         });
 
