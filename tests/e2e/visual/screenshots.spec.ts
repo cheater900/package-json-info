@@ -51,3 +51,30 @@ test("package.json viewer expanded - vue-json-pretty tree view", async ({ page }
     await page.getByText('"dependencies"').waitFor();
     await page.screenshot({ path: "screenshots/05-json-viewer.png", fullPage: true });
 });
+
+async function openColumnsPanel(page) {
+    await page.goto("/");
+    await page.locator("summary", { hasText: "Columns" }).click();
+    await page.locator(".column-visibility-panel").waitFor();
+}
+
+test("columns panel - normal width, single grid", async ({ page }) => {
+    await page.setViewportSize({ width: 600, height: 900 });
+    await openColumnsPanel(page);
+    await page.screenshot({ path: "screenshots/06-columns-panel-normal.png", fullPage: true });
+});
+
+test("columns panel - mid-size desktop, two grids", async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 900 });
+    await openColumnsPanel(page);
+    await page.screenshot({ path: "screenshots/07-columns-panel-mid-desktop.png", fullPage: true });
+});
+
+test("columns panel - large desktop, three grids", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await openColumnsPanel(page);
+    await page.screenshot({
+        path: "screenshots/08-columns-panel-large-desktop.png",
+        fullPage: true,
+    });
+});

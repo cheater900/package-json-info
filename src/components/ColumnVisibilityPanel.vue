@@ -31,6 +31,22 @@ const toggleableColumns = TOGGLEABLE_COLUMNS;
 <style>
 .column-visibility-panel {
     margin-bottom: 16px;
+    column-count: 1;
+    column-gap: 24px;
+}
+
+/* Mid-size desktop: two columns of roughly equal item count/height. */
+@media (min-width: 700px) {
+    .column-visibility-panel {
+        column-count: 2;
+    }
+}
+
+/* Large desktop: three columns of roughly equal item count/height. */
+@media (min-width: 1000px) {
+    .column-visibility-panel {
+        column-count: 3;
+    }
 }
 
 .column-visibility-panel label {
@@ -38,6 +54,7 @@ const toggleableColumns = TOGGLEABLE_COLUMNS;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
+    break-inside: avoid;
 }
 
 .visually-hidden {
