@@ -660,7 +660,7 @@ test("a column order preference seeded in localStorage is reflected in the rende
     const depsTable = page.locator("table.deps").first();
 
     const headerTexts = (await depsTable.locator("thead th").allTextContents()).map((t) =>
-        t.trim(),
+        t.replace(/[\s▲▼]+$/, "").trim(),
     );
     const expectedLabels = [
         "Name",

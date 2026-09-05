@@ -19,22 +19,72 @@
             >
                 <template #header>
                     <th>
-                        <button type="button" @click="toggleSort('name')">
-                            Name{{ sortIndicator("name") }}
-                        </button>
+                        <span class="th-inner">
+                            <button type="button" class="sort-trigger" @click="toggleSort('name')">
+                                <span class="col-label">Name</span>
+                                <span class="sort-icons" aria-hidden="true">
+                                    <span
+                                        class="sort-arrow"
+                                        :class="{
+                                            'sort-arrow-active': sortDirectionFor('name') === 'asc',
+                                        }"
+                                    >
+                                        ▲
+                                    </span>
+                                    <span
+                                        class="sort-arrow"
+                                        :class="{
+                                            'sort-arrow-active':
+                                                sortDirectionFor('name') === 'desc',
+                                        }"
+                                    >
+                                        ▼
+                                    </span>
+                                </span>
+                            </button>
+                        </span>
                     </th>
                 </template>
                 <template #item="{ element: col }">
                     <th>
-                        <span class="col-drag-handle" aria-hidden="true"></span>
-                        <button v-if="col.sortable" type="button" @click="toggleSort(col.key)">
-                            {{ col.label }}{{ sortIndicator(col.key) }}
-                        </button>
-                        <span v-else>{{ col.label }}</span>
+                        <span class="th-inner">
+                            <span class="col-drag-handle" aria-hidden="true"></span>
+                            <button
+                                v-if="col.sortable"
+                                type="button"
+                                class="sort-trigger"
+                                @click="toggleSort(col.key)"
+                            >
+                                <span class="col-label">{{ col.label }}</span>
+                                <span class="sort-icons" aria-hidden="true">
+                                    <span
+                                        class="sort-arrow"
+                                        :class="{
+                                            'sort-arrow-active':
+                                                sortDirectionFor(col.key) === 'asc',
+                                        }"
+                                    >
+                                        ▲
+                                    </span>
+                                    <span
+                                        class="sort-arrow"
+                                        :class="{
+                                            'sort-arrow-active':
+                                                sortDirectionFor(col.key) === 'desc',
+                                        }"
+                                    >
+                                        ▼
+                                    </span>
+                                </span>
+                            </button>
+                            <span v-else class="col-label">{{ col.label }}</span>
+                        </span>
                     </th>
                 </template>
                 <template #footer>
-                    <th>Load</th>
+                    <th>
+                        <span class="th-inner">Load</span>
+                    </th>
                 </template>
             </draggable>
         </thead>
@@ -179,9 +229,8 @@ function toggleSort(key) {
     }
 }
 
-function sortIndicator(key) {
-    if (sortKey.value !== key) return "";
-    return sortDir.value === "asc" ? " ▲" : " ▼";
+function sortDirectionFor(key) {
+    return sortKey.value === key ? sortDir.value : null;
 }
 
 /** Missing values always sort last, regardless of direction. */
@@ -270,6 +319,17 @@ table td {
     padding: 8px 12px;
 }
 
+table th {
+    white-space: nowrap;
+}
+
+.th-inner {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
 .col-drag-handle {
     display: inline-block;
     cursor: grab;
@@ -278,5 +338,33 @@ table td {
 
 .col-drag-handle::before {
     content: "⠿";
+}
+
+.sort-trigger {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.sort-icons {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 0.6;
+    font-size: 0.7em;
+}
+
+.sort-arrow {
+    opacity: 0.35;
+}
+
+.sort-arrow-active {
+    opacity: 1;
+    font-weight: bold;
 }
 </style>

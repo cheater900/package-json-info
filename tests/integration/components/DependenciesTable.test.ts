@@ -98,7 +98,7 @@ describe("DependenciesTable", () => {
         const headerLabels = wrapper.findAll("thead th").map((th) =>
             th
                 .text()
-                .replace(/[▲▼]$/, "")
+                .replace(/[\s▲▼]+$/, "")
                 .trim(),
         );
         const cells = wrapper.findAll("tbody td");
@@ -227,7 +227,7 @@ describe("DependenciesTable column order", () => {
         return wrapper.findAll("thead th").map((th) =>
             th
                 .text()
-                .replace(/[▲▼]$/, "")
+                .replace(/[\s▲▼]+$/, "")
                 .trim(),
         );
     }
@@ -309,6 +309,13 @@ describe("DependenciesTable sorting", () => {
         return button;
     }
 
+    /** Which direction's arrow icon is currently highlighted as active, if any. */
+    function activeSortDirection(button) {
+        const active = button.find(".sort-arrow-active");
+        if (!active.exists()) return null;
+        return active.text().trim() === "▲" ? "asc" : "desc";
+    }
+
     it("keeps the original prop order until a column header is clicked", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
@@ -335,11 +342,11 @@ describe("DependenciesTable sorting", () => {
         });
 
         await sortButton(wrapper, "Name").trigger("click");
-        expect(sortButton(wrapper, "Name").text()).toBe("Name ▲");
-        expect(sortButton(wrapper, "Weekly downloads").text()).toBe("Weekly downloads");
+        expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("asc");
+        expect(activeSortDirection(sortButton(wrapper, "Weekly downloads"))).toBe(null);
 
         await sortButton(wrapper, "Name").trigger("click");
-        expect(sortButton(wrapper, "Name").text()).toBe("Name ▼");
+        expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("desc");
     });
 
     it("switching to a different column resets to ascending", async () => {
@@ -352,7 +359,7 @@ describe("DependenciesTable sorting", () => {
         await sortButton(wrapper, "Name").trigger("click");
 
         expect(names(wrapper)).toEqual(["aaa", "bbb", "ccc"]);
-        expect(sortButton(wrapper, "Name").text()).toBe("Name ▲");
+        expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("asc");
     });
 
     it("always sorts missing values last, in both directions", async () => {
