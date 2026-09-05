@@ -164,3 +164,16 @@ export function mergeColumnOrder(
     const queue = [...newVisibleOrder];
     return fullOrder.map((key) => (visibleSet.has(key) ? queue.shift()! : key));
 }
+
+/**
+ * Abbreviates a multi-word column label to its initials (e.g. "Latest
+ * release date" -> "LRD", "Version Date" -> "VD"), for the "shrink columns
+ * by abbreviation" display preference. A label with fewer than two words
+ * (e.g. "Name", "Outdated") is returned unchanged - there's nothing to
+ * usefully shrink.
+ */
+export function abbreviateLabel(label: string): string {
+    const words = label.trim().split(/\s+/).filter(Boolean);
+    if (words.length < 2) return label;
+    return words.map((word) => word.match(/[A-Za-z]/)?.[0].toUpperCase() ?? "").join("");
+}

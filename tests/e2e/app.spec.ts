@@ -717,3 +717,33 @@ test("dragging a column header by its handle reorders the table, and the new ord
     await expect(reloadedHeaderCells.nth(1)).toContainText(secondLabel);
     await expect(reloadedHeaderCells.nth(2)).toContainText(firstLabel);
 });
+
+test("shrinking columns by abbreviation shows initials with a full-name tooltip, and persists across reload", async ({
+    page,
+}) => {
+    await page.goto("/");
+    await expandAllSections(page);
+    const depsTable = page.locator("table.deps").first();
+
+    await expect(depsTable.getByRole("columnheader", { name: "Version Date" })).toBeVisible();
+
+    const shrinkCheckbox = page.getByLabel("Shrink columns by abbreviation");
+    await expect(shrinkCheckbox).not.toBeChecked();
+    await shrinkCheckbox.check();
+
+    // Multi-word labels abbreviate to initials...
+    const versionDateLabel = depsTable.locator(".col-label", { hasText: "VD" });
+    await expect(versionDateLabel).toBeVisible();
+    await expect(depsTable.getByRole("columnheader", { name: "Version Date" })).toHaveCount(0);
+    await expect(versionDateLabel).toHaveAttribute("title", "Version Date");
+
+    // ...but a single-word label like "Outdated" is left untouched.
+    await expect(depsTable.getByRole("columnheader", { name: "Outdated" })).toBeVisible();
+
+    await page.reload();
+    await expandAllSections(page);
+    const reloadedDepsTable = page.locator("table.deps").first();
+
+    await expect(page.getByLabel("Shrink columns by abbreviation")).toBeChecked();
+    await expect(reloadedDepsTable.locator(".col-label", { hasText: "VD" })).toBeVisible();
+});

@@ -58,6 +58,13 @@
             />
         </div>
 
+        <div class="shrink-labels-controls">
+            <label>
+                <input type="checkbox" v-model="shrinkColumnLabels" />
+                Shrink columns by abbreviation
+            </label>
+        </div>
+
         <details class="accordion">
             <summary>
                 Deps
@@ -68,6 +75,8 @@
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
                 :search-query="searchQuery"
+                :column-labels="columnLabels"
+                :column-titles="columnTitles"
                 @load-package="onLoadPackage"
                 @reorder-columns="onReorderColumns"
             />
@@ -83,6 +92,8 @@
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
                 :search-query="searchQuery"
+                :column-labels="columnLabels"
+                :column-titles="columnTitles"
                 @load-package="onLoadPackage"
                 @reorder-columns="onReorderColumns"
             />
@@ -97,7 +108,11 @@
 import { ref, computed, watch, useId } from "vue";
 import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "./utils/repoPackageJson.ts";
-import { toggleColumnVisibility } from "./utils/tableColumns.ts";
+import {
+    toggleColumnVisibility,
+    TOGGLEABLE_COLUMNS,
+    abbreviateLabel,
+} from "./utils/tableColumns.ts";
 import {
     createHistoryEntry,
     pushHistoryEntry,
@@ -111,6 +126,8 @@ import {
     saveVisibleColumns,
     loadColumnOrder,
     saveColumnOrder,
+    loadShrinkColumnLabels,
+    saveShrinkColumnLabels,
 } from "./utils/columnPreferencesStorage.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
@@ -173,6 +190,36 @@ watch(
 function onReorderColumns(newOrder) {
     columnOrder.value = newOrder;
 }
+
+// Persisted to localStorage on every change, so the shrink-labels
+// preference survives a page reload.
+const shrinkColumnLabels = ref(loadShrinkColumnLabels());
+
+watch(shrinkColumnLabels, (value) => {
+    saveShrinkColumnLabels(value);
+});
+
+// The label (and, when abbreviated, a full-name tooltip) to show for each
+// toggleable column, keyed by column key. DependenciesTable just renders
+// whatever it's given here - it has no notion of "shrink columns by
+// abbreviation" itself.
+const columnLabels = computed(() => {
+    const labels = {};
+    for (const col of TOGGLEABLE_COLUMNS) {
+        labels[col.key] = shrinkColumnLabels.value ? abbreviateLabel(col.label) : col.label;
+    }
+    return labels;
+});
+
+const columnTitles = computed(() => {
+    const titles = {};
+    for (const col of TOGGLEABLE_COLUMNS) {
+        if (columnLabels.value[col.key] !== col.label) {
+            titles[col.key] = col.label;
+        }
+    }
+    return titles;
+});
 
 // Each loaded package.json becomes a history entry, caching its own
 // fetched deps/devDeps. Navigating back/forward restores an entry's cached
@@ -456,6 +503,16 @@ textarea {
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+}
+
+.shrink-labels-controls {
+    margin-bottom: 16px;
+}
+
+.shrink-labels-controls label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .accordion {

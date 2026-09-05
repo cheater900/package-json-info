@@ -294,6 +294,71 @@ describe("DependenciesTable column order", () => {
     });
 });
 
+describe("DependenciesTable column labels", () => {
+    function headerLabels(wrapper) {
+        return wrapper.findAll("thead th").map((th) =>
+            th
+                .text()
+                .replace(/[\s▲▼]+$/, "")
+                .trim(),
+        );
+    }
+
+    it("renders each column's own label when columnLabels is omitted", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency] },
+        });
+
+        expect(headerLabels(wrapper)).toContain("Version Date");
+        expect(headerLabels(wrapper)).toContain("Latest release date");
+    });
+
+    it("renders the overridden text from columnLabels instead of the column's own label", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [fullDependency],
+                columnLabels: { versionDate: "VD", latestReleaseDate: "LRD" },
+            },
+        });
+
+        const labels = headerLabels(wrapper);
+        expect(labels).toContain("VD");
+        expect(labels).toContain("LRD");
+        expect(labels).not.toContain("Version Date");
+        expect(labels).not.toContain("Latest release date");
+    });
+
+    it("falls back to the column's own label for any key missing from columnLabels", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [fullDependency],
+                columnLabels: { versionDate: "VD" },
+            },
+        });
+
+        const labels = headerLabels(wrapper);
+        expect(labels).toContain("VD");
+        expect(labels).toContain("Latest release date");
+    });
+
+    it("sets a title tooltip only for columns named in columnTitles", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [fullDependency],
+                columnLabels: { versionDate: "VD" },
+                columnTitles: { versionDate: "Version Date" },
+            },
+        });
+
+        const labels = wrapper.findAll(".col-label");
+        const abbreviated = labels.find((l) => l.text() === "VD")!;
+        const untouched = labels.find((l) => l.text() === "Latest release date")!;
+
+        expect(abbreviated.attributes("title")).toBe("Version Date");
+        expect(untouched.attributes("title")).toBeUndefined();
+    });
+});
+
 describe("DependenciesTable sorting", () => {
     const pkgA = { ...sparseDependency, name: "aaa", weeklyDownloads: 100, gitStars: 5 };
     const pkgB = { ...sparseDependency, name: "bbb", weeklyDownloads: 300, gitStars: null };

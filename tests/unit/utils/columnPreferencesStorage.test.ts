@@ -4,6 +4,8 @@ import {
     saveVisibleColumns,
     loadColumnOrder,
     saveColumnOrder,
+    loadShrinkColumnLabels,
+    saveShrinkColumnLabels,
 } from "../../../src/utils/columnPreferencesStorage";
 import {
     DEFAULT_VISIBLE_COLUMNS,
@@ -13,6 +15,7 @@ import {
 
 const STORAGE_KEY = "package-json-info:visibleColumns";
 const ORDER_STORAGE_KEY = "package-json-info:columnOrder";
+const SHRINK_LABELS_STORAGE_KEY = "package-json-info:shrinkColumnLabels";
 
 beforeEach(() => {
     localStorage.clear();
@@ -165,5 +168,65 @@ describe("saveColumnOrder", () => {
         });
 
         expect(() => saveColumnOrder([TOGGLEABLE_COLUMNS[0].key])).not.toThrow();
+    });
+});
+
+describe("loadShrinkColumnLabels", () => {
+    it("returns false when nothing has been stored yet", () => {
+        expect(loadShrinkColumnLabels()).toBe(false);
+    });
+
+    it("returns true when true was previously saved", () => {
+        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify(true));
+
+        expect(loadShrinkColumnLabels()).toBe(true);
+    });
+
+    it("returns false when false was previously saved", () => {
+        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify(false));
+
+        expect(loadShrinkColumnLabels()).toBe(false);
+    });
+
+    it("returns false when the stored value isn't valid JSON", () => {
+        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, "{not valid json");
+
+        expect(loadShrinkColumnLabels()).toBe(false);
+    });
+
+    it("returns false when the stored value isn't a boolean", () => {
+        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify("true"));
+
+        expect(loadShrinkColumnLabels()).toBe(false);
+    });
+
+    it("returns false instead of throwing when localStorage.getItem throws", () => {
+        vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+            throw new Error("storage disabled");
+        });
+
+        expect(loadShrinkColumnLabels()).toBe(false);
+    });
+});
+
+describe("saveShrinkColumnLabels", () => {
+    it("persists true as a JSON boolean", () => {
+        saveShrinkColumnLabels(true);
+
+        expect(JSON.parse(localStorage.getItem(SHRINK_LABELS_STORAGE_KEY)!)).toBe(true);
+    });
+
+    it("round-trips through loadShrinkColumnLabels", () => {
+        saveShrinkColumnLabels(true);
+
+        expect(loadShrinkColumnLabels()).toBe(true);
+    });
+
+    it("does not throw when localStorage.setItem throws", () => {
+        vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+            throw new Error("quota exceeded");
+        });
+
+        expect(() => saveShrinkColumnLabels(true)).not.toThrow();
     });
 });

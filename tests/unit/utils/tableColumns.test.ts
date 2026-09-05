@@ -11,6 +11,7 @@ import {
     toggleColumnVisibility,
     orderColumns,
     mergeColumnOrder,
+    abbreviateLabel,
 } from "../../../src/utils/tableColumns";
 
 describe("TOGGLEABLE_COLUMNS", () => {
@@ -205,5 +206,27 @@ describe("mergeColumnOrder", () => {
     it("is a no-op when only one column is visible", () => {
         const fullOrder = ["a", "hidden", "b"];
         expect(mergeColumnOrder(fullOrder, ["a"])).toEqual(["a", "hidden", "b"]);
+    });
+});
+
+describe("abbreviateLabel", () => {
+    it("abbreviates a two-word label to its initials", () => {
+        expect(abbreviateLabel("Version Date")).toBe("VD");
+    });
+
+    it("abbreviates a three-word label to its initials", () => {
+        expect(abbreviateLabel("Latest release date")).toBe("LRD");
+    });
+
+    it("leaves a single-word label unchanged", () => {
+        expect(abbreviateLabel("Outdated")).toBe("Outdated");
+    });
+
+    it("ignores non-letter characters when taking each word's first letter", () => {
+        expect(abbreviateLabel("Bundle size (gzip)")).toBe("BSG");
+    });
+
+    it("collapses repeated whitespace between words", () => {
+        expect(abbreviateLabel("Latest   release date")).toBe("LRD");
     });
 });

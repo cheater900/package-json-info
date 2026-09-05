@@ -46,7 +46,9 @@
                                 class="sort-trigger"
                                 @click="toggleSort(col.key)"
                             >
-                                <span class="col-label">{{ col.label }}</span>
+                                <span class="col-label" :title="titleFor(col)">
+                                    {{ labelFor(col) }}
+                                </span>
                                 <span class="sort-icons" aria-hidden="true">
                                     <span
                                         class="sort-arrow"
@@ -68,7 +70,9 @@
                                     </span>
                                 </span>
                             </button>
-                            <span v-else class="col-label">{{ col.label }}</span>
+                            <span v-else class="col-label" :title="titleFor(col)">
+                                {{ labelFor(col) }}
+                            </span>
                         </span>
                     </th>
                 </template>
@@ -136,6 +140,21 @@ const props = defineProps({
         type: String,
         default: "",
     },
+    // Display label per column key, decided entirely by the parent (e.g.
+    // full name vs. an abbreviation) - this component has no opinion on it,
+    // it just renders whatever it's given, falling back to the column's own
+    // default label for any key the parent doesn't override.
+    columnLabels: {
+        type: Object,
+        default: () => ({}),
+    },
+    // Tooltip text per column key, shown on hover. Only columns whose label
+    // is being overridden with something other than its full name need an
+    // entry here (e.g. an abbreviation's real name) - the parent decides.
+    columnTitles: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const emit = defineEmits(["load-package", "reorder-columns"]);
@@ -148,6 +167,14 @@ const filteredDependencies = computed(() => {
 
 function isVisible(key) {
     return isColumnVisible(props.visibleColumns, key);
+}
+
+function labelFor(col) {
+    return props.columnLabels[col.key] ?? col.label;
+}
+
+function titleFor(col) {
+    return props.columnTitles[col.key];
 }
 
 // The currently-visible toggleable columns, in the persisted order.

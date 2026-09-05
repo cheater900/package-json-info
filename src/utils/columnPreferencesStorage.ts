@@ -8,6 +8,7 @@ import {
 
 const STORAGE_KEY = "package-json-info:visibleColumns";
 const ORDER_STORAGE_KEY = "package-json-info:columnOrder";
+const SHRINK_LABELS_STORAGE_KEY = "package-json-info:shrinkColumnLabels";
 
 /**
  * Loads the persisted visible-columns preference from localStorage. Falls
@@ -95,6 +96,39 @@ export function loadColumnOrder(): string[] {
 export function saveColumnOrder(order: readonly string[]): void {
     try {
         localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+    } catch {
+        // Storage unavailable/full/blocked - preference just won't persist.
+    }
+}
+
+/**
+ * Loads the persisted "shrink columns by abbreviation" preference from
+ * localStorage. Defaults to false (full labels) whenever storage is
+ * unavailable, holds nothing yet, or holds something that isn't the literal
+ * JSON boolean `true`. Never throws.
+ */
+export function loadShrinkColumnLabels(): boolean {
+    try {
+        const raw = localStorage.getItem(SHRINK_LABELS_STORAGE_KEY);
+        if (raw == null) {
+            return false;
+        }
+
+        return JSON.parse(raw) === true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Persists the given "shrink columns by abbreviation" preference to
+ * localStorage. Silently does nothing if storage is unavailable or writing
+ * fails - a preference that can't be saved just doesn't survive the next
+ * reload, rather than breaking the app. Never throws.
+ */
+export function saveShrinkColumnLabels(value: boolean): void {
+    try {
+        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify(value));
     } catch {
         // Storage unavailable/full/blocked - preference just won't persist.
     }
