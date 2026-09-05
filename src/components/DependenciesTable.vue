@@ -1,13 +1,4 @@
 <template>
-    <div class="table-controls">
-        <label :for="searchInputId">Search by name</label>
-        <input
-            :id="searchInputId"
-            type="text"
-            v-model="searchQuery"
-            placeholder="Filter by package name"
-        />
-    </div>
     <table class="deps">
         <thead>
             <draggable
@@ -117,7 +108,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, useId } from "vue";
+import { ref, computed, watch } from "vue";
 import draggable from "vuedraggable";
 import { hasLicenseWarning } from "../utils/license";
 import {
@@ -141,15 +132,16 @@ const props = defineProps({
         type: Array,
         default: () => DEFAULT_COLUMN_ORDER,
     },
+    searchQuery: {
+        type: String,
+        default: "",
+    },
 });
 
 const emit = defineEmits(["load-package", "reorder-columns"]);
 
-const searchInputId = useId();
-const searchQuery = ref("");
-
 const filteredDependencies = computed(() => {
-    const query = searchQuery.value.trim().toLowerCase();
+    const query = props.searchQuery.trim().toLowerCase();
     if (!query) return props.dependencies;
     return props.dependencies.filter((d) => d.name?.toLowerCase().includes(query));
 });
@@ -301,13 +293,6 @@ function formatCell(key, dependency) {
 </script>
 
 <style>
-.table-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
 table.deps {
     display: block;
     overflow-x: scroll;

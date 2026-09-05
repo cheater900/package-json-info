@@ -416,11 +416,15 @@ describe("DependenciesTable search", () => {
         return wrapper.findAll("tbody tr td:first-child").map((td) => td.text());
     }
 
-    function searchInput(wrapper) {
-        return wrapper.get('input[type="text"]');
-    }
+    it("renders no search box of its own - filtering is driven entirely by the searchQuery prop", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [react, reactDom, vue] },
+        });
 
-    it("shows every row when the search box is empty", () => {
+        expect(wrapper.find('input[type="text"]').exists()).toBe(false);
+    });
+
+    it("shows every row when searchQuery is omitted", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue] },
         });
@@ -428,52 +432,53 @@ describe("DependenciesTable search", () => {
         expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
     });
 
-    it("filters rows to names containing the query, case-insensitively", async () => {
+    it("filters rows to names containing the query, case-insensitively", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [react, reactDom, vue] },
+            props: { dependencies: [react, reactDom, vue], searchQuery: "REACT" },
         });
-
-        await searchInput(wrapper).setValue("REACT");
 
         expect(names(wrapper)).toEqual(["react", "react-dom"]);
     });
 
-    it("matches a substring anywhere in the name, not just a prefix", async () => {
+    it("matches a substring anywhere in the name, not just a prefix", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [react, reactDom, vue] },
+            props: { dependencies: [react, reactDom, vue], searchQuery: "dom" },
         });
-
-        await searchInput(wrapper).setValue("dom");
 
         expect(names(wrapper)).toEqual(["react-dom"]);
     });
 
-    it("shows no rows when nothing matches", async () => {
+    it("shows no rows when nothing matches", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [react, reactDom, vue] },
+            props: { dependencies: [react, reactDom, vue], searchQuery: "no-such-package" },
         });
-
-        await searchInput(wrapper).setValue("no-such-package");
 
         expect(wrapper.findAll("tbody tr")).toHaveLength(0);
     });
 
-    it("treats a whitespace-only query as empty", async () => {
+    it("treats a whitespace-only query as empty", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [react, reactDom, vue] },
+            props: { dependencies: [react, reactDom, vue], searchQuery: "   " },
         });
-
-        await searchInput(wrapper).setValue("   ");
 
         expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
     });
 
-    it("applies sorting on top of the filtered results", async () => {
+    it("re-filters reactively when the searchQuery prop changes", async () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [reactDom, react] },
+            props: { dependencies: [react, reactDom, vue], searchQuery: "" },
         });
 
-        await searchInput(wrapper).setValue("react");
+        await wrapper.setProps({ searchQuery: "dom" });
+
+        expect(names(wrapper)).toEqual(["react-dom"]);
+    });
+
+    it("applies sorting on top of the filtered results", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [reactDom, react], searchQuery: "react" },
+        });
+
         await wrapper
             .findAll("th button")
             .find((b) => b.text().startsWith("Name"))!

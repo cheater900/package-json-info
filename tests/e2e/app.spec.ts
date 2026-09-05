@@ -446,30 +446,37 @@ test("clicking a column header sorts the table, and clicking again reverses it",
     await expect(packageNameColumn()).toHaveText(["bbb-pkg", "ccc-pkg", "aaa-pkg"]);
 });
 
-test("the search box filters the table by package name", async ({ page }) => {
+test("a single search box filters both the Deps and Dev Deps tables simultaneously", async ({
+    page,
+}) => {
     await page.goto("/");
     await expandAllSections(page);
     await loadJson(page, {
         name: "demo",
         dependencies: { react: "^18.0.0", "react-dom": "^18.0.0", vue: "^3.0.0" },
-        devDependencies: {},
+        devDependencies: { "react-scripts": "^5.0.0", vite: "^5.0.0" },
     });
 
-    // DependenciesTable renders its search box and table as sibling root
-    // nodes (no wrapping element), so scope to the first "Search by name"
-    // box specifically - it precedes the Deps table in DOM order.
-    const depsTable = page.locator("table.deps").first();
-    const depsSearchInput = page.locator(".table-controls").first().getByLabel("Search by name");
+    const depsTable = page.locator("table.deps").nth(0);
+    const devDepsTable = page.locator("table.deps").nth(1);
     await expect(depsTable.locator("tbody tr")).toHaveCount(3);
+    await expect(devDepsTable.locator("tbody tr")).toHaveCount(2);
 
-    await depsSearchInput.fill("react");
+    // Only one search box exists in the whole page now.
+    const searchInput = page.getByLabel("Search by name");
+    await expect(searchInput).toHaveCount(1);
+
+    await searchInput.fill("react");
     await expect(depsTable.locator("tbody tr td:first-child")).toHaveText(["react", "react-dom"]);
+    await expect(devDepsTable.locator("tbody tr td:first-child")).toHaveText(["react-scripts"]);
 
-    await depsSearchInput.fill("no-such-package");
+    await searchInput.fill("no-such-package");
     await expect(depsTable.locator("tbody tr")).toHaveCount(0);
+    await expect(devDepsTable.locator("tbody tr")).toHaveCount(0);
 
-    await depsSearchInput.fill("");
+    await searchInput.fill("");
     await expect(depsTable.locator("tbody tr")).toHaveCount(3);
+    await expect(devDepsTable.locator("tbody tr")).toHaveCount(2);
 });
 
 test("renders license, outdated, deprecated, vulnerability, bundle size, and maintainer data", async ({

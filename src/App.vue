@@ -48,6 +48,16 @@
             <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
         </section>
 
+        <div class="search-controls">
+            <label :for="searchInputId">Search by name</label>
+            <input
+                :id="searchInputId"
+                v-model="searchQuery"
+                type="text"
+                placeholder="Filter by package name"
+            />
+        </div>
+
         <details class="accordion">
             <summary>
                 Deps
@@ -57,6 +67,7 @@
                 :dependencies="deps"
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
+                :search-query="searchQuery"
                 @load-package="onLoadPackage"
                 @reorder-columns="onReorderColumns"
             />
@@ -71,6 +82,7 @@
                 :dependencies="devDeps"
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
+                :search-query="searchQuery"
                 @load-package="onLoadPackage"
                 @reorder-columns="onReorderColumns"
             />
@@ -82,7 +94,7 @@
     </div>
 </template>
 <script lang="ts" setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, useId } from "vue";
 import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "./utils/repoPackageJson.ts";
 import { toggleColumnVisibility } from "./utils/tableColumns.ts";
@@ -127,6 +139,11 @@ watch(urlInput, (value) => {
 
 const deps = ref([]);
 const devDeps = ref([]);
+
+// Shared by both the Deps and Dev Deps tables, so one search box filters
+// both simultaneously.
+const searchInputId = useId();
+const searchQuery = ref("");
 
 // Persisted to localStorage on every change, so column visibility survives
 // a page reload.
@@ -431,6 +448,13 @@ textarea {
     display: flex;
     align-items: center;
     gap: 12px;
+    margin-bottom: 16px;
+}
+
+.search-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 16px;
 }
 
