@@ -117,3 +117,50 @@ export function toggleColumnVisibility(
     }
     return next;
 }
+
+/** Toggleable columns in their declaration order - the order used when no user preference is saved yet. */
+export const DEFAULT_COLUMN_ORDER: readonly string[] = TOGGLEABLE_COLUMNS.map((c) => c.key);
+
+/**
+ * Maps an ordered list of column keys to their ColumnDefs, drawn from
+ * `columns`. Unknown/stale keys (no longer a real column) are dropped;
+ * duplicate keys keep only their first occurrence; any column in `columns`
+ * missing from `order` is appended at the end, in `columns`' own declaration
+ * order - so an empty order, or one saved before a schema change added a new
+ * column, still surfaces every real column.
+ */
+export function orderColumns(order: readonly string[], columns: readonly ColumnDef[]): ColumnDef[] {
+    const byKey = new Map(columns.map((c) => [c.key, c]));
+    const seen = new Set<string>();
+    const ordered: ColumnDef[] = [];
+    for (const key of order) {
+        const col = byKey.get(key);
+        if (col && !seen.has(key)) {
+            ordered.push(col);
+            seen.add(key);
+        }
+    }
+    for (const col of columns) {
+        if (!seen.has(col.key)) {
+            ordered.push(col);
+        }
+    }
+    return ordered;
+}
+
+/**
+ * Merges a drag-reorder of the currently-visible columns back into the full
+ * persisted column order. `fullOrder` is a permutation of every toggleable
+ * column key; `newVisibleOrder` is a permutation of just the keys in
+ * `fullOrder` that are currently visible, in their new drag order. Each
+ * hidden column keeps its own exact slot in the result - only the slots that
+ * held visible columns are refilled, in sequence, from `newVisibleOrder`.
+ */
+export function mergeColumnOrder(
+    fullOrder: readonly string[],
+    newVisibleOrder: readonly string[],
+): string[] {
+    const visibleSet = new Set(newVisibleOrder);
+    const queue = [...newVisibleOrder];
+    return fullOrder.map((key) => (visibleSet.has(key) ? queue.shift()! : key));
+}

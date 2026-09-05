@@ -14,18 +14,28 @@
 </template>
 
 <script lang="ts" setup>
-import { TOGGLEABLE_COLUMNS, wouldViolateMinVisible } from "../utils/tableColumns";
+import { computed } from "vue";
+import {
+    TOGGLEABLE_COLUMNS,
+    DEFAULT_COLUMN_ORDER,
+    wouldViolateMinVisible,
+    orderColumns,
+} from "../utils/tableColumns";
 
-defineProps({
+const props = defineProps({
     visibleColumns: {
         type: Set,
         required: true,
+    },
+    columnOrder: {
+        type: Array,
+        default: () => DEFAULT_COLUMN_ORDER,
     },
 });
 
 defineEmits(["toggle-column"]);
 
-const toggleableColumns = TOGGLEABLE_COLUMNS;
+const toggleableColumns = computed(() => orderColumns(props.columnOrder, TOGGLEABLE_COLUMNS));
 </script>
 
 <style>

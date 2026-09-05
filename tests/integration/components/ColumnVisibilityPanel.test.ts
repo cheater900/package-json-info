@@ -75,4 +75,26 @@ describe("ColumnVisibilityPanel", () => {
 
         expect(checkbox.element.disabled).toBe(false);
     });
+
+    it("renders checkboxes in the given columnOrder, hidden columns included", () => {
+        const reversedOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+        const wrapper = mount(ColumnVisibilityPanel, {
+            props: { visibleColumns: new Set(), columnOrder: reversedOrder },
+        });
+
+        const labels = wrapper.findAll("label").map((l) => l.text());
+        const expectedLabels = reversedOrder.map(
+            (key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key).label,
+        );
+        expect(labels).toEqual(expectedLabels);
+    });
+
+    it("falls back to declaration order when columnOrder is omitted", () => {
+        const wrapper = mount(ColumnVisibilityPanel, {
+            props: { visibleColumns: new Set() },
+        });
+
+        const labels = wrapper.findAll("label").map((l) => l.text());
+        expect(labels).toEqual(TOGGLEABLE_COLUMNS.map((c) => c.label));
+    });
 });

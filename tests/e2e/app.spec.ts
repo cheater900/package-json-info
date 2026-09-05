@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mockExternalApis, loadJson, expandAllSections } from "./helpers";
+import { TOGGLEABLE_COLUMNS } from "../../src/utils/tableColumns";
 
 test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);
@@ -637,4 +638,75 @@ test("column visibility preferences persist in localStorage across a page reload
     await expect(depsTable.getByRole("columnheader", { name: "Maintainers" })).toBeVisible();
     expect(await page.getByLabel("License", { exact: true }).isChecked()).toBe(false);
     expect(await page.getByLabel("Maintainers", { exact: true }).isChecked()).toBe(true);
+});
+
+test("a column order preference seeded in localStorage is reflected in the rendered header", async ({
+    page,
+}) => {
+    // A full permutation of every toggleable column, reversed from
+    // declaration order - also doubles as "everything visible" so the test
+    // isolates ordering from the separate visibility feature.
+    const order = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+    await page.addInitScript(
+        ({ order }) => {
+            localStorage.setItem("package-json-info:columnOrder", JSON.stringify(order));
+            localStorage.setItem("package-json-info:visibleColumns", JSON.stringify(order));
+        },
+        { order },
+    );
+
+    await page.goto("/");
+    await expandAllSections(page);
+    const depsTable = page.locator("table.deps").first();
+
+    const headerTexts = (await depsTable.locator("thead th").allTextContents()).map((t) =>
+        t.trim(),
+    );
+    const expectedLabels = [
+        "Name",
+        ...order.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key)!.label),
+        "Load",
+    ];
+    expect(headerTexts).toEqual(expectedLabels);
+});
+
+test("dragging a column header by its handle reorders the table, and the new order persists across reload", async ({
+    page,
+}) => {
+    await page.goto("/");
+    await expandAllSections(page);
+    const depsTable = page.locator("table.deps").first();
+    const headerCells = depsTable.locator("thead th");
+
+    // Index 0 is the pinned Name column, so the first two draggable columns
+    // (indices 1 and 2) are swapped.
+    const firstLabel = (await headerCells.nth(1).innerText()).trim();
+    const secondLabel = (await headerCells.nth(2).innerText()).trim();
+
+    const firstBox = await headerCells.nth(1).locator(".col-drag-handle").boundingBox();
+    const secondBox = await headerCells.nth(2).locator(".col-drag-handle").boundingBox();
+    if (!firstBox || !secondBox) {
+        throw new Error("Drag handle bounding box not available.");
+    }
+
+    await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height / 2, {
+        steps: 10,
+    });
+    await page.mouse.move(
+        secondBox.x + secondBox.width / 2 + 5,
+        secondBox.y + secondBox.height / 2,
+        { steps: 5 },
+    );
+    await page.mouse.up();
+
+    await expect(headerCells.nth(1)).toContainText(secondLabel);
+    await expect(headerCells.nth(2)).toContainText(firstLabel);
+
+    await page.reload();
+    await expandAllSections(page);
+    const reloadedHeaderCells = page.locator("table.deps").first().locator("thead th");
+    await expect(reloadedHeaderCells.nth(1)).toContainText(secondLabel);
+    await expect(reloadedHeaderCells.nth(2)).toContainText(firstLabel);
 });

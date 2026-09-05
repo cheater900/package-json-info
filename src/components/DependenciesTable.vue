@@ -10,115 +10,44 @@
     </div>
     <table class="deps">
         <thead>
-            <tr>
-                <th>
-                    <button type="button" @click="toggleSort('name')">
-                        Name{{ sortIndicator("name") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('version')">Version</th>
-                <th v-if="isVisible('versionDate')">
-                    <button type="button" @click="toggleSort('versionDate')">
-                        Version Date{{ sortIndicator("versionDate") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('latestVersion')">Latest version</th>
-                <th v-if="isVisible('latestReleaseDate')">
-                    <button type="button" @click="toggleSort('latestReleaseDate')">
-                        Latest release date{{ sortIndicator("latestReleaseDate") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('latestUpdateDate')">
-                    <button type="button" @click="toggleSort('latestUpdateDate')">
-                        Latest update date{{ sortIndicator("latestUpdateDate") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('isOutdated')">
-                    <button type="button" @click="toggleSort('isOutdated')">
-                        Outdated{{ sortIndicator("isOutdated") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('weeklyDownloads')">
-                    <button type="button" @click="toggleSort('weeklyDownloads')">
-                        Weekly downloads{{ sortIndicator("weeklyDownloads") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('sourceCode')">Source code</th>
-                <th v-if="isVisible('gitStars')">
-                    <button type="button" @click="toggleSort('gitStars')">
-                        Git stars{{ sortIndicator("gitStars") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('openPRs')">
-                    <button type="button" @click="toggleSort('openPRs')">
-                        Open PRs{{ sortIndicator("openPRs") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('closedPRs')">
-                    <button type="button" @click="toggleSort('closedPRs')">
-                        Closed PRs{{ sortIndicator("closedPRs") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('openIssues')">
-                    <button type="button" @click="toggleSort('openIssues')">
-                        Open issues{{ sortIndicator("openIssues") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('closedIssues')">
-                    <button type="button" @click="toggleSort('closedIssues')">
-                        Closed issues{{ sortIndicator("closedIssues") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('dependencies')">Dependencies</th>
-                <th v-if="isVisible('license')">License</th>
-                <th v-if="isVisible('deprecated')">Deprecated</th>
-                <th v-if="isVisible('vulnerabilityCount')">
-                    <button type="button" @click="toggleSort('vulnerabilityCount')">
-                        Vulnerabilities{{ sortIndicator("vulnerabilityCount") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('bundleSizeGzip')">
-                    <button type="button" @click="toggleSort('bundleSizeGzip')">
-                        Bundle size (gzip){{ sortIndicator("bundleSizeGzip") }}
-                    </button>
-                </th>
-                <th v-if="isVisible('maintainers')">Maintainers</th>
-                <th>Load</th>
-            </tr>
+            <draggable
+                tag="tr"
+                :list="draggableColumns"
+                item-key="key"
+                handle=".col-drag-handle"
+                :force-fallback="true"
+            >
+                <template #header>
+                    <th>
+                        <button type="button" @click="toggleSort('name')">
+                            Name{{ sortIndicator("name") }}
+                        </button>
+                    </th>
+                </template>
+                <template #item="{ element: col }">
+                    <th>
+                        <span class="col-drag-handle" aria-hidden="true"></span>
+                        <button v-if="col.sortable" type="button" @click="toggleSort(col.key)">
+                            {{ col.label }}{{ sortIndicator(col.key) }}
+                        </button>
+                        <span v-else>{{ col.label }}</span>
+                    </th>
+                </template>
+                <template #footer>
+                    <th>Load</th>
+                </template>
+            </draggable>
         </thead>
         <tbody>
             <tr v-for="dependency in sortedDependencies" :key="dependency.name">
                 <td>{{ dependency.name }}</td>
-                <td v-if="isVisible('version')">{{ dependency.version }}</td>
-                <td v-if="isVisible('versionDate')">{{ fmtDate(dependency.versionDate) }}</td>
-                <td v-if="isVisible('latestVersion')">{{ dependency.latestVersion ?? "-" }}</td>
-                <td v-if="isVisible('latestReleaseDate')">
-                    {{ fmtDate(dependency.latestReleaseDate) }}
+                <td v-for="col in orderedVisibleColumns" :key="col.key">
+                    <template v-if="col.key === 'sourceCode'">
+                        <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>
+                        <template v-else>-</template>
+                    </template>
+                    <template v-else>{{ formatCell(col.key, dependency) }}</template>
                 </td>
-                <td v-if="isVisible('latestUpdateDate')">
-                    {{ fmtDate(dependency.latestUpdateDate) }}
-                </td>
-                <td v-if="isVisible('isOutdated')">{{ fmtOutdated(dependency.isOutdated) }}</td>
-                <td v-if="isVisible('weeklyDownloads')">{{ dependency.weeklyDownloads ?? "-" }}</td>
-                <td v-if="isVisible('sourceCode')">
-                    <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>
-                    <template v-else>-</template>
-                </td>
-                <td v-if="isVisible('gitStars')">{{ dependency.gitStars ?? "-" }}</td>
-                <td v-if="isVisible('openPRs')">{{ dependency.openPRs ?? "-" }}</td>
-                <td v-if="isVisible('closedPRs')">{{ dependency.closedPRs ?? "-" }}</td>
-                <td v-if="isVisible('openIssues')">{{ dependency.openIssues ?? "-" }}</td>
-                <td v-if="isVisible('closedIssues')">{{ dependency.closedIssues ?? "-" }}</td>
-                <td v-if="isVisible('dependencies')">{{ fmtList(dependency.dependencies) }}</td>
-                <td v-if="isVisible('license')">{{ fmtLicense(dependency.license) }}</td>
-                <td v-if="isVisible('deprecated')">{{ dependency.deprecated ?? "-" }}</td>
-                <td v-if="isVisible('vulnerabilityCount')">
-                    {{ dependency.vulnerabilityCount ?? "-" }}
-                </td>
-                <td v-if="isVisible('bundleSizeGzip')">
-                    {{ fmtBundleSize(dependency.bundleSizeGzip) }}
-                </td>
-                <td v-if="isVisible('maintainers')">{{ fmtList(dependency.maintainers) }}</td>
                 <td>
                     <button
                         type="button"
@@ -138,9 +67,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, useId } from "vue";
+import { ref, computed, watch, useId } from "vue";
+import draggable from "vuedraggable";
 import { hasLicenseWarning } from "../utils/license";
-import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
+import {
+    isColumnVisible,
+    TOGGLEABLE_COLUMNS,
+    DEFAULT_COLUMN_ORDER,
+    orderColumns,
+    mergeColumnOrder,
+} from "../utils/tableColumns";
 
 const props = defineProps({
     dependencies: {
@@ -151,9 +87,13 @@ const props = defineProps({
         type: Set,
         default: () => new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)),
     },
+    columnOrder: {
+        type: Array,
+        default: () => DEFAULT_COLUMN_ORDER,
+    },
 });
 
-defineEmits(["load-package"]);
+const emit = defineEmits(["load-package", "reorder-columns"]);
 
 const searchInputId = useId();
 const searchQuery = ref("");
@@ -167,6 +107,47 @@ const filteredDependencies = computed(() => {
 function isVisible(key) {
     return isColumnVisible(props.visibleColumns, key);
 }
+
+// The currently-visible toggleable columns, in the persisted order.
+const orderedVisibleColumns = computed(() =>
+    orderColumns(props.columnOrder, TOGGLEABLE_COLUMNS).filter((c) => isVisible(c.key)),
+);
+
+// vuedraggable needs a locally-mutable array to splice as the user drags -
+// it can't splice a computed or a prop directly. Kept in sync with the true
+// (prop-driven) order via the watchers below.
+const draggableColumns = ref([...orderedVisibleColumns.value]);
+
+function sameKeyOrder(a, b) {
+    return a.length === b.length && a.every((col, i) => col.key === b[i].key);
+}
+
+// Resync when the true order/visibility changes for a reason other than a
+// drag on this table instance - a column was hidden/shown, or the sibling
+// Deps/Dev Deps table reordered columns and it flowed back down through the
+// shared App-level state.
+watch(orderedVisibleColumns, (next) => {
+    if (!sameKeyOrder(draggableColumns.value, next)) {
+        draggableColumns.value = [...next];
+    }
+});
+
+// After a drop, merge the new visible-column order into the full persisted
+// order and emit it upward. deep: true because vuedraggable mutates
+// draggableColumns in place via splice, which a shallow watch would miss.
+watch(
+    draggableColumns,
+    (cols) => {
+        const merged = mergeColumnOrder(
+            props.columnOrder,
+            cols.map((c) => c.key),
+        );
+        if (merged.join() !== props.columnOrder.join()) {
+            emit("reorder-columns", merged);
+        }
+    },
+    { deep: true },
+);
 
 // Columns whose values are meaningful to sort by (excludes the source-code
 // link, the raw semver ranges, and list-valued columns).
@@ -248,6 +229,26 @@ function fmtBundleSize(gzipBytes) {
     if (gzipBytes === null || gzipBytes === undefined) return "-";
     return `${(gzipBytes / 1024).toFixed(1)} KB`;
 }
+
+// Per-column cell formatters, keyed by column key. Columns without an entry
+// here fall back to a plain value ?? "-" passthrough (see formatCell).
+// sourceCode isn't included: it renders a link instead of text, and is
+// special-cased directly in the template.
+const CELL_FORMATTERS = {
+    versionDate: (d) => fmtDate(d.versionDate),
+    latestReleaseDate: (d) => fmtDate(d.latestReleaseDate),
+    latestUpdateDate: (d) => fmtDate(d.latestUpdateDate),
+    isOutdated: (d) => fmtOutdated(d.isOutdated),
+    dependencies: (d) => fmtList(d.dependencies),
+    license: (d) => fmtLicense(d.license),
+    bundleSizeGzip: (d) => fmtBundleSize(d.bundleSizeGzip),
+    maintainers: (d) => fmtList(d.maintainers),
+};
+
+function formatCell(key, dependency) {
+    const formatter = CELL_FORMATTERS[key];
+    return formatter ? formatter(dependency) : (dependency[key] ?? "-");
+}
 </script>
 
 <style>
@@ -267,5 +268,15 @@ table.deps {
 table th,
 table td {
     padding: 8px 12px;
+}
+
+.col-drag-handle {
+    display: inline-block;
+    cursor: grab;
+    padding: 0 4px;
+}
+
+.col-drag-handle::before {
+    content: "⠿";
 }
 </style>

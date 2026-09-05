@@ -2,10 +2,17 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
     loadVisibleColumns,
     saveVisibleColumns,
+    loadColumnOrder,
+    saveColumnOrder,
 } from "../../../src/utils/columnPreferencesStorage";
-import { DEFAULT_VISIBLE_COLUMNS, TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+import {
+    DEFAULT_VISIBLE_COLUMNS,
+    DEFAULT_COLUMN_ORDER,
+    TOGGLEABLE_COLUMNS,
+} from "../../../src/utils/tableColumns";
 
 const STORAGE_KEY = "package-json-info:visibleColumns";
+const ORDER_STORAGE_KEY = "package-json-info:columnOrder";
 
 beforeEach(() => {
     localStorage.clear();
@@ -86,5 +93,77 @@ describe("saveVisibleColumns", () => {
         });
 
         expect(() => saveVisibleColumns(new Set(["license"]))).not.toThrow();
+    });
+});
+
+describe("loadColumnOrder", () => {
+    it("returns DEFAULT_COLUMN_ORDER when nothing has been stored yet", () => {
+        expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
+    });
+
+    it("returns a previously saved full permutation unchanged", () => {
+        const order = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+
+        expect(loadColumnOrder()).toEqual(order);
+    });
+
+    it("falls back to the default order when the stored value isn't a JSON array", () => {
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify({ not: "an array" }));
+
+        expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
+    });
+
+    it("falls back to the default order when the stored value isn't valid JSON", () => {
+        localStorage.setItem(ORDER_STORAGE_KEY, "{not valid json");
+
+        expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
+    });
+
+    it("drops keys that no longer correspond to a real toggleable column", () => {
+        const validOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+        const order = [validOrder[0], "some-removed-column", ...validOrder.slice(1)];
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+
+        expect(loadColumnOrder()).toEqual(validOrder);
+    });
+
+    it("appends a valid column missing from the stored order, instead of losing it", () => {
+        const order = TOGGLEABLE_COLUMNS.slice(1).map((c) => c.key);
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+
+        expect(loadColumnOrder()).toEqual([...order, TOGGLEABLE_COLUMNS[0].key]);
+    });
+
+    it("falls back to the default order instead of throwing when localStorage.getItem throws", () => {
+        vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+            throw new Error("storage disabled");
+        });
+
+        expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
+    });
+});
+
+describe("saveColumnOrder", () => {
+    it("persists the order as a JSON array", () => {
+        const order = [TOGGLEABLE_COLUMNS[1].key, TOGGLEABLE_COLUMNS[0].key];
+        saveColumnOrder(order);
+
+        expect(JSON.parse(localStorage.getItem(ORDER_STORAGE_KEY)!)).toEqual(order);
+    });
+
+    it("round-trips a full permutation through loadColumnOrder", () => {
+        const order = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+        saveColumnOrder(order);
+
+        expect(loadColumnOrder()).toEqual(order);
+    });
+
+    it("does not throw when localStorage.setItem throws", () => {
+        vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+            throw new Error("quota exceeded");
+        });
+
+        expect(() => saveColumnOrder([TOGGLEABLE_COLUMNS[0].key])).not.toThrow();
     });
 });

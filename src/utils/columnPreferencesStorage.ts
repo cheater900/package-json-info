@@ -1,6 +1,13 @@
-import { TOGGLEABLE_COLUMNS, DEFAULT_VISIBLE_COLUMNS, meetsMinVisible } from "./tableColumns";
+import {
+    TOGGLEABLE_COLUMNS,
+    DEFAULT_VISIBLE_COLUMNS,
+    DEFAULT_COLUMN_ORDER,
+    meetsMinVisible,
+    orderColumns,
+} from "./tableColumns";
 
 const STORAGE_KEY = "package-json-info:visibleColumns";
+const ORDER_STORAGE_KEY = "package-json-info:columnOrder";
 
 /**
  * Loads the persisted visible-columns preference from localStorage. Falls
@@ -47,6 +54,47 @@ export function loadVisibleColumns(): Set<string> {
 export function saveVisibleColumns(visibleColumns: ReadonlySet<string>): void {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify([...visibleColumns]));
+    } catch {
+        // Storage unavailable/full/blocked - preference just won't persist.
+    }
+}
+
+/**
+ * Loads the persisted column-order preference from localStorage. Falls back
+ * to DEFAULT_COLUMN_ORDER whenever storage is unavailable, holds nothing
+ * yet, or holds something that isn't a JSON array of column keys. Any
+ * stored key that no longer matches a real toggleable column is dropped,
+ * and any real column missing from the stored order (e.g. added in a later
+ * version) is appended at the end - see orderColumns. Never throws.
+ */
+export function loadColumnOrder(): string[] {
+    try {
+        const raw = localStorage.getItem(ORDER_STORAGE_KEY);
+        if (raw == null) {
+            return [...DEFAULT_COLUMN_ORDER];
+        }
+
+        const parsed: unknown = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+            return [...DEFAULT_COLUMN_ORDER];
+        }
+
+        const order = parsed.filter((key): key is string => typeof key === "string");
+        return orderColumns(order, TOGGLEABLE_COLUMNS).map((c) => c.key);
+    } catch {
+        return [...DEFAULT_COLUMN_ORDER];
+    }
+}
+
+/**
+ * Persists the given column order to localStorage. Silently does nothing if
+ * storage is unavailable or writing fails - an order that can't be saved
+ * just doesn't survive the next reload, rather than breaking the app.
+ * Never throws.
+ */
+export function saveColumnOrder(order: readonly string[]): void {
+    try {
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
     } catch {
         // Storage unavailable/full/blocked - preference just won't persist.
     }

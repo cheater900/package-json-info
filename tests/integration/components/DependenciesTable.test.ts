@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
+import draggable from "vuedraggable";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
@@ -215,6 +217,80 @@ describe("DependenciesTable column visibility", () => {
         const rowCellCount = wrapper.findAll("tbody td").length;
         expect(headerCount).toBe(rowCellCount);
         expect(headerCount).toBeLessThan(20);
+    });
+});
+
+describe("DependenciesTable column order", () => {
+    const reversedOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+
+    function headerLabels(wrapper) {
+        return wrapper.findAll("thead th").map((th) =>
+            th
+                .text()
+                .replace(/[▲▼]$/, "")
+                .trim(),
+        );
+    }
+
+    it("renders visible columns in the given columnOrder", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columnOrder: reversedOrder },
+        });
+
+        const expectedLabels = [
+            "Name",
+            ...reversedOrder.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key).label),
+            "Load",
+        ];
+        expect(headerLabels(wrapper)).toEqual(expectedLabels);
+    });
+
+    it("falls back to declaration order when columnOrder is omitted", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency] },
+        });
+
+        const expectedLabels = ["Name", ...TOGGLEABLE_COLUMNS.map((c) => c.label), "Load"];
+        expect(headerLabels(wrapper)).toEqual(expectedLabels);
+    });
+
+    it("keeps Name first and Load last regardless of columnOrder content", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columnOrder: reversedOrder },
+        });
+
+        const labels = headerLabels(wrapper);
+        expect(labels[0]).toBe("Name");
+        expect(labels[labels.length - 1]).toBe("Load");
+    });
+
+    it("keeps body <td> order in sync with header <th> order for a non-default columnOrder", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columnOrder: reversedOrder },
+        });
+
+        // sourceCode's cell renders a link, not text - use its position to
+        // cross-check header vs body order instead of comparing raw text.
+        const sourceCodeIndex = headerLabels(wrapper).indexOf("Source code");
+        const cells = wrapper.findAll("tbody td");
+        expect(cells[sourceCodeIndex].find("a").exists()).toBe(true);
+    });
+
+    it("emits reorder-columns with the merged full order when the draggable list is reordered", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency] },
+        });
+
+        const draggableComponent = wrapper.findComponent(draggable);
+        const list = draggableComponent.props("list");
+        [list[0], list[1]] = [list[1], list[0]];
+        await nextTick();
+
+        const emitted = wrapper.emitted("reorder-columns");
+        expect(emitted).toBeTruthy();
+        const [newOrder] = emitted[emitted.length - 1];
+        expect(newOrder[0]).toBe(TOGGLEABLE_COLUMNS[1].key);
+        expect(newOrder[1]).toBe(TOGGLEABLE_COLUMNS[0].key);
     });
 });
 

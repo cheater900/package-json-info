@@ -37,6 +37,7 @@
             <summary>Columns</summary>
             <column-visibility-panel
                 :visible-columns="visibleColumns"
+                :column-order="columnOrder"
                 @toggle-column="onToggleColumn"
             />
         </details>
@@ -55,7 +56,9 @@
             <dependencies-table
                 :dependencies="deps"
                 :visible-columns="visibleColumns"
+                :column-order="columnOrder"
                 @load-package="onLoadPackage"
+                @reorder-columns="onReorderColumns"
             />
         </details>
 
@@ -67,7 +70,9 @@
             <dependencies-table
                 :dependencies="devDeps"
                 :visible-columns="visibleColumns"
+                :column-order="columnOrder"
                 @load-package="onLoadPackage"
+                @reorder-columns="onReorderColumns"
             />
         </details>
         <details class="accordion">
@@ -89,7 +94,12 @@ import {
     isEntryCacheValid,
 } from "./utils/packageJsonHistory.ts";
 import { readInputUrlParam, withInputUrlParam } from "./utils/urlInputSync.ts";
-import { loadVisibleColumns, saveVisibleColumns } from "./utils/columnPreferencesStorage.ts";
+import {
+    loadVisibleColumns,
+    saveVisibleColumns,
+    loadColumnOrder,
+    saveColumnOrder,
+} from "./utils/columnPreferencesStorage.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import VueJsonPretty from "vue-json-pretty";
@@ -129,6 +139,23 @@ watch(
     },
     { deep: true },
 );
+
+// Persisted to localStorage on every change, so column order survives a
+// page reload. Shared globally across the Deps/Dev Deps tables and the
+// Columns panel, same as visibleColumns above.
+const columnOrder = ref(loadColumnOrder());
+
+watch(
+    columnOrder,
+    (value) => {
+        saveColumnOrder(value);
+    },
+    { deep: true },
+);
+
+function onReorderColumns(newOrder) {
+    columnOrder.value = newOrder;
+}
 
 // Each loaded package.json becomes a history entry, caching its own
 // fetched deps/devDeps. Navigating back/forward restores an entry's cached
