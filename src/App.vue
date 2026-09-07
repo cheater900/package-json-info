@@ -65,6 +65,8 @@
             </label>
         </div>
 
+        <h2 v-if="pkg?.name">{{ pkg.name }}</h2>
+
         <details class="accordion">
             <summary>
                 Deps

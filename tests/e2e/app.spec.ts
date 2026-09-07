@@ -231,7 +231,7 @@ test("the paste-from-clipboard button reads the clipboard and replaces the table
     await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible();
 });
 
-test("clicking a row's Load button loads that package's package.json as the new input", async ({
+test("clicking a row's VIEW THIS button loads that package's package.json as the new input", async ({
     page,
 }) => {
     await page.route("https://registry.npmjs.org/left-pad", async (route) => {
@@ -269,7 +269,7 @@ test("clicking a row's Load button loads that package's package.json as the new 
 
     const depsTable = page.locator("table.deps").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
-    await row.getByRole("button", { name: "Load" }).click();
+    await row.getByRole("button", { name: "VIEW THIS" }).click();
 
     // The table now reflects left-pad's own package.json: its dependency
     // shows up, and left-pad itself is no longer the input's own dependency.
@@ -603,7 +603,7 @@ test("the column visibility panel hides/shows columns and never drops below the 
     await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible();
 
     // Hide every toggleable column except "Version" to hit the floor: Name
-    // and Load are always visible, so this should bottom out at those two
+    // and Actions are always visible, so this should bottom out at those two
     // plus Version (three total), not fewer.
     const allLabels = (await page.locator(".column-visibility-panel label").allTextContents()).map(
         (t) => t.trim(),
@@ -618,7 +618,7 @@ test("the column visibility panel hides/shows columns and never drops below the 
     await expect(
         depsTable.getByRole("columnheader", { name: "Version", exact: true }),
     ).toBeVisible();
-    await expect(depsTable.getByRole("columnheader", { name: "Load" })).toBeVisible();
+    await expect(depsTable.getByRole("columnheader", { name: "Actions" })).toBeVisible();
     await expect(depsTable.locator("thead th")).toHaveCount(3);
 });
 
@@ -672,7 +672,7 @@ test("a column order preference seeded in localStorage is reflected in the rende
     const expectedLabels = [
         "Name",
         ...order.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key)!.label),
-        "Load",
+        "Actions",
     ];
     expect(headerTexts).toEqual(expectedLabels);
 });

@@ -103,11 +103,11 @@ describe("DependenciesTable", () => {
         );
         const cells = wrapper.findAll("tbody td");
         const licenseIndex = headerLabels.indexOf("License");
-        const loadIndex = headerLabels.indexOf("Load");
+        const loadIndex = headerLabels.indexOf("Actions");
 
         // name/version are always present; every other cell should fall back to
         // '-', except License (marks a missing license with a warning) and
-        // Load (always renders its button, regardless of dependency data).
+        // Actions (always renders its button, regardless of dependency data).
         cells.forEach((cell, index) => {
             if (index === 0 || index === 1 || index === loadIndex) return;
             if (index === licenseIndex) {
@@ -137,16 +137,16 @@ describe("DependenciesTable", () => {
 });
 
 describe("DependenciesTable load-as-input action", () => {
-    it("renders a Load column as the last header, with a Load button per row", () => {
+    it("renders an Actions column as the last header, with a VIEW THIS button per row", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
-        expect(headerTexts[headerTexts.length - 1]).toBe("Load");
+        expect(headerTexts[headerTexts.length - 1]).toBe("Actions");
 
         const lastCell = wrapper.find("tbody tr").findAll("td").at(-1)!;
-        expect(lastCell.find("button").text()).toBe("Load");
+        expect(lastCell.find("button").text()).toBe("VIEW THIS");
     });
 
     it("emits load-package with the row's name and version when clicked", async () => {
@@ -166,7 +166,7 @@ describe("DependenciesTable load-as-input action", () => {
         });
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
-        expect(headerTexts).toContain("Load");
+        expect(headerTexts).toContain("Actions");
     });
 });
 
@@ -240,7 +240,7 @@ describe("DependenciesTable column order", () => {
         const expectedLabels = [
             "Name",
             ...reversedOrder.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key).label),
-            "Load",
+            "Actions",
         ];
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
@@ -250,18 +250,18 @@ describe("DependenciesTable column order", () => {
             props: { dependencies: [fullDependency] },
         });
 
-        const expectedLabels = ["Name", ...TOGGLEABLE_COLUMNS.map((c) => c.label), "Load"];
+        const expectedLabels = ["Name", ...TOGGLEABLE_COLUMNS.map((c) => c.label), "Actions"];
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
 
-    it("keeps Name first and Load last regardless of columnOrder content", () => {
+    it("keeps Name first and Actions last regardless of columnOrder content", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columnOrder: reversedOrder },
         });
 
         const labels = headerLabels(wrapper);
         expect(labels[0]).toBe("Name");
-        expect(labels[labels.length - 1]).toBe("Load");
+        expect(labels[labels.length - 1]).toBe("Actions");
     });
 
     it("keeps body <td> order in sync with header <th> order for a non-default columnOrder", () => {

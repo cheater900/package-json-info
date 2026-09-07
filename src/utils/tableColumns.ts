@@ -25,7 +25,7 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
     { key: "vulnerabilityCount", label: "Vulnerabilities", sortable: true },
     { key: "bundleSizeGzip", label: "Bundle size (gzip)", sortable: true },
     { key: "maintainers", label: "Maintainers", sortable: false },
-    { key: "loadAction", label: "Load", sortable: false },
+    { key: "loadAction", label: "Actions", sortable: false },
 ];
 
 /**

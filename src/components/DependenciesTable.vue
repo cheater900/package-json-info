@@ -78,7 +78,7 @@
                 </template>
                 <template #footer>
                     <th>
-                        <span class="th-inner">Load</span>
+                        <span class="th-inner">Actions</span>
                     </th>
                 </template>
             </draggable>
@@ -103,7 +103,7 @@
                             })
                         "
                     >
-                        Load
+                        VIEW THIS
                     </button>
                 </td>
             </tr>
