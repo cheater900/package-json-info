@@ -38,7 +38,7 @@
             <column-visibility-panel
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
-                @toggle-column="onToggleColumn"
+                @toggle-column="toggleColumn"
             />
         </details>
 
@@ -78,7 +78,7 @@
                 :column-labels="columnLabels"
                 :column-titles="columnTitles"
                 @load-package="onLoadPackage"
-                @reorder-columns="onReorderColumns"
+                @reorder-columns="reorderColumns"
             />
         </details>
 
@@ -95,7 +95,7 @@
                 :column-labels="columnLabels"
                 :column-titles="columnTitles"
                 @load-package="onLoadPackage"
-                @reorder-columns="onReorderColumns"
+                @reorder-columns="reorderColumns"
             />
         </details>
         <details class="accordion">
@@ -105,42 +105,19 @@
     </div>
 </template>
 <script lang="ts" setup>
-import { ref, computed, watch, useId } from "vue";
-import { fetchPackagesInfo, fetchPackageJsonForVersion } from "./utils/npmPackage.ts";
+import { ref, watch, useId } from "vue";
+import { fetchPackageJsonForVersion } from "./utils/npmPackage.ts";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "./utils/repoPackageJson.ts";
-import {
-    toggleColumnVisibility,
-    TOGGLEABLE_COLUMNS,
-    abbreviateLabel,
-} from "./utils/tableColumns.ts";
-import {
-    createHistoryEntry,
-    pushHistoryEntry,
-    canGoBack as canGoBackPure,
-    canGoForward as canGoForwardPure,
-    isEntryCacheValid,
-} from "./utils/packageJsonHistory.ts";
 import { readInputUrlParam, withInputUrlParam } from "./utils/urlInputSync.ts";
-import {
-    loadVisibleColumns,
-    saveVisibleColumns,
-    loadColumnOrder,
-    saveColumnOrder,
-    loadShrinkColumnLabels,
-    saveShrinkColumnLabels,
-} from "./utils/columnPreferencesStorage.ts";
+import { useColumnPreferences } from "./composables/useColumnPreferences.ts";
+import { usePackageJsonHistory } from "./composables/usePackageJsonHistory.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import packageJson from "../package.json";
 
-const pkg = ref(null);
-
-const loadError = ref(null);
 const isLoadingInput = ref(false);
-const isLoadingDeps = ref(false);
-const isLoadingDevDeps = ref(false);
 
 // Kept in sync with the ?inputUrl= query param: read on load, written back
 // (via replaceState, so typing doesn't spam browser history) on every
@@ -154,199 +131,36 @@ watch(urlInput, (value) => {
     window.history.replaceState(null, "", url);
 });
 
-const deps = ref([]);
-const devDeps = ref([]);
-
 // Shared by both the Deps and Dev Deps tables, so one search box filters
 // both simultaneously.
 const searchInputId = useId();
 const searchQuery = ref("");
 
-// Persisted to localStorage on every change, so column visibility survives
-// a page reload.
-const visibleColumns = ref(loadVisibleColumns());
-
-watch(
+const {
     visibleColumns,
-    (value) => {
-        saveVisibleColumns(value);
-    },
-    { deep: true },
-);
-
-// Persisted to localStorage on every change, so column order survives a
-// page reload. Shared globally across the Deps/Dev Deps tables and the
-// Columns panel, same as visibleColumns above.
-const columnOrder = ref(loadColumnOrder());
-
-watch(
     columnOrder,
-    (value) => {
-        saveColumnOrder(value);
-    },
-    { deep: true },
-);
+    shrinkColumnLabels,
+    columnLabels,
+    columnTitles,
+    toggleColumn,
+    reorderColumns,
+} = useColumnPreferences();
 
-function onReorderColumns(newOrder) {
-    columnOrder.value = newOrder;
-}
-
-// Persisted to localStorage on every change, so the shrink-labels
-// preference survives a page reload.
-const shrinkColumnLabels = ref(loadShrinkColumnLabels());
-
-watch(shrinkColumnLabels, (value) => {
-    saveShrinkColumnLabels(value);
-});
-
-// The label (and, when abbreviated, a full-name tooltip) to show for each
-// toggleable column, keyed by column key. DependenciesTable just renders
-// whatever it's given here - it has no notion of "shrink columns by
-// abbreviation" itself.
-const columnLabels = computed(() => {
-    const labels = {};
-    for (const col of TOGGLEABLE_COLUMNS) {
-        labels[col.key] = shrinkColumnLabels.value ? abbreviateLabel(col.label) : col.label;
-    }
-    return labels;
-});
-
-const columnTitles = computed(() => {
-    const titles = {};
-    for (const col of TOGGLEABLE_COLUMNS) {
-        if (columnLabels.value[col.key] !== col.label) {
-            titles[col.key] = col.label;
-        }
-    }
-    return titles;
-});
-
-// Each loaded package.json becomes a history entry, caching its own
-// fetched deps/devDeps. Navigating back/forward restores an entry's cached
-// data directly (no request) when it's still valid for the current
-// visibleColumns; otherwise (never fetched, or fetched under a different
-// column set) it fetches - but even then, npmPackage's own name/slug-level
-// caching means only genuinely new data triggers a request.
-const history = ref([]);
-const historyIndex = ref(-1);
-
-const canGoBack = computed(() => canGoBackPure(historyIndex.value));
-const canGoForward = computed(() => canGoForwardPure(history.value, historyIndex.value));
-
-function onToggleColumn(key) {
-    visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);
-}
-
-watch(
-    visibleColumns,
-    () => {
-        applyCurrentHistoryEntry();
-    },
-    { deep: true },
-);
-
-function toPackageInputs(dependencies) {
-    if (!dependencies || typeof dependencies !== "object") {
-        return [];
-    }
-    return Object.entries(dependencies).map(([name, version]) => ({ name, version }));
-}
-
-/**
- * Validates raw package.json text and, on success, records it as a new
- * history entry and applies it. Returns true on success; on failure, sets
- * loadError and leaves the previous content untouched.
- */
-function loadPackageJsonText(text) {
-    let parsed;
-    try {
-        parsed = JSON.parse(text);
-    } catch (err) {
-        loadError.value = `That's not valid JSON: ${err.message}`;
-        return false;
-    }
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-        loadError.value = "Invalid package.json: expected a JSON object.";
-        return false;
-    }
-    loadError.value = null;
-
-    const pushed = pushHistoryEntry(
-        history.value,
-        historyIndex.value,
-        createHistoryEntry(text, parsed),
-    );
-    history.value = pushed.history;
-    historyIndex.value = pushed.index;
-    applyCurrentHistoryEntry();
-    return true;
-}
-
-function goBack() {
-    if (!canGoBack.value) return;
-    historyIndex.value -= 1;
-    applyCurrentHistoryEntry();
-}
-
-function goForward() {
-    if (!canGoForward.value) return;
-    historyIndex.value += 1;
-    applyCurrentHistoryEntry();
-}
-
-function applyCurrentHistoryEntry() {
-    const entry = history.value[historyIndex.value];
-    if (!entry) return;
-
-    pkg.value = entry.pkg;
-
-    if (isEntryCacheValid(entry, visibleColumns.value)) {
-        deps.value = entry.deps;
-        devDeps.value = entry.devDeps;
-        isLoadingDeps.value = false;
-        isLoadingDevDeps.value = false;
-        return;
-    }
-
-    fetchEntryDependencies(entry, historyIndex.value);
-}
-
-/**
- * Fetches (or re-fetches, if visibleColumns has changed) an entry's
- * deps/devDeps, caches the result on the entry itself, and - only if the
- * user hasn't navigated elsewhere in the meantime - applies it to the
- * visible state.
- */
-async function fetchEntryDependencies(entry, index) {
-    const rawDeps = toPackageInputs(entry.pkg?.dependencies);
-    const rawDevDeps = toPackageInputs(entry.pkg?.devDependencies);
-    const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
-
-    if (historyIndex.value === index) {
-        isLoadingDeps.value = rawDeps.length > 0;
-        isLoadingDevDeps.value = rawDevDeps.length > 0;
-    }
-
-    const [depsResult, devDepsResult] = await Promise.all([
-        rawDeps.length > 0
-            ? fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime })
-            : Promise.resolve([]),
-        rawDevDeps.length > 0
-            ? fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime })
-            : Promise.resolve([]),
-    ]);
-
-    entry.deps = depsResult;
-    entry.devDeps = devDepsResult;
-    entry.visibleColumnsSnapshot = visibleColumnsAtFetchTime;
-
-    if (historyIndex.value === index) {
-        deps.value = depsResult;
-        devDeps.value = devDepsResult;
-        isLoadingDeps.value = false;
-        isLoadingDevDeps.value = false;
-    }
-}
+const {
+    pkg,
+    deps,
+    devDeps,
+    isLoadingDeps,
+    isLoadingDevDeps,
+    loadError,
+    history,
+    historyIndex,
+    canGoBack,
+    canGoForward,
+    goBack,
+    goForward,
+    loadPackageJsonText,
+} = usePackageJsonHistory(visibleColumns);
 
 async function loadFromClipboard() {
     loadError.value = null;
