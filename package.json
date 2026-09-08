@@ -1,5 +1,5 @@
 {
-    "name": "package-jso-info",
+    "name": "package-json-info",
     "version": "0.0.0",
     "private": true,
     "type": "module",
