@@ -78,7 +78,7 @@ describe("DependenciesTable", () => {
 
         const text = wrapper.text();
         expect(text).toContain("left-pad");
-        expect(text).toContain("4242");
+        expect(text).toContain("4,242");
         expect(text).toContain("99");
         expect(text).toContain("a, b");
         expect(text).toContain("MIT");
