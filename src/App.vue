@@ -48,21 +48,23 @@
             <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
         </section>
 
-        <div class="search-controls">
-            <label :for="searchInputId">Search by name</label>
-            <input
-                :id="searchInputId"
-                v-model="searchQuery"
-                type="text"
-                placeholder="Filter by package name"
-            />
-        </div>
+        <div class="search-shrink-row">
+            <div class="search-controls">
+                <label :for="searchInputId" class="visually-hidden">Search by name</label>
+                <input
+                    :id="searchInputId"
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Filter by package name"
+                />
+            </div>
 
-        <div class="shrink-labels-controls">
-            <label>
-                <input type="checkbox" v-model="shrinkColumnLabels" />
-                Shrink columns by abbreviation
-            </label>
+            <div class="shrink-labels-controls">
+                <label>
+                    <input type="checkbox" v-model="shrinkColumnLabels" />
+                    Shrink columns by abbreviation
+                </label>
+            </div>
         </div>
 
         <h2 v-if="pkg?.name">{{ pkg.name }}</h2>
@@ -460,7 +462,7 @@ textarea {
 
 .input-methods {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 8px;
     margin-bottom: 24px;
 }
@@ -468,6 +470,7 @@ textarea {
 .url-fetch-row {
     display: flex;
     gap: 8px;
+    flex: 1;
 }
 
 .url-fetch-row input {
@@ -502,15 +505,17 @@ textarea {
     margin-bottom: 16px;
 }
 
+.search-shrink-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
 .search-controls {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 16px;
-}
-
-.shrink-labels-controls {
-    margin-bottom: 16px;
 }
 
 .shrink-labels-controls label {
