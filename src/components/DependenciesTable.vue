@@ -279,7 +279,7 @@ const sortedDependencies = computed(() => {
 function fmtDate(dateStr) {
     if (!dateStr) return "-";
     try {
-        return new Date(dateStr).toDateString();
+        return new Date(dateStr).toDateString().slice(4);
     } catch {
         return dateStr;
     }
