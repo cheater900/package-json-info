@@ -84,7 +84,10 @@
             </draggable>
         </thead>
         <tbody>
-            <tr v-for="dependency in sortedDependencies" :key="dependency.name">
+            <tr v-if="isLoading">
+                <td :colspan="orderedVisibleColumns.length + 2" class="loading-row">Loading…</td>
+            </tr>
+            <tr v-else v-for="dependency in sortedDependencies" :key="dependency.name">
                 <td>{{ dependency.name }}</td>
                 <td v-for="col in orderedVisibleColumns" :key="col.key">
                     <template v-if="col.key === 'sourceCode'">
@@ -154,6 +157,10 @@ const props = defineProps({
     columnTitles: {
         type: Object,
         default: () => ({}),
+    },
+    isLoading: {
+        type: Boolean,
+        default: false,
     },
 });
 
@@ -378,5 +385,10 @@ table th {
 .sort-arrow-active {
     opacity: 1;
     font-weight: bold;
+}
+
+.loading-row {
+    text-align: center;
+    font-style: italic;
 }
 </style>

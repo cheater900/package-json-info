@@ -79,6 +79,7 @@
                 :search-query="searchQuery"
                 :column-labels="columnLabels"
                 :column-titles="columnTitles"
+                :is-loading="isLoadingDeps"
                 @load-package="onLoadPackage"
                 @reorder-columns="onReorderColumns"
             />
@@ -96,6 +97,7 @@
                 :search-query="searchQuery"
                 :column-labels="columnLabels"
                 :column-titles="columnTitles"
+                :is-loading="isLoadingDevDeps"
                 @load-package="onLoadPackage"
                 @reorder-columns="onReorderColumns"
             />
