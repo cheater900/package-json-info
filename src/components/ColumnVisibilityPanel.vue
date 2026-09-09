@@ -65,6 +65,7 @@ const toggleableColumns = computed(() => orderColumns(props.columnOrder, TOGGLEA
     gap: 4px;
     white-space: nowrap;
     break-inside: avoid;
+    padding: 3px 0;
 }
 
 .visually-hidden {

@@ -67,7 +67,7 @@
             </div>
         </div>
 
-        <h2 v-if="pkg?.name">{{ pkg.name }}</h2>
+        <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
 
         <details class="accordion">
             <summary>
@@ -447,6 +447,8 @@ textarea {
     padding: 8px 12px;
     border-radius: 4px;
     margin-bottom: 16px;
+    font-weight: 600;
+    word-wrap: break-word;
 }
 
 .banner-error {
@@ -510,6 +512,11 @@ textarea {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg, #fff);
+    padding: 8px 0;
+    z-index: 2;
 }
 
 .search-controls {
@@ -531,6 +538,18 @@ textarea {
 .accordion > summary {
     cursor: pointer;
     font-weight: 600;
-    padding: 4px 0;
+    padding: 8px 4px;
+}
+
+.package-name {
+    font-weight: 700;
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border, #e5e4e7);
+}
+
+button {
+    padding: 6px 14px;
+    font-size: 0.95rem;
 }
 </style>

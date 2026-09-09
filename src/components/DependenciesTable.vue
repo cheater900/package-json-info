@@ -343,15 +343,18 @@ table.deps {
     display: block;
     overflow-x: scroll;
     width: 100%;
+    font-size: 0.85rem;
+    margin-top: 4px;
 }
 
 table th,
 table td {
-    padding: 8px 12px;
+    padding: 6px 10px;
+    white-space: nowrap;
 }
 
-table th {
-    white-space: nowrap;
+table td button {
+    font-size: inherit;
 }
 
 .th-inner {
@@ -359,6 +362,7 @@ table th {
     align-items: center;
     gap: 4px;
     white-space: nowrap;
+    font-weight: 600;
 }
 
 .col-drag-handle {
@@ -402,5 +406,6 @@ table th {
 .loading-row {
     text-align: center;
     font-style: italic;
+    padding: 12px;
 }
 </style>
