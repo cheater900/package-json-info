@@ -437,6 +437,11 @@ loadPackageJsonText(JSON.stringify(packageJson, null, 2));
     text-align: left;
 }
 
+h1 {
+    text-align: center;
+    text-transform: uppercase;
+}
+
 input,
 textarea {
     display: block;

@@ -9,7 +9,7 @@
                 :force-fallback="true"
             >
                 <template #header>
-                    <th>
+                    <th :class="{ 'col-centered': isCentered('name') }">
                         <span class="th-inner">
                             <button type="button" class="sort-trigger" @click="toggleSort('name')">
                                 <span class="col-label">Name</span>
@@ -37,7 +37,7 @@
                     </th>
                 </template>
                 <template #item="{ element: col }">
-                    <th>
+                    <th :class="{ 'col-centered': isCentered(col.key) }">
                         <span class="th-inner">
                             <span class="col-drag-handle" aria-hidden="true"></span>
                             <button
@@ -77,7 +77,7 @@
                     </th>
                 </template>
                 <template #footer>
-                    <th>
+                    <th :class="{ 'col-centered': isCentered('loadAction') }">
                         <span class="th-inner">Actions</span>
                     </th>
                 </template>
@@ -88,15 +88,19 @@
                 <td :colspan="orderedVisibleColumns.length + 2" class="loading-row">Loading…</td>
             </tr>
             <tr v-else v-for="dependency in sortedDependencies" :key="dependency.name">
-                <td>{{ dependency.name }}</td>
-                <td v-for="col in orderedVisibleColumns" :key="col.key">
+                <td :class="{ 'col-centered': isCentered('name') }">{{ dependency.name }}</td>
+                <td
+                    v-for="col in orderedVisibleColumns"
+                    :key="col.key"
+                    :class="{ 'col-centered': isCentered(col.key) }"
+                >
                     <template v-if="col.key === 'sourceCode'">
                         <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>
                         <template v-else>-</template>
                     </template>
                     <template v-else>{{ formatCell(col.key, dependency) }}</template>
                 </td>
-                <td>
+                <td :class="{ 'col-centered': isCentered('loadAction') }">
                     <button
                         type="button"
                         @click="
@@ -162,9 +166,19 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    // Column keys whose header and cells should be center-aligned instead of
+    // the default left alignment.
+    centeredColumns: {
+        type: Set,
+        default: () => new Set(["loadAction"]),
+    },
 });
 
 const emit = defineEmits(["load-package", "reorder-columns"]);
+
+function isCentered(key) {
+    return props.centeredColumns.has(key);
+}
 
 const filteredDependencies = computed(() => {
     const query = props.searchQuery.trim().toLowerCase();
@@ -355,6 +369,14 @@ table td {
 
 table td button {
     font-size: inherit;
+}
+
+.col-centered {
+    text-align: center;
+}
+
+.col-centered .th-inner {
+    justify-content: center;
 }
 
 .th-inner {
