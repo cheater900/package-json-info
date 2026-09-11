@@ -3,7 +3,7 @@ import { hasLicenseWarning } from "./license";
 export function fmtDate(dateStr) {
     if (!dateStr) return "-";
     try {
-        return new Date(dateStr).toDateString();
+        return new Date(dateStr).toDateString().slice(4);
     } catch {
         return dateStr;
     }
@@ -29,6 +29,11 @@ export function fmtBundleSize(gzipBytes) {
     return `${(gzipBytes / 1024).toFixed(1)} KB`;
 }
 
+export function fmtNumber(n) {
+    if (n === null || n === undefined) return "-";
+    return n.toLocaleString("en-US");
+}
+
 // Per-column cell formatters, keyed by column key. Columns without an entry
 // here fall back to a plain value ?? "-" passthrough (see formatCell).
 // sourceCode isn't included: it renders a link instead of text, and is
@@ -38,6 +43,13 @@ const CELL_FORMATTERS = {
     latestReleaseDate: (d) => fmtDate(d.latestReleaseDate),
     latestUpdateDate: (d) => fmtDate(d.latestUpdateDate),
     isOutdated: (d) => fmtOutdated(d.isOutdated),
+    weeklyDownloads: (d) => fmtNumber(d.weeklyDownloads),
+    gitStars: (d) => fmtNumber(d.gitStars),
+    openPRs: (d) => fmtNumber(d.openPRs),
+    closedPRs: (d) => fmtNumber(d.closedPRs),
+    openIssues: (d) => fmtNumber(d.openIssues),
+    closedIssues: (d) => fmtNumber(d.closedIssues),
+    vulnerabilityCount: (d) => fmtNumber(d.vulnerabilityCount),
     dependencies: (d) => fmtList(d.dependencies),
     license: (d) => fmtLicense(d.license),
     bundleSizeGzip: (d) => fmtBundleSize(d.bundleSizeGzip),

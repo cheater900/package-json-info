@@ -13,7 +13,7 @@ import {
 describe("fmtDate", () => {
     it("formats a valid date string", () => {
         expect(fmtDate("2024-01-01T00:00:00.000Z")).toBe(
-            new Date("2024-01-01T00:00:00.000Z").toDateString(),
+            new Date("2024-01-01T00:00:00.000Z").toDateString().slice(4),
         );
     });
 
