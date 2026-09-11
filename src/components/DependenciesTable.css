@@ -1,0 +1,77 @@
+table.deps {
+    display: block;
+    overflow-x: scroll;
+    width: 100%;
+    font-size: 0.85rem;
+    margin-top: 4px;
+}
+
+table th,
+table td {
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+table td button {
+    font-size: inherit;
+}
+
+.col-centered {
+    text-align: center;
+}
+
+.col-centered .th-inner {
+    justify-content: center;
+}
+
+.th-inner {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.col-drag-handle {
+    display: inline-block;
+    cursor: grab;
+    padding: 0 4px;
+}
+
+.col-drag-handle::before {
+    content: "⠿";
+}
+
+.sort-trigger {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.sort-icons {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 0.6;
+    font-size: 0.7em;
+}
+
+.sort-arrow {
+    opacity: 0.35;
+}
+
+.sort-arrow-active {
+    opacity: 1;
+    font-weight: bold;
+}
+
+.loading-row {
+    text-align: center;
+    font-style: italic;
+    padding: 12px;
+}
