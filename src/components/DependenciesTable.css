@@ -75,3 +75,35 @@ table td button {
     font-style: italic;
     padding: 12px;
 }
+
+.deps-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
+
+.expand-toggle {
+    font-size: 0.85rem;
+    padding: 4px 10px;
+}
+
+.deps-region-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 24px;
+}
+
+.deps-region-modal .deps-panel {
+    background: var(--bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    padding: 16px;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: auto;
+}

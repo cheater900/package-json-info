@@ -1,4 +1,4 @@
-import { ref, computed, watch, defineComponent } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, defineComponent } from "vue";
 import draggable from "vuedraggable";
 import {
     isColumnVisible,
@@ -139,6 +139,37 @@ export default defineComponent({
             sortDependencies(filteredDependencies.value, sortKey.value, sortDir.value),
         );
 
+        const isExpanded = ref(false);
+
+        function toggleExpanded() {
+            isExpanded.value = !isExpanded.value;
+        }
+
+        // Clicking the backdrop (not the panel itself) closes the modal, same
+        // as pressing Escape.
+        function onOverlayClick(event) {
+            if (isExpanded.value && event.target === event.currentTarget) {
+                isExpanded.value = false;
+            }
+        }
+
+        function onKeydown(event) {
+            if (event.key === "Escape" && isExpanded.value) {
+                isExpanded.value = false;
+            }
+        }
+
+        // Lock page scroll behind the fullscreen overlay while it's open.
+        watch(isExpanded, (expanded) => {
+            document.body.style.overflow = expanded ? "hidden" : "";
+        });
+
+        onMounted(() => window.addEventListener("keydown", onKeydown));
+        onUnmounted(() => {
+            window.removeEventListener("keydown", onKeydown);
+            document.body.style.overflow = "";
+        });
+
         return {
             isCentered,
             formatCell,
@@ -150,6 +181,9 @@ export default defineComponent({
             toggleSort,
             sortDirectionFor,
             sortedDependencies,
+            isExpanded,
+            toggleExpanded,
+            onOverlayClick,
         };
     },
 });
