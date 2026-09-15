@@ -76,11 +76,9 @@
             </summary>
             <dependencies-table
                 :dependencies="deps"
-                :visible-columns="visibleColumns"
-                :column-order="columnOrder"
+                :columns="visibleColumnKeys"
                 :search-query="searchQuery"
-                :column-labels="columnLabels"
-                :column-titles="columnTitles"
+                :shrink-labels="shrinkColumnLabels"
                 :is-loading="isLoadingDeps"
                 @load-package="onLoadPackage"
                 @reorder-columns="reorderColumns"
@@ -94,11 +92,9 @@
             </summary>
             <dependencies-table
                 :dependencies="devDeps"
-                :visible-columns="visibleColumns"
-                :column-order="columnOrder"
+                :columns="visibleColumnKeys"
                 :search-query="searchQuery"
-                :column-labels="columnLabels"
-                :column-titles="columnTitles"
+                :shrink-labels="shrinkColumnLabels"
                 :is-loading="isLoadingDevDeps"
                 @load-package="onLoadPackage"
                 @reorder-columns="reorderColumns"

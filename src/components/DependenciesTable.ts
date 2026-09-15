@@ -1,13 +1,9 @@
 import { ref, computed, watch, onMounted, onUnmounted, defineComponent } from "vue";
 import draggable from "vuedraggable";
-import {
-    isColumnVisible,
-    TOGGLEABLE_COLUMNS,
-    DEFAULT_COLUMN_ORDER,
-    orderColumns,
-    mergeColumnOrder,
-} from "../utils/tableColumns";
+import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
 import { formatCell, sortDependencies } from "../utils/dependencyRowFormatting";
+
+const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
     components: { draggable },
@@ -16,11 +12,12 @@ export default defineComponent({
             type: Array,
             required: true,
         },
-        visibleColumns: {
-            type: Set,
-            default: () => new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)),
-        },
-        columnOrder: {
+        // Ordered list of the currently-visible column keys - the only
+        // column-visibility/order information this component needs from its
+        // parent. Column text, abbreviation, and how each column's content
+        // renders (plain text, numbers, links, buttons) are this
+        // component's own business, not something a parent should decide.
+        columns: {
             type: Array,
             default: () => DEFAULT_COLUMN_ORDER,
         },
@@ -28,36 +25,25 @@ export default defineComponent({
             type: String,
             default: "",
         },
-        // Display label per column key, decided entirely by the parent (e.g.
-        // full name vs. an abbreviation) - this component has no opinion on it,
-        // it just renders whatever it's given, falling back to the column's own
-        // default label for any key the parent doesn't override.
-        columnLabels: {
-            type: Object,
-            default: () => ({}),
-        },
-        // Tooltip text per column key, shown on hover. Only columns whose label
-        // is being overridden with something other than its full name need an
-        // entry here (e.g. an abbreviation's real name) - the parent decides.
-        columnTitles: {
-            type: Object,
-            default: () => ({}),
+        // Whether to abbreviate multi-word column labels (e.g. "Version
+        // Date" -> "VD"), with the full name shown as a hover tooltip. A
+        // plain display-preference toggle - turning it into actual label
+        // text is this component's job, via abbreviateLabel.
+        shrinkLabels: {
+            type: Boolean,
+            default: false,
         },
         isLoading: {
             type: Boolean,
             default: false,
         },
-        // Column keys whose header and cells should be center-aligned instead of
-        // the default left alignment.
-        centeredColumns: {
-            type: Set,
-            default: () => new Set(["loadAction"]),
-        },
     },
     emits: ["load-package", "reorder-columns"],
     setup(props, { emit }) {
+        // The Actions column is the only one center-aligned; not something a
+        // parent has ever needed to customize.
         function isCentered(key) {
-            return props.centeredColumns.has(key);
+            return key === "loadAction";
         }
 
         const filteredDependencies = computed(() => {
@@ -66,21 +52,19 @@ export default defineComponent({
             return props.dependencies.filter((d) => d.name?.toLowerCase().includes(query));
         });
 
-        function isVisible(key) {
-            return isColumnVisible(props.visibleColumns, key);
-        }
-
         function labelFor(col) {
-            return props.columnLabels[col.key] ?? col.label;
+            return props.shrinkLabels ? abbreviateLabel(col.label) : col.label;
         }
 
         function titleFor(col) {
-            return props.columnTitles[col.key];
+            const label = labelFor(col);
+            return label !== col.label ? col.label : undefined;
         }
 
-        // The currently-visible toggleable columns, in the persisted order.
+        // Resolve the parent's ordered list of visible column keys into full
+        // ColumnDefs, dropping any key that no longer matches a real column.
         const orderedVisibleColumns = computed(() =>
-            orderColumns(props.columnOrder, TOGGLEABLE_COLUMNS).filter((c) => isVisible(c.key)),
+            props.columns.map((key) => COLUMNS_BY_KEY.get(key)).filter((c) => c !== undefined),
         );
 
         // vuedraggable needs a locally-mutable array to splice as the user drags -
@@ -102,18 +86,17 @@ export default defineComponent({
             }
         });
 
-        // After a drop, merge the new visible-column order into the full persisted
-        // order and emit it upward. deep: true because vuedraggable mutates
-        // draggableColumns in place via splice, which a shallow watch would miss.
+        // After a drop, emit the new visible-column order upward. deep: true
+        // because vuedraggable mutates draggableColumns in place via splice,
+        // which a shallow watch would miss. Merging this back into the full
+        // persisted order (so hidden columns keep their own slot) is the
+        // parent's job, not this component's.
         watch(
             draggableColumns,
             (cols) => {
-                const merged = mergeColumnOrder(
-                    props.columnOrder,
-                    cols.map((c) => c.key),
-                );
-                if (merged.join() !== props.columnOrder.join()) {
-                    emit("reorder-columns", merged);
+                const newOrder = cols.map((c) => c.key);
+                if (newOrder.join() !== props.columns.join()) {
+                    emit("reorder-columns", newOrder);
                 }
             },
             { deep: true },
@@ -173,7 +156,6 @@ export default defineComponent({
         return {
             isCentered,
             formatCell,
-            isVisible,
             labelFor,
             titleFor,
             orderedVisibleColumns,

@@ -2,7 +2,9 @@ import { ref, computed, watch } from "vue";
 import {
     toggleColumnVisibility,
     TOGGLEABLE_COLUMNS,
-    abbreviateLabel,
+    isColumnVisible,
+    orderColumns,
+    mergeColumnOrder,
 } from "../utils/tableColumns.ts";
 import {
     loadVisibleColumns,
@@ -50,38 +52,28 @@ export function useColumnPreferences() {
         visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);
     }
 
-    function reorderColumns(newOrder) {
-        columnOrder.value = newOrder;
+    // `newVisibleOrder` is a permutation of just the currently-visible
+    // columns (what DependenciesTable emits after a drag) - merge it back
+    // into the full persisted order so each hidden column keeps its own
+    // slot, ready to reappear in place if it's shown again later.
+    function reorderColumns(newVisibleOrder) {
+        columnOrder.value = mergeColumnOrder(columnOrder.value, newVisibleOrder);
     }
 
-    // The label (and, when abbreviated, a full-name tooltip) to show for
-    // each toggleable column, keyed by column key. DependenciesTable just
-    // renders whatever it's given here - it has no notion of "shrink
-    // columns by abbreviation" itself.
-    const columnLabels = computed(() => {
-        const labels = {};
-        for (const col of TOGGLEABLE_COLUMNS) {
-            labels[col.key] = shrinkColumnLabels.value ? abbreviateLabel(col.label) : col.label;
-        }
-        return labels;
-    });
-
-    const columnTitles = computed(() => {
-        const titles = {};
-        for (const col of TOGGLEABLE_COLUMNS) {
-            if (columnLabels.value[col.key] !== col.label) {
-                titles[col.key] = col.label;
-            }
-        }
-        return titles;
-    });
+    // The currently-visible toggleable column keys, in display order - the
+    // only column-visibility/order info DependenciesTable needs. It owns
+    // everything else about a column (label, abbreviation, cell rendering).
+    const visibleColumnKeys = computed(() =>
+        orderColumns(columnOrder.value, TOGGLEABLE_COLUMNS)
+            .filter((c) => isColumnVisible(visibleColumns.value, c.key))
+            .map((c) => c.key),
+    );
 
     return {
         visibleColumns,
         columnOrder,
         shrinkColumnLabels,
-        columnLabels,
-        columnTitles,
+        visibleColumnKeys,
         toggleColumn,
         reorderColumns,
     };

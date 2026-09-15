@@ -41,23 +41,50 @@ describe("toggleColumn", () => {
 });
 
 describe("reorderColumns", () => {
-    it("sets columnOrder to the given order", () => {
+    it("reorders the currently-visible columns, keeping each hidden column in its own slot", () => {
         const { columnOrder, reorderColumns } = useColumnPreferences();
-        const reversed = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+        const visibleOrder = columnOrder.value.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
+        const reversedVisible = [...visibleOrder].reverse();
 
-        reorderColumns(reversed);
+        reorderColumns(reversedVisible);
 
-        expect(columnOrder.value).toEqual(reversed);
+        expect(columnOrder.value.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key))).toEqual(
+            reversedVisible,
+        );
+        expect(columnOrder.value.filter((key) => !DEFAULT_VISIBLE_COLUMNS.has(key))).toEqual(
+            TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !DEFAULT_VISIBLE_COLUMNS.has(key)),
+        );
     });
 
     it("persists the change to localStorage", async () => {
-        const { reorderColumns } = useColumnPreferences();
-        const reversed = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
+        const { columnOrder, reorderColumns } = useColumnPreferences();
+        const visibleOrder = columnOrder.value.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
+        const reversedVisible = [...visibleOrder].reverse();
 
-        reorderColumns(reversed);
+        reorderColumns(reversedVisible);
         await nextTick();
 
-        expect(JSON.parse(localStorage.getItem(ORDER_STORAGE_KEY)!)).toEqual(reversed);
+        const stored = JSON.parse(localStorage.getItem(ORDER_STORAGE_KEY)!);
+        expect(stored.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key))).toEqual(reversedVisible);
+    });
+});
+
+describe("visibleColumnKeys", () => {
+    it("returns only the visible toggleable columns, in columnOrder", () => {
+        const { visibleColumnKeys } = useColumnPreferences();
+
+        expect(visibleColumnKeys.value).toEqual(
+            TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key)),
+        );
+    });
+
+    it("updates when a hidden column is toggled visible", () => {
+        const { visibleColumnKeys, toggleColumn } = useColumnPreferences();
+        expect(visibleColumnKeys.value).not.toContain("maintainers");
+
+        toggleColumn("maintainers");
+
+        expect(visibleColumnKeys.value).toContain("maintainers");
     });
 });
 
@@ -69,32 +96,5 @@ describe("shrinkColumnLabels", () => {
         await nextTick();
 
         expect(JSON.parse(localStorage.getItem(SHRINK_LABELS_STORAGE_KEY)!)).toBe(true);
-    });
-});
-
-describe("columnLabels / columnTitles", () => {
-    it("uses each column's own full label when shrinkColumnLabels is false", () => {
-        const { columnLabels, columnTitles } = useColumnPreferences();
-
-        expect(columnLabels.value.versionDate).toBe("Version Date");
-        expect(columnTitles.value.versionDate).toBeUndefined();
-    });
-
-    it("abbreviates multi-word labels when shrinkColumnLabels is true, with a full-name title", () => {
-        const { shrinkColumnLabels, columnLabels, columnTitles } = useColumnPreferences();
-
-        shrinkColumnLabels.value = true;
-
-        expect(columnLabels.value.versionDate).toBe("VD");
-        expect(columnTitles.value.versionDate).toBe("Version Date");
-    });
-
-    it("leaves a single-word label untouched even when shrinkColumnLabels is true", () => {
-        const { shrinkColumnLabels, columnLabels, columnTitles } = useColumnPreferences();
-
-        shrinkColumnLabels.value = true;
-
-        expect(columnLabels.value.deprecated).toBe("Deprecated");
-        expect(columnTitles.value.deprecated).toBeUndefined();
     });
 });

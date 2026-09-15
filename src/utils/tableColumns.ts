@@ -2,6 +2,11 @@ export type ColumnDef = {
     key: string;
     label: string;
     sortable: boolean;
+    // How this column's cell content renders. Omitted means plain formatted
+    // text (see formatCell) - the only other kind currently needed is an
+    // external link (sourceCode). DependenciesTable dispatches on this
+    // instead of hardcoding column keys in its template.
+    render?: "link";
 };
 
 export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
@@ -13,7 +18,7 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
     { key: "latestUpdateDate", label: "Latest update date", sortable: true },
     { key: "isOutdated", label: "Outdated", sortable: true },
     { key: "weeklyDownloads", label: "Weekly downloads", sortable: true },
-    { key: "sourceCode", label: "Source code", sortable: false },
+    { key: "sourceCode", label: "Source code", sortable: false, render: "link" },
     { key: "gitStars", label: "Git stars", sortable: true },
     { key: "openPRs", label: "Open PRs", sortable: true },
     { key: "closedPRs", label: "Closed PRs", sortable: true },

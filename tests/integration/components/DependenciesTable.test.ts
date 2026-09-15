@@ -6,8 +6,8 @@ import DependenciesTable from "../../../src/components/DependenciesTable.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
 /** Every toggleable column key except the given ones - i.e. "everything visible except these". */
-function visibleColumnsExcept(...excluded) {
-    return new Set(TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !excluded.includes(key)));
+function columnsExcept(...excluded) {
+    return TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !excluded.includes(key));
 }
 
 const fullDependency = {
@@ -160,9 +160,9 @@ describe("DependenciesTable load-as-input action", () => {
         expect(wrapper.emitted("load-package")).toEqual([[{ name: "left-pad", version: "1.2.0" }]]);
     });
 
-    it("stays visible even with an empty visibleColumns set", () => {
+    it("stays visible even with an empty columns list", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], visibleColumns: new Set() },
+            props: { dependencies: [fullDependency], columns: [] },
         });
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
@@ -181,11 +181,11 @@ describe("DependenciesTable column visibility", () => {
         expect(headerTexts).toContain("Maintainers");
     });
 
-    it("hides a column not named in visibleColumns, from both the header and every row", () => {
+    it("hides a column not named in columns, from both the header and every row", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency, sparseDependency],
-                visibleColumns: visibleColumnsExcept("license"),
+                columns: columnsExcept("license"),
             },
         });
 
@@ -197,7 +197,7 @@ describe("DependenciesTable column visibility", () => {
 
     it("never hides the Name column even if asked to", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], visibleColumns: new Set() },
+            props: { dependencies: [fullDependency], columns: [] },
         });
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
@@ -209,7 +209,7 @@ describe("DependenciesTable column visibility", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency],
-                visibleColumns: visibleColumnsExcept("license", "maintainers", "sourceCode"),
+                columns: columnsExcept("license", "maintainers", "sourceCode"),
             },
         });
 
@@ -232,9 +232,9 @@ describe("DependenciesTable column order", () => {
         );
     }
 
-    it("renders visible columns in the given columnOrder", () => {
+    it("renders visible columns in the given columns order", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columnOrder: reversedOrder },
+            props: { dependencies: [fullDependency], columns: reversedOrder },
         });
 
         const expectedLabels = [
@@ -245,7 +245,7 @@ describe("DependenciesTable column order", () => {
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
 
-    it("falls back to declaration order when columnOrder is omitted", () => {
+    it("falls back to declaration order when columns is omitted", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -254,9 +254,9 @@ describe("DependenciesTable column order", () => {
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
 
-    it("keeps Name first and Actions last regardless of columnOrder content", () => {
+    it("keeps Name first and Actions last regardless of columns content", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columnOrder: reversedOrder },
+            props: { dependencies: [fullDependency], columns: reversedOrder },
         });
 
         const labels = headerLabels(wrapper);
@@ -264,9 +264,9 @@ describe("DependenciesTable column order", () => {
         expect(labels[labels.length - 1]).toBe("Actions");
     });
 
-    it("keeps body <td> order in sync with header <th> order for a non-default columnOrder", () => {
+    it("keeps body <td> order in sync with header <th> order for a non-default columns order", () => {
         const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columnOrder: reversedOrder },
+            props: { dependencies: [fullDependency], columns: reversedOrder },
         });
 
         // sourceCode's cell renders a link, not text - use its position to
@@ -276,7 +276,7 @@ describe("DependenciesTable column order", () => {
         expect(cells[sourceCodeIndex].find("a").exists()).toBe(true);
     });
 
-    it("emits reorder-columns with the merged full order when the draggable list is reordered", async () => {
+    it("emits reorder-columns with the new column order when the draggable list is reordered", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -304,7 +304,7 @@ describe("DependenciesTable column labels", () => {
         );
     }
 
-    it("renders each column's own label when columnLabels is omitted", () => {
+    it("renders each column's own full label when shrinkLabels is omitted", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -313,46 +313,34 @@ describe("DependenciesTable column labels", () => {
         expect(headerLabels(wrapper)).toContain("Latest release date");
     });
 
-    it("renders the overridden text from columnLabels instead of the column's own label", () => {
+    it("abbreviates every multi-word label to initials when shrinkLabels is true", () => {
         const wrapper = mount(DependenciesTable, {
-            props: {
-                dependencies: [fullDependency],
-                columnLabels: { versionDate: "VD", latestReleaseDate: "LRD" },
-            },
+            props: { dependencies: [fullDependency], shrinkLabels: true },
         });
 
         const labels = headerLabels(wrapper);
-        expect(labels).toContain("VD");
-        expect(labels).toContain("LRD");
+        expect(labels).toContain("VD"); // Version Date
+        expect(labels).toContain("LRD"); // Latest release date
         expect(labels).not.toContain("Version Date");
         expect(labels).not.toContain("Latest release date");
     });
 
-    it("falls back to the column's own label for any key missing from columnLabels", () => {
+    it("leaves a single-word label unabbreviated even when shrinkLabels is true", () => {
         const wrapper = mount(DependenciesTable, {
-            props: {
-                dependencies: [fullDependency],
-                columnLabels: { versionDate: "VD" },
-            },
+            props: { dependencies: [fullDependency], shrinkLabels: true },
         });
 
-        const labels = headerLabels(wrapper);
-        expect(labels).toContain("VD");
-        expect(labels).toContain("Latest release date");
+        expect(headerLabels(wrapper)).toContain("Deprecated");
     });
 
-    it("sets a title tooltip only for columns named in columnTitles", () => {
+    it("sets a title tooltip only for labels that were actually abbreviated", () => {
         const wrapper = mount(DependenciesTable, {
-            props: {
-                dependencies: [fullDependency],
-                columnLabels: { versionDate: "VD" },
-                columnTitles: { versionDate: "Version Date" },
-            },
+            props: { dependencies: [fullDependency], shrinkLabels: true },
         });
 
         const labels = wrapper.findAll(".col-label");
         const abbreviated = labels.find((l) => l.text() === "VD")!;
-        const untouched = labels.find((l) => l.text() === "Latest release date")!;
+        const untouched = labels.find((l) => l.text() === "Deprecated")!;
 
         expect(abbreviated.attributes("title")).toBe("Version Date");
         expect(untouched.attributes("title")).toBeUndefined();

@@ -120,7 +120,7 @@
                                 :key="col.key"
                                 :class="{ 'col-centered': isCentered(col.key) }"
                             >
-                                <template v-if="col.key === 'sourceCode'">
+                                <template v-if="col.render === 'link'">
                                     <a v-if="dependency.sourceCode" :href="dependency.sourceCode">
                                         link
                                     </a>
