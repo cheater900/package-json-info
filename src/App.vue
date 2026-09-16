@@ -20,7 +20,10 @@
                     Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL
                 </label>
                 <input id="url-input" v-model="urlInput" type="text" placeholder="Enter url..." />
-                <button type="submit" :disabled="isLoadingInput">FETCH</button>
+                <button type="submit" :disabled="isLoadingInput">
+                    <span class="btn-icon" aria-hidden="true">↓</span>
+                    Fetch
+                </button>
             </form>
 
             <div class="input-method-actions">
@@ -32,9 +35,11 @@
                     @change="onFileSelected"
                 />
                 <button type="button" @click="fileInputRef?.click()" :disabled="isLoadingInput">
+                    <span class="btn-icon" aria-hidden="true">↑</span>
                     Upload file
                 </button>
                 <button type="button" @click="loadFromClipboard" :disabled="isLoadingInput">
+                    <span class="btn-icon" aria-hidden="true">⧉</span>
                     Paste from clipboard
                 </button>
             </div>
