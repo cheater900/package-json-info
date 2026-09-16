@@ -1,6 +1,13 @@
 <template>
     <div>
-        <h1>Package.json info</h1>
+        <div class="terminal-titlebar">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="path">node ~/package.json</span>
+        </div>
+
+        <h1>$ package.json info<span class="cursor">_</span></h1>
 
         <div v-if="loadError" class="banner banner-error" role="alert">
             {{ loadError }}
