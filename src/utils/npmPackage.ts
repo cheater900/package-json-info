@@ -1,6 +1,8 @@
 import type { PackageInfo, PackageInput, PackageError } from "../types";
 import { isVersionOutdated } from "./semver";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "./tableColumns";
+import { findGithubReleaseTag } from "./sourceTree";
+import type { SourceTreeRef } from "./sourceTree";
 
 // ── Internal npm / GitHub response shapes ────────────────────────────────────
 
@@ -38,6 +40,7 @@ type NpmVersionData = {
     dependencies?: Record<string, string>;
     license?: NpmLicenseField;
     deprecated?: string;
+    dist?: { tarball?: string };
 };
 
 type NpmRegistryData = {
@@ -157,6 +160,7 @@ const weeklyDownloadsCache = new Map<string, Promise<number | null>>();
 const vulnerabilityCountCache = new Map<string, Promise<number | null>>();
 const bundleSizeCache = new Map<string, Promise<number | null>>();
 const repoMetadataCache = new Map<string, Promise<RepoMetadata>>();
+const githubReleaseTagCache = new Map<string, Promise<string | null>>();
 
 function nameVersionKey(name: string, version: string): string {
     return `${name}@${version}`;
@@ -173,6 +177,7 @@ export function clearPackageInfoCache(): void {
     vulnerabilityCountCache.clear();
     bundleSizeCache.clear();
     repoMetadataCache.clear();
+    githubReleaseTagCache.clear();
 }
 
 // ── Column gating ────────────────────────────────────────────────────────────
@@ -197,6 +202,7 @@ const NPM_DATA_DEPENDENT_COLUMNS = [
     "isOutdated",
     "maintainers",
     "sourceCode",
+    "sourceCodeTree",
     "gitStars",
     "openPRs",
     "closedPRs",
@@ -287,6 +293,12 @@ export async function fetchPackageInfo(
             ? await fetchRepoMetadata(slug, githubHeaders)
             : EMPTY_REPO_METADATA;
 
+    // ── 4. Source tree eligibility: npm's own tarball first, GitHub tag fallback ─
+
+    const sourceTree = isColumnVisible(visibleColumns, "sourceCodeTree")
+        ? await resolveSourceTree(versionData, slug, version, githubHeaders)
+        : null;
+
     return {
         name,
         version,
@@ -308,6 +320,7 @@ export async function fetchPackageInfo(
         vulnerabilityCount,
         bundleSizeGzip,
         maintainers,
+        sourceTree,
     };
 }
 
@@ -505,6 +518,45 @@ function fetchRepoMetadata(
 
         return EMPTY_REPO_METADATA;
     });
+}
+
+/**
+ * Decides how (if at all) this version's source can be browsed: npm's own
+ * published tarball is preferred whenever the registry lists one (true for
+ * virtually every published version), falling back to a matching GitHub
+ * release tag only when it isn't. GitLab/Codeberg aren't supported for this
+ * fallback - the tree/tag APIs needed differ enough per host that it wasn't
+ * worth building out for hosts npm packages rarely miss a tarball for
+ * anyway.
+ */
+async function resolveSourceTree(
+    versionData: NpmVersionData | undefined,
+    slug: RepoSlug | null,
+    version: string,
+    githubHeaders: Record<string, string>,
+): Promise<SourceTreeRef | null> {
+    const tarballUrl = versionData?.dist?.tarball;
+    if (tarballUrl) {
+        return { provider: "npm", tarballUrl };
+    }
+    if (slug != null && slug.host === "github.com") {
+        const tag = await fetchGithubReleaseTag(slug, version, githubHeaders);
+        if (tag) {
+            return { provider: "github", owner: slug.owner, repo: slug.repo, tag };
+        }
+    }
+    return null;
+}
+
+/** Cached by repo slug + version, so the same (owner, repo, version) triple across multiple packages only checks GitHub once. */
+function fetchGithubReleaseTag(
+    slug: RepoSlug,
+    version: string,
+    githubHeaders: Record<string, string>,
+): Promise<string | null> {
+    return memoizeAsync(githubReleaseTagCache, `${repoSlugKey(slug)}@${version}`, () =>
+        findGithubReleaseTag(slug.owner, slug.repo, version, githubHeaders),
+    );
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

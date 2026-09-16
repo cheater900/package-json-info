@@ -3,6 +3,7 @@ import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import draggable from "vuedraggable";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
+import SourceTreeModal from "../../../src/components/SourceTreeModal.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
 /** Every toggleable column key except the given ones - i.e. "everything visible except these". */
@@ -271,7 +272,7 @@ describe("DependenciesTable column order", () => {
 
         // sourceCode's cell renders a link, not text - use its position to
         // cross-check header vs body order instead of comparing raw text.
-        const sourceCodeIndex = headerLabels(wrapper).indexOf("Source code");
+        const sourceCodeIndex = headerLabels(wrapper).indexOf("Source Code link");
         const cells = wrapper.findAll("tbody td");
         expect(cells[sourceCodeIndex].find("a").exists()).toBe(true);
     });
@@ -435,7 +436,8 @@ describe("DependenciesTable sorting", () => {
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
         for (const label of [
             "Version",
-            "Source code",
+            "Source Code link",
+            "Source Code Tree",
             "Dependencies",
             "License",
             "Deprecated",
@@ -538,5 +540,52 @@ describe("DependenciesTable search", () => {
             .trigger("click");
 
         expect(names(wrapper)).toEqual(["react", "react-dom"]);
+    });
+});
+
+describe("DependenciesTable source tree", () => {
+    const npmSourceTree = {
+        provider: "npm",
+        tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
+    };
+
+    function mountWithSourceTree(dependency) {
+        return mount(DependenciesTable, {
+            props: { dependencies: [dependency], columns: ["sourceCodeTree"] },
+            global: { stubs: { SourceTreeModal: true } },
+        });
+    }
+
+    it("renders a View tree button when the dependency has a source tree available", () => {
+        const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
+
+        expect(wrapper.find("tbody button").text()).toBe("View tree");
+    });
+
+    it("renders a dash instead of a button when no source tree is available", () => {
+        const wrapper = mountWithSourceTree({ ...sparseDependency, sourceTree: null });
+
+        const cells = wrapper.findAll("tbody td");
+        expect(cells[1].text()).toBe("-");
+        expect(cells[1].find("button").exists()).toBe(false);
+    });
+
+    it("opens the modal with the clicked dependency's name and source tree", async () => {
+        const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
+
+        await wrapper.find("tbody button").trigger("click");
+
+        const modal = wrapper.findComponent(SourceTreeModal);
+        expect(modal.props("dependencyName")).toBe("left-pad");
+        expect(modal.props("sourceTree")).toEqual(npmSourceTree);
+    });
+
+    it("closes the modal (clears its source tree) when it emits close", async () => {
+        const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
+
+        await wrapper.find("tbody button").trigger("click");
+        await wrapper.findComponent(SourceTreeModal).vm.$emit("close");
+
+        expect(wrapper.findComponent(SourceTreeModal).props("sourceTree")).toBeNull();
     });
 });

@@ -58,7 +58,12 @@ describe("fetchPackageInfo", () => {
                         url: "git+https://github.com/left-pad/left-pad.git",
                     },
                     versions: {
-                        "1.2.0": { dependencies: { "tiny-dep": "^1.0.0" } },
+                        "1.2.0": {
+                            dependencies: { "tiny-dep": "^1.0.0" },
+                            dist: {
+                                tarball: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
+                            },
+                        },
                     },
                 },
                 "api.npmjs.org/downloads": { downloads: 4242 },
@@ -93,6 +98,10 @@ describe("fetchPackageInfo", () => {
             vulnerabilityCount: null,
             bundleSizeGzip: null,
             maintainers: null,
+            sourceTree: {
+                provider: "npm",
+                tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
+            },
         });
     });
 
@@ -340,6 +349,192 @@ describe("fetchPackageInfo", () => {
     });
 });
 
+describe("fetchPackageInfo sourceTree", () => {
+    function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
+        return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
+    }
+
+    it("prefers npm's own tarball even when a GitHub repository is also known", async () => {
+        vi.stubGlobal(
+            "fetch",
+            mockFetchByUrl({
+                "registry.npmjs.org/has-tarball": {
+                    "dist-tags": { latest: "1.0.0" },
+                    time: {},
+                    repository: {
+                        type: "git",
+                        url: "git+https://github.com/some-org/some-repo.git",
+                    },
+                    versions: {
+                        "1.0.0": {
+                            dist: {
+                                tarball:
+                                    "https://registry.npmjs.org/has-tarball/-/has-tarball-1.0.0.tgz",
+                            },
+                        },
+                    },
+                },
+                "api.npmjs.org/downloads": { downloads: 0 },
+            }),
+        );
+
+        const info = await fetchPackageInfo("has-tarball", "1.0.0");
+
+        expect(info.sourceTree).toEqual({
+            provider: "npm",
+            tarballUrl: "https://registry.npmjs.org/has-tarball/-/has-tarball-1.0.0.tgz",
+        });
+    });
+
+    it("falls back to a matching GitHub release tag when npm has no tarball", async () => {
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url.includes("registry.npmjs.org/no-tarball")) {
+                return jsonResponse({
+                    "dist-tags": { latest: "1.0.0" },
+                    time: {},
+                    repository: {
+                        type: "git",
+                        url: "git+https://github.com/some-org/some-repo.git",
+                    },
+                    versions: { "1.0.0": {} },
+                });
+            }
+            if (url.includes("api.npmjs.org/downloads")) return jsonResponse({ downloads: 0 });
+            if (url.includes("git/refs/tags/v1.0.0"))
+                return jsonResponse({ ref: "refs/tags/v1.0.0" });
+            return jsonResponse(null, false);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("no-tarball", "1.0.0");
+
+        expect(info.sourceTree).toEqual({
+            provider: "github",
+            owner: "some-org",
+            repo: "some-repo",
+            tag: "v1.0.0",
+        });
+    });
+
+    it("tries the bare version tag when the v-prefixed tag doesn't exist", async () => {
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url.includes("registry.npmjs.org/bare-tag")) {
+                return jsonResponse({
+                    "dist-tags": { latest: "2.0.0" },
+                    time: {},
+                    repository: {
+                        type: "git",
+                        url: "git+https://github.com/some-org/some-repo.git",
+                    },
+                    versions: { "2.0.0": {} },
+                });
+            }
+            if (url.includes("api.npmjs.org/downloads")) return jsonResponse({ downloads: 0 });
+            if (url.includes("git/refs/tags/2.0.0"))
+                return jsonResponse({ ref: "refs/tags/2.0.0" });
+            return jsonResponse(null, false);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("bare-tag", "2.0.0");
+
+        expect(info.sourceTree?.provider).toBe("github");
+        expect((info.sourceTree as { tag: string }).tag).toBe("2.0.0");
+    });
+
+    it("resolves to null when npm has no tarball and no GitHub tag matches", async () => {
+        vi.stubGlobal(
+            "fetch",
+            mockFetchByUrl({
+                "registry.npmjs.org/no-source": {
+                    "dist-tags": { latest: "1.0.0" },
+                    time: {},
+                    repository: {
+                        type: "git",
+                        url: "git+https://github.com/some-org/some-repo.git",
+                    },
+                    versions: { "1.0.0": {} },
+                },
+                "api.npmjs.org/downloads": { downloads: 0 },
+            }),
+        );
+
+        const info = await fetchPackageInfo("no-source", "1.0.0");
+
+        expect(info.sourceTree).toBeNull();
+    });
+
+    it("resolves to null when there's no tarball and no repository at all", async () => {
+        vi.stubGlobal(
+            "fetch",
+            mockFetchByUrl({
+                "registry.npmjs.org/bare-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+                "api.npmjs.org/downloads": { downloads: 0 },
+            }),
+        );
+
+        const info = await fetchPackageInfo("bare-pkg", "1.0.0");
+
+        expect(info.sourceTree).toBeNull();
+    });
+
+    it("skips the GitHub tag lookup entirely when the Source Code Tree column is hidden", async () => {
+        const fetchMock = mockFetchByUrl({
+            "registry.npmjs.org/hidden-column": {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                repository: { type: "git", url: "git+https://github.com/some-org/some-repo.git" },
+                versions: { "1.0.0": {} },
+            },
+            "api.npmjs.org/downloads": { downloads: 0 },
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("hidden-column", "1.0.0", {
+            visibleColumns: visibleColumnsExcept("sourceCodeTree"),
+        });
+
+        expect(info.sourceTree).toBeNull();
+        expect(countCalls(fetchMock, "git/refs/tags")).toBe(0);
+    });
+
+    it("caches the GitHub tag lookup by repo slug and version across different package names", async () => {
+        const fetchMock = vi.fn(async (url: string) => {
+            if (
+                url.includes("registry.npmjs.org/shared-a") ||
+                url.includes("registry.npmjs.org/shared-b")
+            ) {
+                return jsonResponse({
+                    "dist-tags": { latest: "1.0.0" },
+                    time: {},
+                    repository: {
+                        type: "git",
+                        url: "git+https://github.com/shared-org/shared-repo.git",
+                    },
+                    versions: { "1.0.0": {} },
+                });
+            }
+            if (url.includes("api.npmjs.org/downloads")) return jsonResponse({ downloads: 0 });
+            if (url.includes("git/refs/tags/v1.0.0"))
+                return jsonResponse({ ref: "refs/tags/v1.0.0" });
+            return jsonResponse(null, false);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const a = await fetchPackageInfo("shared-a", "1.0.0");
+        const b = await fetchPackageInfo("shared-b", "1.0.0");
+
+        expect(a.sourceTree).toEqual({
+            provider: "github",
+            owner: "shared-org",
+            repo: "shared-repo",
+            tag: "v1.0.0",
+        });
+        expect(b.sourceTree).toEqual(a.sourceTree);
+        expect(countCalls(fetchMock, "git/refs/tags/v1.0.0")).toBe(1);
+    });
+});
+
 describe("fetchPackageInfo caching", () => {
     function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
         return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
@@ -430,8 +625,12 @@ describe("fetchPackageInfo caching", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const a = await fetchPackageInfo("pkg-a", "1.0.0");
-        const b = await fetchPackageInfo("pkg-b", "1.0.0");
+        // sourceCodeTree isn't this test's concern, and (with no dist.tarball
+        // in the mock) would otherwise also hit api.github.com/repos/... as a
+        // tag-existence check, muddying the repo-metadata call count below.
+        const options = { visibleColumns: visibleColumnsExcept("sourceCodeTree") };
+        const a = await fetchPackageInfo("pkg-a", "1.0.0", options);
+        const b = await fetchPackageInfo("pkg-b", "1.0.0", options);
 
         expect(a.gitStars).toBe(777);
         expect(b.gitStars).toBe(777);
@@ -545,6 +744,7 @@ describe("fetchPackageInfo column gating", () => {
                 "closedPRs",
                 "openIssues",
                 "closedIssues",
+                "sourceCodeTree",
             ),
         });
 
@@ -576,6 +776,7 @@ describe("fetchPackageInfo column gating", () => {
                 "isOutdated",
                 "maintainers",
                 "sourceCode",
+                "sourceCodeTree",
                 "gitStars",
                 "openPRs",
                 "closedPRs",

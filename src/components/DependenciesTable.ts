@@ -2,11 +2,13 @@ import { ref, computed, watch, onMounted, onUnmounted, defineComponent } from "v
 import draggable from "vuedraggable";
 import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
 import { formatCell, sortDependencies } from "../utils/dependencyRowFormatting";
+import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
+import SourceTreeModal from "./SourceTreeModal.vue";
 
 const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
-    components: { draggable },
+    components: { draggable, SourceTreeModal },
     props: {
         dependencies: {
             type: Array,
@@ -144,14 +146,33 @@ export default defineComponent({
 
         // Lock page scroll behind the fullscreen overlay while it's open.
         watch(isExpanded, (expanded) => {
-            document.body.style.overflow = expanded ? "hidden" : "";
+            if (expanded) {
+                lockBodyScroll();
+            } else {
+                unlockBodyScroll();
+            }
         });
 
         onMounted(() => window.addEventListener("keydown", onKeydown));
         onUnmounted(() => {
             window.removeEventListener("keydown", onKeydown);
-            document.body.style.overflow = "";
+            if (isExpanded.value) {
+                unlockBodyScroll();
+            }
         });
+
+        // The dependency whose source tree is currently open in the modal, if
+        // any. Kept as the whole row rather than just its sourceTree ref so
+        // the modal can show which package/version it's browsing.
+        const activeSourceTreeDependency = ref(null);
+
+        function openSourceTree(dependency) {
+            activeSourceTreeDependency.value = dependency;
+        }
+
+        function closeSourceTree() {
+            activeSourceTreeDependency.value = null;
+        }
 
         return {
             isCentered,
@@ -166,6 +187,9 @@ export default defineComponent({
             isExpanded,
             toggleExpanded,
             onOverlayClick,
+            activeSourceTreeDependency,
+            openSourceTree,
+            closeSourceTree,
         };
     },
 });

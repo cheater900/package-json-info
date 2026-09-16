@@ -126,6 +126,16 @@
                                     </a>
                                     <template v-else>-</template>
                                 </template>
+                                <template v-else-if="col.render === 'button'">
+                                    <button
+                                        v-if="dependency.sourceTree"
+                                        type="button"
+                                        @click="openSourceTree(dependency)"
+                                    >
+                                        View tree
+                                    </button>
+                                    <template v-else>-</template>
+                                </template>
                                 <template v-else>{{ formatCell(col.key, dependency) }}</template>
                             </td>
                             <td :class="{ 'col-centered': isCentered('loadAction') }">
@@ -147,6 +157,12 @@
             </div>
         </div>
     </Teleport>
+
+    <source-tree-modal
+        :dependency-name="activeSourceTreeDependency?.name ?? null"
+        :source-tree="activeSourceTreeDependency?.sourceTree ?? null"
+        @close="closeSourceTree"
+    />
 </template>
 
 <script lang="ts" src="./DependenciesTable.ts"></script>

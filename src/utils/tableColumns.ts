@@ -3,10 +3,9 @@ export type ColumnDef = {
     label: string;
     sortable: boolean;
     // How this column's cell content renders. Omitted means plain formatted
-    // text (see formatCell) - the only other kind currently needed is an
-    // external link (sourceCode). DependenciesTable dispatches on this
-    // instead of hardcoding column keys in its template.
-    render?: "link";
+    // text (see formatCell). DependenciesTable dispatches on this instead of
+    // hardcoding column keys in its template.
+    render?: "link" | "button";
 };
 
 export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
@@ -18,7 +17,8 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
     { key: "latestUpdateDate", label: "Latest update date", sortable: true },
     { key: "isOutdated", label: "Outdated", sortable: true },
     { key: "weeklyDownloads", label: "Weekly downloads", sortable: true },
-    { key: "sourceCode", label: "Source code", sortable: false, render: "link" },
+    { key: "sourceCode", label: "Source Code link", sortable: false, render: "link" },
+    { key: "sourceCodeTree", label: "Source Code Tree", sortable: false, render: "button" },
     { key: "gitStars", label: "Git stars", sortable: true },
     { key: "openPRs", label: "Open PRs", sortable: true },
     { key: "closedPRs", label: "Closed PRs", sortable: true },
@@ -49,14 +49,17 @@ export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter(
 /**
  * Toggleable columns kept hidden until the user opts in: vulnerabilityCount
  * and bundleSizeGzip depend on genuinely third-party services (OSV,
- * Bundlephobia) rather than the npm registry or a repository host, and
+ * Bundlephobia) rather than the npm registry or a repository host,
  * maintainers is hidden simply to keep the table's default view narrower -
- * its data still comes from the npm registry like most other columns.
+ * its data still comes from the npm registry like most other columns - and
+ * sourceCodeTree needs an extra GitHub API call per row whenever a package's
+ * own tarball doesn't have a dist URL, so it stays opt-in too.
  */
 const INITIALLY_HIDDEN_COLUMN_KEYS = new Set([
     "vulnerabilityCount",
     "bundleSizeGzip",
     "maintainers",
+    "sourceCodeTree",
 ]);
 
 /** Toggleable columns visible by default - every other toggleable column. */

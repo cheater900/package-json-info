@@ -1,3 +1,5 @@
+import type { SourceTreeRef } from "./utils/sourceTree";
+
 export type PackageInput = {
     name: string;
     version: string;
@@ -24,6 +26,8 @@ export type PackageInfo = {
     vulnerabilityCount: number | null;
     bundleSizeGzip: number | null;
     maintainers: string[] | null;
+    /** How to fetch this version's browsable source tree, or null if neither npm nor a supported host has one available. */
+    sourceTree: SourceTreeRef | null;
 };
 
 export type PackageError = {
