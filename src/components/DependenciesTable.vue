@@ -7,14 +7,16 @@
         >
             <div class="deps-panel">
                 <div class="deps-toolbar">
-                    <button
-                        type="button"
-                        class="expand-toggle"
-                        :aria-label="isExpanded ? 'Collapse table' : 'Expand table'"
-                        @click="toggleExpanded"
-                    >
-                        {{ isExpanded ? "✕ Collapse" : "⤢ Expand" }}
-                    </button>
+                    <tooltip :text="isExpanded ? 'Collapse table' : 'Expand table'">
+                        <button
+                            type="button"
+                            class="expand-toggle"
+                            :aria-label="isExpanded ? 'Collapse table' : 'Expand table'"
+                            @click="toggleExpanded"
+                        >
+                            {{ isExpanded ? "✕" : "⤢" }}
+                        </button>
+                    </tooltip>
                 </div>
                 <table class="deps">
                     <thead>
@@ -68,9 +70,9 @@
                                             class="sort-trigger"
                                             @click="toggleSort(col.key)"
                                         >
-                                            <span class="col-label" :title="titleFor(col)">
-                                                {{ labelFor(col) }}
-                                            </span>
+                                            <tooltip :text="titleFor(col)" position="bottom">
+                                                <span class="col-label">{{ labelFor(col) }}</span>
+                                            </tooltip>
                                             <span class="sort-icons" aria-hidden="true">
                                                 <span
                                                     class="sort-arrow"
@@ -92,9 +94,9 @@
                                                 </span>
                                             </span>
                                         </button>
-                                        <span v-else class="col-label" :title="titleFor(col)">
-                                            {{ labelFor(col) }}
-                                        </span>
+                                        <tooltip v-else :text="titleFor(col)" position="bottom">
+                                            <span class="col-label">{{ labelFor(col) }}</span>
+                                        </tooltip>
                                     </span>
                                 </th>
                             </template>

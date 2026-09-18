@@ -1,0 +1,23 @@
+.tooltip-wrapper {
+    display: inline-flex;
+}
+
+.tooltip-bubble {
+    position: fixed;
+    white-space: nowrap;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    background: var(--code-bg, #0a1a0d);
+    color: var(--text-h, #66ffa0);
+    border: 1px solid var(--border, #1e5c2e);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.tooltip-top {
+    transform: translate(-50%, -100%);
+}
+
+.tooltip-bottom {
+    transform: translate(-50%, 0);
+}

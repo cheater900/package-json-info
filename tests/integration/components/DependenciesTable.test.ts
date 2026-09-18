@@ -4,6 +4,7 @@ import { mount } from "@vue/test-utils";
 import draggable from "vuedraggable";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
 import SourceTreeModal from "../../../src/components/SourceTreeModal.vue";
+import Tooltip from "../../../src/components/Tooltip.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
 /** Every toggleable column key except the given ones - i.e. "everything visible except these". */
@@ -334,17 +335,21 @@ describe("DependenciesTable column labels", () => {
         expect(headerLabels(wrapper)).toContain("Deprecated");
     });
 
-    it("sets a title tooltip only for labels that were actually abbreviated", () => {
+    it("sets a tooltip only for labels that were actually abbreviated", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
 
-        const labels = wrapper.findAll(".col-label");
-        const abbreviated = labels.find((l) => l.text() === "VD")!;
-        const untouched = labels.find((l) => l.text() === "Deprecated")!;
+        const tooltipFor = (labelText) =>
+            wrapper
+                .findAllComponents(Tooltip)
+                .find(
+                    (t) =>
+                        t.find(".col-label").exists() && t.find(".col-label").text() === labelText,
+                )!;
 
-        expect(abbreviated.attributes("title")).toBe("Version Date");
-        expect(untouched.attributes("title")).toBeUndefined();
+        expect(tooltipFor("VD").props("text")).toBe("Version Date");
+        expect(tooltipFor("Deprecated").props("text")).toBe("");
     });
 });
 

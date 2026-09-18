@@ -7,7 +7,10 @@
             <span class="path">node ~/package.json</span>
         </div>
 
-        <h1>$ package.json info<span class="cursor">_</span></h1>
+        <h1>
+            <span>$ package.json info</span>
+            <span class="cursor">_</span>
+        </h1>
 
         <div v-if="loadError" class="banner banner-error" role="alert">
             {{ loadError }}

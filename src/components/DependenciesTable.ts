@@ -4,11 +4,12 @@ import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../ut
 import { formatCell, sortDependencies } from "../utils/dependencyRowFormatting";
 import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
 import SourceTreeModal from "./SourceTreeModal.vue";
+import Tooltip from "./Tooltip.vue";
 
 const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
-    components: { draggable, SourceTreeModal },
+    components: { draggable, SourceTreeModal, Tooltip },
     props: {
         dependencies: {
             type: Array,
