@@ -105,7 +105,7 @@ test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never 
     await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible();
 });
 
-test("Columns, Deps, and Dev Deps are collapsible accordions, all collapsed by default", async ({
+test("Columns, Deps, and Dev Deps are collapsible accordions; Deps and Dev Deps start open", async ({
     page,
 }) => {
     await page.goto("/");
@@ -115,22 +115,22 @@ test("Columns, Deps, and Dev Deps are collapsible accordions, all collapsed by d
     const devDepsSection = page.locator("details.accordion").nth(2);
 
     await expect(columnsSection).toHaveJSProperty("open", false);
-    await expect(depsSection).toHaveJSProperty("open", false);
-    await expect(devDepsSection).toHaveJSProperty("open", false);
-    await expect(depsSection.locator("table.deps")).not.toBeVisible();
+    await expect(depsSection).toHaveJSProperty("open", true);
+    await expect(devDepsSection).toHaveJSProperty("open", true);
+    await expect(depsSection.locator("table.deps")).toBeVisible();
     await expect(columnsSection.locator(".column-visibility-panel")).not.toBeVisible();
 
-    // Expanding Deps reveals its table but leaves Dev Deps and Columns collapsed.
+    // Collapsing Deps hides its table but leaves Dev Deps and Columns as-is.
+    await depsSection.locator("summary").click();
+    await expect(depsSection).toHaveJSProperty("open", false);
+    await expect(depsSection.locator("table.deps")).not.toBeVisible();
+    await expect(devDepsSection).toHaveJSProperty("open", true);
+    await expect(columnsSection).toHaveJSProperty("open", false);
+
+    // Expanding it again reveals the table.
     await depsSection.locator("summary").click();
     await expect(depsSection).toHaveJSProperty("open", true);
     await expect(depsSection.locator("table.deps")).toBeVisible();
-    await expect(devDepsSection).toHaveJSProperty("open", false);
-    await expect(columnsSection).toHaveJSProperty("open", false);
-
-    // Collapsing it again hides the table.
-    await depsSection.locator("summary").click();
-    await expect(depsSection).toHaveJSProperty("open", false);
-    await expect(depsSection.locator("table.deps")).not.toBeVisible();
 
     // Same collapse/expand behaviour for the Columns panel.
     await columnsSection.locator("summary").click();
@@ -685,6 +685,12 @@ test("dragging a column header by its handle reorders the table, and the new ord
     const depsTable = page.locator("table.deps").first();
     const headerCells = depsTable.locator("thead th");
 
+    // With Deps, Dev Deps, and package.json all expanded by default, the
+    // Deps header can sit below the fold - scroll it into view first so the
+    // raw page.mouse coordinates below land on it rather than whatever
+    // happens to occupy that viewport position.
+    await depsTable.scrollIntoViewIfNeeded();
+
     // Index 0 is the pinned Name column, so the first two draggable columns
     // (indices 1 and 2) are swapped.
     const firstLabel = (await headerCells.nth(1).innerText()).trim();
@@ -735,7 +741,8 @@ test("shrinking columns by abbreviation shows initials with a full-name tooltip,
     const versionDateLabel = depsTable.locator(".col-label", { hasText: "VD" });
     await expect(versionDateLabel).toBeVisible();
     await expect(depsTable.getByRole("columnheader", { name: "Version Date" })).toHaveCount(0);
-    await expect(versionDateLabel).toHaveAttribute("title", "Version Date");
+    await versionDateLabel.hover();
+    await expect(page.getByRole("tooltip", { name: "Version Date" })).toBeVisible();
 
     // ...but a single-word label like "Outdated" is left untouched.
     await expect(depsTable.getByRole("columnheader", { name: "Outdated" })).toBeVisible();

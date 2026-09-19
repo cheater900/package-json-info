@@ -84,7 +84,7 @@
 
         <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
 
-        <details class="accordion">
+        <details class="accordion" open>
             <summary>
                 Deps
                 <span v-if="isLoadingDeps">(loading…)</span>
@@ -100,7 +100,7 @@
             />
         </details>
 
-        <details class="accordion">
+        <details class="accordion" open>
             <summary>
                 Dev Deps
                 <span v-if="isLoadingDevDeps">(loading…)</span>
@@ -115,7 +115,7 @@
                 @reorder-columns="reorderColumns"
             />
         </details>
-        <details class="accordion">
+        <details class="accordion" open>
             <summary>package.json</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>

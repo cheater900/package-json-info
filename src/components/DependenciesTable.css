@@ -70,8 +70,13 @@ table td button {
     font-weight: bold;
 }
 
-.loading-row {
-    text-align: center;
+.status-row {
+    /* The cell's colspan stretches it across every column, so centering
+       text within it can land far outside the table's visible scroll
+       area - stick it to the left edge of the scrollport instead. */
+    text-align: left;
+    position: sticky;
+    left: 0;
     font-style: italic;
     padding: 12px;
 }

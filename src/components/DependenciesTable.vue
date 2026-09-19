@@ -109,8 +109,13 @@
                     </thead>
                     <tbody>
                         <tr v-if="isLoading">
-                            <td :colspan="orderedVisibleColumns.length + 2" class="loading-row">
+                            <td :colspan="orderedVisibleColumns.length + 2" class="status-row">
                                 Loading…
+                            </td>
+                        </tr>
+                        <tr v-else-if="dependencies.length === 0">
+                            <td :colspan="orderedVisibleColumns.length + 2" class="status-row">
+                                No dependencies
                             </td>
                         </tr>
                         <tr v-else v-for="dependency in sortedDependencies" :key="dependency.name">
