@@ -7,16 +7,14 @@
         >
             <div class="deps-panel">
                 <div class="deps-toolbar">
-                    <tooltip :text="isExpanded ? 'Collapse table' : 'Expand table'">
-                        <button
-                            type="button"
-                            class="expand-toggle"
-                            :aria-label="isExpanded ? 'Collapse table' : 'Expand table'"
-                            @click="toggleExpanded"
-                        >
-                            {{ isExpanded ? "✕" : "⤢" }}
-                        </button>
-                    </tooltip>
+                    <button
+                        type="button"
+                        class="expand-toggle"
+                        :aria-label="isExpanded ? 'Collapse table' : 'Expand table'"
+                        @click="toggleExpanded"
+                    >
+                        {{ isExpanded ? "✕" : "⤢" }}
+                    </button>
                 </div>
                 <table class="deps">
                     <thead>
