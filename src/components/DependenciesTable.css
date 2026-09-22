@@ -75,14 +75,15 @@ table td button {
 }
 
 .status-row {
-    /* The cell's colspan stretches it across every column, so centering
-       text within it can land far outside the table's visible scroll
-       area - stick it to the left edge of the scrollport instead. */
-    text-align: left;
-    position: sticky;
-    left: 0;
+    /* A sibling of table.deps rather than a row inside it: a colspan cell
+       spanning every column would be as wide as the table's full
+       scrollable content, so centering text in it could land off-screen
+       once the table has more columns than fit on one screen. */
+    text-align: center;
     font-style: italic;
     padding: 12px;
+    border: 1px solid var(--accent, #33ff66);
+    border-top: none;
 }
 
 .deps-toolbar {

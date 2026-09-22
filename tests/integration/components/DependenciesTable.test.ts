@@ -129,14 +129,13 @@ describe("DependenciesTable", () => {
         expect(wrapper.findAll("tbody tr")).toHaveLength(2);
     });
 
-    it("renders a single 'No dependencies' row for an empty dependency list", () => {
+    it("renders a 'No dependencies' message and no rows for an empty dependency list", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [] },
         });
 
-        const rows = wrapper.findAll("tbody tr");
-        expect(rows).toHaveLength(1);
-        expect(rows[0].text()).toBe("No dependencies");
+        expect(wrapper.findAll("tbody tr")).toHaveLength(0);
+        expect(wrapper.find(".status-row").text()).toBe("No dependencies");
     });
 });
 

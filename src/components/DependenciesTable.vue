@@ -105,18 +105,8 @@
                             </template>
                         </draggable>
                     </thead>
-                    <tbody>
-                        <tr v-if="isLoading">
-                            <td :colspan="orderedVisibleColumns.length + 2" class="status-row">
-                                Loading…
-                            </td>
-                        </tr>
-                        <tr v-else-if="dependencies.length === 0">
-                            <td :colspan="orderedVisibleColumns.length + 2" class="status-row">
-                                No dependencies
-                            </td>
-                        </tr>
-                        <tr v-else v-for="dependency in sortedDependencies" :key="dependency.name">
+                    <tbody v-if="!isLoading && dependencies.length > 0">
+                        <tr v-for="dependency in sortedDependencies" :key="dependency.name">
                             <td :class="{ 'col-centered': isCentered('name') }">
                                 {{ dependency.name }}
                             </td>
@@ -159,6 +149,8 @@
                         </tr>
                     </tbody>
                 </table>
+                <div v-if="isLoading" class="status-row">Loading…</div>
+                <div v-else-if="dependencies.length === 0" class="status-row">No dependencies</div>
             </div>
         </div>
     </Teleport>
