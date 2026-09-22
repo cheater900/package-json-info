@@ -1,15 +1,19 @@
 table.deps {
     display: block;
     overflow-x: scroll;
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     font-size: 0.85rem;
     margin-top: 4px;
+    border: 1px solid var(--accent, #33ff66);
 }
 
 table th,
 table td {
     padding: 6px 10px;
     white-space: nowrap;
+    border: 1px solid var(--accent, #33ff66);
+    border-radius: 0;
 }
 
 table td button {
