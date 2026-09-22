@@ -50,7 +50,7 @@ describe("SourceTreeModal", () => {
     it("renders nothing when sourceTree is null", () => {
         mountModal({ dependencyName: null, sourceTree: null });
 
-        expect(bodyFind(".source-tree-overlay")).toBeNull();
+        expect(bodyFind(".modal-overlay")).toBeNull();
     });
 
     it("shows a loading state, then the file tree once it resolves", async () => {
@@ -103,7 +103,7 @@ describe("SourceTreeModal", () => {
         const w = mountModal({ dependencyName: "left-pad", sourceTree: npmSourceTree });
         await flushPromises();
 
-        await bodyFind(".close-button")!.trigger("click");
+        await bodyFind(".modal-close")!.trigger("click");
 
         expect(w.emitted("close")).toBeTruthy();
     });
@@ -114,7 +114,7 @@ describe("SourceTreeModal", () => {
         const w = mountModal({ dependencyName: "left-pad", sourceTree: npmSourceTree });
         await flushPromises();
 
-        await bodyFind(".source-tree-overlay")!.trigger("click");
+        await bodyFind(".modal-overlay")!.trigger("click");
 
         expect(w.emitted("close")).toBeTruthy();
     });

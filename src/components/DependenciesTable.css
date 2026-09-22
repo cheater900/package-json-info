@@ -97,23 +97,10 @@ table td button {
     padding: 4px 10px;
 }
 
-.deps-region-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    padding: clamp(16px, 4vw, 48px);
-}
-
-.deps-region-modal .deps-panel {
-    background: var(--bg, #fff);
-    border: 1px solid var(--accent, #33ff66);
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
-    padding: clamp(16px, 2vw, 32px);
+.deps-panel-expanded {
+    /* Top padding clears Modal's floating close button, which otherwise
+       sits directly over the table's top-right corner. */
+    padding: 40px 16px 16px;
     max-width: min(1200px, 90vw);
     max-height: 100%;
     min-height: min(320px, 70vh);

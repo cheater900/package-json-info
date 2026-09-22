@@ -1,19 +1,4 @@
-.source-tree-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 24px;
-}
-
 .source-tree-panel {
-    background: var(--bg, #fff);
-    border: 1px solid var(--accent, #33ff66);
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
     width: min(1000px, 100%);
     height: min(700px, 100%);
     display: flex;
@@ -25,7 +10,9 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 16px;
+    /* Extra right padding keeps the title/provider text clear of Modal's
+       floating close button in the corner. */
+    padding: 12px 48px 12px 16px;
     border-bottom: 1px solid var(--border, #e5e4e7);
 }
 
@@ -41,12 +28,6 @@
     flex-shrink: 0;
     font-size: 0.8rem;
     color: var(--text, #6b6375);
-}
-
-.close-button {
-    margin-left: auto;
-    font-size: 0.85rem;
-    padding: 4px 10px;
 }
 
 .source-tree-body {

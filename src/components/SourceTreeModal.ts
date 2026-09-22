@@ -1,10 +1,10 @@
-import { ref, computed, watch, onMounted, onUnmounted, defineComponent } from "vue";
+import { ref, computed, watch, defineComponent } from "vue";
 import { fetchSourceTree } from "../utils/sourceTree";
-import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
 import FileTreeItem from "./FileTreeItem.vue";
+import Modal from "./Modal.vue";
 
 export default defineComponent({
-    components: { FileTreeItem },
+    components: { FileTreeItem, Modal },
     props: {
         dependencyName: {
             type: String,
@@ -77,35 +77,6 @@ export default defineComponent({
             emit("close");
         }
 
-        // Clicking the backdrop (not the panel itself) closes the modal, same as Escape.
-        function onOverlayClick(event) {
-            if (isOpen.value && event.target === event.currentTarget) {
-                close();
-            }
-        }
-
-        function onKeydown(event) {
-            if (event.key === "Escape" && isOpen.value) {
-                close();
-            }
-        }
-
-        watch(isOpen, (open) => {
-            if (open) {
-                lockBodyScroll();
-            } else {
-                unlockBodyScroll();
-            }
-        });
-
-        onMounted(() => window.addEventListener("keydown", onKeydown));
-        onUnmounted(() => {
-            window.removeEventListener("keydown", onKeydown);
-            if (isOpen.value) {
-                unlockBodyScroll();
-            }
-        });
-
         return {
             isOpen,
             loading,
@@ -117,7 +88,6 @@ export default defineComponent({
             contentError,
             selectFile,
             close,
-            onOverlayClick,
         };
     },
 });

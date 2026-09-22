@@ -1,15 +1,14 @@
-import { ref, computed, watch, onMounted, onUnmounted, defineComponent } from "vue";
-import draggable from "vuedraggable";
+import { ref, computed, watch, defineComponent } from "vue";
 import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
 import { formatCell, sortDependencies } from "../utils/dependencyRowFormatting";
-import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
+import DependenciesTableGrid from "./DependenciesTableGrid.vue";
+import Modal from "./Modal.vue";
 import SourceTreeModal from "./SourceTreeModal.vue";
-import Tooltip from "./Tooltip.vue";
 
 const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
-    components: { draggable, SourceTreeModal, Tooltip },
+    components: { DependenciesTableGrid, Modal, SourceTreeModal },
     props: {
         dependencies: {
             type: Array,
@@ -72,7 +71,8 @@ export default defineComponent({
 
         // vuedraggable needs a locally-mutable array to splice as the user drags -
         // it can't splice a computed or a prop directly. Kept in sync with the true
-        // (prop-driven) order via the watchers below.
+        // (prop-driven) order via the watchers below. Shared by reference with both
+        // the inline and expanded-modal grid, so dragging either keeps them in sync.
         const draggableColumns = ref([...orderedVisibleColumns.value]);
 
         function sameKeyOrder(a, b) {
@@ -127,40 +127,13 @@ export default defineComponent({
 
         const isExpanded = ref(false);
 
-        function toggleExpanded() {
-            isExpanded.value = !isExpanded.value;
+        function openExpanded() {
+            isExpanded.value = true;
         }
 
-        // Clicking the backdrop (not the panel itself) closes the modal, same
-        // as pressing Escape.
-        function onOverlayClick(event) {
-            if (isExpanded.value && event.target === event.currentTarget) {
-                isExpanded.value = false;
-            }
+        function closeExpanded() {
+            isExpanded.value = false;
         }
-
-        function onKeydown(event) {
-            if (event.key === "Escape" && isExpanded.value) {
-                isExpanded.value = false;
-            }
-        }
-
-        // Lock page scroll behind the fullscreen overlay while it's open.
-        watch(isExpanded, (expanded) => {
-            if (expanded) {
-                lockBodyScroll();
-            } else {
-                unlockBodyScroll();
-            }
-        });
-
-        onMounted(() => window.addEventListener("keydown", onKeydown));
-        onUnmounted(() => {
-            window.removeEventListener("keydown", onKeydown);
-            if (isExpanded.value) {
-                unlockBodyScroll();
-            }
-        });
 
         // The dependency whose source tree is currently open in the modal, if
         // any. Kept as the whole row rather than just its sourceTree ref so
@@ -186,8 +159,8 @@ export default defineComponent({
             sortDirectionFor,
             sortedDependencies,
             isExpanded,
-            toggleExpanded,
-            onOverlayClick,
+            openExpanded,
+            closeExpanded,
             activeSourceTreeDependency,
             openSourceTree,
             closeSourceTree,

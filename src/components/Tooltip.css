@@ -11,7 +11,9 @@
     color: var(--text-h, #66ffa0);
     border: 1px solid var(--border, #1e5c2e);
     pointer-events: none;
-    z-index: 1000;
+    /* Above Modal's overlay (1100) - both teleport to body, so a lower
+       z-index here would paint the bubble underneath an open modal. */
+    z-index: 1200;
 }
 
 .tooltip-top {
