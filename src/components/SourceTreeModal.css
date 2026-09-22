@@ -11,6 +11,7 @@
 
 .source-tree-panel {
     background: var(--bg, #fff);
+    border: 1px solid var(--accent, #33ff66);
     border-radius: 8px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
     width: min(1000px, 100%);
