@@ -41,10 +41,10 @@ export default defineComponent({
     },
     emits: ["load-package", "reorder-columns", "open-source-tree"],
     setup(props, { emit }) {
-        // The Actions column is the only one center-aligned; not something a
-        // parent has ever needed to customize.
+        // Every column is center-aligned except Name, which reads better
+        // left-aligned as the row's identifying label.
         function isCentered(key) {
-            return key === "loadAction";
+            return key !== "name";
         }
 
         const filteredDependencies = computed(() => {
