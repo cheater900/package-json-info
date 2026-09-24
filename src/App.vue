@@ -89,6 +89,16 @@
                 Deps
                 <span v-if="isLoadingDeps">(loading…)</span>
             </summary>
+            <div class="table-toolbar">
+                <button
+                    type="button"
+                    class="table-expand-toggle"
+                    aria-label="Expand table"
+                    @click="expandDeps"
+                >
+                    ⤢
+                </button>
+            </div>
             <dependencies-table
                 :dependencies="deps"
                 :columns="visibleColumnKeys"
@@ -97,6 +107,7 @@
                 :is-loading="isLoadingDeps"
                 @load-package="onLoadPackage"
                 @reorder-columns="reorderColumns"
+                @open-source-tree="openSourceTree"
             />
         </details>
 
@@ -105,6 +116,16 @@
                 Dev Deps
                 <span v-if="isLoadingDevDeps">(loading…)</span>
             </summary>
+            <div class="table-toolbar">
+                <button
+                    type="button"
+                    class="table-expand-toggle"
+                    aria-label="Expand table"
+                    @click="expandDevDeps"
+                >
+                    ⤢
+                </button>
+            </div>
             <dependencies-table
                 :dependencies="devDeps"
                 :columns="visibleColumnKeys"
@@ -113,12 +134,48 @@
                 :is-loading="isLoadingDevDeps"
                 @load-package="onLoadPackage"
                 @reorder-columns="reorderColumns"
+                @open-source-tree="openSourceTree"
             />
         </details>
         <details class="accordion" open>
             <summary>package.json</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
+
+        <modal
+            v-if="isDepsExpanded || isDevDepsExpanded || activeSourceTreeDependency"
+            @close="closeModal"
+        >
+            <div v-if="isDepsExpanded || isDevDepsExpanded" class="table-modal-content">
+                <dependencies-table
+                    v-if="isDepsExpanded"
+                    :dependencies="deps"
+                    :columns="visibleColumnKeys"
+                    :search-query="searchQuery"
+                    :shrink-labels="shrinkColumnLabels"
+                    :is-loading="isLoadingDeps"
+                    @load-package="onLoadPackage"
+                    @reorder-columns="reorderColumns"
+                    @open-source-tree="openSourceTree"
+                />
+                <dependencies-table
+                    v-else
+                    :dependencies="devDeps"
+                    :columns="visibleColumnKeys"
+                    :search-query="searchQuery"
+                    :shrink-labels="shrinkColumnLabels"
+                    :is-loading="isLoadingDevDeps"
+                    @load-package="onLoadPackage"
+                    @reorder-columns="reorderColumns"
+                    @open-source-tree="openSourceTree"
+                />
+            </div>
+            <source-tree-browser
+                v-else
+                :dependency-name="activeSourceTreeDependency.name"
+                :source-tree="activeSourceTreeDependency.sourceTree"
+            />
+        </modal>
     </div>
 </template>
 <script lang="ts" src="./App.ts"></script>

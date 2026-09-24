@@ -1,0 +1,80 @@
+import { describe, it, expect, afterEach } from "vitest";
+import { mount, DOMWrapper } from "@vue/test-utils";
+import Modal from "../../../src/components/Modal.vue";
+
+// Teleport moves the modal's DOM out to document.body, detached from
+// wrapper.element's own subtree - wrapper.find()/text() can't see it, so
+// tests mount with attachTo: document.body and query the real DOM instead.
+let wrapper: ReturnType<typeof mount> | null = null;
+
+function mountModal() {
+    wrapper = mount(Modal, {
+        attachTo: document.body,
+        slots: { default: "<p>panel content</p>" },
+    });
+    return wrapper;
+}
+
+/** Wraps a real-DOM query result in VTU's DOMWrapper for .trigger()/.text() convenience. */
+function bodyFind(selector: string): DOMWrapper<Element> | null {
+    const el = document.body.querySelector(selector);
+    return el ? new DOMWrapper(el) : null;
+}
+
+afterEach(() => {
+    wrapper?.unmount();
+    wrapper = null;
+    document.body.innerHTML = "";
+    document.body.style.overflow = "";
+});
+
+describe("Modal", () => {
+    it("renders its slot content", () => {
+        mountModal();
+
+        expect(document.body.textContent).toContain("panel content");
+    });
+
+    it("locks body scroll while mounted, and unlocks it on unmount", () => {
+        const w = mountModal();
+
+        expect(document.body.style.overflow).toBe("hidden");
+
+        w.unmount();
+        wrapper = null;
+
+        expect(document.body.style.overflow).toBe("");
+    });
+
+    it("emits close when the close button is clicked", async () => {
+        const w = mountModal();
+
+        await bodyFind(".modal-close")!.trigger("click");
+
+        expect(w.emitted("close")).toBeTruthy();
+    });
+
+    it("emits close when the backdrop (not the panel) is clicked", async () => {
+        const w = mountModal();
+
+        await bodyFind(".modal-overlay")!.trigger("click");
+
+        expect(w.emitted("close")).toBeTruthy();
+    });
+
+    it("does not emit close when clicking inside the panel", async () => {
+        const w = mountModal();
+
+        await bodyFind(".modal-panel")!.trigger("click");
+
+        expect(w.emitted("close")).toBeFalsy();
+    });
+
+    it("emits close when Escape is pressed", async () => {
+        const w = mountModal();
+
+        await new DOMWrapper(document.body).trigger("keydown", { key: "Escape" });
+
+        expect(w.emitted("close")).toBeTruthy();
+    });
+});

@@ -1,10 +1,9 @@
-import { ref, computed, watch, defineComponent } from "vue";
+import { ref, watch, defineComponent } from "vue";
 import { fetchSourceTree } from "../utils/sourceTree";
 import FileTreeItem from "./FileTreeItem.vue";
-import Modal from "./Modal.vue";
 
 export default defineComponent({
-    components: { FileTreeItem, Modal },
+    components: { FileTreeItem },
     props: {
         dependencyName: {
             type: String,
@@ -15,9 +14,7 @@ export default defineComponent({
             default: null,
         },
     },
-    emits: ["close"],
-    setup(props, { emit }) {
-        const isOpen = computed(() => props.sourceTree != null);
+    setup(props) {
         const loading = ref(false);
         const error = ref(null);
         const tree = ref([]);
@@ -51,9 +48,8 @@ export default defineComponent({
                     loading.value = false;
                 }
             },
-            // Fires on mount too, not just later changes - guards against
-            // this component ever being created with sourceTree already set
-            // rather than transitioning from null.
+            // Fires on mount too - the parent only mounts this component once
+            // there's a dependency to show, so sourceTree is already set.
             { immediate: true },
         );
 
@@ -73,12 +69,7 @@ export default defineComponent({
             }
         }
 
-        function close() {
-            emit("close");
-        }
-
         return {
-            isOpen,
             loading,
             error,
             tree,
@@ -87,7 +78,6 @@ export default defineComponent({
             loadingContent,
             contentError,
             selectFile,
-            close,
         };
     },
 });

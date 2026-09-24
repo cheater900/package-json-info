@@ -6,12 +6,20 @@ import { useColumnPreferences } from "./composables/useColumnPreferences.ts";
 import { usePackageJsonHistory } from "./composables/usePackageJsonHistory.ts";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
+import Modal from "./components/Modal.vue";
+import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import packageJson from "../package.json";
 
 export default defineComponent({
-    components: { DependenciesTable, ColumnVisibilityPanel, VueJsonPretty },
+    components: {
+        DependenciesTable,
+        ColumnVisibilityPanel,
+        Modal,
+        SourceTreeBrowser,
+        VueJsonPretty,
+    },
     setup() {
         const isLoadingInput = ref(false);
 
@@ -133,6 +141,38 @@ export default defineComponent({
         // Bootstrap with this app's own package.json as the first history entry.
         loadPackageJsonText(JSON.stringify(packageJson, null, 2));
 
+        // A single fullscreen modal shared by both tables' "expand" action and
+        // the source-tree browser - only one of these three is ever showing,
+        // so one modal with switched content is simpler than three separate
+        // ones stacking on top of each other.
+        const isDepsExpanded = ref(false);
+        const isDevDepsExpanded = ref(false);
+        const activeSourceTreeDependency = ref(null);
+
+        function expandDeps() {
+            isDevDepsExpanded.value = false;
+            activeSourceTreeDependency.value = null;
+            isDepsExpanded.value = true;
+        }
+
+        function expandDevDeps() {
+            isDepsExpanded.value = false;
+            activeSourceTreeDependency.value = null;
+            isDevDepsExpanded.value = true;
+        }
+
+        function openSourceTree(dependency) {
+            isDepsExpanded.value = false;
+            isDevDepsExpanded.value = false;
+            activeSourceTreeDependency.value = dependency;
+        }
+
+        function closeModal() {
+            isDepsExpanded.value = false;
+            isDevDepsExpanded.value = false;
+            activeSourceTreeDependency.value = null;
+        }
+
         return {
             isLoadingInput,
             urlInput,
@@ -161,6 +201,13 @@ export default defineComponent({
             onFileSelected,
             fetchFromUrlInput,
             onLoadPackage,
+            isDepsExpanded,
+            isDevDepsExpanded,
+            activeSourceTreeDependency,
+            expandDeps,
+            expandDevDeps,
+            openSourceTree,
+            closeModal,
         };
     },
 });

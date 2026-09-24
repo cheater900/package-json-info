@@ -3,7 +3,6 @@ import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import draggable from "vuedraggable";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
-import SourceTreeModal from "../../../src/components/SourceTreeModal.vue";
 import Tooltip from "../../../src/components/Tooltip.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
@@ -558,7 +557,6 @@ describe("DependenciesTable source tree", () => {
     function mountWithSourceTree(dependency) {
         return mount(DependenciesTable, {
             props: { dependencies: [dependency], columns: ["sourceCodeTree"] },
-            global: { stubs: { SourceTreeModal: true } },
         });
     }
 
@@ -576,22 +574,12 @@ describe("DependenciesTable source tree", () => {
         expect(cells[1].find("button").exists()).toBe(false);
     });
 
-    it("opens the modal with the clicked dependency's name and source tree", async () => {
-        const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
+    it("emits open-source-tree with the clicked dependency, leaving modal ownership to the parent", async () => {
+        const dependency = { ...fullDependency, sourceTree: npmSourceTree };
+        const wrapper = mountWithSourceTree(dependency);
 
         await wrapper.find("tbody button").trigger("click");
 
-        const modal = wrapper.findComponent(SourceTreeModal);
-        expect(modal.props("dependencyName")).toBe("left-pad");
-        expect(modal.props("sourceTree")).toEqual(npmSourceTree);
-    });
-
-    it("closes the modal (clears its source tree) when it emits close", async () => {
-        const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
-
-        await wrapper.find("tbody button").trigger("click");
-        await wrapper.findComponent(SourceTreeModal).vm.$emit("close");
-
-        expect(wrapper.findComponent(SourceTreeModal).props("sourceTree")).toBeNull();
+        expect(wrapper.emitted("open-source-tree")).toEqual([[dependency]]);
     });
 });

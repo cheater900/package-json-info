@@ -1,14 +1,13 @@
 import { ref, computed, watch, defineComponent } from "vue";
+import draggable from "vuedraggable";
 import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
 import { formatCell, sortDependencies } from "../utils/dependencyRowFormatting";
-import DependenciesTableGrid from "./DependenciesTableGrid.vue";
-import Modal from "./Modal.vue";
-import SourceTreeModal from "./SourceTreeModal.vue";
+import Tooltip from "./Tooltip.vue";
 
 const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
-    components: { DependenciesTableGrid, Modal, SourceTreeModal },
+    components: { draggable, Tooltip },
     props: {
         dependencies: {
             type: Array,
@@ -40,7 +39,7 @@ export default defineComponent({
             default: false,
         },
     },
-    emits: ["load-package", "reorder-columns"],
+    emits: ["load-package", "reorder-columns", "open-source-tree"],
     setup(props, { emit }) {
         // The Actions column is the only one center-aligned; not something a
         // parent has ever needed to customize.
@@ -71,8 +70,7 @@ export default defineComponent({
 
         // vuedraggable needs a locally-mutable array to splice as the user drags -
         // it can't splice a computed or a prop directly. Kept in sync with the true
-        // (prop-driven) order via the watchers below. Shared by reference with both
-        // the inline and expanded-modal grid, so dragging either keeps them in sync.
+        // (prop-driven) order via the watchers below.
         const draggableColumns = ref([...orderedVisibleColumns.value]);
 
         function sameKeyOrder(a, b) {
@@ -125,29 +123,6 @@ export default defineComponent({
             sortDependencies(filteredDependencies.value, sortKey.value, sortDir.value),
         );
 
-        const isExpanded = ref(false);
-
-        function openExpanded() {
-            isExpanded.value = true;
-        }
-
-        function closeExpanded() {
-            isExpanded.value = false;
-        }
-
-        // The dependency whose source tree is currently open in the modal, if
-        // any. Kept as the whole row rather than just its sourceTree ref so
-        // the modal can show which package/version it's browsing.
-        const activeSourceTreeDependency = ref(null);
-
-        function openSourceTree(dependency) {
-            activeSourceTreeDependency.value = dependency;
-        }
-
-        function closeSourceTree() {
-            activeSourceTreeDependency.value = null;
-        }
-
         return {
             isCentered,
             formatCell,
@@ -158,12 +133,6 @@ export default defineComponent({
             toggleSort,
             sortDirectionFor,
             sortedDependencies,
-            isExpanded,
-            openExpanded,
-            closeExpanded,
-            activeSourceTreeDependency,
-            openSourceTree,
-            closeSourceTree,
         };
     },
 });
