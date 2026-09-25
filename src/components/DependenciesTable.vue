@@ -76,25 +76,23 @@
                         </span>
                     </th>
                 </template>
-                <template #footer>
-                    <th :class="{ 'col-centered': isCentered('loadAction') }">
-                        <span class="th-inner">Actions</span>
-                    </th>
-                </template>
             </draggable>
         </thead>
         <tbody v-if="!isLoading && dependencies.length > 0">
             <tr v-for="dependency in sortedDependencies" :key="dependency.name">
                 <td
-                    :class="{
-                        'col-centered': isCentered('name'),
-                        'cell-truncate': true,
-                        expanded: isExpanded(dependency.name, 'name'),
-                    }"
-                    @mouseenter="onCellMouseEnter"
-                    @click="onCellClick($event, dependency.name, 'name')"
+                    class="name-cell"
+                    @click="
+                        $emit('load-package', {
+                            name: dependency.name,
+                            version: dependency.version,
+                        })
+                    "
                 >
-                    {{ dependency.name }}
+                    <span class="name-cell-inner">
+                        <span class="name-text">{{ dependency.name }}</span>
+                        <span class="name-arrow" aria-hidden="true">→</span>
+                    </span>
                 </td>
                 <td
                     v-for="col in orderedVisibleColumns"
@@ -122,19 +120,6 @@
                         <template v-else>-</template>
                     </template>
                     <template v-else>{{ formatCell(col.key, dependency) }}</template>
-                </td>
-                <td :class="{ 'col-centered': isCentered('loadAction') }">
-                    <button
-                        type="button"
-                        @click="
-                            $emit('load-package', {
-                                name: dependency.name,
-                                version: dependency.version,
-                            })
-                        "
-                    >
-                        VIEW THIS
-                    </button>
                 </td>
             </tr>
         </tbody>

@@ -14,7 +14,7 @@ export type ColumnDef = {
 };
 
 export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
-    { key: "name", label: "Name", sortable: true, truncatable: true },
+    { key: "name", label: "Name", sortable: true },
     { key: "version", label: "Version", sortable: false },
     { key: "versionDate", label: "Version Date", sortable: true },
     { key: "latestVersion", label: "Latest version", sortable: false },
@@ -35,16 +35,16 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
     { key: "vulnerabilityCount", label: "Vulnerabilities", sortable: true },
     { key: "bundleSizeGzip", label: "Bundle size (gzip)", sortable: true },
     { key: "maintainers", label: "Maintainers", sortable: false, truncatable: true },
-    { key: "loadAction", label: "Actions", sortable: false },
 ];
 
 /**
- * Columns that can never be hidden: Name (identity) and the drill-down
- * "load this package's table" action, which needs to stay reachable. Not
- * tracked in a visibleColumns set at all - isColumnVisible treats them as
- * visible unconditionally.
+ * Columns that can never be hidden: just Name (identity). Not tracked in a
+ * visibleColumns set at all - isColumnVisible treats it as visible
+ * unconditionally. The drill-down "load this package's table" action lives
+ * on the Name cell itself now, so it doesn't need its own always-visible
+ * column.
  */
-const ALWAYS_VISIBLE_COLUMNS = new Set(["name", "loadAction"]);
+const ALWAYS_VISIBLE_COLUMNS = new Set(["name"]);
 
 /** Every column except the always-visible ones above can be toggled. */
 export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter(
@@ -75,8 +75,8 @@ export const DEFAULT_VISIBLE_COLUMNS: ReadonlySet<string> = new Set(
 /**
  * At least this many columns must stay visible at all times: the
  * always-visible ones, plus at least one real data column (so hiding
- * columns can never leave the table down to just Name and the Load
- * button, with no actual dependency data showing).
+ * columns can never leave the table down to just Name, with no actual
+ * dependency data showing).
  */
 export const MIN_VISIBLE_COLUMNS = ALWAYS_VISIBLE_COLUMNS.size + 1;
 

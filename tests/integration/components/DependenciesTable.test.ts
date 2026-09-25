@@ -104,13 +104,11 @@ describe("DependenciesTable", () => {
         );
         const cells = wrapper.findAll("tbody td");
         const licenseIndex = headerLabels.indexOf("License");
-        const loadIndex = headerLabels.indexOf("Actions");
 
-        // name/version are always present; every other cell should fall back to
-        // '-', except License (marks a missing license with a warning) and
-        // Actions (always renders its button, regardless of dependency data).
+        // name/version are always present; every other cell should fall back
+        // to '-', except License (marks a missing license with a warning).
         cells.forEach((cell, index) => {
-            if (index === 0 || index === 1 || index === loadIndex) return;
+            if (index === 0 || index === 1) return;
             if (index === licenseIndex) {
                 expect(cell.text()).toBe("- ⚠");
             } else {
@@ -139,36 +137,23 @@ describe("DependenciesTable", () => {
 });
 
 describe("DependenciesTable load-as-input action", () => {
-    it("renders an Actions column as the last header, with a VIEW THIS button per row", () => {
+    it("renders a right arrow in the Name cell as the load affordance", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
 
-        const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
-        expect(headerTexts[headerTexts.length - 1]).toBe("Actions");
-
-        const lastCell = wrapper.find("tbody tr").findAll("td").at(-1)!;
-        expect(lastCell.find("button").text()).toBe("VIEW THIS");
+        const nameCell = wrapper.find("tbody td");
+        expect(nameCell.find(".name-arrow").text()).toBe("→");
     });
 
-    it("emits load-package with the row's name and version when clicked", async () => {
+    it("emits load-package with the row's name and version when the Name cell is clicked", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
 
-        const lastCell = wrapper.find("tbody tr").findAll("td").at(-1)!;
-        await lastCell.find("button").trigger("click");
+        await wrapper.find("tbody td").trigger("click");
 
         expect(wrapper.emitted("load-package")).toEqual([[{ name: "left-pad", version: "1.2.0" }]]);
-    });
-
-    it("stays visible even with an empty columns list", () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columns: [] },
-        });
-
-        const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
-        expect(headerTexts).toContain("Actions");
     });
 });
 
@@ -204,7 +189,7 @@ describe("DependenciesTable column visibility", () => {
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
         expect(headerTexts.some((t) => t.startsWith("Name"))).toBe(true);
-        expect(wrapper.find("tbody td").text()).toBe("left-pad");
+        expect(wrapper.find("tbody td .name-text").text()).toBe("left-pad");
     });
 
     it("keeps header and row cell counts in sync when columns are hidden", () => {
@@ -242,7 +227,6 @@ describe("DependenciesTable column order", () => {
         const expectedLabels = [
             "Name",
             ...reversedOrder.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key).label),
-            "Actions",
         ];
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
@@ -252,18 +236,17 @@ describe("DependenciesTable column order", () => {
             props: { dependencies: [fullDependency] },
         });
 
-        const expectedLabels = ["Name", ...TOGGLEABLE_COLUMNS.map((c) => c.label), "Actions"];
+        const expectedLabels = ["Name", ...TOGGLEABLE_COLUMNS.map((c) => c.label)];
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
 
-    it("keeps Name first and Actions last regardless of columns content", () => {
+    it("keeps Name first regardless of columns content", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: reversedOrder },
         });
 
         const labels = headerLabels(wrapper);
         expect(labels[0]).toBe("Name");
-        expect(labels[labels.length - 1]).toBe("Actions");
     });
 
     it("keeps body <td> order in sync with header <th> order for a non-default columns order", () => {
@@ -359,7 +342,7 @@ describe("DependenciesTable sorting", () => {
     const pkgC = { ...sparseDependency, name: "ccc", weeklyDownloads: 200, gitStars: 15 };
 
     function names(wrapper) {
-        return wrapper.findAll("tbody tr td:first-child").map((td) => td.text());
+        return wrapper.findAll("tbody tr td:first-child .name-text").map((td) => td.text());
     }
 
     function sortButton(wrapper, label) {
@@ -473,7 +456,7 @@ describe("DependenciesTable search", () => {
     const vue = { ...sparseDependency, name: "vue" };
 
     function names(wrapper) {
-        return wrapper.findAll("tbody tr td:first-child").map((td) => td.text());
+        return wrapper.findAll("tbody tr td:first-child .name-text").map((td) => td.text());
     }
 
     it("renders no search box of its own - filtering is driven entirely by the searchQuery prop", () => {

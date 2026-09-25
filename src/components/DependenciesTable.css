@@ -55,6 +55,36 @@ tbody tr:hover {
     background: var(--accent-border, rgba(51, 255, 102, 0.5));
 }
 
+.name-cell {
+    cursor: pointer;
+}
+
+.name-cell-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.name-arrow {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+.name-cell:hover .name-text {
+    text-decoration: underline;
+}
+
+.name-cell:hover .name-arrow {
+    opacity: 1;
+}
+
 .col-centered {
     text-align: center;
 }

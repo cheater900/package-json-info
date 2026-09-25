@@ -231,7 +231,7 @@ test("the paste-from-clipboard button reads the clipboard and replaces the table
     await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible();
 });
 
-test("clicking a row's VIEW THIS button loads that package's package.json as the new input", async ({
+test("clicking a row's Name cell loads that package's package.json as the new input", async ({
     page,
 }) => {
     await page.route("https://registry.npmjs.org/left-pad", async (route) => {
@@ -269,7 +269,7 @@ test("clicking a row's VIEW THIS button loads that package's package.json as the
 
     const depsTable = page.locator("table.deps").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
-    await row.getByRole("button", { name: "VIEW THIS" }).click();
+    await row.getByRole("cell", { name: "left-pad", exact: true }).click();
 
     // The table now reflects left-pad's own package.json: its dependency
     // shows up, and left-pad itself is no longer the input's own dependency.
@@ -436,7 +436,7 @@ test("clicking a column header sorts the table, and clicking again reverses it",
     const depsTable = page.locator("table.deps").first();
     await expect(depsTable.locator("tbody tr")).toHaveCount(3);
 
-    const packageNameColumn = () => depsTable.locator("tbody tr td:first-child");
+    const packageNameColumn = () => depsTable.locator("tbody tr td:first-child .name-text");
     await expect(packageNameColumn()).toHaveText(["ccc-pkg", "aaa-pkg", "bbb-pkg"]);
 
     await depsTable.getByRole("button", { name: /^Weekly downloads/ }).click();
@@ -467,8 +467,13 @@ test("a single search box filters both the Deps and Dev Deps tables simultaneous
     await expect(searchInput).toHaveCount(1);
 
     await searchInput.fill("react");
-    await expect(depsTable.locator("tbody tr td:first-child")).toHaveText(["react", "react-dom"]);
-    await expect(devDepsTable.locator("tbody tr td:first-child")).toHaveText(["react-scripts"]);
+    await expect(depsTable.locator("tbody tr td:first-child .name-text")).toHaveText([
+        "react",
+        "react-dom",
+    ]);
+    await expect(devDepsTable.locator("tbody tr td:first-child .name-text")).toHaveText([
+        "react-scripts",
+    ]);
 
     await searchInput.fill("no-such-package");
     await expect(depsTable.locator("tbody tr")).toHaveCount(0);
@@ -603,8 +608,8 @@ test("the column visibility panel hides/shows columns and never drops below the 
     await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible();
 
     // Hide every toggleable column except "Version" to hit the floor: Name
-    // and Actions are always visible, so this should bottom out at those two
-    // plus Version (three total), not fewer.
+    // is always visible, so this should bottom out at Name plus Version (two
+    // total), not fewer.
     const allLabels = (await page.locator(".column-visibility-panel label").allTextContents()).map(
         (t) => t.trim(),
     );
@@ -618,8 +623,7 @@ test("the column visibility panel hides/shows columns and never drops below the 
     await expect(
         depsTable.getByRole("columnheader", { name: "Version", exact: true }),
     ).toBeVisible();
-    await expect(depsTable.getByRole("columnheader", { name: "Actions" })).toBeVisible();
-    await expect(depsTable.locator("thead th")).toHaveCount(3);
+    await expect(depsTable.locator("thead th")).toHaveCount(2);
 });
 
 test("column visibility preferences persist in localStorage across a page reload", async ({
@@ -672,7 +676,6 @@ test("a column order preference seeded in localStorage is reflected in the rende
     const expectedLabels = [
         "Name",
         ...order.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key)!.label),
-        "Actions",
     ];
     expect(headerTexts).toEqual(expectedLabels);
 });
