@@ -85,13 +85,27 @@
         </thead>
         <tbody v-if="!isLoading && dependencies.length > 0">
             <tr v-for="dependency in sortedDependencies" :key="dependency.name">
-                <td :class="{ 'col-centered': isCentered('name') }">
+                <td
+                    :class="{
+                        'col-centered': isCentered('name'),
+                        'cell-truncate': true,
+                        expanded: isExpanded(dependency.name, 'name'),
+                    }"
+                    @mouseenter="onCellMouseEnter"
+                    @click="onCellClick($event, dependency.name, 'name')"
+                >
                     {{ dependency.name }}
                 </td>
                 <td
                     v-for="col in orderedVisibleColumns"
                     :key="col.key"
-                    :class="{ 'col-centered': isCentered(col.key) }"
+                    :class="{
+                        'col-centered': isCentered(col.key),
+                        'cell-truncate': col.truncatable,
+                        expanded: col.truncatable && isExpanded(dependency.name, col.key),
+                    }"
+                    @mouseenter="col.truncatable && onCellMouseEnter($event)"
+                    @click="col.truncatable && onCellClick($event, dependency.name, col.key)"
                 >
                     <template v-if="col.render === 'link'">
                         <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>

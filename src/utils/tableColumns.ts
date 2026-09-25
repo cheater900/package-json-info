@@ -6,13 +6,18 @@ export type ColumnDef = {
     // text (see formatCell). DependenciesTable dispatches on this instead of
     // hardcoding column keys in its template.
     render?: "link" | "button";
+    // Whether this column's text can run long enough to need ellipsis
+    // truncation with click-to-expand (e.g. dependency/maintainer lists,
+    // deprecation notices). Dates, numbers, and link/button columns never
+    // set this - their content is always short or isn't text at all.
+    truncatable?: boolean;
 };
 
 export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
-    { key: "name", label: "Name", sortable: true },
-    { key: "version", label: "Version", sortable: false },
+    { key: "name", label: "Name", sortable: true, truncatable: true },
+    { key: "version", label: "Version", sortable: false, truncatable: true },
     { key: "versionDate", label: "Version Date", sortable: true },
-    { key: "latestVersion", label: "Latest version", sortable: false },
+    { key: "latestVersion", label: "Latest version", sortable: false, truncatable: true },
     { key: "latestReleaseDate", label: "Latest release date", sortable: true },
     { key: "latestUpdateDate", label: "Latest update date", sortable: true },
     { key: "isOutdated", label: "Outdated", sortable: true },
@@ -24,12 +29,12 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
     { key: "closedPRs", label: "Closed PRs", sortable: true },
     { key: "openIssues", label: "Open issues", sortable: true },
     { key: "closedIssues", label: "Closed issues", sortable: true },
-    { key: "dependencies", label: "Dependencies", sortable: false },
-    { key: "license", label: "License", sortable: false },
-    { key: "deprecated", label: "Deprecated", sortable: false },
+    { key: "dependencies", label: "Dependencies", sortable: false, truncatable: true },
+    { key: "license", label: "License", sortable: false, truncatable: true },
+    { key: "deprecated", label: "Deprecated", sortable: false, truncatable: true },
     { key: "vulnerabilityCount", label: "Vulnerabilities", sortable: true },
     { key: "bundleSizeGzip", label: "Bundle size (gzip)", sortable: true },
-    { key: "maintainers", label: "Maintainers", sortable: false },
+    { key: "maintainers", label: "Maintainers", sortable: false, truncatable: true },
     { key: "loadAction", label: "Actions", sortable: false },
 ];
 

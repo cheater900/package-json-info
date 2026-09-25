@@ -20,6 +20,41 @@ table td button {
     font-size: inherit;
 }
 
+tbody tr:hover {
+    background: var(--accent-bg, rgba(51, 255, 102, 0.1));
+}
+
+.cell-truncate {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cell-truncate.expanded {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Only cells actually clipping their text (or already expanded, so they can
+   be collapsed again) get the click affordance - a cell whose content
+   already fits has nothing to expand. */
+.cell-truncate.is-overflowing,
+.cell-truncate.expanded {
+    cursor: zoom-in;
+}
+
+.cell-truncate.expanded {
+    cursor: zoom-out;
+}
+
+.cell-truncate.is-overflowing:hover,
+.cell-truncate.expanded:hover {
+    background: var(--accent-border, rgba(51, 255, 102, 0.5));
+}
+
 .col-centered {
     text-align: center;
 }

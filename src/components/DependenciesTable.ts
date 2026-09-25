@@ -123,6 +123,52 @@ export default defineComponent({
             sortDependencies(filteredDependencies.value, sortKey.value, sortDir.value),
         );
 
+        // Cells expanded via click-to-expand (see cell-truncate in the
+        // template), keyed by "<dependency name>:<column key>" so expansion
+        // state is per-cell rather than per-column or per-row.
+        const expandedCells = ref(new Set());
+
+        function cellKey(name, key) {
+            return `${name}:${key}`;
+        }
+
+        function isExpanded(name, key) {
+            return expandedCells.value.has(cellKey(name, key));
+        }
+
+        function toggleExpand(name, key) {
+            const k = cellKey(name, key);
+            if (expandedCells.value.has(k)) {
+                expandedCells.value.delete(k);
+            } else {
+                expandedCells.value.add(k);
+            }
+        }
+
+        // Whether a cell-truncate <td> is actually clipping its text right
+        // now - false once its content fits within the max-width, at which
+        // point there's nothing to expand and the hover/cursor affordance
+        // should disappear.
+        function isOverflowing(el) {
+            return el.scrollWidth > el.clientWidth;
+        }
+
+        // Recomputed on hover (cheap, and avoids tracking overflow state for
+        // every cell up front - most never get hovered).
+        function onCellMouseEnter(event) {
+            const el = event.currentTarget;
+            el.classList.toggle("is-overflowing", isOverflowing(el));
+        }
+
+        // An already-expanded cell always collapses on click; a collapsed
+        // one only expands if its text is actually being clipped.
+        function onCellClick(event, name, key) {
+            if (!isExpanded(name, key) && !isOverflowing(event.currentTarget)) {
+                return;
+            }
+            toggleExpand(name, key);
+        }
+
         return {
             isCentered,
             formatCell,
@@ -133,6 +179,9 @@ export default defineComponent({
             toggleSort,
             sortDirectionFor,
             sortedDependencies,
+            isExpanded,
+            onCellMouseEnter,
+            onCellClick,
         };
     },
 });
