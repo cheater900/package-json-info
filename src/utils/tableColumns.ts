@@ -15,9 +15,9 @@ export type ColumnDef = {
 
 export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
     { key: "name", label: "Name", sortable: true, truncatable: true },
-    { key: "version", label: "Version", sortable: false, truncatable: true },
+    { key: "version", label: "Version", sortable: false },
     { key: "versionDate", label: "Version Date", sortable: true },
-    { key: "latestVersion", label: "Latest version", sortable: false, truncatable: true },
+    { key: "latestVersion", label: "Latest version", sortable: false },
     { key: "latestReleaseDate", label: "Latest release date", sortable: true },
     { key: "latestUpdateDate", label: "Latest update date", sortable: true },
     { key: "isOutdated", label: "Outdated", sortable: true },
