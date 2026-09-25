@@ -166,6 +166,7 @@ button {
 .btn-icon {
     font-size: 1.05em;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 button:hover:not(:disabled) {
