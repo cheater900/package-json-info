@@ -38,7 +38,18 @@
                     @change="onFileSelected"
                 />
                 <button type="button" @click="fileInputRef?.click()" :disabled="isLoadingInput">
-                    <svg class="btn-icon" aria-hidden="true" viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg
+                        class="btn-icon"
+                        aria-hidden="true"
+                        viewBox="0 0 16 16"
+                        width="1em"
+                        height="1em"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
                         <path d="M8 10.5V2M8 2 4.5 5.5M8 2l3.5 3.5" />
                         <path d="M2.5 11v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" />
                     </svg>
@@ -146,7 +157,9 @@
         </details>
 
         <modal
-            v-if="isDepsExpanded || isDevDepsExpanded || activeSourceTreeDependency"
+            v-if="
+                isDepsExpanded || isDevDepsExpanded || activeSourceTreeDependency || selectedPackage
+            "
             @close="closeModal"
         >
             <div v-if="isDepsExpanded || isDevDepsExpanded" class="table-modal-content">
@@ -173,6 +186,11 @@
                     @open-source-tree="openSourceTree"
                 />
             </div>
+            <package-summary-card
+                v-else-if="selectedPackage"
+                :dependency="selectedPackage"
+                @open-source-tree="openSourceTree"
+            />
             <source-tree-browser
                 v-else
                 :dependency-name="activeSourceTreeDependency.name"

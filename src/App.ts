@@ -8,6 +8,7 @@ import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import Modal from "./components/Modal.vue";
 import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
+import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import packageJson from "../package.json";
@@ -18,6 +19,7 @@ export default defineComponent({
         ColumnVisibilityPanel,
         Modal,
         SourceTreeBrowser,
+        PackageSummaryCard,
         VueJsonPretty,
     },
     setup() {
@@ -141,36 +143,50 @@ export default defineComponent({
         // Bootstrap with this app's own package.json as the first history entry.
         loadPackageJsonText(JSON.stringify(packageJson, null, 2));
 
-        // A single fullscreen modal shared by both tables' "expand" action and
-        // the source-tree browser - only one of these three is ever showing,
-        // so one modal with switched content is simpler than three separate
-        // ones stacking on top of each other.
+        // A single fullscreen modal shared by both tables' "expand" action, the
+        // source-tree browser, and a single dependency's summary card - only one
+        // of these four is ever showing, so one modal with switched content is
+        // simpler than four separate ones stacking on top of each other.
         const isDepsExpanded = ref(false);
         const isDevDepsExpanded = ref(false);
         const activeSourceTreeDependency = ref(null);
+        const selectedPackage = ref(null);
 
         function expandDeps() {
             isDevDepsExpanded.value = false;
             activeSourceTreeDependency.value = null;
+            selectedPackage.value = null;
             isDepsExpanded.value = true;
         }
 
         function expandDevDeps() {
             isDepsExpanded.value = false;
             activeSourceTreeDependency.value = null;
+            selectedPackage.value = null;
             isDevDepsExpanded.value = true;
         }
 
         function openSourceTree(dependency) {
             isDepsExpanded.value = false;
             isDevDepsExpanded.value = false;
+            selectedPackage.value = null;
             activeSourceTreeDependency.value = dependency;
+        }
+
+        // Not wired to any UI trigger yet - a future "click a row" action will
+        // call this to open the summary card for that dependency.
+        function showPackageSummary(dependency) {
+            isDepsExpanded.value = false;
+            isDevDepsExpanded.value = false;
+            activeSourceTreeDependency.value = null;
+            selectedPackage.value = dependency;
         }
 
         function closeModal() {
             isDepsExpanded.value = false;
             isDevDepsExpanded.value = false;
             activeSourceTreeDependency.value = null;
+            selectedPackage.value = null;
         }
 
         return {
@@ -204,9 +220,11 @@ export default defineComponent({
             isDepsExpanded,
             isDevDepsExpanded,
             activeSourceTreeDependency,
+            selectedPackage,
             expandDeps,
             expandDevDeps,
             openSourceTree,
+            showPackageSummary,
             closeModal,
         };
     },

@@ -1,0 +1,31 @@
+.package-summary {
+    width: min(480px, 100%);
+    padding: 20px 24px;
+    text-align: left;
+}
+
+.package-summary-name {
+    margin: 0 0 16px;
+    padding-right: 32px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.package-summary-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 10px 16px;
+    margin: 0;
+}
+
+.package-summary-list dt {
+    font-weight: 600;
+    color: var(--text-h, #66ffa0);
+    white-space: nowrap;
+}
+
+.package-summary-list dd {
+    margin: 0;
+    overflow-wrap: break-word;
+}
