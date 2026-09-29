@@ -23,18 +23,14 @@ table td button {
 tbody tr {
     /* Clicking anywhere in a row that isn't its own interactive control
        (Name, a link, the View tree button, or a cell mid-expand) opens the
-       package summary card - the magnifier cursor signals that. cursor is
-       inherited, so .name-cell and table td a below opt back out to their
-       own pointer instead. */
-    cursor: zoom-in;
+       package summary card - the pointer cursor signals that. cursor is
+       inherited, so .name-cell below opts back out to the default arrow
+       since it does something else (loads that package as the new input). */
+    cursor: pointer;
 }
 
 tbody tr:hover {
     background: var(--accent-bg, rgba(51, 255, 102, 0.1));
-}
-
-table td a {
-    cursor: pointer;
 }
 
 .cell-truncate {
@@ -69,7 +65,13 @@ table td a {
 }
 
 .name-cell {
-    cursor: pointer;
+    /* A custom "→" cursor - same glyph as .name-arrow - so hovering the
+       cell that loads this package as the new input reads distinctly from
+       the row's plain pointer cursor (which opens the summary card). */
+    cursor:
+        url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><text x='2' y='18' font-size='20' fill='%2333ff66'>→</text></svg>")
+            0 12,
+        pointer;
 }
 
 .name-cell-inner {
