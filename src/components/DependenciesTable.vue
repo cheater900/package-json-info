@@ -79,10 +79,14 @@
             </draggable>
         </thead>
         <tbody v-if="!isLoading && dependencies.length > 0">
-            <tr v-for="dependency in sortedDependencies" :key="dependency.name">
+            <tr
+                v-for="dependency in sortedDependencies"
+                :key="dependency.name"
+                @click="$emit('select-package', dependency)"
+            >
                 <td
                     class="name-cell"
-                    @click="
+                    @click.stop="
                         $emit('load-package', {
                             name: dependency.name,
                             version: dependency.version,
@@ -106,14 +110,16 @@
                     @click="col.truncatable && onCellClick($event, dependency.name, col.key)"
                 >
                     <template v-if="col.render === 'link'">
-                        <a v-if="dependency.sourceCode" :href="dependency.sourceCode">link</a>
+                        <a v-if="dependency.sourceCode" :href="dependency.sourceCode" @click.stop>
+                            link
+                        </a>
                         <template v-else>-</template>
                     </template>
                     <template v-else-if="col.render === 'button'">
                         <button
                             v-if="dependency.sourceTree"
                             type="button"
-                            @click="$emit('open-source-tree', dependency)"
+                            @click.stop="$emit('open-source-tree', dependency)"
                         >
                             View tree
                         </button>

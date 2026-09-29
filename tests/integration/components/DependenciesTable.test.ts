@@ -157,6 +157,57 @@ describe("DependenciesTable load-as-input action", () => {
     });
 });
 
+describe("DependenciesTable row selection", () => {
+    it("emits select-package with the row's dependency when a plain data cell is clicked", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["version"] },
+        });
+
+        await wrapper.findAll("tbody td").at(-1)!.trigger("click");
+
+        expect(wrapper.emitted("select-package")).toEqual([[fullDependency]]);
+    });
+
+    it("clicking the Name cell only emits load-package, not select-package", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency] },
+        });
+
+        await wrapper.find("tbody td").trigger("click");
+
+        expect(wrapper.emitted("load-package")).toBeTruthy();
+        expect(wrapper.emitted("select-package")).toBeFalsy();
+    });
+
+    it("clicking the source-code link only follows the link, not select-package", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["sourceCode"] },
+        });
+
+        await wrapper.find("tbody a").trigger("click");
+
+        expect(wrapper.emitted("select-package")).toBeFalsy();
+    });
+
+    it("clicking the View tree button only emits open-source-tree, not select-package", async () => {
+        const npmSourceTree = {
+            provider: "npm",
+            tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
+        };
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [{ ...fullDependency, sourceTree: npmSourceTree }],
+                columns: ["sourceCodeTree"],
+            },
+        });
+
+        await wrapper.find("tbody button").trigger("click");
+
+        expect(wrapper.emitted("open-source-tree")).toBeTruthy();
+        expect(wrapper.emitted("select-package")).toBeFalsy();
+    });
+});
+
 describe("DependenciesTable column visibility", () => {
     it("shows every column by default", () => {
         const wrapper = mount(DependenciesTable, {

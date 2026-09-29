@@ -122,6 +122,7 @@
                 @load-package="onLoadPackage"
                 @reorder-columns="reorderColumns"
                 @open-source-tree="openSourceTree"
+                @select-package="showPackageSummary"
             />
         </details>
 
@@ -149,6 +150,7 @@
                 @load-package="onLoadPackage"
                 @reorder-columns="reorderColumns"
                 @open-source-tree="openSourceTree"
+                @select-package="showPackageSummary"
             />
         </details>
         <details class="accordion" open>
@@ -173,6 +175,7 @@
                     @load-package="onLoadPackage"
                     @reorder-columns="reorderColumns"
                     @open-source-tree="openSourceTree"
+                    @select-package="showPackageSummary"
                 />
                 <dependencies-table
                     v-else
@@ -184,6 +187,7 @@
                     @load-package="onLoadPackage"
                     @reorder-columns="reorderColumns"
                     @open-source-tree="openSourceTree"
+                    @select-package="showPackageSummary"
                 />
             </div>
             <package-summary-card

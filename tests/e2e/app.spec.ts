@@ -277,6 +277,28 @@ test("clicking a row's Name cell loads that package's package.json as the new in
     await expect(depsTable.getByRole("cell", { name: "left-pad", exact: true })).toHaveCount(0);
 });
 
+test("clicking a row's data cell opens the package summary card", async ({ page }) => {
+    await page.goto("/");
+    await expandAllSections(page);
+    await loadJson(page, {
+        name: "demo",
+        dependencies: { "left-pad": "^1.0.0" },
+        devDependencies: {},
+    });
+
+    const depsTable = page.locator("table.deps").first();
+    const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
+
+    // A plain data cell (Version) opens the summary card in the modal - the
+    // Name cell has its own click behaviour (see the test above) and is
+    // deliberately excluded from this one.
+    await row.getByRole("cell", { name: "^1.0.0", exact: true }).click();
+    await expect(page.locator(".package-summary-name")).toHaveText("left-pad");
+
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(page.locator(".package-summary-name")).toHaveCount(0);
+});
+
 test("back/forward buttons navigate between loaded package.json states", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);

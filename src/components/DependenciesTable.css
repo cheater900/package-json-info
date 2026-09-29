@@ -20,8 +20,21 @@ table td button {
     font-size: inherit;
 }
 
+tbody tr {
+    /* Clicking anywhere in a row that isn't its own interactive control
+       (Name, a link, the View tree button, or a cell mid-expand) opens the
+       package summary card - the magnifier cursor signals that. cursor is
+       inherited, so .name-cell and table td a below opt back out to their
+       own pointer instead. */
+    cursor: zoom-in;
+}
+
 tbody tr:hover {
     background: var(--accent-bg, rgba(51, 255, 102, 0.1));
+}
+
+table td a {
+    cursor: pointer;
 }
 
 .cell-truncate {

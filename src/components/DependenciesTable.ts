@@ -39,7 +39,7 @@ export default defineComponent({
             default: false,
         },
     },
-    emits: ["load-package", "reorder-columns", "open-source-tree"],
+    emits: ["load-package", "reorder-columns", "open-source-tree", "select-package"],
     setup(props, { emit }) {
         // Every column is center-aligned except Name, which reads better
         // left-aligned as the row's identifying label.
@@ -161,11 +161,15 @@ export default defineComponent({
         }
 
         // An already-expanded cell always collapses on click; a collapsed
-        // one only expands if its text is actually being clipped.
+        // one only expands if its text is actually being clipped. When
+        // neither applies, the click is a no-op here and is left to bubble
+        // up to the row's own click handler (open the package summary card)
+        // instead of being swallowed.
         function onCellClick(event, name, key) {
             if (!isExpanded(name, key) && !isOverflowing(event.currentTarget)) {
                 return;
             }
+            event.stopPropagation();
             toggleExpand(name, key);
         }
 
