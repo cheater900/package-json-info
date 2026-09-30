@@ -129,9 +129,15 @@
                 </td>
             </tr>
         </tbody>
+        <tbody v-else>
+            <tr class="status-row">
+                <td :colspan="orderedVisibleColumns.length + 1">
+                    <template v-if="isLoading">Loading…</template>
+                    <template v-else>No dependencies</template>
+                </td>
+            </tr>
+        </tbody>
     </table>
-    <div v-if="isLoading" class="status-row">Loading…</div>
-    <div v-else-if="dependencies.length === 0" class="status-row">No dependencies</div>
 </template>
 
 <script lang="ts" src="./DependenciesTable.ts"></script>

@@ -131,8 +131,26 @@ describe("DependenciesTable", () => {
             props: { dependencies: [] },
         });
 
-        expect(wrapper.findAll("tbody tr")).toHaveLength(0);
+        expect(wrapper.findAll("tbody tr:not(.status-row)")).toHaveLength(0);
         expect(wrapper.find(".status-row").text()).toBe("No dependencies");
+    });
+
+    it("renders a 'Loading…' status row instead of dependency rows while isLoading is true", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [], isLoading: true },
+        });
+
+        expect(wrapper.findAll("tbody tr:not(.status-row)")).toHaveLength(0);
+        expect(wrapper.find(".status-row").text()).toBe("Loading…");
+    });
+
+    it("spans the status row across every currently-visible column", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [], columns: ["version", "license"] },
+        });
+
+        const headerCount = wrapper.findAll("thead th").length;
+        expect(wrapper.find(".status-row td").attributes("colspan")).toBe(String(headerCount));
     });
 });
 

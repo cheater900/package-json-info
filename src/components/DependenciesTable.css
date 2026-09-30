@@ -20,7 +20,7 @@ table td button {
     font-size: inherit;
 }
 
-tbody tr {
+tbody tr:not(.status-row) {
     /* Clicking anywhere in a row that isn't its own interactive control
        (Name, a link, the View tree button, or a cell mid-expand) opens the
        package summary card - the pointer cursor signals that. cursor is
@@ -29,7 +29,7 @@ tbody tr {
     cursor: pointer;
 }
 
-tbody tr:hover {
+tbody tr:not(.status-row):hover {
     background: var(--accent-bg, rgba(51, 255, 102, 0.1));
 }
 
@@ -155,13 +155,11 @@ tbody tr:hover {
 }
 
 .status-row {
-    /* A sibling of table.deps rather than a row inside it: a colspan cell
-       spanning every column would be as wide as the table's full
-       scrollable content, so centering text in it could land off-screen
-       once the table has more columns than fit on one screen. */
+    cursor: default;
+}
+
+.status-row td {
     text-align: center;
     font-style: italic;
     padding: 12px;
-    border: 1px solid var(--accent, #33ff66);
-    border-top: none;
 }
