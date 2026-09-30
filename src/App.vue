@@ -77,6 +77,8 @@
             <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
         </section>
 
+        <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
+
         <div class="search-shrink-row">
             <div class="search-controls">
                 <label :for="searchInputId" class="visually-hidden">Search by name</label>
@@ -95,8 +97,6 @@
                 </label>
             </div>
         </div>
-
-        <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
 
         <details class="accordion" open>
             <summary>
