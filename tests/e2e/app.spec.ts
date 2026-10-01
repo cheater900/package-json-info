@@ -11,7 +11,7 @@ test("the dependency table scrolls horizontally, since it has more columns than 
 }) => {
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable).toBeVisible();
 
     const overflowX = await depsTable.evaluate((el) => getComputedStyle(el).overflowX);
@@ -84,7 +84,7 @@ test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never 
 
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
 
     await expect(depsTable.getByRole("columnheader", { name: "Vulnerabilities" })).toHaveCount(0);
@@ -117,20 +117,20 @@ test("Columns, Deps, and Dev Deps are collapsible accordions; Deps and Dev Deps 
     await expect(columnsSection).toHaveJSProperty("open", false);
     await expect(depsSection).toHaveJSProperty("open", true);
     await expect(devDepsSection).toHaveJSProperty("open", true);
-    await expect(depsSection.locator("table.deps")).toBeVisible();
+    await expect(depsSection.locator("table.deps-table")).toBeVisible();
     await expect(columnsSection.locator(".column-visibility-panel")).not.toBeVisible();
 
     // Collapsing Deps hides its table but leaves Dev Deps and Columns as-is.
     await depsSection.locator("summary").click();
     await expect(depsSection).toHaveJSProperty("open", false);
-    await expect(depsSection.locator("table.deps")).not.toBeVisible();
+    await expect(depsSection.locator("table.deps-table")).not.toBeVisible();
     await expect(devDepsSection).toHaveJSProperty("open", true);
     await expect(columnsSection).toHaveJSProperty("open", false);
 
     // Expanding it again reveals the table.
     await depsSection.locator("summary").click();
     await expect(depsSection).toHaveJSProperty("open", true);
-    await expect(depsSection.locator("table.deps")).toBeVisible();
+    await expect(depsSection.locator("table.deps-table")).toBeVisible();
 
     // Same collapse/expand behaviour for the Columns panel.
     await columnsSection.locator("summary").click();
@@ -267,7 +267,7 @@ test("clicking a row's Name cell loads that package's package.json as the new in
         devDependencies: {},
     });
 
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
     await row.getByRole("cell", { name: "left-pad", exact: true }).click();
 
@@ -286,17 +286,17 @@ test("clicking a row's data cell opens the package summary card", async ({ page 
         devDependencies: {},
     });
 
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
 
     // A plain data cell (Version) opens the summary card in the modal - the
     // Name cell has its own click behaviour (see the test above) and is
     // deliberately excluded from this one.
     await row.getByRole("cell", { name: "^1.0.0", exact: true }).click();
-    await expect(page.locator(".package-summary-name")).toHaveText("left-pad");
+    await expect(page.locator(".package-summary__name")).toHaveText("left-pad");
 
     await page.getByRole("button", { name: "Close", exact: true }).click();
-    await expect(page.locator(".package-summary-name")).toHaveCount(0);
+    await expect(page.locator(".package-summary__name")).toHaveCount(0);
 });
 
 test("back/forward buttons navigate between loaded package.json states", async ({ page }) => {
@@ -313,7 +313,7 @@ test("back/forward buttons navigate between loaded package.json states", async (
         devDependencies: {},
     });
 
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "history-pkg", exact: true })).toBeVisible();
     await expect(page.getByText("2 / 2", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "← Back" })).toBeEnabled();
@@ -355,7 +355,7 @@ test("navigating history back and forward reuses cached data instead of refetchi
 
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
     expect(vueRequests).toBe(1);
 
@@ -402,7 +402,7 @@ test("loading new content while navigated back discards the old forward history"
         devDependencies: {},
     });
 
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "state-b-pkg", exact: true })).toBeVisible();
     await expect(page.getByText("2 / 2", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled();
@@ -455,10 +455,11 @@ test("clicking a column header sorts the table, and clicking again reverses it",
 
     // Only one populated table (devDependencies is empty), but scope to it
     // explicitly since the empty Dev Deps table also renders a header row.
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.locator("tbody tr")).toHaveCount(3);
 
-    const packageNameColumn = () => depsTable.locator("tbody tr td:first-child .name-text");
+    const packageNameColumn = () =>
+        depsTable.locator("tbody tr td:first-child .deps-table__name-text");
     await expect(packageNameColumn()).toHaveText(["ccc-pkg", "aaa-pkg", "bbb-pkg"]);
 
     await depsTable.getByRole("button", { name: /^Weekly downloads/ }).click();
@@ -479,8 +480,8 @@ test("a single search box filters both the Deps and Dev Deps tables simultaneous
         devDependencies: { "react-scripts": "^5.0.0", vite: "^5.0.0" },
     });
 
-    const depsTable = page.locator("table.deps").nth(0);
-    const devDepsTable = page.locator("table.deps").nth(1);
+    const depsTable = page.locator("table.deps-table").nth(0);
+    const devDepsTable = page.locator("table.deps-table").nth(1);
     await expect(depsTable.locator("tbody tr")).toHaveCount(3);
     await expect(devDepsTable.locator("tbody tr")).toHaveCount(2);
 
@@ -489,13 +490,13 @@ test("a single search box filters both the Deps and Dev Deps tables simultaneous
     await expect(searchInput).toHaveCount(1);
 
     await searchInput.fill("react");
-    await expect(depsTable.locator("tbody tr td:first-child .name-text")).toHaveText([
+    await expect(depsTable.locator("tbody tr td:first-child .deps-table__name-text")).toHaveText([
         "react",
         "react-dom",
     ]);
-    await expect(devDepsTable.locator("tbody tr td:first-child .name-text")).toHaveText([
-        "react-scripts",
-    ]);
+    await expect(devDepsTable.locator("tbody tr td:first-child .deps-table__name-text")).toHaveText(
+        ["react-scripts"],
+    );
 
     await searchInput.fill("no-such-package");
     await expect(depsTable.locator("tbody tr")).toHaveCount(0);
@@ -556,7 +557,7 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
     await page.getByLabel("Bundle size (gzip)", { exact: true }).check();
     await page.getByLabel("Maintainers", { exact: true }).check();
 
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "enriched-pkg" });
 
     await expect(row.getByRole("cell", { name: "GPL-3.0 ⚠", exact: true })).toBeVisible();
@@ -600,7 +601,7 @@ test("hiding a column skips its network request, and re-showing it fetches the m
         devDependencies: {},
     });
 
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "gated-pkg", exact: true })).toBeVisible();
 
     expect(osvRequestedNames).not.toContain("gated-pkg");
@@ -619,7 +620,7 @@ test("the column visibility panel hides/shows columns and never drops below the 
 }) => {
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
 
     await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible();
 
@@ -653,7 +654,7 @@ test("column visibility preferences persist in localStorage across a page reload
 }) => {
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
 
     await expect(depsTable.getByRole("columnheader", { name: "License" })).toBeVisible();
     await expect(depsTable.getByRole("columnheader", { name: "Maintainers" })).toHaveCount(0);
@@ -690,7 +691,7 @@ test("a column order preference seeded in localStorage is reflected in the rende
 
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
 
     const headerTexts = (await depsTable.locator("thead th").allTextContents()).map((t) =>
         t.replace(/[\s▲▼]+$/, "").trim(),
@@ -707,7 +708,7 @@ test("dragging a column header by its handle reorders the table, and the new ord
 }) => {
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
     const headerCells = depsTable.locator("thead th");
 
     // With Deps, Dev Deps, and package.json all expanded by default, the
@@ -721,8 +722,8 @@ test("dragging a column header by its handle reorders the table, and the new ord
     const firstLabel = (await headerCells.nth(1).innerText()).trim();
     const secondLabel = (await headerCells.nth(2).innerText()).trim();
 
-    const firstBox = await headerCells.nth(1).locator(".col-drag-handle").boundingBox();
-    const secondBox = await headerCells.nth(2).locator(".col-drag-handle").boundingBox();
+    const firstBox = await headerCells.nth(1).locator(".deps-table__drag-handle").boundingBox();
+    const secondBox = await headerCells.nth(2).locator(".deps-table__drag-handle").boundingBox();
     if (!firstBox || !secondBox) {
         throw new Error("Drag handle bounding box not available.");
     }
@@ -744,7 +745,7 @@ test("dragging a column header by its handle reorders the table, and the new ord
 
     await page.reload();
     await expandAllSections(page);
-    const reloadedHeaderCells = page.locator("table.deps").first().locator("thead th");
+    const reloadedHeaderCells = page.locator("table.deps-table").first().locator("thead th");
     await expect(reloadedHeaderCells.nth(1)).toContainText(secondLabel);
     await expect(reloadedHeaderCells.nth(2)).toContainText(firstLabel);
 });
@@ -754,7 +755,7 @@ test("shrinking columns by abbreviation shows initials with a full-name tooltip,
 }) => {
     await page.goto("/");
     await expandAllSections(page);
-    const depsTable = page.locator("table.deps").first();
+    const depsTable = page.locator("table.deps-table").first();
 
     await expect(depsTable.getByRole("columnheader", { name: "Version Date" })).toBeVisible();
 
@@ -763,7 +764,7 @@ test("shrinking columns by abbreviation shows initials with a full-name tooltip,
     await shrinkCheckbox.check();
 
     // Multi-word labels abbreviate to initials...
-    const versionDateLabel = depsTable.locator(".col-label", { hasText: "VD" });
+    const versionDateLabel = depsTable.locator(".deps-table__col-label", { hasText: "VD" });
     await expect(versionDateLabel).toBeVisible();
     await expect(depsTable.getByRole("columnheader", { name: "Version Date" })).toHaveCount(0);
     await versionDateLabel.hover();
@@ -774,8 +775,10 @@ test("shrinking columns by abbreviation shows initials with a full-name tooltip,
 
     await page.reload();
     await expandAllSections(page);
-    const reloadedDepsTable = page.locator("table.deps").first();
+    const reloadedDepsTable = page.locator("table.deps-table").first();
 
     await expect(page.getByLabel("Shrink columns by abbreviation")).toBeChecked();
-    await expect(reloadedDepsTable.locator(".col-label", { hasText: "VD" })).toBeVisible();
+    await expect(
+        reloadedDepsTable.locator(".deps-table__col-label", { hasText: "VD" }),
+    ).toBeVisible();
 });

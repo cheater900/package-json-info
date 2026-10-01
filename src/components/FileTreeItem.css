@@ -2,13 +2,13 @@
     list-style: none;
 }
 
-.file-tree-children {
+.file-tree-item__children {
     margin: 0;
     padding-left: 16px;
 }
 
-.tree-toggle,
-.tree-file {
+.file-tree-item__toggle,
+.file-tree-item__file {
     all: unset;
     display: flex;
     align-items: center;
@@ -22,21 +22,21 @@
     border-radius: 3px;
 }
 
-.tree-file {
+.file-tree-item__file {
     padding-left: 20px;
 }
 
-.tree-toggle:hover,
-.tree-file:hover {
+.file-tree-item__toggle:hover,
+.file-tree-item__file:hover {
     background: var(--code-bg, #f4f3ec);
 }
 
-.tree-file-selected {
+.file-tree-item__file--selected {
     background: var(--code-bg, #f4f3ec);
     font-weight: 600;
 }
 
-.tree-icon {
+.file-tree-item__icon {
     display: inline-block;
     width: 12px;
     text-align: center;

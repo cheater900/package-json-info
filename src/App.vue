@@ -1,24 +1,24 @@
 <template>
     <div>
         <div class="terminal-titlebar">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="path">node ~/package.json</span>
+            <span class="terminal-titlebar__dot"></span>
+            <span class="terminal-titlebar__dot"></span>
+            <span class="terminal-titlebar__dot"></span>
+            <span class="terminal-titlebar__path">node ~/package.json</span>
         </div>
 
-        <h1>
+        <h1 class="title">
             <span>$ package.json info</span>
-            <span class="cursor">_</span>
+            <span class="title__cursor">_</span>
         </h1>
 
-        <div v-if="loadError" class="banner banner-error" role="alert">
+        <div v-if="loadError" class="banner banner--error" role="alert">
             {{ loadError }}
         </div>
-        <div v-if="isLoadingInput" class="banner banner-loading">Loading package.json…</div>
+        <div v-if="isLoadingInput" class="banner banner--loading">Loading package.json…</div>
 
         <section class="input-methods">
-            <form class="url-fetch-row" @submit.prevent="fetchFromUrlInput">
+            <form class="input-methods__url-form" @submit.prevent="fetchFromUrlInput">
                 <label for="url-input" class="visually-hidden">
                     Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL
                 </label>
@@ -29,10 +29,10 @@
                 </button>
             </form>
 
-            <div class="input-method-actions">
+            <div class="input-methods__actions">
                 <input
                     ref="fileInputRef"
-                    class="hidden-file-input"
+                    class="input-methods__file-input"
                     type="file"
                     accept=".json,application/json"
                     @change="onFileSelected"
@@ -80,7 +80,7 @@
         <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
 
         <div class="search-shrink-row">
-            <div class="search-controls">
+            <div class="search-shrink-row__search">
                 <label :for="searchInputId" class="visually-hidden">Search by name</label>
                 <input
                     :id="searchInputId"
@@ -90,7 +90,7 @@
                 />
             </div>
 
-            <div class="shrink-labels-controls">
+            <div class="search-shrink-row__shrink">
                 <label>
                     <input type="checkbox" v-model="shrinkColumnLabels" />
                     Shrink columns by abbreviation
@@ -106,7 +106,7 @@
             <div class="table-toolbar">
                 <button
                     type="button"
-                    class="table-expand-toggle"
+                    class="table-toolbar__expand"
                     aria-label="Expand table"
                     @click="expandDeps"
                 >
@@ -134,7 +134,7 @@
             <div class="table-toolbar">
                 <button
                     type="button"
-                    class="table-expand-toggle"
+                    class="table-toolbar__expand"
                     aria-label="Expand table"
                     @click="expandDevDeps"
                 >

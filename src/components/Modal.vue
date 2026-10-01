@@ -1,8 +1,8 @@
 <template>
     <Teleport to="body">
-        <div class="modal-overlay" @click="onOverlayClick">
-            <div class="modal-panel">
-                <button type="button" class="modal-close" aria-label="Close" @click="close">
+        <div class="modal" @click="onOverlayClick">
+            <div class="modal__panel">
+                <button type="button" class="modal__close" aria-label="Close" @click="close">
                     ✕
                 </button>
                 <slot />

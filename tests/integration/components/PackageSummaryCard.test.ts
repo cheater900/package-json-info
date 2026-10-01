@@ -33,7 +33,7 @@ describe("PackageSummaryCard", () => {
     it("shows the dependency name as its title", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
 
-        expect(wrapper.find(".package-summary-name").text()).toBe("left-pad");
+        expect(wrapper.find(".package-summary__name").text()).toBe("left-pad");
     });
 
     it("renders a label/value row for every toggleable column", () => {

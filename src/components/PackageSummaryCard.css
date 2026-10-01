@@ -4,7 +4,7 @@
     text-align: left;
 }
 
-.package-summary-name {
+.package-summary__name {
     margin: 0 0 16px;
     padding-right: 32px;
     overflow: hidden;
@@ -12,20 +12,20 @@
     white-space: nowrap;
 }
 
-.package-summary-list {
+.package-summary__list {
     display: grid;
     grid-template-columns: max-content 1fr;
     gap: 10px 16px;
     margin: 0;
 }
 
-.package-summary-list dt {
+.package-summary__list dt {
     font-weight: 600;
     color: var(--text-h, #66ffa0);
     white-space: nowrap;
 }
 
-.package-summary-list dd {
+.package-summary__list dd {
     margin: 0;
     overflow-wrap: break-word;
 }

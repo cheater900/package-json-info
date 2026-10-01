@@ -1,8 +1,8 @@
-.tooltip-wrapper {
+.tooltip {
     display: inline-flex;
 }
 
-.tooltip-bubble {
+.tooltip__bubble {
     position: fixed;
     white-space: nowrap;
     font-size: 0.8rem;
@@ -16,10 +16,10 @@
     z-index: 1200;
 }
 
-.tooltip-top {
+.tooltip__bubble--top {
     transform: translate(-50%, -100%);
 }
 
-.tooltip-bottom {
+.tooltip__bubble--bottom {
     transform: translate(-50%, 0);
 }

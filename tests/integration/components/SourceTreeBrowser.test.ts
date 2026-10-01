@@ -68,11 +68,11 @@ describe("SourceTreeBrowser", () => {
         });
         await flushPromises();
 
-        await wrapper.find("button.tree-file").trigger("click");
+        await wrapper.find("button.file-tree-item__file").trigger("click");
         await flushPromises();
 
         expect(readFile).toHaveBeenCalledWith("index.js");
-        expect(wrapper.find(".source-tree-content").text()).toBe("console.log(1);");
+        expect(wrapper.find(".source-tree__content").text()).toBe("console.log(1);");
     });
 
     it("re-fetches when a new sourceTree prop replaces the previous one", async () => {

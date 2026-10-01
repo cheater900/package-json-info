@@ -1,4 +1,4 @@
-table.deps {
+.deps-table {
     display: block;
     overflow-x: scroll;
     width: fit-content;
@@ -20,26 +20,26 @@ table td button {
     font-size: inherit;
 }
 
-tbody tr:not(.status-row) {
+tbody tr:not(.deps-table__status-row) {
     /* Clicking anywhere in a row that isn't its own interactive control
        (Name, a link, the View tree button, or a cell mid-expand) opens the
        package summary card - the pointer cursor signals that. cursor is
-       inherited, so .name-cell below opts back out to the default arrow
+       inherited, so .deps-table__name-cell below opts back out to the default arrow
        since it does something else (loads that package as the new input). */
     cursor: pointer;
 }
 
-tbody tr:not(.status-row):hover {
+tbody tr:not(.deps-table__status-row):hover {
     background: var(--accent-bg, rgba(51, 255, 102, 0.1));
 }
 
-.cell-truncate {
+.deps-table__truncate-cell {
     max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.cell-truncate.expanded {
+.deps-table__truncate-cell--expanded {
     max-width: none;
     overflow: visible;
     text-overflow: clip;
@@ -50,22 +50,22 @@ tbody tr:not(.status-row):hover {
 /* Only cells actually clipping their text (or already expanded, so they can
    be collapsed again) get the click affordance - a cell whose content
    already fits has nothing to expand. */
-.cell-truncate.is-overflowing,
-.cell-truncate.expanded {
+.deps-table__truncate-cell--overflowing,
+.deps-table__truncate-cell--expanded {
     cursor: zoom-in;
 }
 
-.cell-truncate.expanded {
+.deps-table__truncate-cell--expanded {
     cursor: zoom-out;
 }
 
-.cell-truncate.is-overflowing:hover,
-.cell-truncate.expanded:hover {
+.deps-table__truncate-cell--overflowing:hover,
+.deps-table__truncate-cell--expanded:hover {
     background: var(--accent-border, rgba(51, 255, 102, 0.5));
 }
 
-.name-cell {
-    /* A custom "→" cursor - same glyph as .name-arrow - so hovering the
+.deps-table__name-cell {
+    /* A custom "→" cursor - same glyph as .deps-table__name-arrow - so hovering the
        cell that loads this package as the new input reads distinctly from
        the row's plain pointer cursor (which opens the summary card). */
     cursor:
@@ -74,41 +74,41 @@ tbody tr:not(.status-row):hover {
         pointer;
 }
 
-.name-cell-inner {
+.deps-table__name-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
 }
 
-.name-text {
+.deps-table__name-text {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 220px;
 }
 
-.name-arrow {
+.deps-table__name-arrow {
     flex-shrink: 0;
     opacity: 0.6;
 }
 
-.name-cell:hover .name-text {
+.deps-table__name-cell:hover .deps-table__name-text {
     text-decoration: underline;
 }
 
-.name-cell:hover .name-arrow {
+.deps-table__name-cell:hover .deps-table__name-arrow {
     opacity: 1;
 }
 
-.col-centered {
+.deps-table__centered {
     text-align: center;
 }
 
-.col-centered .th-inner {
+.deps-table__centered .deps-table__th-inner {
     justify-content: center;
 }
 
-.th-inner {
+.deps-table__th-inner {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -116,17 +116,17 @@ tbody tr:not(.status-row):hover {
     font-weight: 600;
 }
 
-.col-drag-handle {
+.deps-table__drag-handle {
     display: inline-block;
     cursor: grab;
     padding: 0 4px;
 }
 
-.col-drag-handle::before {
+.deps-table__drag-handle::before {
     content: "⠿";
 }
 
-.sort-trigger {
+.deps-table__sort-trigger {
     all: unset;
     display: flex;
     align-items: center;
@@ -137,7 +137,7 @@ tbody tr:not(.status-row):hover {
     color: inherit;
 }
 
-.sort-icons {
+.deps-table__sort-icons {
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
@@ -145,20 +145,20 @@ tbody tr:not(.status-row):hover {
     font-size: 0.7em;
 }
 
-.sort-arrow {
+.deps-table__sort-arrow {
     opacity: 0.35;
 }
 
-.sort-arrow-active {
+.deps-table__sort-arrow--active {
     opacity: 1;
     font-weight: bold;
 }
 
-.status-row {
+.deps-table__status-row {
     cursor: default;
 }
 
-.status-row td {
+.deps-table__status-row td {
     text-align: center;
     font-style: italic;
     padding: 12px;

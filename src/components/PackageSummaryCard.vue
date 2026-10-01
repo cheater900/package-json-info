@@ -1,7 +1,7 @@
 <template>
     <div class="package-summary">
-        <h3 class="package-summary-name">{{ dependency.name }}</h3>
-        <dl class="package-summary-list">
+        <h3 class="package-summary__name">{{ dependency.name }}</h3>
+        <dl class="package-summary__list">
             <template v-for="col in summaryColumns" :key="col.key">
                 <dt>{{ col.label }}</dt>
                 <dd>

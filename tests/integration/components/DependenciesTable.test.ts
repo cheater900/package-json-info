@@ -131,8 +131,8 @@ describe("DependenciesTable", () => {
             props: { dependencies: [] },
         });
 
-        expect(wrapper.findAll("tbody tr:not(.status-row)")).toHaveLength(0);
-        expect(wrapper.find(".status-row").text()).toBe("No dependencies");
+        expect(wrapper.findAll("tbody tr:not(.deps-table__status-row)")).toHaveLength(0);
+        expect(wrapper.find(".deps-table__status-row").text()).toBe("No dependencies");
     });
 
     it("renders a 'Loading…' status row instead of dependency rows while isLoading is true", () => {
@@ -140,8 +140,8 @@ describe("DependenciesTable", () => {
             props: { dependencies: [], isLoading: true },
         });
 
-        expect(wrapper.findAll("tbody tr:not(.status-row)")).toHaveLength(0);
-        expect(wrapper.find(".status-row").text()).toBe("Loading…");
+        expect(wrapper.findAll("tbody tr:not(.deps-table__status-row)")).toHaveLength(0);
+        expect(wrapper.find(".deps-table__status-row").text()).toBe("Loading…");
     });
 
     it("spans the status row across every currently-visible column", () => {
@@ -150,7 +150,9 @@ describe("DependenciesTable", () => {
         });
 
         const headerCount = wrapper.findAll("thead th").length;
-        expect(wrapper.find(".status-row td").attributes("colspan")).toBe(String(headerCount));
+        expect(wrapper.find(".deps-table__status-row td").attributes("colspan")).toBe(
+            String(headerCount),
+        );
     });
 });
 
@@ -161,7 +163,7 @@ describe("DependenciesTable load-as-input action", () => {
         });
 
         const nameCell = wrapper.find("tbody td");
-        expect(nameCell.find(".name-arrow").text()).toBe("→");
+        expect(nameCell.find(".deps-table__name-arrow").text()).toBe("→");
     });
 
     it("emits load-package with the row's name and version when the Name cell is clicked", async () => {
@@ -258,7 +260,7 @@ describe("DependenciesTable column visibility", () => {
 
         const headerTexts = wrapper.findAll("thead th").map((th) => th.text());
         expect(headerTexts.some((t) => t.startsWith("Name"))).toBe(true);
-        expect(wrapper.find("tbody td .name-text").text()).toBe("left-pad");
+        expect(wrapper.find("tbody td .deps-table__name-text").text()).toBe("left-pad");
     });
 
     it("keeps header and row cell counts in sync when columns are hidden", () => {
@@ -397,7 +399,8 @@ describe("DependenciesTable column labels", () => {
                 .findAllComponents(Tooltip)
                 .find(
                     (t) =>
-                        t.find(".col-label").exists() && t.find(".col-label").text() === labelText,
+                        t.find(".deps-table__col-label").exists() &&
+                        t.find(".deps-table__col-label").text() === labelText,
                 )!;
 
         expect(tooltipFor("VD").props("text")).toBe("Version Date");
@@ -411,7 +414,9 @@ describe("DependenciesTable sorting", () => {
     const pkgC = { ...sparseDependency, name: "ccc", weeklyDownloads: 200, gitStars: 15 };
 
     function names(wrapper) {
-        return wrapper.findAll("tbody tr td:first-child .name-text").map((td) => td.text());
+        return wrapper
+            .findAll("tbody tr td:first-child .deps-table__name-text")
+            .map((td) => td.text());
     }
 
     function sortButton(wrapper, label) {
@@ -422,7 +427,7 @@ describe("DependenciesTable sorting", () => {
 
     /** Which direction's arrow icon is currently highlighted as active, if any. */
     function activeSortDirection(button) {
-        const active = button.find(".sort-arrow-active");
+        const active = button.find(".deps-table__sort-arrow--active");
         if (!active.exists()) return null;
         return active.text().trim() === "▲" ? "asc" : "desc";
     }
@@ -525,7 +530,9 @@ describe("DependenciesTable search", () => {
     const vue = { ...sparseDependency, name: "vue" };
 
     function names(wrapper) {
-        return wrapper.findAll("tbody tr td:first-child .name-text").map((td) => td.text());
+        return wrapper
+            .findAll("tbody tr td:first-child .deps-table__name-text")
+            .map((td) => td.text());
     }
 
     it("renders no search box of its own - filtering is driven entirely by the searchQuery prop", () => {

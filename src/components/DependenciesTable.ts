@@ -123,7 +123,7 @@ export default defineComponent({
             sortDependencies(filteredDependencies.value, sortKey.value, sortDir.value),
         );
 
-        // Cells expanded via click-to-expand (see cell-truncate in the
+        // Cells expanded via click-to-expand (see deps-table__truncate-cell in the
         // template), keyed by "<dependency name>:<column key>" so expansion
         // state is per-cell rather than per-column or per-row.
         const expandedCells = ref(new Set());
@@ -145,7 +145,7 @@ export default defineComponent({
             }
         }
 
-        // Whether a cell-truncate <td> is actually clipping its text right
+        // Whether a deps-table__truncate-cell <td> is actually clipping its text right
         // now - false once its content fits within the max-width, at which
         // point there's nothing to expand and the hover/cursor affordance
         // should disappear.
@@ -157,7 +157,7 @@ export default defineComponent({
         // every cell up front - most never get hovered).
         function onCellMouseEnter(event) {
             const el = event.currentTarget;
-            el.classList.toggle("is-overflowing", isOverflowing(el));
+            el.classList.toggle("deps-table__truncate-cell--overflowing", isOverflowing(el));
         }
 
         // An already-expanded cell always collapses on click; a collapsed

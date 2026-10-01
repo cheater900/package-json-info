@@ -1,7 +1,7 @@
 <template>
     <span
         ref="wrapperRef"
-        class="tooltip-wrapper"
+        class="tooltip"
         @mouseenter="show"
         @mouseleave="hide"
         @focusin="show"
@@ -12,8 +12,8 @@
     <Teleport to="body">
         <span
             v-if="visible && text"
-            class="tooltip-bubble"
-            :class="`tooltip-${position}`"
+            class="tooltip__bubble"
+            :class="`tooltip__bubble--${position}`"
             :style="{ left: `${coords.left}px`, top: `${coords.top}px` }"
             role="tooltip"
         >

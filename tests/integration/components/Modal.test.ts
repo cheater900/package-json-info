@@ -49,7 +49,7 @@ describe("Modal", () => {
     it("emits close when the close button is clicked", async () => {
         const w = mountModal();
 
-        await bodyFind(".modal-close")!.trigger("click");
+        await bodyFind(".modal__close")!.trigger("click");
 
         expect(w.emitted("close")).toBeTruthy();
     });
@@ -57,7 +57,7 @@ describe("Modal", () => {
     it("emits close when the backdrop (not the panel) is clicked", async () => {
         const w = mountModal();
 
-        await bodyFind(".modal-overlay")!.trigger("click");
+        await bodyFind(".modal")!.trigger("click");
 
         expect(w.emitted("close")).toBeTruthy();
     });
@@ -65,7 +65,7 @@ describe("Modal", () => {
     it("does not emit close when clicking inside the panel", async () => {
         const w = mountModal();
 
-        await bodyFind(".modal-panel")!.trigger("click");
+        await bodyFind(".modal__panel")!.trigger("click");
 
         expect(w.emitted("close")).toBeFalsy();
     });

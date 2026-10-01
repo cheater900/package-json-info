@@ -1,4 +1,4 @@
-.modal-overlay {
+.modal {
     position: fixed;
     inset: 0;
     z-index: 1100;
@@ -9,7 +9,7 @@
     padding: clamp(16px, 4vw, 48px);
 }
 
-.modal-panel {
+.modal__panel {
     position: relative;
     background: var(--bg, #fff);
     border: 1px solid var(--accent, #33ff66);
@@ -20,7 +20,7 @@
     overflow: auto;
 }
 
-.modal-close {
+.modal__close {
     position: absolute;
     top: 8px;
     right: 8px;
