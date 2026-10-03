@@ -1,48 +1,48 @@
 .source-tree {
-    width: min(1000px, 100%);
-    height: min(700px, 100%);
     display: flex;
     flex-direction: column;
+    height: min(700px, 100%);
     overflow: hidden;
+    width: min(1000px, 100%);
 }
 
 .source-tree__header {
-    display: flex;
     align-items: center;
+    border-bottom: 1px solid var(--border, #e5e4e7);
+    display: flex;
     gap: 8px;
     /* Extra right padding keeps the title/provider text clear of Modal's
        floating close button in the corner. */
     padding: 12px 48px 12px 16px;
-    border-bottom: 1px solid var(--border, #e5e4e7);
 }
 
 .source-tree__title {
-    margin: 0;
     font-size: 1rem;
+    margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .source-tree__provider {
+    color: var(--text, #6b6375);
     flex-shrink: 0;
     font-size: 0.8rem;
-    color: var(--text, #6b6375);
 }
 
 .source-tree__body {
-    flex: 1;
     display: flex;
+    flex: 1;
     min-height: 0;
 }
 
 .source-tree__file-tree {
-    width: 280px;
+    border-right: 1px solid var(--border, #e5e4e7);
     flex-shrink: 0;
     margin: 0;
-    padding: 8px;
     overflow: auto;
-    border-right: 1px solid var(--border, #e5e4e7);
+    padding: 8px;
+    width: 280px;
 }
 
 .source-tree__viewer {
@@ -52,17 +52,17 @@
 }
 
 .source-tree__content {
+    font-size: 0.85rem;
     margin: 0;
     padding: 12px 16px;
-    font-size: 0.85rem;
     white-space: pre-wrap;
     word-break: break-word;
 }
 
 .source-tree__status {
-    padding: 16px;
-    font-style: italic;
     color: var(--text, #6b6375);
+    font-style: italic;
+    padding: 16px;
 }
 
 .source-tree__status--error {

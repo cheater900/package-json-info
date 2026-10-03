@@ -3,14 +3,14 @@
 }
 
 .tooltip__bubble {
-    position: fixed;
-    white-space: nowrap;
+    background: var(--code-bg, #0a1a0d);
+    border: 1px solid var(--border, #1e5c2e);
+    color: var(--text-h, #66ffa0);
     font-size: 0.8rem;
     padding: 4px 8px;
-    background: var(--code-bg, #0a1a0d);
-    color: var(--text-h, #66ffa0);
-    border: 1px solid var(--border, #1e5c2e);
     pointer-events: none;
+    position: fixed;
+    white-space: nowrap;
     /* Above Modal's overlay (1100) - both teleport to body, so a lower
        z-index here would paint the bubble underneath an open modal. */
     z-index: 1200;

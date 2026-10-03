@@ -1,27 +1,27 @@
 .package-summary {
-    width: min(480px, 100%);
     padding: 20px 24px;
     text-align: left;
+    width: min(480px, 100%);
 }
 
 .package-summary__name {
     margin: 0 0 16px;
-    padding-right: 32px;
     overflow: hidden;
+    padding-right: 32px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .package-summary__list {
     display: grid;
-    grid-template-columns: max-content 1fr;
     gap: 10px 16px;
+    grid-template-columns: max-content 1fr;
     margin: 0;
 }
 
 .package-summary__list dt {
-    font-weight: 600;
     color: var(--text-h, #66ffa0);
+    font-weight: 600;
     white-space: nowrap;
 }
 

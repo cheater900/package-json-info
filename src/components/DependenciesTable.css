@@ -1,19 +1,19 @@
 .deps-table {
+    border: 1px solid var(--accent, #33ff66);
     display: block;
-    overflow-x: scroll;
-    width: fit-content;
-    max-width: 100%;
     font-size: 0.85rem;
     margin-top: 4px;
-    border: 1px solid var(--accent, #33ff66);
+    max-width: 100%;
+    overflow-x: scroll;
+    width: fit-content;
 }
 
 table th,
 table td {
-    padding: 6px 10px;
-    white-space: nowrap;
     border: 1px solid var(--accent, #33ff66);
     border-radius: 0;
+    padding: 6px 10px;
+    white-space: nowrap;
 }
 
 table td button {
@@ -75,16 +75,16 @@ tbody tr:not(.deps-table__status-row):hover {
 }
 
 .deps-table__name-inner {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
+    display: flex;
     gap: 8px;
+    justify-content: space-between;
 }
 
 .deps-table__name-text {
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 220px;
 }
 
 .deps-table__name-arrow {
@@ -109,16 +109,16 @@ tbody tr:not(.deps-table__status-row):hover {
 }
 
 .deps-table__th-inner {
-    display: flex;
     align-items: center;
+    display: flex;
+    font-weight: 600;
     gap: 4px;
     white-space: nowrap;
-    font-weight: 600;
 }
 
 .deps-table__drag-handle {
-    display: inline-block;
     cursor: grab;
+    display: inline-block;
     padding: 0 4px;
 }
 
@@ -128,21 +128,21 @@ tbody tr:not(.deps-table__status-row):hover {
 
 .deps-table__sort-trigger {
     all: unset;
-    display: flex;
     align-items: center;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
     gap: 4px;
     white-space: nowrap;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
 }
 
 .deps-table__sort-icons {
     display: inline-flex;
     flex-direction: column;
+    font-size: 0.7em;
     justify-content: center;
     line-height: 0.6;
-    font-size: 0.7em;
 }
 
 .deps-table__sort-arrow {
@@ -150,8 +150,8 @@ tbody tr:not(.deps-table__status-row):hover {
 }
 
 .deps-table__sort-arrow--active {
-    opacity: 1;
     font-weight: bold;
+    opacity: 1;
 }
 
 .deps-table__status-row {
@@ -159,7 +159,7 @@ tbody tr:not(.deps-table__status-row):hover {
 }
 
 .deps-table__status-row td {
-    text-align: center;
     font-style: italic;
     padding: 12px;
+    text-align: center;
 }

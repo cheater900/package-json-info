@@ -10,16 +10,16 @@
 .file-tree-item__toggle,
 .file-tree-item__file {
     all: unset;
-    display: flex;
     align-items: center;
-    gap: 4px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 2px 4px;
-    cursor: pointer;
-    font: inherit;
-    white-space: nowrap;
     border-radius: 3px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: 4px;
+    padding: 2px 4px;
+    white-space: nowrap;
+    width: 100%;
 }
 
 .file-tree-item__file {
@@ -38,6 +38,6 @@
 
 .file-tree-item__icon {
     display: inline-block;
-    width: 12px;
     text-align: center;
+    width: 12px;
 }
