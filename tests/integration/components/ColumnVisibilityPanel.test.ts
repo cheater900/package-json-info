@@ -4,7 +4,7 @@ import ColumnVisibilityPanel from "../../../src/components/ColumnVisibilityPanel
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
 describe("ColumnVisibilityPanel", () => {
-    it("renders one checkbox per toggleable column, and none for Name", () => {
+    it("renders one checkbox per toggleable column, none for Name", () => {
         const wrapper = mount(ColumnVisibilityPanel, {
             props: { visibleColumns: new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)) },
         });
@@ -14,7 +14,7 @@ describe("ColumnVisibilityPanel", () => {
         expect(wrapper.text()).not.toContain("Name");
     });
 
-    it("checks a column's box when it's visible, unchecks it when hidden", () => {
+    it("checks box for visible column, unchecks for hidden", () => {
         const visible = new Set(
             TOGGLEABLE_COLUMNS.map((c) => c.key).filter((k) => k !== "license"),
         );
@@ -30,7 +30,7 @@ describe("ColumnVisibilityPanel", () => {
         expect(versionLabel.find("input").element.checked).toBe(true);
     });
 
-    it("emits toggle-column with the column key when a checkbox changes", async () => {
+    it("emits toggle-column with column key on checkbox change", async () => {
         const wrapper = mount(ColumnVisibilityPanel, {
             props: { visibleColumns: new Set(TOGGLEABLE_COLUMNS.map((c) => c.key)) },
         });
@@ -45,7 +45,7 @@ describe("ColumnVisibilityPanel", () => {
         expect(wrapper.emitted("toggle-column")).toEqual([["license"]]);
     });
 
-    it("disables the checkbox for the last remaining visible non-name column", () => {
+    it("disables checkbox for last visible non-name column", () => {
         const onlyOneVisible = new Set([TOGGLEABLE_COLUMNS[0].key]);
         const wrapper = mount(ColumnVisibilityPanel, {
             props: { visibleColumns: onlyOneVisible },
@@ -60,7 +60,7 @@ describe("ColumnVisibilityPanel", () => {
         expect(checkbox.element.disabled).toBe(true);
     });
 
-    it("does not disable checkboxes for already-hidden columns", () => {
+    it("keeps checkboxes enabled for hidden columns", () => {
         const visible = new Set(
             TOGGLEABLE_COLUMNS.map((c) => c.key).filter((k) => k !== "license"),
         );
@@ -76,7 +76,7 @@ describe("ColumnVisibilityPanel", () => {
         expect(checkbox.element.disabled).toBe(false);
     });
 
-    it("renders checkboxes in the given columnOrder, hidden columns included", () => {
+    it("renders checkboxes in columnOrder, hidden columns included", () => {
         const reversedOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
         const wrapper = mount(ColumnVisibilityPanel, {
             props: { visibleColumns: new Set(), columnOrder: reversedOrder },
@@ -89,7 +89,7 @@ describe("ColumnVisibilityPanel", () => {
         expect(labels).toEqual(expectedLabels);
     });
 
-    it("falls back to declaration order when columnOrder is omitted", () => {
+    it("falls back to declaration order without columnOrder", () => {
         const wrapper = mount(ColumnVisibilityPanel, {
             props: { visibleColumns: new Set() },
         });

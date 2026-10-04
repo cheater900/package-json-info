@@ -6,9 +6,7 @@ test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);
 });
 
-test("the dependency table scrolls horizontally, since it has more columns than fit on screen", async ({
-    page,
-}) => {
+test("dependency table scrolls horizontally", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     const depsTable = page.locator("table.deps-table").first();
@@ -32,9 +30,7 @@ test("the dependency table scrolls horizontally, since it has more columns than 
     expect(scrolledLeft).toBeGreaterThan(0);
 });
 
-test("caches metadata so a package listed in both dependencies and devDependencies is only fetched once", async ({
-    page,
-}) => {
+test("fetches package in both dependencies and devDependencies once", async ({ page }) => {
     let registryRequests = 0;
     await page.route("https://registry.npmjs.org/shared-pkg", async (route) => {
         registryRequests++;
@@ -60,7 +56,7 @@ test("caches metadata so a package listed in both dependencies and devDependenci
     expect(registryRequests).toBe(1);
 });
 
-test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never contacts the third-party services on a fresh load", async ({
+test("hides Vulnerabilities, Bundle size, Maintainers by default, skips third-party services on fresh load", async ({
     page,
 }) => {
     let osvRequests = 0;
@@ -105,7 +101,7 @@ test("hides Vulnerabilities, Bundle size, and Maintainers by default, and never 
     await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible();
 });
 
-test("Columns, Deps, and Dev Deps are collapsible accordions; Deps and Dev Deps start open", async ({
+test("Columns, Deps, Dev Deps are collapsible accordions; Deps and Dev Deps start open", async ({
     page,
 }) => {
     await page.goto("/");
@@ -138,16 +134,14 @@ test("Columns, Deps, and Dev Deps are collapsible accordions; Deps and Dev Deps 
     await expect(columnsSection.locator(".column-visibility-panel")).toBeVisible();
 });
 
-test("loads the app and renders the default package.json dependency table", async ({ page }) => {
+test("loads app, renders default package.json dependency table", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible();
     await expect(page.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
 });
 
-test("the URL input fetches from a repo host (GitHub/GitLab/Codeberg) via its raw-file API", async ({
-    page,
-}) => {
+test("URL input fetches repo host URL via raw-file API", async ({ page }) => {
     await page.route(
         "https://raw.githubusercontent.com/some-owner/some-repo/main/package.json",
         async (route) => {
@@ -169,9 +163,7 @@ test("the URL input fetches from a repo host (GitHub/GitLab/Codeberg) via its ra
     await expect(page.getByRole("cell", { name: "repo-dep", exact: true })).toBeVisible();
 });
 
-test("the URL input fetches a plain URL directly when its host isn't a supported repo host", async ({
-    page,
-}) => {
+test("URL input fetches non-repo-host URL directly", async ({ page }) => {
     await page.route("https://example.com/some/package.json", async (route) => {
         await route.fulfill({
             status: 200,
@@ -190,7 +182,7 @@ test("the URL input fetches a plain URL directly when its host isn't a supported
     await expect(page.getByRole("cell", { name: "remote-dep", exact: true })).toBeVisible();
 });
 
-test("the URL input stays in sync with the ?inputUrl= query param", async ({ page }) => {
+test("URL input syncs with ?inputUrl= query param", async ({ page }) => {
     // Loading with the param already set pre-fills the input.
     await page.goto("/?inputUrl=https%3A%2F%2Fexample.com%2Fpackage.json");
     const urlInputField = page.getByLabel(
@@ -210,10 +202,7 @@ test("the URL input stays in sync with the ?inputUrl= query param", async ({ pag
     await expect.poll(() => page.evaluate(() => window.location.search)).toBe("");
 });
 
-test("the paste-from-clipboard button reads the clipboard and replaces the table", async ({
-    page,
-    context,
-}) => {
+test("paste-from-clipboard button reads clipboard, replaces table", async ({ page, context }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/");
     await expandAllSections(page);
@@ -231,9 +220,7 @@ test("the paste-from-clipboard button reads the clipboard and replaces the table
     await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible();
 });
 
-test("clicking a row's Name cell loads that package's package.json as the new input", async ({
-    page,
-}) => {
+test("row Name cell click loads package's package.json as input", async ({ page }) => {
     await page.route("https://registry.npmjs.org/left-pad", async (route) => {
         await route.fulfill({
             status: 200,
@@ -277,7 +264,7 @@ test("clicking a row's Name cell loads that package's package.json as the new in
     await expect(depsTable.getByRole("cell", { name: "left-pad", exact: true })).toHaveCount(0);
 });
 
-test("clicking a row's data cell opens the package summary card", async ({ page }) => {
+test("row data cell click opens package summary card", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     await loadJson(page, {
@@ -299,7 +286,7 @@ test("clicking a row's data cell opens the package summary card", async ({ page 
     await expect(page.locator(".package-summary__name")).toHaveCount(0);
 });
 
-test("back/forward buttons navigate between loaded package.json states", async ({ page }) => {
+test("back/forward buttons navigate loaded package.json states", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
 
@@ -331,9 +318,7 @@ test("back/forward buttons navigate between loaded package.json states", async (
     await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled();
 });
 
-test("navigating history back and forward reuses cached data instead of refetching", async ({
-    page,
-}) => {
+test("history back/forward reuses cached data, no refetch", async ({ page }) => {
     let vueRequests = 0;
     await page.route("https://registry.npmjs.org/vue", async (route) => {
         vueRequests++;
@@ -380,9 +365,7 @@ test("navigating history back and forward reuses cached data instead of refetchi
     expect(cachedPkgRequests).toBe(1);
 });
 
-test("loading new content while navigated back discards the old forward history", async ({
-    page,
-}) => {
+test("loading content after back discards forward history", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
 
@@ -412,10 +395,7 @@ test("loading new content while navigated back discards the old forward history"
     await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled();
 });
 
-test("pasting invalid JSON from the clipboard shows an inline error instead of crashing", async ({
-    page,
-    context,
-}) => {
+test("invalid JSON paste shows inline error, no crash", async ({ page, context }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/");
 
@@ -426,9 +406,7 @@ test("pasting invalid JSON from the clipboard shows an inline error instead of c
     await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible();
 });
 
-test("clicking a column header sorts the table, and clicking again reverses it", async ({
-    page,
-}) => {
+test("header click sorts table, second click reverses", async ({ page }) => {
     const weeklyDownloadsByPackage: Record<string, number> = {
         "aaa-pkg": 100,
         "bbb-pkg": 300,
@@ -469,9 +447,7 @@ test("clicking a column header sorts the table, and clicking again reverses it",
     await expect(packageNameColumn()).toHaveText(["bbb-pkg", "ccc-pkg", "aaa-pkg"]);
 });
 
-test("a single search box filters both the Deps and Dev Deps tables simultaneously", async ({
-    page,
-}) => {
+test("one search box filters Deps and Dev Deps tables", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     await loadJson(page, {
@@ -507,7 +483,7 @@ test("a single search box filters both the Deps and Dev Deps tables simultaneous
     await expect(devDepsTable.locator("tbody tr")).toHaveCount(2);
 });
 
-test("renders license, outdated, deprecated, vulnerability, bundle size, and maintainer data", async ({
+test("renders license, outdated, deprecated, vulnerability, bundle size, maintainer data", async ({
     page,
 }) => {
     await page.route("https://registry.npmjs.org/**", async (route) => {
@@ -568,9 +544,7 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, and mai
     await expect(row.getByRole("cell", { name: "alice, bob", exact: true })).toBeVisible();
 });
 
-test("hiding a column skips its network request, and re-showing it fetches the missing data", async ({
-    page,
-}) => {
+test("hidden column skips its request, re-shown column fetches missing data", async ({ page }) => {
     const osvRequestedNames: string[] = [];
     await page.route("https://api.osv.dev/v1/query", async (route) => {
         const body = route.request().postDataJSON() as { package: { name: string } };
@@ -615,9 +589,7 @@ test("hiding a column skips its network request, and re-showing it fetches the m
     expect(osvRequestedNames).toContain("gated-pkg");
 });
 
-test("the column visibility panel hides/shows columns and never drops below the floor", async ({
-    page,
-}) => {
+test("column visibility panel hides/shows columns, never below floor", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     const depsTable = page.locator("table.deps-table").first();
@@ -651,9 +623,7 @@ test("the column visibility panel hides/shows columns and never drops below the 
     await expect(depsTable.locator("thead th")).toHaveCount(2);
 });
 
-test("column visibility preferences persist in localStorage across a page reload", async ({
-    page,
-}) => {
+test("column visibility preferences persist across reload", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     const depsTable = page.locator("table.deps-table").first();
@@ -676,9 +646,7 @@ test("column visibility preferences persist in localStorage across a page reload
     expect(await page.getByLabel("Maintainers", { exact: true }).isChecked()).toBe(true);
 });
 
-test("a column order preference seeded in localStorage is reflected in the rendered header", async ({
-    page,
-}) => {
+test("header reflects column order seeded in localStorage", async ({ page }) => {
     // A full permutation of every toggleable column, reversed from
     // declaration order - also doubles as "everything visible" so the test
     // isolates ordering from the separate visibility feature.
@@ -705,9 +673,7 @@ test("a column order preference seeded in localStorage is reflected in the rende
     expect(headerTexts).toEqual(expectedLabels);
 });
 
-test("dragging a column header by its handle reorders the table, and the new order persists across reload", async ({
-    page,
-}) => {
+test("header drag by handle reorders table, order persists across reload", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     const depsTable = page.locator("table.deps-table").first();
@@ -752,7 +718,7 @@ test("dragging a column header by its handle reorders the table, and the new ord
     await expect(reloadedHeaderCells.nth(2)).toContainText(firstLabel);
 });
 
-test("shrinking columns by abbreviation shows initials with a full-name tooltip, and persists across reload", async ({
+test("shrink columns shows initials with full-name tooltip, persists across reload", async ({
     page,
 }) => {
     await page.goto("/");

@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 
 describe("fetchPackageJsonFromRepo", () => {
-    it("fetches from GitHub's raw content URL on the main branch", async () => {
+    it("fetches from GitHub raw content URL on main branch", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             expect(url).toBe("https://raw.githubusercontent.com/owner/repo/main/package.json");
             return jsonResponse({ name: "repo" });
@@ -27,7 +27,7 @@ describe("fetchPackageJsonFromRepo", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("falls back to the master branch when main has no package.json", async () => {
+    it("falls back to master branch without package.json on main", async () => {
         const requestedUrls: string[] = [];
         vi.stubGlobal(
             "fetch",
@@ -48,7 +48,7 @@ describe("fetchPackageJsonFromRepo", () => {
         ]);
     });
 
-    it("returns null when neither branch has a package.json", async () => {
+    it("returns null without package.json on either branch", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => jsonResponse(null, false)),
@@ -83,7 +83,7 @@ describe("fetchPackageJsonFromRepo", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("accepts a URL with a trailing path", async () => {
+    it("accepts URL with trailing path", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => jsonResponse({ name: "repo" })),
@@ -94,7 +94,7 @@ describe("fetchPackageJsonFromRepo", () => {
         expect(JSON.parse(content!)).toEqual({ name: "repo" });
     });
 
-    it("throws a descriptive error for an unsupported host", async () => {
+    it("throws descriptive error for unsupported host", async () => {
         vi.stubGlobal("fetch", vi.fn());
 
         await expect(fetchPackageJsonFromRepo("https://bitbucket.org/owner/repo")).rejects.toThrow(
@@ -102,7 +102,7 @@ describe("fetchPackageJsonFromRepo", () => {
         );
     });
 
-    it("throws a descriptive error for a malformed URL", async () => {
+    it("throws descriptive error for malformed URL", async () => {
         vi.stubGlobal("fetch", vi.fn());
 
         await expect(fetchPackageJsonFromRepo("not a url")).rejects.toThrow(
@@ -110,7 +110,7 @@ describe("fetchPackageJsonFromRepo", () => {
         );
     });
 
-    it("exports every host it claims to support", () => {
+    it("exports every supported host", () => {
         expect(SUPPORTED_REPO_HOSTS).toEqual(
             expect.arrayContaining(["github.com", "gitlab.com", "codeberg.org"]),
         );
@@ -118,20 +118,20 @@ describe("fetchPackageJsonFromRepo", () => {
 });
 
 describe("isRepoHostUrl", () => {
-    it("is true for a URL on any supported repo host", () => {
+    it("is true for URL on supported repo host", () => {
         expect(isRepoHostUrl("https://github.com/owner/repo")).toBe(true);
         expect(isRepoHostUrl("https://gitlab.com/owner/repo")).toBe(true);
         expect(isRepoHostUrl("https://codeberg.org/owner/repo")).toBe(true);
     });
 
-    it("is false for a URL on any other host", () => {
+    it("is false for URL on other host", () => {
         expect(isRepoHostUrl("https://example.com/package.json")).toBe(false);
         expect(
             isRepoHostUrl("https://raw.githubusercontent.com/owner/repo/main/package.json"),
         ).toBe(false);
     });
 
-    it("is false, not throwing, for an unparseable URL", () => {
+    it("is false for unparseable URL, no throw", () => {
         expect(isRepoHostUrl("not a url")).toBe(false);
         expect(isRepoHostUrl("")).toBe(false);
     });

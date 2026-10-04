@@ -30,13 +30,13 @@ const fullDependency = {
 };
 
 describe("PackageSummaryCard", () => {
-    it("shows the dependency name as its title", () => {
+    it("shows dependency name as title", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
 
         expect(wrapper.find(".package-summary__name").text()).toBe("left-pad");
     });
 
-    it("renders a label/value row for every toggleable column", () => {
+    it("renders label/value row per toggleable column", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
 
         const labels = wrapper.findAll("dt").map((dt) => dt.text());
@@ -49,13 +49,13 @@ describe("PackageSummaryCard", () => {
         expect(text).toContain("alice, bob"); // maintainers
     });
 
-    it("renders the source-code column as a link", () => {
+    it("renders source-code column as link", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
 
         expect(wrapper.find('a[href="https://github.com/left-pad/left-pad"]').text()).toBe("link");
     });
 
-    it("renders a dash instead of a link when sourceCode is missing", () => {
+    it("renders dash instead of link without sourceCode", () => {
         const wrapper = mount(PackageSummaryCard, {
             props: { dependency: { ...fullDependency, sourceCode: null } },
         });
@@ -63,7 +63,7 @@ describe("PackageSummaryCard", () => {
         expect(wrapper.find("a").exists()).toBe(false);
     });
 
-    it("emits open-source-tree with the dependency when its View tree button is clicked", async () => {
+    it("emits open-source-tree with dependency on View tree click", async () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
 
         await wrapper.find("button").trigger("click");
@@ -71,7 +71,7 @@ describe("PackageSummaryCard", () => {
         expect(wrapper.emitted("open-source-tree")).toEqual([[fullDependency]]);
     });
 
-    it("renders a dash instead of a button when no source tree is available", () => {
+    it("renders dash instead of button without source tree", () => {
         const wrapper = mount(PackageSummaryCard, {
             props: { dependency: { ...fullDependency, sourceTree: null } },
         });

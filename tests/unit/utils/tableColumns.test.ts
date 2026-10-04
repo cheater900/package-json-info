@@ -15,14 +15,14 @@ import {
 } from "../../../src/utils/tableColumns";
 
 describe("TOGGLEABLE_COLUMNS", () => {
-    it("excludes the always-visible Name column", () => {
+    it("excludes always-visible Name column", () => {
         expect(TOGGLEABLE_COLUMNS.some((c) => c.key === "name")).toBe(false);
         expect(TOGGLEABLE_COLUMNS.length).toBe(DEPENDENCY_TABLE_COLUMNS.length - 1);
     });
 });
 
 describe("DEFAULT_VISIBLE_COLUMNS", () => {
-    it("excludes the third-party-service columns and Maintainers", () => {
+    it("excludes third-party-service columns and Maintainers", () => {
         expect(DEFAULT_VISIBLE_COLUMNS.has("vulnerabilityCount")).toBe(false);
         expect(DEFAULT_VISIBLE_COLUMNS.has("bundleSizeGzip")).toBe(false);
         expect(DEFAULT_VISIBLE_COLUMNS.has("maintainers")).toBe(false);
@@ -51,7 +51,7 @@ describe("DEFAULT_VISIBLE_COLUMNS", () => {
         }
     });
 
-    it("only contains keys of columns that actually exist", () => {
+    it("contains only existing column keys", () => {
         const columnKeys = new Set(DEPENDENCY_TABLE_COLUMNS.map((c) => c.key));
         for (const key of DEFAULT_VISIBLE_COLUMNS) {
             expect(columnKeys.has(key)).toBe(true);
@@ -60,19 +60,19 @@ describe("DEFAULT_VISIBLE_COLUMNS", () => {
 });
 
 describe("isColumnVisible", () => {
-    it("is always true for the Name column, regardless of the visible set", () => {
+    it("is true for Name column with any visible set", () => {
         expect(isColumnVisible(new Set(["name"]), "name")).toBe(true);
         expect(isColumnVisible(new Set(), "name")).toBe(true);
     });
 
-    it("reflects membership in the visible set for other columns", () => {
+    it("reflects visible set membership for other columns", () => {
         expect(isColumnVisible(new Set(["license"]), "license")).toBe(true);
         expect(isColumnVisible(new Set(["license"]), "version")).toBe(false);
     });
 });
 
 describe("MIN_VISIBLE_COLUMNS", () => {
-    it("is one more than the number of always-visible columns, so at least one real data column always shows", () => {
+    it("is always-visible column count plus one", () => {
         // Name is always visible; the floor must still force at least one
         // further (toggleable) column to stay visible alongside it.
         expect(MIN_VISIBLE_COLUMNS).toBe(2);
@@ -80,51 +80,51 @@ describe("MIN_VISIBLE_COLUMNS", () => {
 });
 
 describe("meetsMinVisible", () => {
-    it("is false when only the always-visible columns would show", () => {
+    it("is false with only always-visible columns", () => {
         expect(meetsMinVisible(new Set())).toBe(false);
     });
 
-    it("is true once enough toggleable columns are visible to reach the floor", () => {
+    it("is true once visible toggleable columns reach floor", () => {
         expect(meetsMinVisible(new Set([TOGGLEABLE_COLUMNS[0].key]))).toBe(true);
     });
 });
 
 describe("wouldViolateMinVisible", () => {
-    it("is false for a column that's already hidden (not in the visible set)", () => {
+    it("is false for hidden column", () => {
         const visible = new Set([TOGGLEABLE_COLUMNS[0].key]);
         expect(wouldViolateMinVisible(visible, TOGGLEABLE_COLUMNS[1].key)).toBe(false);
     });
 
-    it("is true when hiding the last remaining visible non-name column", () => {
+    it("is true for hiding last visible non-name column", () => {
         const visible = new Set([TOGGLEABLE_COLUMNS[0].key]);
         expect(wouldViolateMinVisible(visible, TOGGLEABLE_COLUMNS[0].key)).toBe(true);
     });
 
-    it("is false when more than one non-name column is currently visible", () => {
+    it("is false with several visible non-name columns", () => {
         const visible = new Set([TOGGLEABLE_COLUMNS[0].key, TOGGLEABLE_COLUMNS[1].key]);
         expect(wouldViolateMinVisible(visible, TOGGLEABLE_COLUMNS[0].key)).toBe(false);
     });
 });
 
 describe("toggleColumnVisibility", () => {
-    it("never removes or adds the Name column", () => {
+    it("never removes or adds Name column", () => {
         const result = toggleColumnVisibility(new Set(), "name");
         expect(result.has("name")).toBe(false);
     });
 
-    it("shows a currently-hidden column", () => {
+    it("shows hidden column", () => {
         const result = toggleColumnVisibility(new Set(), "license");
         expect(result.has("license")).toBe(true);
     });
 
-    it("hides a currently-visible column", () => {
+    it("hides visible column", () => {
         // Two columns visible so hiding one doesn't hit the MIN_VISIBLE_COLUMNS floor.
         const result = toggleColumnVisibility(new Set(["license", "deprecated"]), "license");
         expect(result.has("license")).toBe(false);
         expect(result.has("deprecated")).toBe(true);
     });
 
-    it("refuses to hide the last remaining visible non-name column", () => {
+    it("refuses to hide last visible non-name column", () => {
         const visible = new Set([TOGGLEABLE_COLUMNS[0].key]);
         const lastVisibleKey = TOGGLEABLE_COLUMNS[0].key;
 
@@ -136,7 +136,7 @@ describe("toggleColumnVisibility", () => {
         expect(totalVisible).toBe(MIN_VISIBLE_COLUMNS);
     });
 
-    it("does not mutate the input set", () => {
+    it("keeps input set unmutated", () => {
         const original = new Set(["license"]);
         toggleColumnVisibility(original, "deprecated");
         expect(original).toEqual(new Set(["license"]));
@@ -150,30 +150,30 @@ describe("DEFAULT_COLUMN_ORDER", () => {
 });
 
 describe("orderColumns", () => {
-    it("maps a valid full order to the matching ColumnDefs, in that order", () => {
+    it("maps valid full order to matching ColumnDefs in order", () => {
         const order = [TOGGLEABLE_COLUMNS[1].key, TOGGLEABLE_COLUMNS[0].key];
         const result = orderColumns(order, TOGGLEABLE_COLUMNS.slice(0, 2));
         expect(result).toEqual([TOGGLEABLE_COLUMNS[1], TOGGLEABLE_COLUMNS[0]]);
     });
 
-    it("falls back to columns' own declaration order when order is empty", () => {
+    it("falls back to declaration order for empty order", () => {
         const columns = TOGGLEABLE_COLUMNS.slice(0, 3);
         expect(orderColumns([], columns)).toEqual(columns);
     });
 
-    it("appends columns missing from order, in declaration order, at the end", () => {
+    it("appends columns missing from order at end, in declaration order", () => {
         const columns = TOGGLEABLE_COLUMNS.slice(0, 3);
         const order = [columns[2].key];
         expect(orderColumns(order, columns)).toEqual([columns[2], columns[0], columns[1]]);
     });
 
-    it("drops keys that no longer correspond to a real column", () => {
+    it("drops keys of removed columns", () => {
         const columns = TOGGLEABLE_COLUMNS.slice(0, 2);
         const order = ["some-removed-column", columns[1].key, columns[0].key];
         expect(orderColumns(order, columns)).toEqual([columns[1], columns[0]]);
     });
 
-    it("dedupes a repeated key, keeping only its first occurrence", () => {
+    it("dedupes repeated key, keeps first occurrence", () => {
         const columns = TOGGLEABLE_COLUMNS.slice(0, 2);
         const order = [columns[0].key, columns[1].key, columns[0].key];
         expect(orderColumns(order, columns)).toEqual([columns[0], columns[1]]);
@@ -181,44 +181,44 @@ describe("orderColumns", () => {
 });
 
 describe("mergeColumnOrder", () => {
-    it("keeps a single hidden column in its exact slot while permuting the visible ones", () => {
+    it("keeps one hidden column in its slot, permutes visible ones", () => {
         const fullOrder = ["a", "b", "c"];
         // "b" is hidden (not part of the drag); "a" and "c" swap.
         const result = mergeColumnOrder(fullOrder, ["c", "a"]);
         expect(result).toEqual(["c", "b", "a"]);
     });
 
-    it("keeps multiple interleaved hidden columns each in their own slot", () => {
+    it("keeps interleaved hidden columns in own slots", () => {
         const fullOrder = ["a", "hidden1", "b", "hidden2", "c"];
         const result = mergeColumnOrder(fullOrder, ["c", "b", "a"]);
         expect(result).toEqual(["c", "hidden1", "b", "hidden2", "a"]);
     });
 
-    it("is a plain permutation when every column is visible", () => {
+    it("is plain permutation with every column visible", () => {
         const fullOrder = ["a", "b", "c"];
         expect(mergeColumnOrder(fullOrder, ["c", "b", "a"])).toEqual(["c", "b", "a"]);
     });
 
-    it("is a no-op when only one column is visible", () => {
+    it("is no-op with one visible column", () => {
         const fullOrder = ["a", "hidden", "b"];
         expect(mergeColumnOrder(fullOrder, ["a"])).toEqual(["a", "hidden", "b"]);
     });
 });
 
 describe("abbreviateLabel", () => {
-    it("abbreviates a two-word label to its initials", () => {
+    it("abbreviates two-word label to initials", () => {
         expect(abbreviateLabel("Version Date")).toBe("VD");
     });
 
-    it("abbreviates a three-word label to its initials", () => {
+    it("abbreviates three-word label to initials", () => {
         expect(abbreviateLabel("Latest release date")).toBe("LRD");
     });
 
-    it("leaves a single-word label unchanged", () => {
+    it("leaves single-word label unchanged", () => {
         expect(abbreviateLabel("Outdated")).toBe("Outdated");
     });
 
-    it("ignores non-letter characters when taking each word's first letter", () => {
+    it("ignores non-letter characters for word initials", () => {
         expect(abbreviateLabel("Bundle size (gzip)")).toBe("BSG");
     });
 

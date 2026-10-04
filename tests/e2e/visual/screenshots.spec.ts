@@ -18,7 +18,7 @@ test("default view - fresh load, Deps/Dev Deps collapsed", async ({ page }) => {
     await page.screenshot({ path: "screenshots/01-default.png", fullPage: true });
 });
 
-test("deps expanded - a small package.json loaded, both tables open", async ({ page }) => {
+test("deps expanded - small package.json, both tables open", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     await loadJson(page, {

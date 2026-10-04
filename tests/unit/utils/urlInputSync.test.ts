@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import { readInputUrlParam, withInputUrlParam } from "../../../src/utils/urlInputSync";
 
 describe("readInputUrlParam", () => {
-    it("reads and decodes the inputUrl param", () => {
+    it("reads and decodes inputUrl param", () => {
         expect(readInputUrlParam("?inputUrl=https%3A%2F%2Fexample.com%2Fpackage.json")).toBe(
             "https://example.com/package.json",
         );
     });
 
-    it("returns an empty string when the param is absent", () => {
+    it("returns empty string without param", () => {
         expect(readInputUrlParam("")).toBe("");
         expect(readInputUrlParam("?other=1")).toBe("");
     });
@@ -21,23 +21,23 @@ describe("readInputUrlParam", () => {
 });
 
 describe("withInputUrlParam", () => {
-    it("adds the param to an empty search string", () => {
+    it("adds param to empty search string", () => {
         expect(withInputUrlParam("", "https://example.com")).toBe(
             "?inputUrl=https%3A%2F%2Fexample.com",
         );
     });
 
-    it("replaces an existing inputUrl value", () => {
+    it("replaces existing inputUrl value", () => {
         expect(withInputUrlParam("?inputUrl=old-value", "https://example.com")).toBe(
             "?inputUrl=https%3A%2F%2Fexample.com",
         );
     });
 
-    it("removes the param entirely when value is empty", () => {
+    it("removes param for empty value", () => {
         expect(withInputUrlParam("?inputUrl=https://example.com", "")).toBe("");
     });
 
-    it("returns an empty string when there was nothing and value is empty", () => {
+    it("returns empty string for empty search and value", () => {
         expect(withInputUrlParam("", "")).toBe("");
     });
 

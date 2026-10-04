@@ -9,7 +9,7 @@ import {
 } from "../../../src/utils/packageJsonHistory";
 
 describe("createHistoryEntry", () => {
-    it("starts with unfetched deps/devDeps and no visibleColumns snapshot", () => {
+    it("starts with unfetched deps/devDeps, no visibleColumns snapshot", () => {
         const entry = createHistoryEntry("{}", { name: "demo" });
         expect(entry).toEqual({
             content: "{}",
@@ -22,7 +22,7 @@ describe("createHistoryEntry", () => {
 });
 
 describe("pushHistoryEntry", () => {
-    it("appends to an empty history and points the index at it", () => {
+    it("appends to empty history, points index there", () => {
         const entry = createHistoryEntry("{}", {});
         const { history, index } = pushHistoryEntry([], -1, entry);
 
@@ -30,7 +30,7 @@ describe("pushHistoryEntry", () => {
         expect(index).toBe(0);
     });
 
-    it("appends after the current index without touching earlier entries", () => {
+    it("appends after current index, keeps earlier entries", () => {
         const first = createHistoryEntry("first", {});
         const second = createHistoryEntry("second", {});
 
@@ -40,7 +40,7 @@ describe("pushHistoryEntry", () => {
         expect(index).toBe(1);
     });
 
-    it("discards forward entries when pushing after navigating back", () => {
+    it("discards forward entries on push after back", () => {
         const a = createHistoryEntry("a", {});
         const b = createHistoryEntry("b", {});
         const c = createHistoryEntry("c", {});
@@ -53,7 +53,7 @@ describe("pushHistoryEntry", () => {
         expect(index).toBe(1);
     });
 
-    it("does not mutate the input history array", () => {
+    it("keeps input history array unmutated", () => {
         const a = createHistoryEntry("a", {});
         const original = [a];
         pushHistoryEntry(original, 0, createHistoryEntry("b", {}));
@@ -62,12 +62,12 @@ describe("pushHistoryEntry", () => {
 });
 
 describe("canGoBack / canGoForward", () => {
-    it("canGoBack is false at the start of history, true otherwise", () => {
+    it("canGoBack false at history start, else true", () => {
         expect(canGoBack(0)).toBe(false);
         expect(canGoBack(1)).toBe(true);
     });
 
-    it("canGoForward is false at the end of history, true otherwise", () => {
+    it("canGoForward false at history end, else true", () => {
         const history = [createHistoryEntry("a", {}), createHistoryEntry("b", {})];
         expect(canGoForward(history, 1)).toBe(false);
         expect(canGoForward(history, 0)).toBe(true);
@@ -75,7 +75,7 @@ describe("canGoBack / canGoForward", () => {
 });
 
 describe("visibleColumnsEqual", () => {
-    it("is true for two sets with the same members, regardless of insertion order", () => {
+    it("is true for sets with same members in any order", () => {
         expect(visibleColumnsEqual(new Set(["a", "b"]), new Set(["b", "a"]))).toBe(true);
     });
 
@@ -95,12 +95,12 @@ describe("visibleColumnsEqual", () => {
 });
 
 describe("isEntryCacheValid", () => {
-    it("is false for a never-fetched entry", () => {
+    it("is false for never-fetched entry", () => {
         const entry = createHistoryEntry("{}", {});
         expect(isEntryCacheValid(entry, new Set())).toBe(false);
     });
 
-    it("is true once fetched under the exact same visibleColumns", () => {
+    it("is true once fetched under same visibleColumns", () => {
         const entry = createHistoryEntry("{}", {});
         entry.deps = [];
         entry.devDeps = [];
@@ -109,7 +109,7 @@ describe("isEntryCacheValid", () => {
         expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(true);
     });
 
-    it("is false when visibleColumns has changed since the entry was fetched", () => {
+    it("is false when visibleColumns changed since fetch", () => {
         const entry = createHistoryEntry("{}", {});
         entry.deps = [];
         entry.devDeps = [];

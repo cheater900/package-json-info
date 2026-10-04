@@ -35,7 +35,7 @@ describe("Modal", () => {
         expect(document.body.textContent).toContain("panel content");
     });
 
-    it("locks body scroll while mounted, and unlocks it on unmount", () => {
+    it("locks body scroll while mounted, unlocks on unmount", () => {
         const w = mountModal();
 
         expect(document.body.style.overflow).toBe("hidden");
@@ -46,7 +46,7 @@ describe("Modal", () => {
         expect(document.body.style.overflow).toBe("");
     });
 
-    it("emits close when the close button is clicked", async () => {
+    it("emits close on close button click", async () => {
         const w = mountModal();
 
         await bodyFind(".modal__close")!.trigger("click");
@@ -54,7 +54,7 @@ describe("Modal", () => {
         expect(w.emitted("close")).toBeTruthy();
     });
 
-    it("emits close when the backdrop (not the panel) is clicked", async () => {
+    it("emits close on backdrop click, not panel", async () => {
         const w = mountModal();
 
         await bodyFind(".modal")!.trigger("click");
@@ -62,7 +62,7 @@ describe("Modal", () => {
         expect(w.emitted("close")).toBeTruthy();
     });
 
-    it("does not emit close when clicking inside the panel", async () => {
+    it("skips close on click inside panel", async () => {
         const w = mountModal();
 
         await bodyFind(".modal__panel")!.trigger("click");
@@ -70,7 +70,7 @@ describe("Modal", () => {
         expect(w.emitted("close")).toBeFalsy();
     });
 
-    it("emits close when Escape is pressed", async () => {
+    it("emits close on Escape", async () => {
         const w = mountModal();
 
         await new DOMWrapper(document.body).trigger("keydown", { key: "Escape" });

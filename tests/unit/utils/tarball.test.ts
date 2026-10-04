@@ -71,7 +71,7 @@ function buildTar(inputs: TarInput[]): ArrayBuffer {
 }
 
 describe("parseTar", () => {
-    it("parses a single file entry with its content intact", () => {
+    it("parses single file entry with content intact", () => {
         const entries = parseTar(
             new Uint8Array(buildTar([{ name: "package/index.js", content: "console.log(1);" }])),
         );
@@ -96,7 +96,7 @@ describe("parseTar", () => {
         expect(entries.map((e) => e.path)).toEqual(["package/a.js", "package/b.js"]);
     });
 
-    it("parses an explicit directory entry", () => {
+    it("parses explicit directory entry", () => {
         const entries = parseTar(
             new Uint8Array(buildTar([{ type: "directory", name: "package/src/" }])),
         );
@@ -106,7 +106,7 @@ describe("parseTar", () => {
         ]);
     });
 
-    it("stops at the end-of-archive zero block instead of reading past it", () => {
+    it("stops at end-of-archive zero block", () => {
         const entries = parseTar(
             new Uint8Array(buildTar([{ name: "package/only.js", content: "x" }])),
         );
@@ -114,11 +114,11 @@ describe("parseTar", () => {
         expect(entries).toHaveLength(1);
     });
 
-    it("returns an empty list for an archive with no entries", () => {
+    it("returns empty list for empty archive", () => {
         expect(parseTar(new Uint8Array(buildTar([])))).toEqual([]);
     });
 
-    it("applies a PAX extended header's path to the very next entry only", () => {
+    it("applies PAX header path to next entry only", () => {
         const longPath = `package/${"deep/".repeat(20)}file.js`;
         const entries = parseTar(
             new Uint8Array(
@@ -135,7 +135,7 @@ describe("parseTar", () => {
 });
 
 describe("gunzip", () => {
-    it("decompresses a gzip buffer back to its original bytes", async () => {
+    it("decompresses gzip buffer to original bytes", async () => {
         const original = new TextEncoder().encode("hello world");
         const gzipped = gzipSync(original);
 
@@ -146,7 +146,7 @@ describe("gunzip", () => {
         expect(new TextDecoder().decode(result)).toBe("hello world");
     });
 
-    it("round-trips a gzipped tar archive end to end", async () => {
+    it("round-trips gzipped tar archive", async () => {
         const tar = buildTar([{ name: "package/index.js", content: "module.exports = 1;" }]);
         const gzipped = gzipSync(new Uint8Array(tar));
 

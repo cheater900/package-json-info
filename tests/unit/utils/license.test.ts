@@ -14,14 +14,14 @@ describe("isCopyleftLicense", () => {
         expect(isCopyleftLicense("gpl-3.0")).toBe(true);
     });
 
-    it("does not flag permissive licenses", () => {
+    it("skips flag for permissive licenses", () => {
         expect(isCopyleftLicense("MIT")).toBe(false);
         expect(isCopyleftLicense("Apache-2.0")).toBe(false);
         expect(isCopyleftLicense("BSD-3-Clause")).toBe(false);
         expect(isCopyleftLicense("ISC")).toBe(false);
     });
 
-    it("does not flag a missing license", () => {
+    it("skips flag for missing license", () => {
         expect(isCopyleftLicense(null)).toBe(false);
         expect(isCopyleftLicense(undefined)).toBe(false);
         expect(isCopyleftLicense("")).toBe(false);
@@ -29,17 +29,17 @@ describe("isCopyleftLicense", () => {
 });
 
 describe("hasLicenseWarning", () => {
-    it("warns on a missing license", () => {
+    it("warns on missing license", () => {
         expect(hasLicenseWarning(null)).toBe(true);
         expect(hasLicenseWarning(undefined)).toBe(true);
         expect(hasLicenseWarning("")).toBe(true);
     });
 
-    it("warns on a copyleft license", () => {
+    it("warns on copyleft license", () => {
         expect(hasLicenseWarning("GPL-3.0")).toBe(true);
     });
 
-    it("does not warn on a permissive license", () => {
+    it("skips warning for permissive license", () => {
         expect(hasLicenseWarning("MIT")).toBe(false);
     });
 });

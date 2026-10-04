@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 describe("SourceTreeBrowser", () => {
-    it("shows a loading state, then the file tree once it resolves", async () => {
+    it("shows loading state, then file tree", async () => {
         let resolveTree: (value: unknown) => void;
         vi.mocked(fetchSourceTree).mockReturnValue(
             new Promise((resolve) => {
@@ -48,7 +48,7 @@ describe("SourceTreeBrowser", () => {
         expect(wrapper.text()).not.toContain("Downloading source");
     });
 
-    it("shows an error message when fetching the source tree fails", async () => {
+    it("shows error on source tree fetch failure", async () => {
         vi.mocked(fetchSourceTree).mockRejectedValue(new Error("network down"));
 
         const wrapper = mount(SourceTreeBrowser, {
@@ -59,7 +59,7 @@ describe("SourceTreeBrowser", () => {
         expect(wrapper.text()).toContain("network down");
     });
 
-    it("fetches and displays a file's content when clicked", async () => {
+    it("fetches and shows file content on click", async () => {
         const readFile = vi.fn().mockResolvedValue("console.log(1);");
         vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile });
 
@@ -75,7 +75,7 @@ describe("SourceTreeBrowser", () => {
         expect(wrapper.find(".source-tree__content").text()).toBe("console.log(1);");
     });
 
-    it("re-fetches when a new sourceTree prop replaces the previous one", async () => {
+    it("re-fetches on new sourceTree prop", async () => {
         vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile: vi.fn() });
 
         const wrapper = mount(SourceTreeBrowser, {

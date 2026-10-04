@@ -42,7 +42,7 @@ beforeEach(() => {
 });
 
 describe("fetchPackageInfo", () => {
-    it("resolves npm registry, downloads, and GitHub data for a package with a GitHub repository", async () => {
+    it("resolves npm registry, downloads, GitHub data for GitHub repository", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -105,7 +105,7 @@ describe("fetchPackageInfo", () => {
         });
     });
 
-    it("falls back to the latest version's dependencies when the installed version isn't in the registry response", async () => {
+    it("falls back to latest version dependencies for unknown installed version", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -125,7 +125,7 @@ describe("fetchPackageInfo", () => {
         expect(info.dependencies).toEqual(["bar"]);
     });
 
-    it("leaves GitHub-derived fields null when there's no repository to resolve", async () => {
+    it("leaves GitHub-derived fields null without repository", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -153,7 +153,7 @@ describe("fetchPackageInfo", () => {
         expect(info.maintainers).toBeNull();
     });
 
-    it("resolves stars from GitLab for a package with a GitLab repository, and leaves PR/issue counts null", async () => {
+    it("resolves stars from GitLab, leaves PR/issue counts null", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -180,7 +180,7 @@ describe("fetchPackageInfo", () => {
         expect(info.closedIssues).toBeNull();
     });
 
-    it("resolves stars from Codeberg for a package with a Codeberg repository", async () => {
+    it("resolves stars from Codeberg for Codeberg repository", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -200,7 +200,7 @@ describe("fetchPackageInfo", () => {
         expect(info.gitStars).toBe(12);
     });
 
-    it("extracts license, deprecation notice, and maintainers from the registry response", async () => {
+    it("extracts license, deprecation notice, maintainers from registry response", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -223,7 +223,7 @@ describe("fetchPackageInfo", () => {
         expect(info.maintainers).toEqual(["alice", "bob"]);
     });
 
-    it("falls back to the package-level license when the resolved version has none", async () => {
+    it("falls back to package-level license when version has none", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -242,7 +242,7 @@ describe("fetchPackageInfo", () => {
         expect(info.license).toBe("Apache-2.0");
     });
 
-    it("marks the package up to date when the declared version matches the latest", async () => {
+    it("marks package up to date when declared version is latest", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -259,7 +259,7 @@ describe("fetchPackageInfo", () => {
         expect(info.isOutdated).toBe(false);
     });
 
-    it("reports the vulnerability count from OSV", async () => {
+    it("reports vulnerability count from OSV", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -276,7 +276,7 @@ describe("fetchPackageInfo", () => {
         expect(info.vulnerabilityCount).toBe(2);
     });
 
-    it("reports zero vulnerabilities (not null) when OSV responds with none", async () => {
+    it("reports 0 vulnerabilities, not null, for empty OSV response", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -291,7 +291,7 @@ describe("fetchPackageInfo", () => {
         expect(info.vulnerabilityCount).toBe(0);
     });
 
-    it("reports the gzip bundle size from Bundlephobia", async () => {
+    it("reports gzip bundle size from Bundlephobia", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -306,7 +306,7 @@ describe("fetchPackageInfo", () => {
         expect(info.bundleSizeGzip).toBe(2048);
     });
 
-    it("resolves vulnerabilityCount and bundleSizeGzip to null, without failing the whole lookup, when those APIs error out", async () => {
+    it("resolves vulnerabilityCount and bundleSizeGzip null on API errors, lookup survives", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string) => {
@@ -330,7 +330,7 @@ describe("fetchPackageInfo", () => {
         expect(info.name).toBe("flaky-pkg");
     });
 
-    it("falls back to the npm homepage when there's no GitHub repository", async () => {
+    it("falls back to npm homepage without GitHub repository", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -354,7 +354,7 @@ describe("fetchPackageInfo sourceTree", () => {
         return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
     }
 
-    it("prefers npm's own tarball even when a GitHub repository is also known", async () => {
+    it("prefers npm tarball over known GitHub repository", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -386,7 +386,7 @@ describe("fetchPackageInfo sourceTree", () => {
         });
     });
 
-    it("falls back to a matching GitHub release tag when npm has no tarball", async () => {
+    it("falls back to matching GitHub release tag without npm tarball", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("registry.npmjs.org/no-tarball")) {
                 return jsonResponse({
@@ -419,7 +419,7 @@ describe("fetchPackageInfo sourceTree", () => {
         });
     });
 
-    it("tries the bare version tag when the v-prefixed tag doesn't exist", async () => {
+    it("tries bare version tag without v-prefixed tag", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("registry.npmjs.org/bare-tag")) {
                 return jsonResponse({
@@ -448,7 +448,7 @@ describe("fetchPackageInfo sourceTree", () => {
         expect((info.sourceTree as { tag: string }).tag).toBe("2.0.0");
     });
 
-    it("resolves to null when npm has no tarball and no GitHub tag matches", async () => {
+    it("resolves null without npm tarball or matching GitHub tag", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -470,7 +470,7 @@ describe("fetchPackageInfo sourceTree", () => {
         expect(info.sourceTree).toBeNull();
     });
 
-    it("resolves to null when there's no tarball and no repository at all", async () => {
+    it("resolves null without tarball or repository", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -484,7 +484,7 @@ describe("fetchPackageInfo sourceTree", () => {
         expect(info.sourceTree).toBeNull();
     });
 
-    it("skips the GitHub tag lookup entirely when the Source Code Tree column is hidden", async () => {
+    it("skips GitHub tag lookup with Source Code Tree column hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/hidden-column": {
                 "dist-tags": { latest: "1.0.0" },
@@ -504,7 +504,7 @@ describe("fetchPackageInfo sourceTree", () => {
         expect(countCalls(fetchMock, "git/refs/tags")).toBe(0);
     });
 
-    it("caches the GitHub tag lookup by repo slug and version across different package names", async () => {
+    it("caches GitHub tag lookup by repo slug and version across package names", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (
                 url.includes("registry.npmjs.org/shared-a") ||
@@ -549,7 +549,7 @@ describe("fetchPackageInfo caching", () => {
         return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
     }
 
-    it("reuses cached sub-fetches for a repeated exact name+version instead of refetching", async () => {
+    it("reuses cached sub-fetches for repeated name+version", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/cached-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 1 },
@@ -566,7 +566,7 @@ describe("fetchPackageInfo caching", () => {
         expect(countCalls(fetchMock, "registry.npmjs.org/cached-pkg")).toBe(1);
     });
 
-    it("coalesces concurrent requests for the same name+version into a single network round", async () => {
+    it("coalesces concurrent same name+version requests into one network round", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/concurrent-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 1 },
@@ -582,7 +582,7 @@ describe("fetchPackageInfo caching", () => {
         expect(countCalls(fetchMock, "registry.npmjs.org/concurrent-pkg")).toBe(1);
     });
 
-    it("shares name-scoped lookups (registry, downloads, advisories) across different versions of the same package", async () => {
+    it("shares name-scoped lookups across versions of same package", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/multi-version-pkg": {
                 "dist-tags": { latest: "2.0.0" },
@@ -610,7 +610,7 @@ describe("fetchPackageInfo caching", () => {
         expect(countCalls(fetchMock, "bundlephobia.com")).toBe(2);
     });
 
-    it("shares repo metadata across different npm package names pointing at the same repository", async () => {
+    it("shares repo metadata across package names with same repository", async () => {
         const sharedRepo = {
             repository: { type: "git", url: "git+https://github.com/shared-org/shared-repo.git" },
         };
@@ -646,7 +646,7 @@ describe("fetchPackageInfo caching", () => {
         expect(countCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
     });
 
-    it("does not cache a failed lookup - the next call for the same key retries", async () => {
+    it("skips caching failed lookup, next same-key call retries", async () => {
         let registryAttempts = 0;
         vi.stubGlobal(
             "fetch",
@@ -679,7 +679,7 @@ describe("fetchPackageInfo column gating", () => {
         return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
     }
 
-    it("skips the security-advisory request when the Vulnerabilities column is hidden", async () => {
+    it("skips security-advisory request with Vulnerabilities column hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/no-vuln-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 1 },
@@ -695,7 +695,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countCalls(fetchMock, "api.osv.dev")).toBe(0);
     });
 
-    it("skips the Bundlephobia request when the Bundle size column is hidden", async () => {
+    it("skips Bundlephobia request with Bundle size column hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/no-bundle-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 1 },
@@ -711,7 +711,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countCalls(fetchMock, "bundlephobia.com")).toBe(0);
     });
 
-    it("skips the npm downloads request when the Weekly downloads column is hidden", async () => {
+    it("skips npm downloads request with Weekly downloads column hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/no-downloads-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 99999 },
@@ -726,7 +726,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(0);
     });
 
-    it("skips the repo metadata request (stars/PR/issues) when all of those columns are hidden but License stays visible", async () => {
+    it("skips repo metadata request with its columns hidden, License visible", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("registry.npmjs.org/license-only")) {
                 return jsonResponse({
@@ -763,7 +763,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countCalls(fetchMock, "api.github.com")).toBe(0);
     });
 
-    it("skips the npm registry request entirely when every column it backs is hidden", async () => {
+    it("skips npm registry request with all its columns hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/registry-not-needed": {
                 "dist-tags": { latest: "1.0.0" },
@@ -801,7 +801,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
     });
 
-    it("fetches everything when visibleColumns is omitted, matching the pre-existing default behaviour", async () => {
+    it("fetches everything without visibleColumns", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/default-visible": { "dist-tags": { latest: "1.0.0" }, time: {} },
             "api.npmjs.org/downloads": { downloads: 1 },
@@ -820,7 +820,7 @@ describe("fetchPackageInfo column gating", () => {
 });
 
 describe("fetchPackageJsonForVersion", () => {
-    it("returns the exact version's manifest, including fields fetchPackageInfo doesn't parse (e.g. devDependencies)", async () => {
+    it("returns exact version manifest, including unparsed fields like devDependencies", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -850,7 +850,7 @@ describe("fetchPackageJsonForVersion", () => {
         });
     });
 
-    it("falls back to the latest version when the declared version (e.g. a semver range) isn't a registry key", async () => {
+    it("falls back to latest version when declared version not registry key", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -873,7 +873,7 @@ describe("fetchPackageJsonForVersion", () => {
         expect(JSON.parse(json!)).toMatchObject({ version: "3.0.0" });
     });
 
-    it("returns null when the package can't be resolved at all", async () => {
+    it("returns null for unresolvable package", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => jsonResponse(null, false)),
@@ -884,7 +884,7 @@ describe("fetchPackageJsonForVersion", () => {
         expect(json).toBeNull();
     });
 
-    it("reuses the same cached registry fetch as fetchPackageInfo, issuing no extra network request", async () => {
+    it("reuses fetchPackageInfo registry cache, no extra request", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/shared-drill-pkg": {
                 "dist-tags": { latest: "1.0.0" },
@@ -907,7 +907,7 @@ describe("fetchPackageJsonForVersion", () => {
 });
 
 describe("fetchPackagesInfo", () => {
-    it("resolves every package and reports failures individually instead of rejecting the whole batch", async () => {
+    it("resolves every package, reports failures per package, no batch reject", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string) => {
@@ -934,7 +934,7 @@ describe("fetchPackagesInfo", () => {
         expect(results[1]).toMatchObject({ name: "bad", error: "network down" });
     });
 
-    it("calls onProgress once per package as each one resolves", async () => {
+    it("calls onProgress once per resolved package", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -957,7 +957,7 @@ describe("fetchPackagesInfo", () => {
 });
 
 describe("parseRepoSlug", () => {
-    it("parses a plain https GitHub URL", () => {
+    it("parses plain https GitHub URL", () => {
         expect(parseRepoSlug("https://github.com/owner/repo")).toEqual({
             host: "github.com",
             owner: "owner",
@@ -965,7 +965,7 @@ describe("parseRepoSlug", () => {
         });
     });
 
-    it("parses a git+https URL with a .git suffix", () => {
+    it("parses git+https URL with .git suffix", () => {
         expect(parseRepoSlug("git+https://github.com/owner/repo.git")).toEqual({
             host: "github.com",
             owner: "owner",
@@ -973,7 +973,7 @@ describe("parseRepoSlug", () => {
         });
     });
 
-    it("parses a git:// protocol URL", () => {
+    it("parses git:// URL", () => {
         expect(parseRepoSlug("git://github.com/owner/repo.git")).toEqual({
             host: "github.com",
             owner: "owner",
@@ -981,7 +981,7 @@ describe("parseRepoSlug", () => {
         });
     });
 
-    it("parses an ssh://git@ URL", () => {
+    it("parses ssh://git@ URL", () => {
         expect(parseRepoSlug("ssh://git@github.com/owner/repo.git")).toEqual({
             host: "github.com",
             owner: "owner",
@@ -989,7 +989,7 @@ describe("parseRepoSlug", () => {
         });
     });
 
-    it("parses an scp-like git@host:owner/repo URL", () => {
+    it("parses scp-like git@host:owner/repo URL", () => {
         expect(parseRepoSlug("git@github.com:owner/repo.git")).toEqual({
             host: "github.com",
             owner: "owner",
@@ -997,7 +997,7 @@ describe("parseRepoSlug", () => {
         });
     });
 
-    it("parses the github: shorthand", () => {
+    it("parses github: shorthand", () => {
         expect(parseRepoSlug("github:owner/repo")).toEqual({
             host: "github.com",
             owner: "owner",
@@ -1018,19 +1018,19 @@ describe("parseRepoSlug", () => {
         });
     });
 
-    it("returns null for an empty string or an unsupported host", () => {
+    it("returns null for empty string or unsupported host", () => {
         expect(parseRepoSlug("")).toBeNull();
         expect(parseRepoSlug("https://bitbucket.org/owner/repo")).toBeNull();
     });
 });
 
 describe("normaliseRepoUrl", () => {
-    it("returns null for a missing URL", () => {
+    it("returns null for missing URL", () => {
         expect(normaliseRepoUrl(undefined)).toBeNull();
         expect(normaliseRepoUrl("")).toBeNull();
     });
 
-    it("strips the git+ prefix and .git suffix", () => {
+    it("strips git+ prefix and .git suffix", () => {
         expect(normaliseRepoUrl("git+https://example.com/owner/repo.git")).toBe(
             "https://example.com/owner/repo",
         );
@@ -1045,7 +1045,7 @@ describe("normaliseRepoUrl", () => {
         );
     });
 
-    it("leaves an already-https URL untouched", () => {
+    it("leaves https URL untouched", () => {
         expect(normaliseRepoUrl("https://example.com/owner/repo")).toBe(
             "https://example.com/owner/repo",
         );
@@ -1053,33 +1053,33 @@ describe("normaliseRepoUrl", () => {
 });
 
 describe("extractLicense", () => {
-    it("returns null for a missing value", () => {
+    it("returns null for missing value", () => {
         expect(extractLicense(undefined)).toBeNull();
     });
 
-    it("passes through a plain SPDX string", () => {
+    it("passes through plain SPDX string", () => {
         expect(extractLicense("MIT")).toBe("MIT");
     });
 
-    it("reads the legacy { type } object shape", () => {
+    it("reads legacy { type } object shape", () => {
         expect(extractLicense({ type: "MIT" })).toBe("MIT");
     });
 
-    it("returns null for a { type } object with no type", () => {
+    it("returns null for { type } object without type", () => {
         expect(extractLicense({})).toBeNull();
     });
 
-    it("joins an array of licenses with OR", () => {
+    it("joins license array with OR", () => {
         expect(extractLicense(["MIT", { type: "Apache-2.0" }])).toBe("MIT OR Apache-2.0");
     });
 
-    it("returns null for an array with no resolvable entries", () => {
+    it("returns null for array without resolvable entries", () => {
         expect(extractLicense([{}, {}])).toBeNull();
     });
 });
 
 describe("memoizeAsync", () => {
-    it("caches a resolved value under its key, calling fn only once", async () => {
+    it("caches resolved value by key, calls fn once", async () => {
         const cache = new Map<string, Promise<number>>();
         const fn = vi.fn(async () => 42);
 
@@ -1091,7 +1091,7 @@ describe("memoizeAsync", () => {
         expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    it("coalesces concurrent calls for the same key into a single fn invocation", async () => {
+    it("coalesces concurrent same-key calls into one fn call", async () => {
         const cache = new Map<string, Promise<number>>();
         let resolveFn: (value: number) => void;
         const fn = vi.fn(
@@ -1110,7 +1110,7 @@ describe("memoizeAsync", () => {
         expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    it("does not share the cache across different keys", async () => {
+    it("keeps cache separate per key", async () => {
         const cache = new Map<string, Promise<number>>();
         const fn = vi.fn(async () => 1);
 
@@ -1120,7 +1120,7 @@ describe("memoizeAsync", () => {
         expect(fn).toHaveBeenCalledTimes(2);
     });
 
-    it("evicts a failed lookup so the next call for the same key retries", async () => {
+    it("evicts failed lookup, next same-key call retries", async () => {
         const cache = new Map<string, Promise<number>>();
         const fn = vi.fn().mockRejectedValueOnce(new Error("fail")).mockResolvedValueOnce(9);
 

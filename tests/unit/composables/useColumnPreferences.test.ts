@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 
 describe("initial state", () => {
-    it("loads visibleColumns, columnOrder, and shrinkColumnLabels from localStorage defaults", () => {
+    it("loads visibleColumns, columnOrder, shrinkColumnLabels from localStorage defaults", () => {
         const { visibleColumns, columnOrder, shrinkColumnLabels } = useColumnPreferences();
 
         expect(visibleColumns.value).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
@@ -22,7 +22,7 @@ describe("initial state", () => {
 });
 
 describe("toggleColumn", () => {
-    it("shows a currently-hidden column", () => {
+    it("shows hidden column", () => {
         const { visibleColumns, toggleColumn } = useColumnPreferences();
 
         toggleColumn("maintainers");
@@ -30,7 +30,7 @@ describe("toggleColumn", () => {
         expect(visibleColumns.value.has("maintainers")).toBe(true);
     });
 
-    it("persists the change to localStorage", async () => {
+    it("persists change to localStorage on toggle", async () => {
         const { toggleColumn } = useColumnPreferences();
 
         toggleColumn("maintainers");
@@ -41,7 +41,7 @@ describe("toggleColumn", () => {
 });
 
 describe("reorderColumns", () => {
-    it("reorders the currently-visible columns, keeping each hidden column in its own slot", () => {
+    it("reorders visible columns, keeps hidden columns in own slots", () => {
         const { columnOrder, reorderColumns } = useColumnPreferences();
         const visibleOrder = columnOrder.value.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
         const reversedVisible = [...visibleOrder].reverse();
@@ -56,7 +56,7 @@ describe("reorderColumns", () => {
         );
     });
 
-    it("persists the change to localStorage", async () => {
+    it("persists change to localStorage on toggle", async () => {
         const { columnOrder, reorderColumns } = useColumnPreferences();
         const visibleOrder = columnOrder.value.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
         const reversedVisible = [...visibleOrder].reverse();
@@ -70,7 +70,7 @@ describe("reorderColumns", () => {
 });
 
 describe("visibleColumnKeys", () => {
-    it("returns only the visible toggleable columns, in columnOrder", () => {
+    it("returns visible toggleable columns only, in columnOrder", () => {
         const { visibleColumnKeys } = useColumnPreferences();
 
         expect(visibleColumnKeys.value).toEqual(
@@ -78,7 +78,7 @@ describe("visibleColumnKeys", () => {
         );
     });
 
-    it("updates when a hidden column is toggled visible", () => {
+    it("updates when hidden column toggled visible", () => {
         const { visibleColumnKeys, toggleColumn } = useColumnPreferences();
         expect(visibleColumnKeys.value).not.toContain("maintainers");
 
@@ -89,7 +89,7 @@ describe("visibleColumnKeys", () => {
 });
 
 describe("shrinkColumnLabels", () => {
-    it("persists a change to localStorage", async () => {
+    it("persists change to localStorage", async () => {
         const { shrinkColumnLabels } = useColumnPreferences();
 
         shrinkColumnLabels.value = true;

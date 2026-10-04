@@ -58,7 +58,7 @@ const sparseDependency = {
 };
 
 describe("DependenciesTable", () => {
-    it("every header column has a matching data cell in each row", () => {
+    it("every header column has matching data cell per row", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -72,7 +72,7 @@ describe("DependenciesTable", () => {
         }
     });
 
-    it("renders a full row of dependency data", () => {
+    it("renders full dependency data row", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -91,7 +91,7 @@ describe("DependenciesTable", () => {
         expect(text).not.toContain("MIT ⚠");
     });
 
-    it("renders '-' placeholders for every missing field instead of blank cells", () => {
+    it("renders '-' for missing fields, no blank cells", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [sparseDependency] },
         });
@@ -128,7 +128,7 @@ describe("DependenciesTable", () => {
         expect(wrapper.findAll("tbody tr")).toHaveLength(2);
     });
 
-    it("renders a 'No dependencies' message and no rows for an empty dependency list", () => {
+    it("renders 'No dependencies' and no rows for empty list", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [] },
         });
@@ -137,7 +137,7 @@ describe("DependenciesTable", () => {
         expect(wrapper.find(".deps-table__status-row").text()).toBe("No dependencies");
     });
 
-    it("renders a 'Loading…' status row instead of dependency rows while isLoading is true", () => {
+    it("renders 'Loading…' status row while isLoading true", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [], isLoading: true },
         });
@@ -146,7 +146,7 @@ describe("DependenciesTable", () => {
         expect(wrapper.find(".deps-table__status-row").text()).toBe("Loading…");
     });
 
-    it("spans the status row across every currently-visible column", () => {
+    it("spans status row across visible columns", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [], columns: ["version", "license"] },
         });
@@ -159,7 +159,7 @@ describe("DependenciesTable", () => {
 });
 
 describe("DependenciesTable load-as-input action", () => {
-    it("renders a right arrow in the Name cell as the load affordance", () => {
+    it("renders right arrow in Name cell as load affordance", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -168,7 +168,7 @@ describe("DependenciesTable load-as-input action", () => {
         expect(nameCell.find(".deps-table__name-arrow").text()).toBe("→");
     });
 
-    it("emits load-package with the row's name and version when the Name cell is clicked", async () => {
+    it("emits load-package with row name and version on Name cell click", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -180,7 +180,7 @@ describe("DependenciesTable load-as-input action", () => {
 });
 
 describe("DependenciesTable row selection", () => {
-    it("emits select-package with the row's dependency when a plain data cell is clicked", async () => {
+    it("emits select-package with row dependency on data cell click", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: ["version"] },
         });
@@ -190,7 +190,7 @@ describe("DependenciesTable row selection", () => {
         expect(wrapper.emitted("select-package")).toEqual([[fullDependency]]);
     });
 
-    it("clicking the Name cell only emits load-package, not select-package", async () => {
+    it("Name cell click emits load-package only, not select-package", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -201,7 +201,7 @@ describe("DependenciesTable row selection", () => {
         expect(wrapper.emitted("select-package")).toBeFalsy();
     });
 
-    it("clicking the source-code link only follows the link, not select-package", async () => {
+    it("source-code link click follows link only, not select-package", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: ["sourceCode"] },
         });
@@ -211,7 +211,7 @@ describe("DependenciesTable row selection", () => {
         expect(wrapper.emitted("select-package")).toBeFalsy();
     });
 
-    it("clicking the View tree button only emits open-source-tree, not select-package", async () => {
+    it("View tree click emits open-source-tree only, not select-package", async () => {
         const npmSourceTree = {
             provider: "npm",
             tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
@@ -241,7 +241,7 @@ describe("DependenciesTable column visibility", () => {
         expect(headerTexts).toContain("Maintainers");
     });
 
-    it("hides a column not named in columns, from both the header and every row", () => {
+    it("hides column missing from columns in header and rows", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency, sparseDependency],
@@ -255,7 +255,7 @@ describe("DependenciesTable column visibility", () => {
         expect(wrapper.text()).not.toContain("MIT");
     });
 
-    it("never hides the Name column even if asked to", () => {
+    it("never hides Name column", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: [] },
         });
@@ -265,7 +265,7 @@ describe("DependenciesTable column visibility", () => {
         expect(wrapper.find("tbody td .deps-table__name-text").text()).toBe("left-pad");
     });
 
-    it("keeps header and row cell counts in sync when columns are hidden", () => {
+    it("keeps header and row cell counts in sync with hidden columns", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency],
@@ -292,7 +292,7 @@ describe("DependenciesTable column order", () => {
         );
     }
 
-    it("renders visible columns in the given columns order", () => {
+    it("renders visible columns in columns order", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: reversedOrder },
         });
@@ -304,7 +304,7 @@ describe("DependenciesTable column order", () => {
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
 
-    it("falls back to declaration order when columns is omitted", () => {
+    it("falls back to declaration order without columns", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -313,7 +313,7 @@ describe("DependenciesTable column order", () => {
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
 
-    it("keeps Name first regardless of columns content", () => {
+    it("keeps Name first for any columns", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: reversedOrder },
         });
@@ -322,7 +322,7 @@ describe("DependenciesTable column order", () => {
         expect(labels[0]).toBe("Name");
     });
 
-    it("keeps body <td> order in sync with header <th> order for a non-default columns order", () => {
+    it("keeps body <td> order in sync with header <th> for custom columns order", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], columns: reversedOrder },
         });
@@ -334,7 +334,7 @@ describe("DependenciesTable column order", () => {
         expect(cells[sourceCodeIndex].find("a").exists()).toBe(true);
     });
 
-    it("emits reorder-columns with the new column order when the draggable list is reordered", async () => {
+    it("emits reorder-columns with new order on drag reorder", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -362,7 +362,7 @@ describe("DependenciesTable column labels", () => {
         );
     }
 
-    it("renders each column's own full label when shrinkLabels is omitted", () => {
+    it("renders full labels without shrinkLabels", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
         });
@@ -371,7 +371,7 @@ describe("DependenciesTable column labels", () => {
         expect(headerLabels(wrapper)).toContain("Latest release date");
     });
 
-    it("abbreviates every multi-word label to initials when shrinkLabels is true", () => {
+    it("abbreviates multi-word labels when shrinkLabels true", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
@@ -383,7 +383,7 @@ describe("DependenciesTable column labels", () => {
         expect(labels).not.toContain("Latest release date");
     });
 
-    it("leaves a single-word label unabbreviated even when shrinkLabels is true", () => {
+    it("leaves single-word label unabbreviated with shrinkLabels true", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
@@ -391,7 +391,7 @@ describe("DependenciesTable column labels", () => {
         expect(headerLabels(wrapper)).toContain("Deprecated");
     });
 
-    it("sets a tooltip only for labels that were actually abbreviated", () => {
+    it("sets tooltip only for abbreviated labels", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
@@ -438,7 +438,7 @@ describe("DependenciesTable sorting", () => {
         return active.text().trim() === "▲" ? "asc" : "desc";
     }
 
-    it("keeps the original prop order until a column header is clicked", () => {
+    it("keeps prop order until header click", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
         });
@@ -446,7 +446,7 @@ describe("DependenciesTable sorting", () => {
         expect(names(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
     });
 
-    it("sorts ascending on first click and descending on a second click of the same column", async () => {
+    it("sorts ascending on first click, descending on second", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
         });
@@ -458,7 +458,7 @@ describe("DependenciesTable sorting", () => {
         expect(names(wrapper)).toEqual(["bbb", "ccc", "aaa"]);
     });
 
-    it("shows an ascending/descending indicator only on the active sort column", async () => {
+    it("shows sort indicator only on active column", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
         });
@@ -471,7 +471,7 @@ describe("DependenciesTable sorting", () => {
         expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("desc");
     });
 
-    it("switching to a different column resets to ascending", async () => {
+    it("switching column resets to ascending", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
         });
@@ -484,7 +484,7 @@ describe("DependenciesTable sorting", () => {
         expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("asc");
     });
 
-    it("always sorts missing values last, in both directions", async () => {
+    it("sorts missing values last in both directions", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
         });
@@ -496,7 +496,7 @@ describe("DependenciesTable sorting", () => {
         expect(names(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
     });
 
-    it("does not render a sort button for non-sortable columns", () => {
+    it("renders no sort button for non-sortable columns", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgA] },
         });
@@ -516,7 +516,7 @@ describe("DependenciesTable sorting", () => {
         }
     });
 
-    it("sorts by vulnerability count, keeping unknown counts last", async () => {
+    it("sorts by vulnerability count, unknown last", async () => {
         const withVulns = { ...sparseDependency, name: "aaa", vulnerabilityCount: 3 };
         const withoutVulns = { ...sparseDependency, name: "bbb", vulnerabilityCount: 0 };
         const unknownVulns = { ...sparseDependency, name: "ccc", vulnerabilityCount: null };
@@ -541,7 +541,7 @@ describe("DependenciesTable search", () => {
             .map((td) => td.text());
     }
 
-    it("renders no search box of its own - filtering is driven entirely by the searchQuery prop", () => {
+    it("renders no own search box, filters by searchQuery prop", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue] },
         });
@@ -549,7 +549,7 @@ describe("DependenciesTable search", () => {
         expect(wrapper.find('input[type="text"]').exists()).toBe(false);
     });
 
-    it("shows every row when searchQuery is omitted", () => {
+    it("shows every row without searchQuery", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue] },
         });
@@ -557,7 +557,7 @@ describe("DependenciesTable search", () => {
         expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
     });
 
-    it("filters rows to names containing the query, case-insensitively", () => {
+    it("filters rows by name containing query, case-insensitive", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue], searchQuery: "REACT" },
         });
@@ -565,7 +565,7 @@ describe("DependenciesTable search", () => {
         expect(names(wrapper)).toEqual(["react", "react-dom"]);
     });
 
-    it("matches a substring anywhere in the name, not just a prefix", () => {
+    it("matches substring anywhere in name, not only prefix", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue], searchQuery: "dom" },
         });
@@ -573,7 +573,7 @@ describe("DependenciesTable search", () => {
         expect(names(wrapper)).toEqual(["react-dom"]);
     });
 
-    it("shows no rows when nothing matches", () => {
+    it("shows no rows without match", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue], searchQuery: "no-such-package" },
         });
@@ -581,7 +581,7 @@ describe("DependenciesTable search", () => {
         expect(wrapper.findAll("tbody tr")).toHaveLength(0);
     });
 
-    it("treats a whitespace-only query as empty", () => {
+    it("treats whitespace-only query as empty", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue], searchQuery: "   " },
         });
@@ -589,7 +589,7 @@ describe("DependenciesTable search", () => {
         expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
     });
 
-    it("re-filters reactively when the searchQuery prop changes", async () => {
+    it("re-filters on searchQuery prop change", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [react, reactDom, vue], searchQuery: "" },
         });
@@ -599,7 +599,7 @@ describe("DependenciesTable search", () => {
         expect(names(wrapper)).toEqual(["react-dom"]);
     });
 
-    it("applies sorting on top of the filtered results", async () => {
+    it("sorts filtered results", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [reactDom, react], searchQuery: "react" },
         });
@@ -625,13 +625,13 @@ describe("DependenciesTable source tree", () => {
         });
     }
 
-    it("renders a View tree button when the dependency has a source tree available", () => {
+    it("renders View tree button with source tree", () => {
         const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
 
         expect(wrapper.find("tbody button").text()).toBe("View tree");
     });
 
-    it("renders a dash instead of a button when no source tree is available", () => {
+    it("renders dash instead of button without source tree", () => {
         const wrapper = mountWithSourceTree({ ...sparseDependency, sourceTree: null });
 
         const cells = wrapper.findAll("tbody td");
@@ -639,7 +639,7 @@ describe("DependenciesTable source tree", () => {
         expect(cells[1].find("button").exists()).toBe(false);
     });
 
-    it("emits open-source-tree with the clicked dependency, leaving modal ownership to the parent", async () => {
+    it("emits open-source-tree with clicked dependency, parent owns modal", async () => {
         const dependency = { ...fullDependency, sourceTree: npmSourceTree };
         const wrapper = mountWithSourceTree(dependency);
 

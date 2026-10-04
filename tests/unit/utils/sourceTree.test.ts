@@ -44,7 +44,7 @@ beforeEach(() => {
 });
 
 describe("fetchSourceTree - npm provider", () => {
-    it("downloads and decompresses the tarball into a browsable tree", async () => {
+    it("downloads and decompresses tarball into browsable tree", async () => {
         const tarball = buildNpmTarball({
             "index.js": "module.exports = 1;",
             "src/helper.js": "export const x = 1;",
@@ -65,7 +65,7 @@ describe("fetchSourceTree - npm provider", () => {
         expect(await readFile("src/helper.js")).toBe("export const x = 1;");
     });
 
-    it("strips the tarball's leading package/ prefix from every path", async () => {
+    it("strips tarball package/ prefix from paths", async () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
         vi.stubGlobal(
             "fetch",
@@ -80,7 +80,7 @@ describe("fetchSourceTree - npm provider", () => {
         expect(tree[0].path).toBe("index.js");
     });
 
-    it("throws when the tarball download fails", async () => {
+    it("throws on tarball download failure", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => ({ ok: false, status: 404 })),
@@ -91,7 +91,7 @@ describe("fetchSourceTree - npm provider", () => {
         ).rejects.toThrow(/404/);
     });
 
-    it("readFile rejects for a path that isn't in the tarball", async () => {
+    it("readFile rejects for path missing from tarball", async () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
         vi.stubGlobal(
             "fetch",
@@ -108,7 +108,7 @@ describe("fetchSourceTree - npm provider", () => {
 });
 
 describe("fetchSourceTree - github provider", () => {
-    it("builds a tree from the git-trees API and lazily fetches file content on demand", async () => {
+    it("builds tree from git-trees API, fetches file content lazily", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("api.github.com")) {
                 return {
@@ -142,7 +142,7 @@ describe("fetchSourceTree - github provider", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it("throws when the tree request fails", async () => {
+    it("throws on tree request failure", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => ({ ok: false, status: 404 })),
@@ -155,7 +155,7 @@ describe("fetchSourceTree - github provider", () => {
 });
 
 describe("findGithubReleaseTag", () => {
-    it("returns the v-prefixed tag when it exists", async () => {
+    it("returns v-prefixed tag when present", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string) => ({ ok: url.endsWith("/tags/v1.2.3") })),
@@ -164,7 +164,7 @@ describe("findGithubReleaseTag", () => {
         expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBe("v1.2.3");
     });
 
-    it("falls back to the bare version when the v-prefixed tag doesn't exist", async () => {
+    it("falls back to bare version without v-prefixed tag", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string) => ({ ok: url.endsWith("/tags/1.2.3") })),
@@ -173,7 +173,7 @@ describe("findGithubReleaseTag", () => {
         expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBe("1.2.3");
     });
 
-    it("returns null when neither tag naming pattern exists", async () => {
+    it("returns null when no tag pattern matches", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => ({ ok: false })),

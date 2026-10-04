@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 describe("loadPackageJsonText", () => {
-    it("records a new history entry and applies it on valid JSON", () => {
+    it("records and applies new history entry for valid JSON", () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, pkg, history, historyIndex, loadError } =
@@ -48,7 +48,7 @@ describe("loadPackageJsonText", () => {
         expect(loadError.value).toBe(null);
     });
 
-    it("sets loadError and leaves state untouched on invalid JSON", () => {
+    it("sets loadError, keeps state for invalid JSON", () => {
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, pkg, history, loadError } =
             usePackageJsonHistory(visibleColumns);
@@ -61,7 +61,7 @@ describe("loadPackageJsonText", () => {
         expect(loadError.value).toContain("not valid JSON");
     });
 
-    it("sets loadError for JSON that isn't an object (e.g. an array)", () => {
+    it("sets loadError for non-object JSON", () => {
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, loadError } = usePackageJsonHistory(visibleColumns);
 
@@ -71,7 +71,7 @@ describe("loadPackageJsonText", () => {
         expect(loadError.value).toContain("expected a JSON object");
     });
 
-    it("clears a previous loadError on a subsequent successful load", () => {
+    it("clears previous loadError on successful load", () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, loadError } = usePackageJsonHistory(visibleColumns);
@@ -83,7 +83,7 @@ describe("loadPackageJsonText", () => {
         expect(loadError.value).toBe(null);
     });
 
-    it("fetches and populates deps for the newly loaded entry", async () => {
+    it("fetches and populates deps for new entry", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, deps, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
@@ -107,7 +107,7 @@ describe("history navigation", () => {
         return composable;
     }
 
-    it("canGoBack/canGoForward reflect the current position", async () => {
+    it("canGoBack/canGoForward reflect current position", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { canGoBack, canGoForward } = await loadTwoEntries(visibleColumns);
@@ -116,7 +116,7 @@ describe("history navigation", () => {
         expect(canGoForward.value).toBe(false);
     });
 
-    it("goBack/goForward move between entries and restore the right pkg", async () => {
+    it("goBack/goForward move between entries, restore pkg", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { goBack, goForward, pkg, canGoBack, canGoForward } =
@@ -133,7 +133,7 @@ describe("history navigation", () => {
         expect(pkg.value.name).toBe("second");
     });
 
-    it("goBack does nothing when already at the start", async () => {
+    it("goBack no-op at start", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { goBack, pkg } = await loadTwoEntries(visibleColumns);
@@ -145,7 +145,7 @@ describe("history navigation", () => {
         expect(pkg.value.name).toBe("first");
     });
 
-    it("re-navigating to an already-fetched entry reuses cached deps without re-fetching", async () => {
+    it("revisiting fetched entry reuses cached deps, no refetch", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { goBack, goForward, deps } = await loadTwoEntries(visibleColumns);
@@ -161,7 +161,7 @@ describe("history navigation", () => {
 });
 
 describe("reacting to visibleColumns changes", () => {
-    it("re-fetches the current entry when visibleColumns changes", async () => {
+    it("re-fetches current entry on visibleColumns change", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
