@@ -108,7 +108,9 @@ describe("DependenciesTable", () => {
         // name/version are always present; every other cell should fall back
         // to '-', except License (marks a missing license with a warning).
         cells.forEach((cell, index) => {
-            if (index === 0 || index === 1) return;
+            if (index === 0 || index === 1) {
+                return;
+            }
             if (index === licenseIndex) {
                 expect(cell.text()).toBe("- ⚠");
             } else {
@@ -421,14 +423,18 @@ describe("DependenciesTable sorting", () => {
 
     function sortButton(wrapper, label) {
         const button = wrapper.findAll("th button").find((b) => b.text().startsWith(label));
-        if (!button) throw new Error(`No sort button found for column "${label}"`);
+        if (!button) {
+            throw new Error(`No sort button found for column "${label}"`);
+        }
         return button;
     }
 
     /** Which direction's arrow icon is currently highlighted as active, if any. */
     function activeSortDirection(button) {
         const active = button.find(".deps-table__sort-arrow--active");
-        if (!active.exists()) return null;
+        if (!active.exists()) {
+            return null;
+        }
         return active.text().trim() === "▲" ? "asc" : "desc";
     }
 

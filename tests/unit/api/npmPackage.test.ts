@@ -399,9 +399,12 @@ describe("fetchPackageInfo sourceTree", () => {
                     versions: { "1.0.0": {} },
                 });
             }
-            if (url.includes("api.npmjs.org/downloads")) return jsonResponse({ downloads: 0 });
-            if (url.includes("git/refs/tags/v1.0.0"))
+            if (url.includes("api.npmjs.org/downloads")) {
+                return jsonResponse({ downloads: 0 });
+            }
+            if (url.includes("git/refs/tags/v1.0.0")) {
                 return jsonResponse({ ref: "refs/tags/v1.0.0" });
+            }
             return jsonResponse(null, false);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -429,9 +432,12 @@ describe("fetchPackageInfo sourceTree", () => {
                     versions: { "2.0.0": {} },
                 });
             }
-            if (url.includes("api.npmjs.org/downloads")) return jsonResponse({ downloads: 0 });
-            if (url.includes("git/refs/tags/2.0.0"))
+            if (url.includes("api.npmjs.org/downloads")) {
+                return jsonResponse({ downloads: 0 });
+            }
+            if (url.includes("git/refs/tags/2.0.0")) {
                 return jsonResponse({ ref: "refs/tags/2.0.0" });
+            }
             return jsonResponse(null, false);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -514,9 +520,12 @@ describe("fetchPackageInfo sourceTree", () => {
                     versions: { "1.0.0": {} },
                 });
             }
-            if (url.includes("api.npmjs.org/downloads")) return jsonResponse({ downloads: 0 });
-            if (url.includes("git/refs/tags/v1.0.0"))
+            if (url.includes("api.npmjs.org/downloads")) {
+                return jsonResponse({ downloads: 0 });
+            }
+            if (url.includes("git/refs/tags/v1.0.0")) {
                 return jsonResponse({ ref: "refs/tags/v1.0.0" });
+            }
             return jsonResponse(null, false);
         });
         vi.stubGlobal("fetch", fetchMock);

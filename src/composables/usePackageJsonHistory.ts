@@ -71,20 +71,26 @@ export function usePackageJsonHistory(visibleColumns) {
     }
 
     function goBack() {
-        if (!canGoBack.value) return;
+        if (!canGoBack.value) {
+            return;
+        }
         historyIndex.value -= 1;
         applyCurrentHistoryEntry();
     }
 
     function goForward() {
-        if (!canGoForward.value) return;
+        if (!canGoForward.value) {
+            return;
+        }
         historyIndex.value += 1;
         applyCurrentHistoryEntry();
     }
 
     function applyCurrentHistoryEntry() {
         const entry = history.value[historyIndex.value];
-        if (!entry) return;
+        if (!entry) {
+            return;
+        }
 
         pkg.value = entry.pkg;
 

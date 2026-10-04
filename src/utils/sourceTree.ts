@@ -109,7 +109,9 @@ export async function findGithubReleaseTag(
             `https://api.github.com/repos/${owner}/${repo}/git/refs/tags/${encodeURIComponent(candidate)}`,
             { headers },
         );
-        if (response.ok) return candidate;
+        if (response.ok) {
+            return candidate;
+        }
     }
     return null;
 }

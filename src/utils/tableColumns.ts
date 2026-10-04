@@ -100,8 +100,12 @@ export function meetsMinVisible(visibleColumns: ReadonlySet<string>): boolean {
  * visible count).
  */
 export function wouldViolateMinVisible(visibleColumns: ReadonlySet<string>, key: string): boolean {
-    if (ALWAYS_VISIBLE_COLUMNS.has(key)) return false;
-    if (!visibleColumns.has(key)) return false;
+    if (ALWAYS_VISIBLE_COLUMNS.has(key)) {
+        return false;
+    }
+    if (!visibleColumns.has(key)) {
+        return false;
+    }
     const next = new Set(visibleColumns);
     next.delete(key);
     return !meetsMinVisible(next);
@@ -120,13 +124,15 @@ export function toggleColumnVisibility(
     key: string,
 ): Set<string> {
     const next = new Set(visibleColumns);
-    if (ALWAYS_VISIBLE_COLUMNS.has(key)) return next;
-    if (next.has(key)) {
-        if (!wouldViolateMinVisible(visibleColumns, key)) {
-            next.delete(key);
-        }
-    } else {
+    if (ALWAYS_VISIBLE_COLUMNS.has(key)) {
+        return next;
+    }
+    if (!next.has(key)) {
         next.add(key);
+        return next;
+    }
+    if (!wouldViolateMinVisible(visibleColumns, key)) {
+        next.delete(key);
     }
     return next;
 }
@@ -148,10 +154,11 @@ export function orderColumns(order: readonly string[], columns: readonly ColumnD
     const ordered: ColumnDef[] = [];
     for (const key of order) {
         const col = byKey.get(key);
-        if (col && !seen.has(key)) {
-            ordered.push(col);
-            seen.add(key);
+        if (!col || seen.has(key)) {
+            continue;
         }
+        ordered.push(col);
+        seen.add(key);
     }
     for (const col of columns) {
         if (!seen.has(col.key)) {
@@ -187,6 +194,8 @@ export function mergeColumnOrder(
  */
 export function abbreviateLabel(label: string): string {
     const words = label.trim().split(/\s+/).filter(Boolean);
-    if (words.length < 2) return label;
+    if (words.length < 2) {
+        return label;
+    }
     return words.map((word) => word.match(/[A-Za-z]/)?.[0].toUpperCase() ?? "").join("");
 }

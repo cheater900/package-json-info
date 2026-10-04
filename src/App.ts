@@ -106,7 +106,8 @@ export default defineComponent({
                     ? await fetchPackageJsonFromRepo(url)
                     : await fetchUrlAsText(url);
                 if (!content) {
-                    throw new Error("Could not find a package.json at that URL.");
+                    loadError.value = "Could not find a package.json at that URL.";
+                    return;
                 }
                 loadPackageJsonText(content);
             } catch (err) {
@@ -130,7 +131,8 @@ export default defineComponent({
             try {
                 const content = await fetchPackageJsonForVersion(name, version);
                 if (!content) {
-                    throw new Error(`Could not find package.json data for "${name}".`);
+                    loadError.value = `Could not find package.json data for "${name}".`;
+                    return;
                 }
                 loadPackageJsonText(content);
             } catch (err) {

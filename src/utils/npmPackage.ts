@@ -385,7 +385,7 @@ export async function fetchPackagesInfo(
                 const failure: PackageError = {
                     name,
                     version,
-                    error: err instanceof Error ? err.message : String(err),
+                    error: err.message,
                 };
                 results[i] = failure;
                 onProgress?.(failure, i, packages.length);
@@ -429,7 +429,9 @@ function fetchVulnerabilityCount(name: string): Promise<number | null> {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ package: { name, ecosystem: "npm" } }),
             });
-            if (!response.ok) return null;
+            if (!response.ok) {
+                return null;
+            }
             const data = (await response.json()) as OsvQueryResponse;
             return data.vulns?.length ?? 0;
         } catch {
@@ -539,13 +541,14 @@ async function resolveSourceTree(
     if (tarballUrl) {
         return { provider: "npm", tarballUrl };
     }
-    if (slug != null && slug.host === "github.com") {
-        const tag = await fetchGithubReleaseTag(slug, version, githubHeaders);
-        if (tag) {
-            return { provider: "github", owner: slug.owner, repo: slug.repo, tag };
-        }
+    if (slug?.host !== "github.com") {
+        return null;
     }
-    return null;
+    const tag = await fetchGithubReleaseTag(slug, version, githubHeaders);
+    if (!tag) {
+        return null;
+    }
+    return { provider: "github", owner: slug.owner, repo: slug.repo, tag };
 }
 
 /** Cached by repo slug + version, so the same (owner, repo, version) triple across multiple packages only checks GitHub once. */
@@ -567,7 +570,9 @@ function fetchGithubReleaseTag(
  */
 async function fetchJson<T>(url: string, headers: Record<string, string> = {}): Promise<T | null> {
     const response = await fetch(url, { headers });
-    if (!response.ok) return null;
+    if (!response.ok) {
+        return null;
+    }
     return response.json() as Promise<T>;
 }
 
@@ -578,9 +583,13 @@ async function fetchJson<T>(url: string, headers: Record<string, string> = {}): 
  * and the shorthand github:owner/repo.
  */
 function extractRepoSlug(npmData: NpmRegistryData | null): RepoSlug | null {
-    if (npmData == null) return null;
+    if (npmData == null) {
+        return null;
+    }
     const repo = npmData.repository;
-    if (repo == null) return null;
+    if (repo == null) {
+        return null;
+    }
     const raw = typeof repo === "string" ? repo : (repo.url ?? "");
     return parseRepoSlug(raw);
 }
@@ -592,7 +601,9 @@ function extractRepoSlug(npmData: NpmRegistryData | null): RepoSlug | null {
  * and the shorthand github:owner/repo.
  */
 export function parseRepoSlug(raw: string): RepoSlug | null {
-    if (!raw) return null;
+    if (!raw) {
+        return null;
+    }
     const normalised = raw
         .replace(/^git\+/, "")
         .replace(/\.git$/, "")
@@ -612,7 +623,9 @@ export function parseRepoSlug(raw: string): RepoSlug | null {
 }
 
 export function normaliseRepoUrl(raw: string | undefined): string | null {
-    if (!raw) return null;
+    if (!raw) {
+        return null;
+    }
     return raw
         .replace(/^git\+/, "")
         .replace(/^git:\/\//, "https://")
@@ -625,8 +638,12 @@ export function normaliseRepoUrl(raw: string | undefined): string | null {
  * `{ type }` object, or (in very old packages) an array of either.
  */
 export function extractLicense(value: NpmLicenseField | undefined): string | null {
-    if (!value) return null;
-    if (typeof value === "string") return value;
+    if (!value) {
+        return null;
+    }
+    if (typeof value === "string") {
+        return value;
+    }
     if (Array.isArray(value)) {
         const names = value.map(extractLicense).filter((v): v is string => Boolean(v));
         return names.length > 0 ? names.join(" OR ") : null;

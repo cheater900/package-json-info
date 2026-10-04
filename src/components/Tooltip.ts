@@ -24,7 +24,9 @@ export default defineComponent({
         const coords = ref({ top: 0, left: 0 });
 
         function show() {
-            if (!props.text || !wrapperRef.value) return;
+            if (!props.text || !wrapperRef.value) {
+                return;
+            }
             const rect = wrapperRef.value.getBoundingClientRect();
             coords.value = {
                 left: rect.left + rect.width / 2,

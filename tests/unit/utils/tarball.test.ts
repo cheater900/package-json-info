@@ -21,7 +21,9 @@ function paxRecord(key: string, value: string): string {
     let len = key.length + value.length + 3;
     for (;;) {
         const candidate = String(len).length + key.length + value.length + 3;
-        if (candidate === len) break;
+        if (candidate === len) {
+            break;
+        }
         len = candidate;
     }
     return `${len} ${key}=${value}\n`;

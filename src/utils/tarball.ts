@@ -32,7 +32,9 @@ function readOctal(bytes: Uint8Array, offset: number, length: number): number {
 
 function isZeroBlock(bytes: Uint8Array, offset: number): boolean {
     for (let i = 0; i < BLOCK_SIZE; i++) {
-        if (bytes[offset + i] !== 0) return false;
+        if (bytes[offset + i] !== 0) {
+            return false;
+        }
     }
     return true;
 }
@@ -48,9 +50,13 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
     let offset = 0;
     while (offset < text.length) {
         const spaceIndex = text.indexOf(" ", offset);
-        if (spaceIndex === -1) break;
+        if (spaceIndex === -1) {
+            break;
+        }
         const recordLength = parseInt(text.slice(offset, spaceIndex), 10);
-        if (!recordLength || recordLength <= spaceIndex - offset) break;
+        if (!recordLength || recordLength <= spaceIndex - offset) {
+            break;
+        }
         const record = text.slice(offset, offset + recordLength);
         const eq = record.indexOf("=", spaceIndex - offset + 1);
         if (eq !== -1) {
@@ -77,7 +83,9 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
     let longPathOverride: string | null = null;
 
     while (offset + BLOCK_SIZE <= bytes.length) {
-        if (isZeroBlock(bytes, offset)) break;
+        if (isZeroBlock(bytes, offset)) {
+            break;
+        }
 
         const name = readString(bytes, offset, 100);
         const size = readOctal(bytes, offset + 124, 12);
@@ -86,20 +94,19 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
         const dataStart = offset + BLOCK_SIZE;
         const data = bytes.subarray(dataStart, dataStart + size);
         const path = longPathOverride ?? (prefix ? `${prefix}/${name}` : name);
+        offset = dataStart + Math.ceil(size / BLOCK_SIZE) * BLOCK_SIZE;
 
         if (typeflag === "x" || typeflag === "X") {
-            const records = parsePaxRecords(data);
-            if (records.path) longPathOverride = records.path;
-        } else {
-            if (typeflag === "5") {
-                entries.push({ path, size: 0, type: "directory", content: new Uint8Array(0) });
-            } else if (typeflag === "0" || typeflag === "\0") {
-                entries.push({ path, size, type: "file", content: data.slice() });
-            }
-            longPathOverride = null;
+            longPathOverride = parsePaxRecords(data).path || longPathOverride;
+            continue;
         }
 
-        offset = dataStart + Math.ceil(size / BLOCK_SIZE) * BLOCK_SIZE;
+        longPathOverride = null;
+        if (typeflag === "5") {
+            entries.push({ path, size: 0, type: "directory", content: new Uint8Array(0) });
+        } else if (typeflag === "0" || typeflag === "\0") {
+            entries.push({ path, size, type: "file", content: data.slice() });
+        }
     }
 
     return entries;

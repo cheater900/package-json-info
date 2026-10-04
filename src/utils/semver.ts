@@ -3,14 +3,18 @@ export type SemverTuple = [number, number, number];
 /** Extracts the leading `major.minor.patch` from a version or range string. */
 export function parseLeadingSemver(raw: string): SemverTuple | null {
     const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
-    if (!match) return null;
+    if (!match) {
+        return null;
+    }
     return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
 /** Compares two parsed semver tuples: negative if `a` < `b`, positive if `a` > `b`, 0 if equal. */
 export function compareSemver(a: SemverTuple, b: SemverTuple): number {
     for (let i = 0; i < 3; i++) {
-        if (a[i] !== b[i]) return a[i] - b[i];
+        if (a[i] !== b[i]) {
+            return a[i] - b[i];
+        }
     }
     return 0;
 }
@@ -30,9 +34,13 @@ export function isVersionOutdated(
     declared: string | null | undefined,
     latest: string | null | undefined,
 ): boolean | null {
-    if (!declared || !latest) return null;
+    if (!declared || !latest) {
+        return null;
+    }
     const declaredSemver = parseLeadingSemver(declared);
     const latestSemver = parseLeadingSemver(latest);
-    if (!declaredSemver || !latestSemver) return null;
+    if (!declaredSemver || !latestSemver) {
+        return null;
+    }
     return compareSemver(declaredSemver, latestSemver) < 0;
 }

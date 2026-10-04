@@ -1,21 +1,23 @@
 import { hasLicenseWarning } from "./license";
 
 export function fmtDate(dateStr) {
-    if (!dateStr) return "-";
-    try {
-        return new Date(dateStr).toDateString().slice(4);
-    } catch {
-        return dateStr;
+    if (!dateStr) {
+        return "-";
     }
+    return new Date(dateStr).toDateString().slice(4);
 }
 
 export function fmtList(names) {
-    if (!names || names.length === 0) return "-";
+    if (!names || names.length === 0) {
+        return "-";
+    }
     return names.join(", ");
 }
 
 export function fmtOutdated(isOutdated) {
-    if (isOutdated === null || isOutdated === undefined) return "-";
+    if (isOutdated === null || isOutdated === undefined) {
+        return "-";
+    }
     return isOutdated ? "Yes" : "No";
 }
 
@@ -25,12 +27,16 @@ export function fmtLicense(license) {
 }
 
 export function fmtBundleSize(gzipBytes) {
-    if (gzipBytes === null || gzipBytes === undefined) return "-";
+    if (gzipBytes === null || gzipBytes === undefined) {
+        return "-";
+    }
     return `${(gzipBytes / 1024).toFixed(1)} KB`;
 }
 
 export function fmtNumber(n) {
-    if (n === null || n === undefined) return "-";
+    if (n === null || n === undefined) {
+        return "-";
+    }
     return n.toLocaleString("en-US");
 }
 
@@ -81,9 +87,15 @@ const SORT_ACCESSORS = {
 
 /** Missing values always sort last, regardless of direction. */
 export function compareValues(a, b, dir) {
-    if (a == null && b == null) return 0;
-    if (a == null) return 1;
-    if (b == null) return -1;
+    if (a == null && b == null) {
+        return 0;
+    }
+    if (a == null) {
+        return 1;
+    }
+    if (b == null) {
+        return -1;
+    }
     const cmp = typeof a === "string" ? a.localeCompare(b) : a < b ? -1 : a > b ? 1 : 0;
     return dir === "desc" ? -cmp : cmp;
 }
@@ -94,7 +106,9 @@ export function compareValues(a, b, dir) {
  * unchanged (same reference) when `sortKey` is falsy - nothing to sort by.
  */
 export function sortDependencies(dependencies, sortKey, sortDir) {
-    if (!sortKey) return dependencies;
+    if (!sortKey) {
+        return dependencies;
+    }
     const accessor = SORT_ACCESSORS[sortKey];
     return [...dependencies].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir));
 }

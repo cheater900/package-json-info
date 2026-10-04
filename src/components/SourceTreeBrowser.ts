@@ -35,7 +35,9 @@ export default defineComponent({
                 selectedPath.value = null;
                 selectedContent.value = null;
                 contentError.value = null;
-                if (!ref_) return;
+                if (!ref_) {
+                    return;
+                }
 
                 loading.value = true;
                 try {
@@ -43,7 +45,7 @@ export default defineComponent({
                     tree.value = result.tree;
                     readFile = result.readFile;
                 } catch (err) {
-                    error.value = err instanceof Error ? err.message : String(err);
+                    error.value = err.message;
                 } finally {
                     loading.value = false;
                 }
@@ -57,13 +59,15 @@ export default defineComponent({
             selectedPath.value = path;
             selectedContent.value = null;
             contentError.value = null;
-            if (!readFile) return;
+            if (!readFile) {
+                return;
+            }
 
             loadingContent.value = true;
             try {
                 selectedContent.value = await readFile(path);
             } catch (err) {
-                contentError.value = err instanceof Error ? err.message : String(err);
+                contentError.value = err.message;
             } finally {
                 loadingContent.value = false;
             }

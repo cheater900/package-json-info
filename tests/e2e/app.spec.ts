@@ -637,7 +637,9 @@ test("the column visibility panel hides/shows columns and never drops below the 
         (t) => t.trim(),
     );
     for (const label of allLabels) {
-        if (label === "Version") continue;
+        if (label === "Version") {
+            continue;
+        }
         await page.getByLabel(label, { exact: true }).uncheck();
     }
 

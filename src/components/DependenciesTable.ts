@@ -49,7 +49,9 @@ export default defineComponent({
 
         const filteredDependencies = computed(() => {
             const query = props.searchQuery.trim().toLowerCase();
-            if (!query) return props.dependencies;
+            if (!query) {
+                return props.dependencies;
+            }
             return props.dependencies.filter((d) => d.name?.toLowerCase().includes(query));
         });
 
@@ -109,10 +111,10 @@ export default defineComponent({
         function toggleSort(key) {
             if (sortKey.value === key) {
                 sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-            } else {
-                sortKey.value = key;
-                sortDir.value = "asc";
+                return;
             }
+            sortKey.value = key;
+            sortDir.value = "asc";
         }
 
         function sortDirectionFor(key) {
@@ -140,9 +142,9 @@ export default defineComponent({
             const k = cellKey(name, key);
             if (expandedCells.value.has(k)) {
                 expandedCells.value.delete(k);
-            } else {
-                expandedCells.value.add(k);
+                return;
             }
+            expandedCells.value.add(k);
         }
 
         // Whether a deps-table__truncate-cell <td> is actually clipping its text right

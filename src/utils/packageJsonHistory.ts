@@ -12,6 +12,11 @@ export type HistoryEntry = {
     visibleColumnsSnapshot: ReadonlySet<string> | null;
 };
 
+export type HistoryPosition = {
+    history: HistoryEntry[];
+    index: number;
+};
+
 export function createHistoryEntry(content: string, pkg: Record<string, unknown>): HistoryEntry {
     return { content, pkg, deps: null, devDeps: null, visibleColumnsSnapshot: null };
 }
@@ -26,7 +31,7 @@ export function pushHistoryEntry(
     history: HistoryEntry[],
     index: number,
     entry: HistoryEntry,
-): { history: HistoryEntry[]; index: number } {
+): HistoryPosition {
     const next = [...history.slice(0, index + 1), entry];
     return { history: next, index: next.length - 1 };
 }
@@ -44,10 +49,16 @@ export function visibleColumnsEqual(
     a: ReadonlySet<string> | null,
     b: ReadonlySet<string> | null,
 ): boolean {
-    if (a == null || b == null) return false;
-    if (a.size !== b.size) return false;
+    if (a == null || b == null) {
+        return false;
+    }
+    if (a.size !== b.size) {
+        return false;
+    }
     for (const key of a) {
-        if (!b.has(key)) return false;
+        if (!b.has(key)) {
+            return false;
+        }
     }
     return true;
 }

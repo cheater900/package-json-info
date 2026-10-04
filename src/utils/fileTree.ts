@@ -25,7 +25,9 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
 
     function ensureDir(path: string): FileTreeNode {
         const existing = dirsByPath.get(path);
-        if (existing) return existing;
+        if (existing) {
+            return existing;
+        }
         const lastSlash = path.lastIndexOf("/");
         const parentPath = lastSlash === -1 ? "" : path.slice(0, lastSlash);
         const name = lastSlash === -1 ? path : path.slice(lastSlash + 1);
@@ -39,13 +41,17 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
     // Process directories before files so every parent exists by the time a
     // file needing it is inserted, regardless of the archive's own order.
     const sorted = [...entries].sort((a, b) => {
-        if (a.type !== b.type) return a.type === "directory" ? -1 : 1;
+        if (a.type !== b.type) {
+            return a.type === "directory" ? -1 : 1;
+        }
         return a.path.localeCompare(b.path);
     });
 
     for (const entry of sorted) {
         const path = entry.path.replace(/\/+$/, "");
-        if (!path) continue;
+        if (!path) {
+            continue;
+        }
         if (entry.type === "directory") {
             ensureDir(path);
             continue;
@@ -68,10 +74,14 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
 /** Directories before files, alphabetically within each group - recursively. */
 function sortTree(nodes: FileTreeNode[]): void {
     nodes.sort((a, b) => {
-        if (a.type !== b.type) return a.type === "directory" ? -1 : 1;
+        if (a.type !== b.type) {
+            return a.type === "directory" ? -1 : 1;
+        }
         return a.name.localeCompare(b.name);
     });
     for (const node of nodes) {
-        if (node.children) sortTree(node.children);
+        if (node.children) {
+            sortTree(node.children);
+        }
     }
 }
