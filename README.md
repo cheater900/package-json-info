@@ -7,16 +7,16 @@ table of its dependencies and devDependencies.
 
 Let a user bring in a `package.json` from wherever they have it, and get back
 a table that tells them, at a glance, how healthy and active every dependency
-is — without having to open npm, GitHub, and changelogs one tab at a time.
+is - without having to open npm, GitHub, and changelogs one tab at a time.
 
 ## Input methods
 
 The app accepts a `package.json` from any of the following sources:
 
-- [x] **Clipboard content** — paste the raw JSON directly.
-- [x] **Git URL** — point at a repository containing a `package.json`.
-- [x] **File upload** — pick a local `package.json` file.
-- [x] **File URL** — fetch a `package.json` from a remote URL.
+- [x] **Clipboard content** - paste the raw JSON directly.
+- [x] **Git URL** - point at a repository containing a `package.json`.
+- [x] **File upload** - pick a local `package.json` file.
+- [x] **File URL** - fetch a `package.json` from a remote URL.
 
 ## Output: the dependency summary table
 
@@ -40,9 +40,9 @@ the data is available:
 
 Direct `dependencies`/`devDependencies` are only the tip of what a package
 manager actually installs. To show the real footprint of a `package.json`,
-the app recursively walks each package's own dependency tree — fetching each
+the app recursively walks each package's own dependency tree - fetching each
 dependency's `package.json` in turn, then its dependencies' `package.json`
-files, and so on — the same way a package manager would resolve the tree.
+files, and so on - the same way a package manager would resolve the tree.
 
 **Not implemented yet.** This should be done gracefully:
 
@@ -51,7 +51,7 @@ files, and so on — the same way a package manager would resolve the tree.
       hoists/dedupes).
 - [ ] **Cap recursion depth / detect cycles** so a malformed or circular
       dependency graph can't cause runaway fetching.
-- [ ] **Tolerate partial failures** — if a nested package's metadata can't be
+- [ ] **Tolerate partial failures** - if a nested package's metadata can't be
       fetched (rate limits, missing registry entry, network error), skip it and
       continue rather than failing the whole resolution.
 - [ ] **Surface the total resolved dependency count** (direct + transitive) as
@@ -71,7 +71,7 @@ input for the table. Clicking it:
 
 ## Desired features (must-have)
 
-Beyond the core goals above, these are required for a first usable version —
+Beyond the core goals above, these are required for a first usable version -
 not optional extras to consider later.
 
 ### Table / input data
@@ -79,10 +79,10 @@ not optional extras to consider later.
 - [x] **Sorting and filtering** on any column (e.g. sort by weekly downloads,
       filter to packages not updated in over a year).
 - [x] **Search box** to jump to a specific package by name within a large table.
-- [x] **Validation of malformed/invalid input** — a broken `package.json` (bad
+- [x] **Validation of malformed/invalid input** - a broken `package.json` (bad
       JSON, missing `dependencies`/`devDependencies`) shows a clear inline error
       instead of a crash or a blank table.
-- [x] **Graceful per-field fallback** — when a data point can't be fetched for a
+- [x] **Graceful per-field fallback** - when a data point can't be fetched for a
       package (e.g. no npm downloads data, no repo URL), the row still renders
       with that cell clearly marked as unavailable, rather than breaking the row
       or the table.
@@ -93,22 +93,22 @@ not optional extras to consider later.
       and for per-row/per-field lookups that resolve asynchronously.
 - [x] **Clear error messaging** for failed input loads (bad git URL, unreachable
       file URL, invalid upload) and for failed per-package metadata lookups.
-- [ ] **Responsive layout** — the table stays usable on mobile/narrow viewports.
+- [ ] **Responsive layout** - the table stays usable on mobile/narrow viewports.
 - [ ] **Keyboard-accessible interactions and semantic markup** (proper focus
       order, ARIA labels where needed) for the input controls, table, and
       drill-down/history navigation.
 
 ## Optional / nice-to-have features
 
-Ideas beyond the core goals and must-haves above, not committed to — lower
+Ideas beyond the core goals and must-haves above, not committed to - lower
 priority, for later review and pick-and-choose, may not be implemented.
 
 ### Input
 
-- [ ] **Multiple package managers** — parse `pnpm-lock.yaml` / `yarn.lock` /
+- [ ] **Multiple package managers** - parse `pnpm-lock.yaml` / `yarn.lock` /
       `package-lock.json` when present, to show actually-resolved versions
       instead of semver ranges.
-- [ ] **Monorepo / workspaces support** — detect `workspaces` and let the user
+- [ ] **Monorepo / workspaces support** - detect `workspaces` and let the user
       pick which workspace's `package.json` to summarize, or merge them.
 - [ ] **Drag-and-drop file upload**, in addition to the file picker.
 - [x] **Paste a GitHub/GitLab/Codeberg repo URL directly** (not just a raw git
@@ -119,29 +119,29 @@ priority, for later review and pick-and-choose, may not be implemented.
 - [ ] **Health/risk score** per package, combining staleness, open issue ratio,
       maintainer count, etc. into a single glanceable indicator.
 - [x] **License column**, with a warning badge for copyleft or missing licenses.
-- [x] **Outdated version indicator** — compare the installed/semver-range
+- [x] **Outdated version indicator** - compare the installed/semver-range
       version against the latest published version.
-- [x] **Security advisories** — surface known vulnerabilities (e.g. via the
+- [x] **Security advisories** - surface known vulnerabilities (e.g. via the
       npm/OSV advisory databases) per package.
 - [x] **Bundle size** (min+gzip) per package, e.g. via Bundlephobia-style data.
-- [x] **Maintainer/publisher info** — who currently owns/publishes the package
+- [x] **Maintainer/publisher info** - who currently owns/publishes the package
       on npm.
-- [x] **Deprecation warnings** — flag packages marked deprecated on npm.
+- [x] **Deprecation warnings** - flag packages marked deprecated on npm.
 
 ### UX
 
 - [ ] **Dark mode.**
-- [ ] **Shareable table state** — encode the loaded source + drill-down history
+- [ ] **Shareable table state** - encode the loaded source + drill-down history
       in the URL so a table view can be linked/bookmarked.
 - [ ] **Export** the table as CSV/JSON/Markdown.
-- [ ] **Diff view** — compare two `package.json` files (e.g. before/after an
+- [ ] **Diff view** - compare two `package.json` files (e.g. before/after an
       upgrade) side by side.
 - [ ] **Caching** of fetched registry/repo metadata (with visible "last checked"
       timestamps and a manual refresh) to avoid re-hitting rate limits.
       (Metadata is cached in memory to avoid duplicate requests, but there's no
       visible "last checked" timestamp, manual refresh, or persistence across
       reloads yet.)
-- [ ] **Offline-tolerant mode** — show whatever data is cached/known even if
+- [ ] **Offline-tolerant mode** - show whatever data is cached/known even if
       live lookups fail, clearly marked as stale.
 
 ## Status
@@ -150,4 +150,4 @@ Input methods, the full dependency table, sorting, search, column
 visibility, drill-down with history navigation, and in-memory metadata
 caching are implemented and tested (unit, component, and e2e). Transitive
 dependency resolution, responsive/accessible UI, and most of the
-nice-to-have list remain outstanding — see the unchecked boxes above.
+nice-to-have list remain outstanding - see the unchecked boxes above.
