@@ -71,6 +71,19 @@ describe("loadPackageJsonText", () => {
         expect(loadError.value).toContain("expected a JSON object");
     });
 
+    it("sets loadError, keeps state for non-string dependency version", () => {
+        const visibleColumns = ref(new Set<string>());
+        const { loadPackageJsonText, pkg, history, loadError } =
+            usePackageJsonHistory(visibleColumns);
+
+        const result = loadPackageJsonText(JSON.stringify({ dependencies: { "left-pad": 1 } }));
+
+        expect(result).toBe(false);
+        expect(pkg.value).toBe(null);
+        expect(history.value).toHaveLength(0);
+        expect(loadError.value).toContain("dependencies.left-pad");
+    });
+
     it("clears previous loadError on successful load", () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());

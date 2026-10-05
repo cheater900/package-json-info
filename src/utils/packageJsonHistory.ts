@@ -1,3 +1,5 @@
+import type { PackageJson } from "./packageJson";
+
 /**
  * One visited package.json state. `deps`/`devDeps` start out null (not yet
  * fetched); once fetched they're cached here, tagged with the
@@ -6,7 +8,7 @@
  */
 export type HistoryEntry = {
     content: string;
-    pkg: Record<string, unknown>;
+    pkg: PackageJson;
     deps: unknown[] | null;
     devDeps: unknown[] | null;
     visibleColumnsSnapshot: ReadonlySet<string> | null;
@@ -17,7 +19,7 @@ export type HistoryPosition = {
     index: number;
 };
 
-export function createHistoryEntry(content: string, pkg: Record<string, unknown>): HistoryEntry {
+export function createHistoryEntry(content: string, pkg: PackageJson): HistoryEntry {
     return { content, pkg, deps: null, devDeps: null, visibleColumnsSnapshot: null };
 }
 

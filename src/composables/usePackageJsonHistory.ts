@@ -7,12 +7,11 @@ import {
     canGoForward as canGoForwardPure,
     isEntryCacheValid,
 } from "../utils/packageJsonHistory.ts";
+import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson.ts";
+import type { DependencyMap } from "../utils/packageJson.ts";
 
-function toPackageInputs(dependencies) {
-    if (!dependencies || typeof dependencies !== "object") {
-        return [];
-    }
-    return Object.entries(dependencies).map(([name, version]) => ({ name, version }));
+function toPackageInputs(dependencies: DependencyMap | undefined) {
+    return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
 }
 
 /**
@@ -53,8 +52,9 @@ export function usePackageJsonHistory(visibleColumns) {
             loadError.value = `That's not valid JSON: ${err.message}`;
             return false;
         }
-        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-            loadError.value = "Invalid package.json: expected a JSON object.";
+        const result = PackageJsonSchema.safeParse(parsed);
+        if (!result.success) {
+            loadError.value = `Invalid package.json: ${formatPackageJsonError(result.error)}.`;
             return false;
         }
         loadError.value = null;
@@ -62,7 +62,7 @@ export function usePackageJsonHistory(visibleColumns) {
         const pushed = pushHistoryEntry(
             history.value,
             historyIndex.value,
-            createHistoryEntry(text, parsed),
+            createHistoryEntry(text, result.data),
         );
         history.value = pushed.history;
         historyIndex.value = pushed.index;
