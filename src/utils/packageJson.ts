@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { t } from "../i18n";
 
 /** Package name -> declared version or range, as in `dependencies`. */
 const DependencyMapSchema = z.record(z.string(), z.string(), {
-    error: "expected an object mapping package names to version strings",
+    error: t("validation.dependencyMap"),
 });
 
 /**
@@ -11,12 +12,12 @@ const DependencyMapSchema = z.record(z.string(), z.string(), {
  */
 export const PackageJsonSchema = z.looseObject(
     {
-        name: z.string({ error: "expected a string" }).optional(),
-        version: z.string({ error: "expected a string" }).optional(),
+        name: z.string({ error: t("validation.string") }).optional(),
+        version: z.string({ error: t("validation.string") }).optional(),
         dependencies: DependencyMapSchema.optional(),
         devDependencies: DependencyMapSchema.optional(),
     },
-    { error: "expected a JSON object" },
+    { error: t("validation.object") },
 );
 
 /** One line per issue, prefixed with the offending field path when there is one. */

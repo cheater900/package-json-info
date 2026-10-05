@@ -2,6 +2,7 @@ import { ref, watch } from "vue";
 import { fetchPackageJsonForVersion } from "../api/npmPackage.ts";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../api/repoPackageJson.ts";
 import { fetchText } from "../api/http.ts";
+import { t } from "../i18n";
 import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync.ts";
 
 /**
@@ -46,8 +47,7 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
         try {
             loadPackageJsonText(await navigator.clipboard.readText());
         } catch {
-            loadError.value =
-                "Could not read the clipboard. Check the browser's clipboard permission and try again.";
+            loadError.value = t("errors.clipboard");
         }
     }
 
@@ -59,7 +59,7 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
         const reader = new FileReader();
         reader.onload = () => loadPackageJsonText(String(reader.result));
         reader.onerror = () => {
-            loadError.value = "Failed to read the selected file.";
+            loadError.value = t("errors.fileRead");
         };
         reader.readAsText(file);
     }
@@ -69,14 +69,14 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
         const url = urlInput.value;
         return loadFromSource(
             () => (isRepoHostUrl(url) ? fetchPackageJsonFromRepo(url) : fetchText(url)),
-            "Could not find a package.json at that URL.",
+            t("errors.urlNotFound"),
         );
     }
 
     function loadDependency({ name, version }) {
         return loadFromSource(
             () => fetchPackageJsonForVersion(name, version),
-            `Could not find package.json data for "${name}".`,
+            t("errors.dependencyNotFound", { name }),
         );
     }
 

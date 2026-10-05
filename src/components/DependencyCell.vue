@@ -1,6 +1,8 @@
 <template>
     <template v-if="column.render === 'link'">
-        <a v-if="dependency.sourceCode" :href="dependency.sourceCode" @click.stop>link</a>
+        <a v-if="dependency.sourceCode" :href="dependency.sourceCode" @click.stop>
+            {{ t("table.sourceLink") }}
+        </a>
         <template v-else>{{ MISSING_VALUE }}</template>
     </template>
     <template v-else-if="column.render === 'button'">
@@ -9,7 +11,7 @@
             type="button"
             @click.stop="$emit('open-source-tree', dependency)"
         >
-            View tree
+            {{ t("table.viewTree") }}
         </button>
         <template v-else>{{ MISSING_VALUE }}</template>
     </template>

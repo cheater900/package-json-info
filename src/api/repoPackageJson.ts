@@ -5,6 +5,7 @@ import {
     GITLAB_HOST,
     SUPPORTED_REPO_HOSTS,
 } from "../constants";
+import { t } from "../i18n";
 import { githubRawFileUrl } from "./github";
 
 /** Builds the raw-file URL for a repo's root package.json on a branch. */
@@ -45,13 +46,13 @@ export function isRepoHostUrl(url: string): boolean {
 export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string | null> {
     const match = repoUrl.match(REPO_URL_PATTERN);
     if (!match) {
-        throw new Error("Invalid repository URL. Must be in format: https://<host>/<owner>/<repo>");
+        throw new Error(t("errors.invalidRepoUrl"));
     }
     const [, host, owner, repo] = match;
     const buildRawUrl = RAW_PACKAGE_JSON_URL_BUILDERS[host];
     if (!buildRawUrl) {
         throw new Error(
-            `Unsupported git host "${host}". Supported hosts: ${SUPPORTED_REPO_HOSTS.join(", ")}`,
+            t("errors.unsupportedRepoHost", { host, hosts: SUPPORTED_REPO_HOSTS.join(", ") }),
         );
     }
     for (const branch of DEFAULT_BRANCH_CANDIDATES) {

@@ -16,7 +16,7 @@
                                 class="deps-table__sort-trigger"
                                 @click="toggleSort('name')"
                             >
-                                <span class="deps-table__col-label">Name</span>
+                                <span class="deps-table__col-label">{{ t("columns.name") }}</span>
                                 <sort-indicator :direction="sortDirectionFor('name')" />
                             </button>
                         </span>
@@ -88,8 +88,8 @@
         <tbody v-else>
             <tr class="deps-table__status-row">
                 <td :colspan="orderedVisibleColumns.length + 1">
-                    <template v-if="isLoading">Loading…</template>
-                    <template v-else>No dependencies</template>
+                    <template v-if="isLoading">{{ t("table.loading") }}</template>
+                    <template v-else>{{ t("table.empty") }}</template>
                 </td>
             </tr>
         </tbody>

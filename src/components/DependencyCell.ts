@@ -1,4 +1,5 @@
 import { defineComponent } from "vue";
+import { t } from "../i18n";
 import { formatCell } from "../utils/dependencyRowFormatting";
 import { MISSING_VALUE } from "../constants";
 
@@ -16,6 +17,6 @@ export default defineComponent({
     },
     emits: ["open-source-tree"],
     setup() {
-        return { formatCell, MISSING_VALUE };
+        return { t, formatCell, MISSING_VALUE };
     },
 });

@@ -2,6 +2,7 @@ import { gunzip, parseTar } from "../utils/tarball";
 import { buildFileTree } from "../utils/fileTree";
 import type { FileTreeNode } from "../utils/fileTree";
 import { githubHeaders, githubRawFileUrl, githubRepoApiUrl } from "./github";
+import { t } from "../i18n";
 
 export type SourceTreeRef =
     | { provider: "npm"; tarballUrl: string }
@@ -35,7 +36,7 @@ export async function fetchSourceTree(ref: SourceTreeRef): Promise<SourceTree> {
 async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     const response = await fetch(tarballUrl);
     if (!response.ok) {
-        throw new Error(`Could not download the package tarball (status ${response.status}).`);
+        throw new Error(t("errors.tarballDownload", { status: response.status }));
     }
     const rawTar = await gunzip(await response.arrayBuffer());
     const entries = parseTar(rawTar)
@@ -49,7 +50,7 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
         readFile: async (path) => {
             const content = contentByPath.get(path);
             if (!content) {
-                throw new Error(`File not found in the downloaded tarball: ${path}`);
+                throw new Error(t("errors.tarballFileMissing", { path }));
             }
             return new TextDecoder().decode(content);
         },
@@ -67,7 +68,7 @@ async function fetchGithubSourceTree(
         { headers: githubHeaders() },
     );
     if (!response.ok) {
-        throw new Error(`Could not fetch the repository tree (status ${response.status}).`);
+        throw new Error(t("errors.repoTreeFetch", { status: response.status }));
     }
     const data = (await response.json()) as GithubTreeResponse;
     const entries = (data.tree ?? []).map((entry) => ({
@@ -83,7 +84,7 @@ async function fetchGithubSourceTree(
                 githubRawFileUrl(owner, repo, encodedTag, encodedPath),
             );
             if (!fileResponse.ok) {
-                throw new Error(`Could not fetch file contents (status ${fileResponse.status}).`);
+                throw new Error(t("errors.fileContentFetch", { status: fileResponse.status }));
             }
             return fileResponse.text();
         },

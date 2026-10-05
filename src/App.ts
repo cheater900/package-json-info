@@ -10,6 +10,7 @@ import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import packageJson from "../package.json";
+import { t } from "./i18n";
 
 export default defineComponent({
     components: {
@@ -61,10 +62,15 @@ export default defineComponent({
         loadPackageJsonText(JSON.stringify(packageJson, null, 2));
 
         const tableSections = computed(() => [
-            { id: "deps", title: "Deps", dependencies: deps.value, isLoading: isLoadingDeps.value },
+            {
+                id: "deps",
+                title: t("sections.deps"),
+                dependencies: deps.value,
+                isLoading: isLoadingDeps.value,
+            },
             {
                 id: "devDeps",
-                title: "Dev Deps",
+                title: t("sections.devDeps"),
                 dependencies: devDeps.value,
                 isLoading: isLoadingDevDeps.value,
             },
@@ -108,6 +114,7 @@ export default defineComponent({
         };
 
         return {
+            t,
             isLoadingInput,
             urlInput,
             fileInputRef,

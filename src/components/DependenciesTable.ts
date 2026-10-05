@@ -1,4 +1,5 @@
 import { ref, computed, watch, defineComponent } from "vue";
+import { t } from "../i18n";
 import draggable from "vuedraggable";
 import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
 import { sortDependencies } from "../utils/dependencyRowFormatting";
@@ -178,6 +179,7 @@ export default defineComponent({
         }
 
         return {
+            t,
             isCentered,
             labelFor,
             titleFor,

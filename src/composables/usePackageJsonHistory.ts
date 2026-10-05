@@ -9,6 +9,7 @@ import {
 } from "../utils/packageJsonHistory.ts";
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson.ts";
 import type { DependencyMap } from "../utils/packageJson.ts";
+import { t } from "../i18n";
 
 function toPackageInputs(dependencies: DependencyMap | undefined) {
     return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
@@ -49,12 +50,14 @@ export function usePackageJsonHistory(visibleColumns) {
         try {
             parsed = JSON.parse(text);
         } catch (err) {
-            loadError.value = `That's not valid JSON: ${err.message}`;
+            loadError.value = t("errors.invalidJson", { message: err.message });
             return false;
         }
         const result = PackageJsonSchema.safeParse(parsed);
         if (!result.success) {
-            loadError.value = `Invalid package.json: ${formatPackageJsonError(result.error)}.`;
+            loadError.value = t("errors.invalidPackageJson", {
+                details: formatPackageJsonError(result.error),
+            });
             return false;
         }
         loadError.value = null;

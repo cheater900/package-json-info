@@ -2,7 +2,12 @@
     <Teleport to="body">
         <div class="modal" @click="onOverlayClick">
             <div class="modal__panel">
-                <button type="button" class="modal__close" aria-label="Close" @click="close">
+                <button
+                    type="button"
+                    class="modal__close"
+                    :aria-label="t('modal.close')"
+                    @click="close"
+                >
                     ✕
                 </button>
                 <slot />

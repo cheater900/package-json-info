@@ -1,0 +1,99 @@
+{
+    "app": {
+        "titlebarPath": "node ~/package.json",
+        "title": "$ package.json info"
+    },
+    "input": {
+        "loading": "Loading package.json…",
+        "urlLabel": "Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL",
+        "urlPlaceholder": "Enter url...",
+        "fetch": "Fetch",
+        "uploadFile": "Upload file",
+        "pasteFromClipboard": "Paste from clipboard"
+    },
+    "history": {
+        "back": "← Back",
+        "forward": "Forward →",
+        "position": "{current} / {total}"
+    },
+    "search": {
+        "label": "Search by name",
+        "placeholder": "Filter by package name"
+    },
+    "sections": {
+        "columns": "Columns",
+        "deps": "Deps",
+        "devDeps": "Dev Deps",
+        "packageJson": "package.json",
+        "loading": "(loading…)",
+        "expandTable": "Expand table",
+        "shrinkColumnLabels": "Shrink columns by abbreviation"
+    },
+    "columns": {
+        "name": "Name",
+        "version": "Version",
+        "versionDate": "Version Date",
+        "latestVersion": "Latest version",
+        "latestReleaseDate": "Latest release date",
+        "latestUpdateDate": "Latest update date",
+        "isOutdated": "Outdated",
+        "weeklyDownloads": "Weekly downloads",
+        "sourceCode": "Source Code link",
+        "sourceCodeTree": "Source Code Tree",
+        "gitStars": "Git stars",
+        "openPRs": "Open PRs",
+        "closedPRs": "Closed PRs",
+        "openIssues": "Open issues",
+        "closedIssues": "Closed issues",
+        "dependencies": "Dependencies",
+        "license": "License",
+        "deprecated": "Deprecated",
+        "vulnerabilityCount": "Vulnerabilities",
+        "bundleSizeGzip": "Bundle size (gzip)",
+        "maintainers": "Maintainers"
+    },
+    "table": {
+        "loading": "Loading…",
+        "empty": "No dependencies",
+        "sourceLink": "link",
+        "viewTree": "View tree"
+    },
+    "cell": {
+        "yes": "Yes",
+        "no": "No",
+        "kilobytes": "{size} KB"
+    },
+    "modal": {
+        "close": "Close"
+    },
+    "sourceTree": {
+        "via": "via {provider}",
+        "providers": {
+            "npm": "npm",
+            "github": "GitHub"
+        },
+        "downloading": "Downloading source…",
+        "selectFile": "Select a file to view its contents.",
+        "loadingFile": "Loading…"
+    },
+    "errors": {
+        "clipboard": "Could not read the clipboard. Check the browser's clipboard permission and try again.",
+        "fileRead": "Failed to read the selected file.",
+        "urlNotFound": "Could not find a package.json at that URL.",
+        "dependencyNotFound": "Could not find package.json data for \"{name}\".",
+        "invalidJson": "That's not valid JSON: {message}",
+        "invalidPackageJson": "Invalid package.json: {details}.",
+        "requestFailed": "Request failed with status {status}",
+        "invalidRepoUrl": "Invalid repository URL. Must be in format: https://<host>/<owner>/<repo>",
+        "unsupportedRepoHost": "Unsupported git host \"{host}\". Supported hosts: {hosts}",
+        "tarballDownload": "Could not download the package tarball (status {status}).",
+        "tarballFileMissing": "File not found in the downloaded tarball: {path}",
+        "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
+        "fileContentFetch": "Could not fetch file contents (status {status})."
+    },
+    "validation": {
+        "dependencyMap": "expected an object mapping package names to version strings",
+        "string": "expected a string",
+        "object": "expected a JSON object"
+    }
+}

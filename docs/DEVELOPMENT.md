@@ -9,6 +9,7 @@
 | `src/constants.ts`          | API base URLs, supported repo hosts, storage keys, display constants.    |
 | `src/config.ts`             | Developer settings read from `.env` (see Configuration below).           |
 | `src/types.ts`              | Shared `PackageInfo` / `PackageInput` / `PackageError` types.            |
+| `src/i18n/`                 | `t()` message lookup. UI text lives in `locales/en.json`.                |
 | `src/api/`                  | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees. |
 | `src/composables/`          | Vue state: column preferences, package.json history, input sources.      |
 | `src/components/`           | Vue components. Each has its own `.vue`, `.ts` and `.css` file.          |
@@ -25,6 +26,7 @@
 - Vue 3 with single-file components
 - Vite for the dev server and build
 - Zod for package.json validation
+- Built-in `t()` helper with JSON message catalogs for UI text
 - vue-json-pretty for the raw JSON viewer, vuedraggable for column reordering
 - Vitest with jsdom for unit and component tests
 - Playwright for end-to-end tests
@@ -44,6 +46,14 @@ privileged token into a build you publish.
 
 Column visibility, column order and the "shrink columns" toggle are user
 settings. The app stores them in `localStorage`.
+
+## Translations
+
+All user-facing text lives in `src/i18n/locales/en.json`. Look up a message
+with `t("group.key")`. Placeholders such as `{name}` are filled from the
+second argument: `t("errors.dependencyNotFound", { name })`. Components
+return `t` from `setup()` so templates can call it. A unit test fails when
+code uses a literal key that is missing from the catalog.
 
 ## Run
 

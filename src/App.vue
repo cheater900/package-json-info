@@ -4,28 +4,35 @@
             <span class="terminal-titlebar__dot"></span>
             <span class="terminal-titlebar__dot"></span>
             <span class="terminal-titlebar__dot"></span>
-            <span class="terminal-titlebar__path">node ~/package.json</span>
+            <span class="terminal-titlebar__path">{{ t("app.titlebarPath") }}</span>
         </div>
 
         <h1 class="title">
-            <span>$ package.json info</span>
+            <span>{{ t("app.title") }}</span>
             <span class="title__cursor">_</span>
         </h1>
 
         <div v-if="loadError" class="banner banner--error" role="alert">
             {{ loadError }}
         </div>
-        <div v-if="isLoadingInput" class="banner banner--loading">Loading package.json…</div>
+        <div v-if="isLoadingInput" class="banner banner--loading">
+            {{ t("input.loading") }}
+        </div>
 
         <section class="input-methods">
             <form class="input-methods__url-form" @submit.prevent="loadFromUrlInput">
                 <label for="url-input" class="visually-hidden">
-                    Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL
+                    {{ t("input.urlLabel") }}
                 </label>
-                <input id="url-input" v-model="urlInput" type="text" placeholder="Enter url..." />
+                <input
+                    id="url-input"
+                    v-model="urlInput"
+                    type="text"
+                    :placeholder="t('input.urlPlaceholder')"
+                />
                 <button type="submit" :disabled="isLoadingInput">
                     <span class="btn-icon" aria-hidden="true">↓</span>
-                    Fetch
+                    {{ t("input.fetch") }}
                 </button>
             </form>
 
@@ -53,17 +60,17 @@
                         <path d="M8 10.5V2M8 2 4.5 5.5M8 2l3.5 3.5" />
                         <path d="M2.5 11v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" />
                     </svg>
-                    Upload file
+                    {{ t("input.uploadFile") }}
                 </button>
                 <button type="button" @click="loadFromClipboard" :disabled="isLoadingInput">
                     <span class="btn-icon" aria-hidden="true">⧉</span>
-                    Paste from clipboard
+                    {{ t("input.pasteFromClipboard") }}
                 </button>
             </div>
         </section>
 
         <details class="accordion">
-            <summary>Columns</summary>
+            <summary>{{ t("sections.columns") }}</summary>
             <column-visibility-panel
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
@@ -72,28 +79,36 @@
         </details>
 
         <section v-if="history.length > 1" class="history-controls">
-            <button type="button" @click="goBack" :disabled="!canGoBack">← Back</button>
-            <span>{{ historyIndex + 1 }} / {{ history.length }}</span>
-            <button type="button" @click="goForward" :disabled="!canGoForward">Forward →</button>
+            <button type="button" @click="goBack" :disabled="!canGoBack">
+                {{ t("history.back") }}
+            </button>
+            <span>
+                {{ t("history.position", { current: historyIndex + 1, total: history.length }) }}
+            </span>
+            <button type="button" @click="goForward" :disabled="!canGoForward">
+                {{ t("history.forward") }}
+            </button>
         </section>
 
         <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
 
         <div class="search-shrink-row">
             <div class="search-shrink-row__search">
-                <label :for="searchInputId" class="visually-hidden">Search by name</label>
+                <label :for="searchInputId" class="visually-hidden">
+                    {{ t("search.label") }}
+                </label>
                 <input
                     :id="searchInputId"
                     v-model="searchQuery"
                     type="text"
-                    placeholder="Filter by package name"
+                    :placeholder="t('search.placeholder')"
                 />
             </div>
 
             <div class="search-shrink-row__shrink">
                 <label>
                     <input type="checkbox" v-model="shrinkColumnLabels" />
-                    Shrink columns by abbreviation
+                    {{ t("sections.shrinkColumnLabels") }}
                 </label>
             </div>
         </div>
@@ -101,13 +116,13 @@
         <details v-for="section in tableSections" :key="section.id" class="accordion" open>
             <summary>
                 {{ section.title }}
-                <span v-if="section.isLoading">(loading…)</span>
+                <span v-if="section.isLoading">{{ t("sections.loading") }}</span>
             </summary>
             <div class="table-toolbar">
                 <button
                     type="button"
                     class="table-toolbar__expand"
-                    aria-label="Expand table"
+                    :aria-label="t('sections.expandTable')"
                     @click="expandTable(section.id)"
                 >
                     ⤢
@@ -121,7 +136,7 @@
             />
         </details>
         <details class="accordion" open>
-            <summary>package.json</summary>
+            <summary>{{ t("sections.packageJson") }}</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
 

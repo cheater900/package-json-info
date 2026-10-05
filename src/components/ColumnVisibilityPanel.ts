@@ -1,4 +1,5 @@
 import { computed, defineComponent } from "vue";
+import { t } from "../i18n";
 import {
     TOGGLEABLE_COLUMNS,
     DEFAULT_COLUMN_ORDER,
@@ -24,6 +25,7 @@ export default defineComponent({
         );
 
         return {
+            t,
             toggleableColumns,
             wouldViolateMinVisible,
         };

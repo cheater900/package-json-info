@@ -1,6 +1,6 @@
 <template>
     <fieldset class="column-visibility-panel">
-        <legend class="visually-hidden">Columns</legend>
+        <legend class="visually-hidden">{{ t("sections.columns") }}</legend>
         <label v-for="col in toggleableColumns" :key="col.key">
             <input
                 type="checkbox"

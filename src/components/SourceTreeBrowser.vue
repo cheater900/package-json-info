@@ -3,11 +3,17 @@
         <div class="source-tree__header">
             <h3 class="source-tree__title">{{ dependencyName }}</h3>
             <span v-if="sourceTree" class="source-tree__provider">
-                via {{ sourceTree.provider === "npm" ? "npm" : "GitHub" }}
+                {{
+                    t("sourceTree.via", {
+                        provider: t(`sourceTree.providers.${sourceTree.provider}`),
+                    })
+                }}
             </span>
         </div>
         <div class="source-tree__body">
-            <div v-if="loading" class="source-tree__status">Downloading source…</div>
+            <div v-if="loading" class="source-tree__status">
+                {{ t("sourceTree.downloading") }}
+            </div>
             <div v-else-if="error" class="source-tree__status source-tree__status--error">
                 {{ error }}
             </div>
@@ -23,9 +29,11 @@
                 </ul>
                 <div class="source-tree__viewer">
                     <div v-if="!selectedPath" class="source-tree__status">
-                        Select a file to view its contents.
+                        {{ t("sourceTree.selectFile") }}
                     </div>
-                    <div v-else-if="loadingContent" class="source-tree__status">Loading…</div>
+                    <div v-else-if="loadingContent" class="source-tree__status">
+                        {{ t("sourceTree.loadingFile") }}
+                    </div>
                     <div
                         v-else-if="contentError"
                         class="source-tree__status source-tree__status--error"

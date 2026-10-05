@@ -1,4 +1,5 @@
 import { ref, watch, defineComponent } from "vue";
+import { t } from "../i18n";
 import { fetchSourceTree } from "../api/sourceTree";
 import FileTreeItem from "./FileTreeItem.vue";
 
@@ -74,6 +75,7 @@ export default defineComponent({
         }
 
         return {
+            t,
             loading,
             error,
             tree,

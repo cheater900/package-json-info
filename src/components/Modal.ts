@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, defineComponent } from "vue";
+import { t } from "../i18n";
 import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
 
 // Callers control this component's lifecycle with v-if - mounted means
@@ -33,6 +34,6 @@ export default defineComponent({
             unlockBodyScroll();
         });
 
-        return { close, onOverlayClick };
+        return { t, close, onOverlayClick };
     },
 });

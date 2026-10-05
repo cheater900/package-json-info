@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 export type ColumnDef = {
     key: string;
     label: string;
@@ -13,29 +15,34 @@ export type ColumnDef = {
     truncatable?: boolean;
 };
 
-export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = [
-    { key: "name", label: "Name", sortable: true },
-    { key: "version", label: "Version", sortable: false },
-    { key: "versionDate", label: "Version Date", sortable: true },
-    { key: "latestVersion", label: "Latest version", sortable: false },
-    { key: "latestReleaseDate", label: "Latest release date", sortable: true },
-    { key: "latestUpdateDate", label: "Latest update date", sortable: true },
-    { key: "isOutdated", label: "Outdated", sortable: true },
-    { key: "weeklyDownloads", label: "Weekly downloads", sortable: true },
-    { key: "sourceCode", label: "Source Code link", sortable: false, render: "link" },
-    { key: "sourceCodeTree", label: "Source Code Tree", sortable: false, render: "button" },
-    { key: "gitStars", label: "Git stars", sortable: true },
-    { key: "openPRs", label: "Open PRs", sortable: true },
-    { key: "closedPRs", label: "Closed PRs", sortable: true },
-    { key: "openIssues", label: "Open issues", sortable: true },
-    { key: "closedIssues", label: "Closed issues", sortable: true },
-    { key: "dependencies", label: "Dependencies", sortable: false, truncatable: true },
-    { key: "license", label: "License", sortable: false, truncatable: true },
-    { key: "deprecated", label: "Deprecated", sortable: false, truncatable: true },
-    { key: "vulnerabilityCount", label: "Vulnerabilities", sortable: true },
-    { key: "bundleSizeGzip", label: "Bundle size (gzip)", sortable: true },
-    { key: "maintainers", label: "Maintainers", sortable: false, truncatable: true },
+const COLUMN_SPECS: Omit<ColumnDef, "label">[] = [
+    { key: "name", sortable: true },
+    { key: "version", sortable: false },
+    { key: "versionDate", sortable: true },
+    { key: "latestVersion", sortable: false },
+    { key: "latestReleaseDate", sortable: true },
+    { key: "latestUpdateDate", sortable: true },
+    { key: "isOutdated", sortable: true },
+    { key: "weeklyDownloads", sortable: true },
+    { key: "sourceCode", sortable: false, render: "link" },
+    { key: "sourceCodeTree", sortable: false, render: "button" },
+    { key: "gitStars", sortable: true },
+    { key: "openPRs", sortable: true },
+    { key: "closedPRs", sortable: true },
+    { key: "openIssues", sortable: true },
+    { key: "closedIssues", sortable: true },
+    { key: "dependencies", sortable: false, truncatable: true },
+    { key: "license", sortable: false, truncatable: true },
+    { key: "deprecated", sortable: false, truncatable: true },
+    { key: "vulnerabilityCount", sortable: true },
+    { key: "bundleSizeGzip", sortable: true },
+    { key: "maintainers", sortable: false, truncatable: true },
 ];
+
+export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = COLUMN_SPECS.map((spec) => ({
+    ...spec,
+    label: t(`columns.${spec.key}`),
+}));
 
 /**
  * Columns that can never be hidden: just Name (identity). Not tracked in a

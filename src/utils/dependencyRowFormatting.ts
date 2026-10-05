@@ -1,5 +1,6 @@
 import { hasLicenseWarning } from "./license";
 import { BYTES_PER_KB, MISSING_VALUE, NUMBER_LOCALE } from "../constants";
+import { t } from "../i18n";
 
 const LICENSE_WARNING_MARK = "⚠";
 /** Drops the weekday from `Date#toDateString` ("Mon Jan 01 2024" -> "Jan 01 2024"). */
@@ -23,7 +24,7 @@ export function fmtOutdated(isOutdated) {
     if (isOutdated == null) {
         return MISSING_VALUE;
     }
-    return isOutdated ? "Yes" : "No";
+    return isOutdated ? t("cell.yes") : t("cell.no");
 }
 
 export function fmtLicense(license) {
@@ -35,7 +36,7 @@ export function fmtBundleSize(gzipBytes) {
     if (gzipBytes == null) {
         return MISSING_VALUE;
     }
-    return `${(gzipBytes / BYTES_PER_KB).toFixed(1)} KB`;
+    return t("cell.kilobytes", { size: (gzipBytes / BYTES_PER_KB).toFixed(1) });
 }
 
 export function fmtNumber(n) {

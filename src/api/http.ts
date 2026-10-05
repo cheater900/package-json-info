@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 export type HttpHeaders = Record<string, string>;
 
 /**
@@ -16,7 +18,7 @@ export async function fetchJson<T>(url: string, headers: HttpHeaders = {}): Prom
 export async function fetchText(url: string): Promise<string> {
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        throw new Error(t("errors.requestFailed", { status: response.status }));
     }
     return response.text();
 }
