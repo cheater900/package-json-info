@@ -1,5 +1,5 @@
 import { ref, watch, defineComponent } from "vue";
-import { fetchSourceTree } from "../utils/sourceTree";
+import { fetchSourceTree } from "../api/sourceTree";
 import FileTreeItem from "./FileTreeItem.vue";
 
 export default defineComponent({
@@ -28,20 +28,20 @@ export default defineComponent({
 
         watch(
             () => props.sourceTree,
-            async (ref_) => {
+            async (sourceTreeRef) => {
                 tree.value = [];
                 readFile = null;
                 error.value = null;
                 selectedPath.value = null;
                 selectedContent.value = null;
                 contentError.value = null;
-                if (!ref_) {
+                if (!sourceTreeRef) {
                     return;
                 }
 
                 loading.value = true;
                 try {
-                    const result = await fetchSourceTree(ref_);
+                    const result = await fetchSourceTree(sourceTreeRef);
                     tree.value = result.tree;
                     readFile = result.readFile;
                 } catch (err) {

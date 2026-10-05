@@ -1,5 +1,5 @@
 import { ref, computed, watch } from "vue";
-import { fetchPackagesInfo } from "../utils/npmPackage.ts";
+import { fetchPackagesInfo } from "../api/npmPackage.ts";
 import {
     createHistoryEntry,
     pushHistoryEntry,
@@ -112,8 +112,8 @@ export function usePackageJsonHistory(visibleColumns) {
      * the visible state.
      */
     async function fetchEntryDependencies(entry, index) {
-        const rawDeps = toPackageInputs(entry.pkg?.dependencies);
-        const rawDevDeps = toPackageInputs(entry.pkg?.devDependencies);
+        const rawDeps = toPackageInputs(entry.pkg.dependencies);
+        const rawDevDeps = toPackageInputs(entry.pkg.devDependencies);
         const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
 
         if (historyIndex.value === index) {
@@ -122,12 +122,8 @@ export function usePackageJsonHistory(visibleColumns) {
         }
 
         const [depsResult, devDepsResult] = await Promise.all([
-            rawDeps.length > 0
-                ? fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime })
-                : Promise.resolve([]),
-            rawDevDeps.length > 0
-                ? fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime })
-                : Promise.resolve([]),
+            fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime }),
+            fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime }),
         ]);
 
         entry.deps = depsResult;

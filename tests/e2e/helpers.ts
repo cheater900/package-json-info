@@ -9,55 +9,33 @@ export async function mockExternalApis(page: Page) {
     await page.route("https://registry.npmjs.org/**", async (route) => {
         const name = decodeURIComponent(new URL(route.request().url()).pathname.slice(1));
         await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
+            json: {
                 "dist-tags": { latest: "9.9.9" },
                 time: { "9.9.9": "2024-01-01T00:00:00.000Z", modified: "2024-06-01T00:00:00.000Z" },
                 repository: { type: "git", url: `git+https://github.com/example-org/${name}.git` },
                 versions: { "9.9.9": { dependencies: {} } },
-            }),
+            },
         });
     });
 
     await page.route("https://api.npmjs.org/**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ downloads: 12345 }),
-        });
+        await route.fulfill({ json: { downloads: 12345 } });
     });
 
     await page.route("https://api.github.com/repos/**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ stargazers_count: 42 }),
-        });
+        await route.fulfill({ json: { stargazers_count: 42 } });
     });
 
     await page.route("https://api.github.com/search/issues**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ total_count: 3 }),
-        });
+        await route.fulfill({ json: { total_count: 3 } });
     });
 
     await page.route("https://api.osv.dev/**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ vulns: [] }),
-        });
+        await route.fulfill({ json: { vulns: [] } });
     });
 
     await page.route("https://bundlephobia.com/**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ gzip: 1024 }),
-        });
+        await route.fulfill({ json: { gzip: 1024 } });
     });
 }
 

@@ -12,6 +12,27 @@ export type FileTreeNode = {
     children?: FileTreeNode[];
 };
 
+function splitPath(path: string): { parentPath: string; name: string } {
+    const lastSlash = path.lastIndexOf("/");
+    if (lastSlash === -1) {
+        return { parentPath: "", name: path };
+    }
+    return { parentPath: path.slice(0, lastSlash), name: path.slice(lastSlash + 1) };
+}
+
+/** Directories before files, then by the given text key. */
+function compareDirectoriesFirst<T extends { type: string }>(
+    a: T,
+    b: T,
+    textA: string,
+    textB: string,
+): number {
+    if (a.type !== b.type) {
+        return a.type === "directory" ? -1 : 1;
+    }
+    return textA.localeCompare(textB);
+}
+
 /**
  * Builds a nested file tree from a flat list of paths (as produced by a tar
  * archive or GitHub's recursive git-trees API). Intermediate directories
@@ -28,9 +49,7 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
         if (existing) {
             return existing;
         }
-        const lastSlash = path.lastIndexOf("/");
-        const parentPath = lastSlash === -1 ? "" : path.slice(0, lastSlash);
-        const name = lastSlash === -1 ? path : path.slice(lastSlash + 1);
+        const { parentPath, name } = splitPath(path);
         const parent = ensureDir(parentPath);
         const dir: FileTreeNode = { name, path, type: "directory", size: 0, children: [] };
         parent.children!.push(dir);
@@ -40,12 +59,7 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
 
     // Process directories before files so every parent exists by the time a
     // file needing it is inserted, regardless of the archive's own order.
-    const sorted = [...entries].sort((a, b) => {
-        if (a.type !== b.type) {
-            return a.type === "directory" ? -1 : 1;
-        }
-        return a.path.localeCompare(b.path);
-    });
+    const sorted = [...entries].sort((a, b) => compareDirectoriesFirst(a, b, a.path, b.path));
 
     for (const entry of sorted) {
         const path = entry.path.replace(/\/+$/, "");
@@ -56,9 +70,7 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
             ensureDir(path);
             continue;
         }
-        const lastSlash = path.lastIndexOf("/");
-        const parentPath = lastSlash === -1 ? "" : path.slice(0, lastSlash);
-        const name = lastSlash === -1 ? path : path.slice(lastSlash + 1);
+        const { parentPath, name } = splitPath(path);
         ensureDir(parentPath).children!.push({
             name,
             path,
@@ -71,14 +83,9 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
     return root.children!;
 }
 
-/** Directories before files, alphabetically within each group - recursively. */
+/** Sorts every level of the tree: directories first, then by name. */
 function sortTree(nodes: FileTreeNode[]): void {
-    nodes.sort((a, b) => {
-        if (a.type !== b.type) {
-            return a.type === "directory" ? -1 : 1;
-        }
-        return a.name.localeCompare(b.name);
-    });
+    nodes.sort((a, b) => compareDirectoriesFirst(a, b, a.name, b.name));
     for (const node of nodes) {
         if (node.children) {
             sortTree(node.children);

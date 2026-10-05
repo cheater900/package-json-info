@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isCopyleftLicense, hasLicenseWarning } from "../../../src/utils/license";
+import { isCopyleftLicense, hasLicenseWarning, extractLicense } from "../../../src/utils/license";
 
 describe("isCopyleftLicense", () => {
     it("flags GPL-family SPDX identifiers", () => {
@@ -41,5 +41,31 @@ describe("hasLicenseWarning", () => {
 
     it("skips warning for permissive license", () => {
         expect(hasLicenseWarning("MIT")).toBe(false);
+    });
+});
+
+describe("extractLicense", () => {
+    it("returns null for missing value", () => {
+        expect(extractLicense(undefined)).toBeNull();
+    });
+
+    it("passes through plain SPDX string", () => {
+        expect(extractLicense("MIT")).toBe("MIT");
+    });
+
+    it("reads legacy { type } object shape", () => {
+        expect(extractLicense({ type: "MIT" })).toBe("MIT");
+    });
+
+    it("returns null for { type } object without type", () => {
+        expect(extractLicense({})).toBeNull();
+    });
+
+    it("joins license array with OR", () => {
+        expect(extractLicense(["MIT", { type: "Apache-2.0" }])).toBe("MIT OR Apache-2.0");
+    });
+
+    it("returns null for array without resolvable entries", () => {
+        expect(extractLicense([{}, {}])).toBeNull();
     });
 });

@@ -18,7 +18,7 @@
         <div v-if="isLoadingInput" class="banner banner--loading">Loading package.json…</div>
 
         <section class="input-methods">
-            <form class="input-methods__url-form" @submit.prevent="fetchFromUrlInput">
+            <form class="input-methods__url-form" @submit.prevent="loadFromUrlInput">
                 <label for="url-input" class="visually-hidden">
                     Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL
                 </label>
@@ -35,7 +35,7 @@
                     class="input-methods__file-input"
                     type="file"
                     accept=".json,application/json"
-                    @change="onFileSelected"
+                    @change="loadFromFile"
                 />
                 <button type="button" @click="fileInputRef?.click()" :disabled="isLoadingInput">
                     <svg
@@ -98,59 +98,26 @@
             </div>
         </div>
 
-        <details class="accordion" open>
+        <details v-for="section in tableSections" :key="section.id" class="accordion" open>
             <summary>
-                Deps
-                <span v-if="isLoadingDeps">(loading…)</span>
+                {{ section.title }}
+                <span v-if="section.isLoading">(loading…)</span>
             </summary>
             <div class="table-toolbar">
                 <button
                     type="button"
                     class="table-toolbar__expand"
                     aria-label="Expand table"
-                    @click="expandDeps"
+                    @click="expandTable(section.id)"
                 >
                     ⤢
                 </button>
             </div>
             <dependencies-table
-                :dependencies="deps"
-                :columns="visibleColumnKeys"
-                :search-query="searchQuery"
-                :shrink-labels="shrinkColumnLabels"
-                :is-loading="isLoadingDeps"
-                @load-package="onLoadPackage"
-                @reorder-columns="reorderColumns"
-                @open-source-tree="openSourceTree"
-                @select-package="showPackageSummary"
-            />
-        </details>
-
-        <details class="accordion" open>
-            <summary>
-                Dev Deps
-                <span v-if="isLoadingDevDeps">(loading…)</span>
-            </summary>
-            <div class="table-toolbar">
-                <button
-                    type="button"
-                    class="table-toolbar__expand"
-                    aria-label="Expand table"
-                    @click="expandDevDeps"
-                >
-                    ⤢
-                </button>
-            </div>
-            <dependencies-table
-                :dependencies="devDeps"
-                :columns="visibleColumnKeys"
-                :search-query="searchQuery"
-                :shrink-labels="shrinkColumnLabels"
-                :is-loading="isLoadingDevDeps"
-                @load-package="onLoadPackage"
-                @reorder-columns="reorderColumns"
-                @open-source-tree="openSourceTree"
-                @select-package="showPackageSummary"
+                v-bind="tableProps"
+                :dependencies="section.dependencies"
+                :is-loading="section.isLoading"
+                v-on="tableListeners"
             />
         </details>
         <details class="accordion" open>
@@ -158,47 +125,24 @@
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
 
-        <modal
-            v-if="
-                isDepsExpanded || isDevDepsExpanded || activeSourceTreeDependency || selectedPackage
-            "
-            @close="closeModal"
-        >
-            <div v-if="isDepsExpanded || isDevDepsExpanded" class="table-modal-content">
+        <modal v-if="modalContent" @close="closeModal">
+            <div v-if="expandedSection" class="table-modal-content">
                 <dependencies-table
-                    v-if="isDepsExpanded"
-                    :dependencies="deps"
-                    :columns="visibleColumnKeys"
-                    :search-query="searchQuery"
-                    :shrink-labels="shrinkColumnLabels"
-                    :is-loading="isLoadingDeps"
-                    @load-package="onLoadPackage"
-                    @reorder-columns="reorderColumns"
-                    @open-source-tree="openSourceTree"
-                    @select-package="showPackageSummary"
-                />
-                <dependencies-table
-                    v-else
-                    :dependencies="devDeps"
-                    :columns="visibleColumnKeys"
-                    :search-query="searchQuery"
-                    :shrink-labels="shrinkColumnLabels"
-                    :is-loading="isLoadingDevDeps"
-                    @load-package="onLoadPackage"
-                    @reorder-columns="reorderColumns"
-                    @open-source-tree="openSourceTree"
-                    @select-package="showPackageSummary"
+                    v-bind="tableProps"
+                    :dependencies="expandedSection.dependencies"
+                    :is-loading="expandedSection.isLoading"
+                    v-on="tableListeners"
                 />
             </div>
             <package-summary-card
-                v-else-if="selectedPackage"
-                :dependency="selectedPackage"
+                v-else-if="modalContent.kind === 'summary'"
+                :dependency="modalContent.dependency"
                 @open-source-tree="openSourceTree"
             />
             <source-tree-browser
                 v-else
-                :dependency-name="activeSourceTreeDependency.name"
-                :source-tree="activeSourceTreeDependency.sourceTree"
+                :dependency-name="modalContent.dependency.name"
+                :source-tree="modalContent.dependency.sourceTree"
             />
         </modal>
     </div>

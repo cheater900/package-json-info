@@ -34,11 +34,7 @@ test("fetches package in both dependencies and devDependencies once", async ({ p
     let registryRequests = 0;
     await page.route("https://registry.npmjs.org/shared-pkg", async (route) => {
         registryRequests++;
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
-        });
+        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
     });
 
     await page.goto("/");
@@ -63,19 +59,11 @@ test("hides Vulnerabilities, Bundle size, Maintainers by default, skips third-pa
     let bundlephobiaRequests = 0;
     await page.route("https://api.osv.dev/**", async (route) => {
         osvRequests++;
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ vulns: [] }),
-        });
+        await route.fulfill({ json: { vulns: [] } });
     });
     await page.route("https://bundlephobia.com/**", async (route) => {
         bundlephobiaRequests++;
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ gzip: 1 }),
-        });
+        await route.fulfill({ json: { gzip: 1 } });
     });
 
     await page.goto("/");
@@ -146,9 +134,7 @@ test("URL input fetches repo host URL via raw-file API", async ({ page }) => {
         "https://raw.githubusercontent.com/some-owner/some-repo/main/package.json",
         async (route) => {
             await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify({ name: "some-repo", dependencies: { "repo-dep": "1.0.0" } }),
+                json: { name: "some-repo", dependencies: { "repo-dep": "1.0.0" } },
             });
         },
     );
@@ -166,9 +152,7 @@ test("URL input fetches repo host URL via raw-file API", async ({ page }) => {
 test("URL input fetches non-repo-host URL directly", async ({ page }) => {
     await page.route("https://example.com/some/package.json", async (route) => {
         await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ name: "remote-pkg", dependencies: { "remote-dep": "1.0.0" } }),
+            json: { name: "remote-pkg", dependencies: { "remote-dep": "1.0.0" } },
         });
     });
 
@@ -223,9 +207,7 @@ test("paste-from-clipboard button reads clipboard, replaces table", async ({ pag
 test("row Name cell click loads package's package.json as input", async ({ page }) => {
     await page.route("https://registry.npmjs.org/left-pad", async (route) => {
         await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
+            json: {
                 "dist-tags": { latest: "1.0.0" },
                 time: { "1.0.0": "2020-01-01T00:00:00.000Z", modified: "2020-01-01T00:00:00.000Z" },
                 versions: {
@@ -235,15 +217,11 @@ test("row Name cell click loads package's package.json as input", async ({ page 
                         dependencies: { "nested-dep": "^1.0.0" },
                     },
                 },
-            }),
+            },
         });
     });
     await page.route("https://registry.npmjs.org/nested-dep", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
-        });
+        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
     });
 
     await page.goto("/");
@@ -322,20 +300,12 @@ test("history back/forward reuses cached data, no refetch", async ({ page }) => 
     let vueRequests = 0;
     await page.route("https://registry.npmjs.org/vue", async (route) => {
         vueRequests++;
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ "dist-tags": { latest: "3.5.34" }, time: {} }),
-        });
+        await route.fulfill({ json: { "dist-tags": { latest: "3.5.34" }, time: {} } });
     });
     let cachedPkgRequests = 0;
     await page.route("https://registry.npmjs.org/cached-history-pkg", async (route) => {
         cachedPkgRequests++;
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
-        });
+        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
     });
 
     await page.goto("/");
@@ -416,11 +386,7 @@ test("header click sorts table, second click reverses", async ({ page }) => {
         const name = decodeURIComponent(
             new URL(route.request().url()).pathname.split("/").pop() ?? "",
         );
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ downloads: weeklyDownloadsByPackage[name] ?? 0 }),
-        });
+        await route.fulfill({ json: { downloads: weeklyDownloadsByPackage[name] ?? 0 } });
     });
 
     await page.goto("/");
@@ -488,9 +454,7 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, maintai
 }) => {
     await page.route("https://registry.npmjs.org/**", async (route) => {
         await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
+            json: {
                 "dist-tags": { latest: "2.0.0" },
                 time: {
                     "1.0.0": "2023-01-01T00:00:00.000Z",
@@ -501,22 +465,14 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, maintai
                 versions: {
                     "1.0.0": { license: "GPL-3.0", deprecated: "please upgrade" },
                 },
-            }),
+            },
         });
     });
     await page.route("https://api.osv.dev/**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ vulns: [{ id: "GHSA-xxxx-xxxx-xxxx" }] }),
-        });
+        await route.fulfill({ json: { vulns: [{ id: "GHSA-xxxx-xxxx-xxxx" }] } });
     });
     await page.route("https://bundlephobia.com/**", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ gzip: 2048 }),
-        });
+        await route.fulfill({ json: { gzip: 2048 } });
     });
 
     await page.goto("/");
@@ -549,18 +505,10 @@ test("hidden column skips its request, re-shown column fetches missing data", as
     await page.route("https://api.osv.dev/v1/query", async (route) => {
         const body = route.request().postDataJSON() as { package: { name: string } };
         osvRequestedNames.push(body.package.name);
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ vulns: [{ id: "GHSA-test" }] }),
-        });
+        await route.fulfill({ json: { vulns: [{ id: "GHSA-test" }] } });
     });
     await page.route("https://registry.npmjs.org/gated-pkg", async (route) => {
-        await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ "dist-tags": { latest: "1.0.0" }, time: {} }),
-        });
+        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
     });
 
     await page.goto("/");

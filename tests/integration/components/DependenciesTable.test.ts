@@ -5,57 +5,21 @@ import draggable from "vuedraggable";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
 import Tooltip from "../../../src/components/Tooltip.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+import { columnKeysExcept } from "../../helpers/columns";
+import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/dependencies";
 
-/** Every toggleable column key except the given ones - i.e. "everything visible except these". */
-function columnsExcept(...excluded) {
-    return TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !excluded.includes(key));
+function headerLabels(wrapper) {
+    return wrapper.findAll("thead th").map((th) =>
+        th
+            .text()
+            .replace(/[\s▲▼]+$/, "")
+            .trim(),
+    );
 }
 
-const fullDependency = {
-    name: "left-pad",
-    version: "1.2.0",
-    versionDate: "2020-01-01T00:00:00.000Z",
-    latestVersion: "1.3.0",
-    latestReleaseDate: "2021-01-01T00:00:00.000Z",
-    latestUpdateDate: "2021-06-01T00:00:00.000Z",
-    weeklyDownloads: 4242,
-    sourceCode: "https://github.com/left-pad/left-pad",
-    gitStars: 99,
-    openPRs: 2,
-    closedPRs: 10,
-    openIssues: 3,
-    closedIssues: 20,
-    dependencies: ["a", "b"],
-    license: "MIT",
-    isOutdated: true,
-    deprecated: null,
-    vulnerabilityCount: 0,
-    bundleSizeGzip: 15360,
-    maintainers: ["alice", "bob"],
-};
-
-const sparseDependency = {
-    name: "no-data-pkg",
-    version: "0.0.1",
-    versionDate: null,
-    latestVersion: null,
-    latestReleaseDate: null,
-    latestUpdateDate: null,
-    weeklyDownloads: null,
-    sourceCode: null,
-    gitStars: null,
-    openPRs: null,
-    closedPRs: null,
-    openIssues: null,
-    closedIssues: null,
-    dependencies: null,
-    license: null,
-    isOutdated: null,
-    deprecated: null,
-    vulnerabilityCount: null,
-    bundleSizeGzip: null,
-    maintainers: null,
-};
+function rowNames(wrapper) {
+    return wrapper.findAll("tbody tr td:first-child .deps-table__name-text").map((td) => td.text());
+}
 
 describe("DependenciesTable", () => {
     it("every header column has matching data cell per row", () => {
@@ -96,14 +60,8 @@ describe("DependenciesTable", () => {
             props: { dependencies: [sparseDependency] },
         });
 
-        const headerLabels = wrapper.findAll("thead th").map((th) =>
-            th
-                .text()
-                .replace(/[\s▲▼]+$/, "")
-                .trim(),
-        );
         const cells = wrapper.findAll("tbody td");
-        const licenseIndex = headerLabels.indexOf("License");
+        const licenseIndex = headerLabels(wrapper).indexOf("License");
 
         // name/version are always present; every other cell should fall back
         // to '-', except License (marks a missing license with a warning).
@@ -212,10 +170,6 @@ describe("DependenciesTable row selection", () => {
     });
 
     it("View tree click emits open-source-tree only, not select-package", async () => {
-        const npmSourceTree = {
-            provider: "npm",
-            tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
-        };
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [{ ...fullDependency, sourceTree: npmSourceTree }],
@@ -245,7 +199,7 @@ describe("DependenciesTable column visibility", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency, sparseDependency],
-                columns: columnsExcept("license"),
+                columns: columnKeysExcept("license"),
             },
         });
 
@@ -269,7 +223,7 @@ describe("DependenciesTable column visibility", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency],
-                columns: columnsExcept("license", "maintainers", "sourceCode"),
+                columns: columnKeysExcept("license", "maintainers", "sourceCode"),
             },
         });
 
@@ -282,15 +236,6 @@ describe("DependenciesTable column visibility", () => {
 
 describe("DependenciesTable column order", () => {
     const reversedOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
-
-    function headerLabels(wrapper) {
-        return wrapper.findAll("thead th").map((th) =>
-            th
-                .text()
-                .replace(/[\s▲▼]+$/, "")
-                .trim(),
-        );
-    }
 
     it("renders visible columns in columns order", () => {
         const wrapper = mount(DependenciesTable, {
@@ -353,15 +298,6 @@ describe("DependenciesTable column order", () => {
 });
 
 describe("DependenciesTable column labels", () => {
-    function headerLabels(wrapper) {
-        return wrapper.findAll("thead th").map((th) =>
-            th
-                .text()
-                .replace(/[\s▲▼]+$/, "")
-                .trim(),
-        );
-    }
-
     it("renders full labels without shrinkLabels", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency] },
@@ -415,12 +351,6 @@ describe("DependenciesTable sorting", () => {
     const pkgB = { ...sparseDependency, name: "bbb", weeklyDownloads: 300, gitStars: null };
     const pkgC = { ...sparseDependency, name: "ccc", weeklyDownloads: 200, gitStars: 15 };
 
-    function names(wrapper) {
-        return wrapper
-            .findAll("tbody tr td:first-child .deps-table__name-text")
-            .map((td) => td.text());
-    }
-
     function sortButton(wrapper, label) {
         const button = wrapper.findAll("th button").find((b) => b.text().startsWith(label));
         if (!button) {
@@ -431,7 +361,7 @@ describe("DependenciesTable sorting", () => {
 
     /** Which direction's arrow icon is currently highlighted as active, if any. */
     function activeSortDirection(button) {
-        const active = button.find(".deps-table__sort-arrow--active");
+        const active = button.find(".sort-indicator__arrow--active");
         if (!active.exists()) {
             return null;
         }
@@ -443,7 +373,7 @@ describe("DependenciesTable sorting", () => {
             props: { dependencies: [pkgC, pkgA, pkgB] },
         });
 
-        expect(names(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
+        expect(rowNames(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
     });
 
     it("sorts ascending on first click, descending on second", async () => {
@@ -452,10 +382,10 @@ describe("DependenciesTable sorting", () => {
         });
 
         await sortButton(wrapper, "Weekly downloads").trigger("click");
-        expect(names(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
+        expect(rowNames(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
 
         await sortButton(wrapper, "Weekly downloads").trigger("click");
-        expect(names(wrapper)).toEqual(["bbb", "ccc", "aaa"]);
+        expect(rowNames(wrapper)).toEqual(["bbb", "ccc", "aaa"]);
     });
 
     it("shows sort indicator only on active column", async () => {
@@ -480,7 +410,7 @@ describe("DependenciesTable sorting", () => {
         await sortButton(wrapper, "Weekly downloads").trigger("click");
         await sortButton(wrapper, "Name").trigger("click");
 
-        expect(names(wrapper)).toEqual(["aaa", "bbb", "ccc"]);
+        expect(rowNames(wrapper)).toEqual(["aaa", "bbb", "ccc"]);
         expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("asc");
     });
 
@@ -490,10 +420,10 @@ describe("DependenciesTable sorting", () => {
         });
 
         await sortButton(wrapper, "Git stars").trigger("click");
-        expect(names(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
+        expect(rowNames(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
 
         await sortButton(wrapper, "Git stars").trigger("click");
-        expect(names(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
+        expect(rowNames(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
     });
 
     it("renders no sort button for non-sortable columns", () => {
@@ -526,7 +456,7 @@ describe("DependenciesTable sorting", () => {
 
         await sortButton(wrapper, "Vulnerabilities").trigger("click");
 
-        expect(names(wrapper)).toEqual(["bbb", "aaa", "ccc"]);
+        expect(rowNames(wrapper)).toEqual(["bbb", "aaa", "ccc"]);
     });
 });
 
@@ -534,12 +464,6 @@ describe("DependenciesTable search", () => {
     const react = { ...sparseDependency, name: "react" };
     const reactDom = { ...sparseDependency, name: "react-dom" };
     const vue = { ...sparseDependency, name: "vue" };
-
-    function names(wrapper) {
-        return wrapper
-            .findAll("tbody tr td:first-child .deps-table__name-text")
-            .map((td) => td.text());
-    }
 
     it("renders no own search box, filters by searchQuery prop", () => {
         const wrapper = mount(DependenciesTable, {
@@ -554,7 +478,7 @@ describe("DependenciesTable search", () => {
             props: { dependencies: [react, reactDom, vue] },
         });
 
-        expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
+        expect(rowNames(wrapper)).toEqual(["react", "react-dom", "vue"]);
     });
 
     it("filters rows by name containing query, case-insensitive", () => {
@@ -562,7 +486,7 @@ describe("DependenciesTable search", () => {
             props: { dependencies: [react, reactDom, vue], searchQuery: "REACT" },
         });
 
-        expect(names(wrapper)).toEqual(["react", "react-dom"]);
+        expect(rowNames(wrapper)).toEqual(["react", "react-dom"]);
     });
 
     it("matches substring anywhere in name, not only prefix", () => {
@@ -570,7 +494,7 @@ describe("DependenciesTable search", () => {
             props: { dependencies: [react, reactDom, vue], searchQuery: "dom" },
         });
 
-        expect(names(wrapper)).toEqual(["react-dom"]);
+        expect(rowNames(wrapper)).toEqual(["react-dom"]);
     });
 
     it("shows no rows without match", () => {
@@ -586,7 +510,7 @@ describe("DependenciesTable search", () => {
             props: { dependencies: [react, reactDom, vue], searchQuery: "   " },
         });
 
-        expect(names(wrapper)).toEqual(["react", "react-dom", "vue"]);
+        expect(rowNames(wrapper)).toEqual(["react", "react-dom", "vue"]);
     });
 
     it("re-filters on searchQuery prop change", async () => {
@@ -596,7 +520,7 @@ describe("DependenciesTable search", () => {
 
         await wrapper.setProps({ searchQuery: "dom" });
 
-        expect(names(wrapper)).toEqual(["react-dom"]);
+        expect(rowNames(wrapper)).toEqual(["react-dom"]);
     });
 
     it("sorts filtered results", async () => {
@@ -609,16 +533,11 @@ describe("DependenciesTable search", () => {
             .find((b) => b.text().startsWith("Name"))!
             .trigger("click");
 
-        expect(names(wrapper)).toEqual(["react", "react-dom"]);
+        expect(rowNames(wrapper)).toEqual(["react", "react-dom"]);
     });
 });
 
 describe("DependenciesTable source tree", () => {
-    const npmSourceTree = {
-        provider: "npm",
-        tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
-    };
-
     function mountWithSourceTree(dependency) {
         return mount(DependenciesTable, {
             props: { dependencies: [dependency], columns: ["sourceCodeTree"] },

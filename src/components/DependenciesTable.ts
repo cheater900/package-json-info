@@ -1,13 +1,15 @@
 import { ref, computed, watch, defineComponent } from "vue";
 import draggable from "vuedraggable";
 import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
-import { formatCell, sortDependencies } from "../utils/dependencyRowFormatting";
+import { sortDependencies } from "../utils/dependencyRowFormatting";
 import Tooltip from "./Tooltip.vue";
+import SortIndicator from "./SortIndicator.vue";
+import DependencyCell from "./DependencyCell.vue";
 
 const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
-    components: { draggable, Tooltip },
+    components: { draggable, Tooltip, SortIndicator, DependencyCell },
     props: {
         dependencies: {
             type: Array,
@@ -177,7 +179,6 @@ export default defineComponent({
 
         return {
             isCentered,
-            formatCell,
             labelFor,
             titleFor,
             orderedVisibleColumns,

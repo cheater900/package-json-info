@@ -1,0 +1,64 @@
+import {
+    CODEBERG_HOST,
+    DEFAULT_BRANCH_CANDIDATES,
+    GITHUB_HOST,
+    GITLAB_HOST,
+    SUPPORTED_REPO_HOSTS,
+} from "../constants";
+import { githubRawFileUrl } from "./github";
+
+/** Builds the raw-file URL for a repo's root package.json on a branch. */
+type RawUrlBuilder = (owner: string, repo: string, branch: string) => string;
+
+const PACKAGE_JSON_PATH = "package.json";
+
+const RAW_PACKAGE_JSON_URL_BUILDERS: Record<string, RawUrlBuilder> = {
+    [GITHUB_HOST]: (owner, repo, branch) =>
+        githubRawFileUrl(owner, repo, branch, PACKAGE_JSON_PATH),
+    [GITLAB_HOST]: (owner, repo, branch) =>
+        `https://${GITLAB_HOST}/${owner}/${repo}/-/raw/${branch}/${PACKAGE_JSON_PATH}`,
+    [CODEBERG_HOST]: (owner, repo, branch) =>
+        `https://${CODEBERG_HOST}/${owner}/${repo}/raw/branch/${branch}/${PACKAGE_JSON_PATH}`,
+};
+
+const REPO_URL_PATTERN = /^https:\/\/([^/]+)\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(?:\/.*)?$/;
+
+/**
+ * True if `url`'s host is one of SUPPORTED_REPO_HOSTS. An unparseable URL
+ * counts as "not a repo URL"; whichever fetch runs next reports the error.
+ */
+export function isRepoHostUrl(url: string): boolean {
+    try {
+        return SUPPORTED_REPO_HOSTS.includes(new URL(url).hostname);
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Fetches the raw package.json of a GitHub/GitLab/Codeberg repository,
+ * trying each of DEFAULT_BRANCH_CANDIDATES in order.
+ *
+ * @returns The raw package.json text, or null if no branch has one.
+ * @throws  If the URL isn't `https://<host>/<owner>/<repo>` on a supported host.
+ */
+export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string | null> {
+    const match = repoUrl.match(REPO_URL_PATTERN);
+    if (!match) {
+        throw new Error("Invalid repository URL. Must be in format: https://<host>/<owner>/<repo>");
+    }
+    const [, host, owner, repo] = match;
+    const buildRawUrl = RAW_PACKAGE_JSON_URL_BUILDERS[host];
+    if (!buildRawUrl) {
+        throw new Error(
+            `Unsupported git host "${host}". Supported hosts: ${SUPPORTED_REPO_HOSTS.join(", ")}`,
+        );
+    }
+    for (const branch of DEFAULT_BRANCH_CANDIDATES) {
+        const response = await fetch(buildRawUrl(owner, repo, branch));
+        if (response.ok) {
+            return response.text();
+        }
+    }
+    return null;
+}

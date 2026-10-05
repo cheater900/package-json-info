@@ -1,4 +1,20 @@
-const BLOCK_SIZE = 512;
+export const TAR_BLOCK_SIZE = 512;
+
+/** USTAR header field offsets and lengths, in bytes. */
+export const TAR_HEADER = {
+    name: { offset: 0, length: 100 },
+    size: { offset: 124, length: 12 },
+    typeflag: { offset: 156 },
+    prefix: { offset: 345, length: 155 },
+};
+
+export const TAR_TYPEFLAG = {
+    file: "0",
+    legacyFile: "\0",
+    directory: "5",
+    paxHeader: "x",
+    paxGlobalHeader: "X",
+};
 
 export type TarEntry = {
     path: string;
@@ -31,7 +47,7 @@ function readOctal(bytes: Uint8Array, offset: number, length: number): number {
 }
 
 function isZeroBlock(bytes: Uint8Array, offset: number): boolean {
-    for (let i = 0; i < BLOCK_SIZE; i++) {
+    for (let i = 0; i < TAR_BLOCK_SIZE; i++) {
         if (bytes[offset + i] !== 0) {
             return false;
         }
@@ -82,29 +98,33 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
     let offset = 0;
     let longPathOverride: string | null = null;
 
-    while (offset + BLOCK_SIZE <= bytes.length) {
+    while (offset + TAR_BLOCK_SIZE <= bytes.length) {
         if (isZeroBlock(bytes, offset)) {
             break;
         }
 
-        const name = readString(bytes, offset, 100);
-        const size = readOctal(bytes, offset + 124, 12);
-        const typeflag = String.fromCharCode(bytes[offset + 156]);
-        const prefix = readString(bytes, offset + 345, 155);
-        const dataStart = offset + BLOCK_SIZE;
+        const name = readString(bytes, offset + TAR_HEADER.name.offset, TAR_HEADER.name.length);
+        const size = readOctal(bytes, offset + TAR_HEADER.size.offset, TAR_HEADER.size.length);
+        const typeflag = String.fromCharCode(bytes[offset + TAR_HEADER.typeflag.offset]);
+        const prefix = readString(
+            bytes,
+            offset + TAR_HEADER.prefix.offset,
+            TAR_HEADER.prefix.length,
+        );
+        const dataStart = offset + TAR_BLOCK_SIZE;
         const data = bytes.subarray(dataStart, dataStart + size);
         const path = longPathOverride ?? (prefix ? `${prefix}/${name}` : name);
-        offset = dataStart + Math.ceil(size / BLOCK_SIZE) * BLOCK_SIZE;
+        offset = dataStart + Math.ceil(size / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;
 
-        if (typeflag === "x" || typeflag === "X") {
+        if (typeflag === TAR_TYPEFLAG.paxHeader || typeflag === TAR_TYPEFLAG.paxGlobalHeader) {
             longPathOverride = parsePaxRecords(data).path || longPathOverride;
             continue;
         }
 
         longPathOverride = null;
-        if (typeflag === "5") {
+        if (typeflag === TAR_TYPEFLAG.directory) {
             entries.push({ path, size: 0, type: "directory", content: new Uint8Array(0) });
-        } else if (typeflag === "0" || typeflag === "\0") {
+        } else if (typeflag === TAR_TYPEFLAG.file || typeflag === TAR_TYPEFLAG.legacyFile) {
             entries.push({ path, size, type: "file", content: data.slice() });
         }
     }

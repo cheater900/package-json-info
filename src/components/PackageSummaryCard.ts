@@ -1,8 +1,9 @@
 import { defineComponent } from "vue";
 import { TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
-import { formatCell } from "../utils/dependencyRowFormatting";
+import DependencyCell from "./DependencyCell.vue";
 
 export default defineComponent({
+    components: { DependencyCell },
     props: {
         dependency: {
             type: Object,
@@ -16,7 +17,6 @@ export default defineComponent({
         // whatever columns exist without a second list to keep in sync.
         return {
             summaryColumns: TOGGLEABLE_COLUMNS,
-            formatCell,
         };
     },
 });

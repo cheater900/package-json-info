@@ -1,16 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, nextTick } from "vue";
 import { usePackageJsonHistory } from "../../../src/composables/usePackageJsonHistory";
-import { clearPackageInfoCache } from "../../../src/utils/npmPackage";
-
-function jsonResponse(body: unknown, ok = true) {
-    return {
-        ok,
-        status: ok ? 200 : 404,
-        json: async () => body,
-        text: async () => JSON.stringify(body),
-    };
-}
+import { clearPackageInfoCache } from "../../../src/api/npmPackage";
+import { jsonResponse } from "../../helpers/fetchMock";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
  * for fetchPackageInfo to complete without needing per-package data. */

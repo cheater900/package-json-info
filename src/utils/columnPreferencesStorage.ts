@@ -5,131 +5,62 @@ import {
     meetsMinVisible,
     orderColumns,
 } from "./tableColumns";
+import { readStoredJson, writeStoredJson } from "./storage";
+import {
+    VISIBLE_COLUMNS_STORAGE_KEY,
+    COLUMN_ORDER_STORAGE_KEY,
+    SHRINK_LABELS_STORAGE_KEY,
+} from "../constants";
 
-const STORAGE_KEY = "package-json-info:visibleColumns";
-const ORDER_STORAGE_KEY = "package-json-info:columnOrder";
-const SHRINK_LABELS_STORAGE_KEY = "package-json-info:shrinkColumnLabels";
+function readStoredStringArray(key: string): string[] | null {
+    const stored = readStoredJson(key);
+    if (!Array.isArray(stored)) {
+        return null;
+    }
+    return stored.filter((item): item is string => typeof item === "string");
+}
 
 /**
- * Loads the persisted visible-columns preference from localStorage. Falls
- * back to DEFAULT_VISIBLE_COLUMNS whenever storage is unavailable (e.g.
- * private browsing, disabled storage), holds nothing yet, holds something
- * that isn't a JSON array of column keys, or - after dropping any stored
- * key that no longer matches a real toggleable column (renamed/removed in
- * a later version) - would leave fewer than MIN_VISIBLE_COLUMNS visible.
- * Never throws.
+ * Persisted visible-column keys, minus keys no longer matching a real
+ * toggleable column. Falls back to DEFAULT_VISIBLE_COLUMNS when nothing
+ * valid is stored or the result would break MIN_VISIBLE_COLUMNS.
  */
 export function loadVisibleColumns(): Set<string> {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw == null) {
-            return new Set(DEFAULT_VISIBLE_COLUMNS);
-        }
-
-        const parsed: unknown = JSON.parse(raw);
-        if (!Array.isArray(parsed)) {
-            return new Set(DEFAULT_VISIBLE_COLUMNS);
-        }
-
-        const validKeys = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
-        const visible = new Set(
-            parsed.filter((key) => typeof key === "string" && validKeys.has(key)),
-        );
-
-        if (!meetsMinVisible(visible)) {
-            return new Set(DEFAULT_VISIBLE_COLUMNS);
-        }
-
-        return visible;
-    } catch {
+    const stored = readStoredStringArray(VISIBLE_COLUMNS_STORAGE_KEY);
+    const validKeys = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
+    const visible = new Set(stored?.filter((key) => validKeys.has(key)));
+    if (stored == null || !meetsMinVisible(visible)) {
         return new Set(DEFAULT_VISIBLE_COLUMNS);
     }
+    return visible;
 }
 
-/**
- * Persists the given visible-columns set to localStorage. Silently does
- * nothing if storage is unavailable or writing fails (e.g. quota exceeded,
- * private browsing) - a preference that can't be saved just doesn't
- * survive the next reload, rather than breaking the app. Never throws.
- */
 export function saveVisibleColumns(visibleColumns: ReadonlySet<string>): void {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([...visibleColumns]));
-    } catch {
-        // Storage unavailable/full/blocked - preference just won't persist.
-    }
+    writeStoredJson(VISIBLE_COLUMNS_STORAGE_KEY, [...visibleColumns]);
 }
 
 /**
- * Loads the persisted column-order preference from localStorage. Falls back
- * to DEFAULT_COLUMN_ORDER whenever storage is unavailable, holds nothing
- * yet, or holds something that isn't a JSON array of column keys. Any
- * stored key that no longer matches a real toggleable column is dropped,
- * and any real column missing from the stored order (e.g. added in a later
- * version) is appended at the end - see orderColumns. Never throws.
+ * Persisted column order, normalized by orderColumns: stale keys dropped,
+ * new columns appended. Falls back to DEFAULT_COLUMN_ORDER when nothing
+ * valid is stored.
  */
 export function loadColumnOrder(): string[] {
-    try {
-        const raw = localStorage.getItem(ORDER_STORAGE_KEY);
-        if (raw == null) {
-            return [...DEFAULT_COLUMN_ORDER];
-        }
-
-        const parsed: unknown = JSON.parse(raw);
-        if (!Array.isArray(parsed)) {
-            return [...DEFAULT_COLUMN_ORDER];
-        }
-
-        const order = parsed.filter((key): key is string => typeof key === "string");
-        return orderColumns(order, TOGGLEABLE_COLUMNS).map((c) => c.key);
-    } catch {
+    const stored = readStoredStringArray(COLUMN_ORDER_STORAGE_KEY);
+    if (stored == null) {
         return [...DEFAULT_COLUMN_ORDER];
     }
+    return orderColumns(stored, TOGGLEABLE_COLUMNS).map((c) => c.key);
 }
 
-/**
- * Persists the given column order to localStorage. Silently does nothing if
- * storage is unavailable or writing fails - an order that can't be saved
- * just doesn't survive the next reload, rather than breaking the app.
- * Never throws.
- */
 export function saveColumnOrder(order: readonly string[]): void {
-    try {
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
-    } catch {
-        // Storage unavailable/full/blocked - preference just won't persist.
-    }
+    writeStoredJson(COLUMN_ORDER_STORAGE_KEY, order);
 }
 
-/**
- * Loads the persisted "shrink columns by abbreviation" preference from
- * localStorage. Defaults to false (full labels) whenever storage is
- * unavailable, holds nothing yet, or holds something that isn't the literal
- * JSON boolean `true`. Never throws.
- */
+/** True only when the stored value is the literal JSON `true`. */
 export function loadShrinkColumnLabels(): boolean {
-    try {
-        const raw = localStorage.getItem(SHRINK_LABELS_STORAGE_KEY);
-        if (raw == null) {
-            return false;
-        }
-
-        return JSON.parse(raw) === true;
-    } catch {
-        return false;
-    }
+    return readStoredJson(SHRINK_LABELS_STORAGE_KEY) === true;
 }
 
-/**
- * Persists the given "shrink columns by abbreviation" preference to
- * localStorage. Silently does nothing if storage is unavailable or writing
- * fails - a preference that can't be saved just doesn't survive the next
- * reload, rather than breaking the app. Never throws.
- */
 export function saveShrinkColumnLabels(value: boolean): void {
-    try {
-        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify(value));
-    } catch {
-        // Storage unavailable/full/blocked - preference just won't persist.
-    }
+    writeStoredJson(SHRINK_LABELS_STORAGE_KEY, value);
 }

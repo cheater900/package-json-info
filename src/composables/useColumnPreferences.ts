@@ -23,30 +23,11 @@ import {
  */
 export function useColumnPreferences() {
     const visibleColumns = ref(loadVisibleColumns());
-
-    watch(
-        visibleColumns,
-        (value) => {
-            saveVisibleColumns(value);
-        },
-        { deep: true },
-    );
-
     const columnOrder = ref(loadColumnOrder());
-
-    watch(
-        columnOrder,
-        (value) => {
-            saveColumnOrder(value);
-        },
-        { deep: true },
-    );
-
     const shrinkColumnLabels = ref(loadShrinkColumnLabels());
-
-    watch(shrinkColumnLabels, (value) => {
-        saveShrinkColumnLabels(value);
-    });
+    watch(visibleColumns, saveVisibleColumns, { deep: true });
+    watch(columnOrder, saveColumnOrder, { deep: true });
+    watch(shrinkColumnLabels, saveShrinkColumnLabels);
 
     function toggleColumn(key) {
         visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);

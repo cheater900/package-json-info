@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import SourceTreeBrowser from "../../../src/components/SourceTreeBrowser.vue";
-import { fetchSourceTree } from "../../../src/utils/sourceTree";
+import { fetchSourceTree } from "../../../src/api/sourceTree";
+import { npmSourceTree } from "../../fixtures/dependencies";
 
-vi.mock("../../../src/utils/sourceTree", () => ({
+vi.mock("../../../src/api/sourceTree", () => ({
     fetchSourceTree: vi.fn(),
 }));
-
-const npmSourceTree = { provider: "npm", tarballUrl: "https://example.com/pkg.tgz" };
 
 const sampleTree = [
     { name: "index.js", path: "index.js", type: "file", size: 10 },

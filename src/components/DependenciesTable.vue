@@ -17,26 +17,7 @@
                                 @click="toggleSort('name')"
                             >
                                 <span class="deps-table__col-label">Name</span>
-                                <span class="deps-table__sort-icons" aria-hidden="true">
-                                    <span
-                                        class="deps-table__sort-arrow"
-                                        :class="{
-                                            'deps-table__sort-arrow--active':
-                                                sortDirectionFor('name') === 'asc',
-                                        }"
-                                    >
-                                        ▲
-                                    </span>
-                                    <span
-                                        class="deps-table__sort-arrow"
-                                        :class="{
-                                            'deps-table__sort-arrow--active':
-                                                sortDirectionFor('name') === 'desc',
-                                        }"
-                                    >
-                                        ▼
-                                    </span>
-                                </span>
+                                <sort-indicator :direction="sortDirectionFor('name')" />
                             </button>
                         </span>
                     </th>
@@ -54,26 +35,7 @@
                                 <tooltip :text="titleFor(col)" position="bottom">
                                     <span class="deps-table__col-label">{{ labelFor(col) }}</span>
                                 </tooltip>
-                                <span class="deps-table__sort-icons" aria-hidden="true">
-                                    <span
-                                        class="deps-table__sort-arrow"
-                                        :class="{
-                                            'deps-table__sort-arrow--active':
-                                                sortDirectionFor(col.key) === 'asc',
-                                        }"
-                                    >
-                                        ▲
-                                    </span>
-                                    <span
-                                        class="deps-table__sort-arrow"
-                                        :class="{
-                                            'deps-table__sort-arrow--active':
-                                                sortDirectionFor(col.key) === 'desc',
-                                        }"
-                                    >
-                                        ▼
-                                    </span>
-                                </span>
+                                <sort-indicator :direction="sortDirectionFor(col.key)" />
                             </button>
                             <tooltip v-else :text="titleFor(col)" position="bottom">
                                 <span class="deps-table__col-label">{{ labelFor(col) }}</span>
@@ -115,23 +77,11 @@
                     @mouseenter="col.truncatable && onCellMouseEnter($event)"
                     @click="col.truncatable && onCellClick($event, dependency.name, col.key)"
                 >
-                    <template v-if="col.render === 'link'">
-                        <a v-if="dependency.sourceCode" :href="dependency.sourceCode" @click.stop>
-                            link
-                        </a>
-                        <template v-else>-</template>
-                    </template>
-                    <template v-else-if="col.render === 'button'">
-                        <button
-                            v-if="dependency.sourceTree"
-                            type="button"
-                            @click.stop="$emit('open-source-tree', dependency)"
-                        >
-                            View tree
-                        </button>
-                        <template v-else>-</template>
-                    </template>
-                    <template v-else>{{ formatCell(col.key, dependency) }}</template>
+                    <dependency-cell
+                        :column="col"
+                        :dependency="dependency"
+                        @open-source-tree="$emit('open-source-tree', $event)"
+                    />
                 </td>
             </tr>
         </tbody>

@@ -12,10 +12,11 @@ import {
     DEFAULT_COLUMN_ORDER,
     TOGGLEABLE_COLUMNS,
 } from "../../../src/utils/tableColumns";
-
-const STORAGE_KEY = "package-json-info:visibleColumns";
-const ORDER_STORAGE_KEY = "package-json-info:columnOrder";
-const SHRINK_LABELS_STORAGE_KEY = "package-json-info:shrinkColumnLabels";
+import {
+    VISIBLE_COLUMNS_STORAGE_KEY,
+    COLUMN_ORDER_STORAGE_KEY,
+    SHRINK_LABELS_STORAGE_KEY,
+} from "../../../src/constants";
 
 beforeEach(() => {
     localStorage.clear();
@@ -28,26 +29,29 @@ describe("loadVisibleColumns", () => {
     });
 
     it("returns saved set", () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(["license", "sourceCode"]));
+        localStorage.setItem(
+            VISIBLE_COLUMNS_STORAGE_KEY,
+            JSON.stringify(["license", "sourceCode"]),
+        );
 
         expect(loadVisibleColumns()).toEqual(new Set(["license", "sourceCode"]));
     });
 
     it("falls back to defaults for non-array stored value", () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ not: "an array" }));
+        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify({ not: "an array" }));
 
         expect(loadVisibleColumns()).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
     });
 
     it("falls back to defaults for invalid stored JSON", () => {
-        localStorage.setItem(STORAGE_KEY, "{not valid json");
+        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, "{not valid json");
 
         expect(loadVisibleColumns()).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
     });
 
     it("drops keys of removed toggleable columns", () => {
         localStorage.setItem(
-            STORAGE_KEY,
+            VISIBLE_COLUMNS_STORAGE_KEY,
             JSON.stringify(["license", "sourceCode", "some-removed-column", "name", 42, null]),
         );
 
@@ -55,14 +59,14 @@ describe("loadVisibleColumns", () => {
     });
 
     it("falls back to defaults for empty stored set", () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify([]));
 
         expect(loadVisibleColumns()).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
     });
 
     it("keeps stored set with one visible column", () => {
         const oneKey = [TOGGLEABLE_COLUMNS[0].key];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(oneKey));
+        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify(oneKey));
 
         expect(loadVisibleColumns()).toEqual(new Set(oneKey));
     });
@@ -80,7 +84,10 @@ describe("saveVisibleColumns", () => {
     it("persists set as JSON array", () => {
         saveVisibleColumns(new Set(["license", "sourceCode"]));
 
-        expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(["license", "sourceCode"]);
+        expect(JSON.parse(localStorage.getItem(VISIBLE_COLUMNS_STORAGE_KEY)!)).toEqual([
+            "license",
+            "sourceCode",
+        ]);
     });
 
     it("round-trips through loadVisibleColumns", () => {
@@ -106,19 +113,19 @@ describe("loadColumnOrder", () => {
 
     it("returns saved full permutation unchanged", () => {
         const order = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(order));
 
         expect(loadColumnOrder()).toEqual(order);
     });
 
     it("falls back to default order for non-array stored value", () => {
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify({ not: "an array" }));
+        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify({ not: "an array" }));
 
         expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
     });
 
     it("falls back to default order for invalid stored JSON", () => {
-        localStorage.setItem(ORDER_STORAGE_KEY, "{not valid json");
+        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, "{not valid json");
 
         expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
     });
@@ -126,14 +133,14 @@ describe("loadColumnOrder", () => {
     it("drops keys of removed toggleable columns", () => {
         const validOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
         const order = [validOrder[0], "some-removed-column", ...validOrder.slice(1)];
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(order));
 
         expect(loadColumnOrder()).toEqual(validOrder);
     });
 
     it("appends valid column missing from stored order", () => {
         const order = TOGGLEABLE_COLUMNS.slice(1).map((c) => c.key);
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
+        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(order));
 
         expect(loadColumnOrder()).toEqual([...order, TOGGLEABLE_COLUMNS[0].key]);
     });
@@ -152,7 +159,7 @@ describe("saveColumnOrder", () => {
         const order = [TOGGLEABLE_COLUMNS[1].key, TOGGLEABLE_COLUMNS[0].key];
         saveColumnOrder(order);
 
-        expect(JSON.parse(localStorage.getItem(ORDER_STORAGE_KEY)!)).toEqual(order);
+        expect(JSON.parse(localStorage.getItem(COLUMN_ORDER_STORAGE_KEY)!)).toEqual(order);
     });
 
     it("round-trips full permutation through loadColumnOrder", () => {

@@ -4,36 +4,12 @@ import {
     fetchPackagesInfo,
     fetchPackageJsonForVersion,
     clearPackageInfoCache,
-    parseRepoSlug,
-    normaliseRepoUrl,
-    extractLicense,
-    memoizeAsync,
-} from "../../../src/utils/npmPackage";
-import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+} from "../../../src/api/npmPackage";
+import { columnKeysExcept } from "../../helpers/columns";
+import { countFetchCalls, jsonResponse, mockFetchByUrl } from "../../helpers/fetchMock";
 
-/** Every toggleable column key except the given ones - i.e. "everything visible except these". */
 function visibleColumnsExcept(...excluded: string[]): Set<string> {
-    return new Set(TOGGLEABLE_COLUMNS.map((c) => c.key).filter((key) => !excluded.includes(key)));
-}
-
-function jsonResponse(body: unknown, ok = true) {
-    return {
-        ok,
-        status: ok ? 200 : 404,
-        json: async () => body,
-        text: async () => JSON.stringify(body),
-    };
-}
-
-function mockFetchByUrl(handlers: Record<string, unknown>) {
-    return vi.fn(async (url: string) => {
-        for (const [pattern, body] of Object.entries(handlers)) {
-            if (url.includes(pattern)) {
-                return jsonResponse(body);
-            }
-        }
-        return jsonResponse(null, false);
-    });
+    return new Set(columnKeysExcept(...excluded));
 }
 
 beforeEach(() => {
@@ -350,10 +326,6 @@ describe("fetchPackageInfo", () => {
 });
 
 describe("fetchPackageInfo sourceTree", () => {
-    function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
-        return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
-    }
-
     it("prefers npm tarball over known GitHub repository", async () => {
         vi.stubGlobal(
             "fetch",
@@ -501,7 +473,7 @@ describe("fetchPackageInfo sourceTree", () => {
         });
 
         expect(info.sourceTree).toBeNull();
-        expect(countCalls(fetchMock, "git/refs/tags")).toBe(0);
+        expect(countFetchCalls(fetchMock, "git/refs/tags")).toBe(0);
     });
 
     it("caches GitHub tag lookup by repo slug and version across package names", async () => {
@@ -540,15 +512,11 @@ describe("fetchPackageInfo sourceTree", () => {
             tag: "v1.0.0",
         });
         expect(b.sourceTree).toEqual(a.sourceTree);
-        expect(countCalls(fetchMock, "git/refs/tags/v1.0.0")).toBe(1);
+        expect(countFetchCalls(fetchMock, "git/refs/tags/v1.0.0")).toBe(1);
     });
 });
 
 describe("fetchPackageInfo caching", () => {
-    function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
-        return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
-    }
-
     it("reuses cached sub-fetches for repeated name+version", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/cached-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
@@ -563,7 +531,7 @@ describe("fetchPackageInfo caching", () => {
         // (cached) sub-fetches, since which fields get fetched can vary call to
         // call depending on visibleColumns - but no duplicate network request.
         expect(second).toEqual(first);
-        expect(countCalls(fetchMock, "registry.npmjs.org/cached-pkg")).toBe(1);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/cached-pkg")).toBe(1);
     });
 
     it("coalesces concurrent same name+version requests into one network round", async () => {
@@ -579,7 +547,7 @@ describe("fetchPackageInfo caching", () => {
         ]);
 
         expect(second).toEqual(first);
-        expect(countCalls(fetchMock, "registry.npmjs.org/concurrent-pkg")).toBe(1);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/concurrent-pkg")).toBe(1);
     });
 
     it("shares name-scoped lookups across versions of same package", async () => {
@@ -603,11 +571,11 @@ describe("fetchPackageInfo caching", () => {
 
         expect(v1.dependencies).toEqual(["a"]);
         expect(v2.dependencies).toEqual(["b"]);
-        expect(countCalls(fetchMock, "registry.npmjs.org/multi-version-pkg")).toBe(1);
-        expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
-        expect(countCalls(fetchMock, "api.osv.dev")).toBe(1);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/multi-version-pkg")).toBe(1);
+        expect(countFetchCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(1);
         // Bundle size is genuinely version-scoped, so it's fetched for each version.
-        expect(countCalls(fetchMock, "bundlephobia.com")).toBe(2);
+        expect(countFetchCalls(fetchMock, "bundlephobia.com")).toBe(2);
     });
 
     it("shares repo metadata across package names with same repository", async () => {
@@ -643,7 +611,7 @@ describe("fetchPackageInfo caching", () => {
 
         expect(a.gitStars).toBe(777);
         expect(b.gitStars).toBe(777);
-        expect(countCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
+        expect(countFetchCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
     });
 
     it("skips caching failed lookup, next same-key call retries", async () => {
@@ -675,10 +643,6 @@ describe("fetchPackageInfo caching", () => {
 });
 
 describe("fetchPackageInfo column gating", () => {
-    function countCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
-        return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
-    }
-
     it("skips security-advisory request with Vulnerabilities column hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/no-vuln-check": { "dist-tags": { latest: "1.0.0" }, time: {} },
@@ -692,7 +656,7 @@ describe("fetchPackageInfo column gating", () => {
         });
 
         expect(info.vulnerabilityCount).toBeNull();
-        expect(countCalls(fetchMock, "api.osv.dev")).toBe(0);
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(0);
     });
 
     it("skips Bundlephobia request with Bundle size column hidden", async () => {
@@ -708,7 +672,7 @@ describe("fetchPackageInfo column gating", () => {
         });
 
         expect(info.bundleSizeGzip).toBeNull();
-        expect(countCalls(fetchMock, "bundlephobia.com")).toBe(0);
+        expect(countFetchCalls(fetchMock, "bundlephobia.com")).toBe(0);
     });
 
     it("skips npm downloads request with Weekly downloads column hidden", async () => {
@@ -723,7 +687,7 @@ describe("fetchPackageInfo column gating", () => {
         });
 
         expect(info.weeklyDownloads).toBeNull();
-        expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(0);
+        expect(countFetchCalls(fetchMock, "api.npmjs.org/downloads")).toBe(0);
     });
 
     it("skips repo metadata request with its columns hidden, License visible", async () => {
@@ -759,8 +723,8 @@ describe("fetchPackageInfo column gating", () => {
 
         expect(info.license).toBe("MIT");
         expect(info.gitStars).toBeNull();
-        expect(countCalls(fetchMock, "registry.npmjs.org/license-only")).toBe(1);
-        expect(countCalls(fetchMock, "api.github.com")).toBe(0);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/license-only")).toBe(1);
+        expect(countFetchCalls(fetchMock, "api.github.com")).toBe(0);
     });
 
     it("skips npm registry request with all its columns hidden", async () => {
@@ -796,9 +760,9 @@ describe("fetchPackageInfo column gating", () => {
 
         expect(info.sourceCode).toBeNull();
         expect(info.latestVersion).toBeNull();
-        expect(countCalls(fetchMock, "registry.npmjs.org/registry-not-needed")).toBe(0);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/registry-not-needed")).toBe(0);
         // Weekly downloads wasn't hidden, so that call still goes out independently.
-        expect(countCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
+        expect(countFetchCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
     });
 
     it("fetches everything without visibleColumns", async () => {
@@ -815,7 +779,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(info.weeklyDownloads).toBe(1);
         expect(info.vulnerabilityCount).toBe(0);
         expect(info.bundleSizeGzip).toBe(10);
-        expect(countCalls(fetchMock, "registry.npmjs.org/default-visible")).toBe(1);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/default-visible")).toBe(1);
     });
 });
 
@@ -932,202 +896,5 @@ describe("fetchPackagesInfo", () => {
         expect(results).toHaveLength(2);
         expect(results[0]).toMatchObject({ name: "good" });
         expect(results[1]).toMatchObject({ name: "bad", error: "network down" });
-    });
-
-    it("calls onProgress once per resolved package", async () => {
-        vi.stubGlobal(
-            "fetch",
-            mockFetchByUrl({
-                "registry.npmjs.org": { "dist-tags": { latest: "1.0.0" }, time: {} },
-                "api.npmjs.org/downloads": { downloads: 1 },
-            }),
-        );
-
-        const onProgress = vi.fn();
-        await fetchPackagesInfo(
-            [
-                { name: "a", version: "1.0.0" },
-                { name: "b", version: "1.0.0" },
-            ],
-            { onProgress },
-        );
-
-        expect(onProgress).toHaveBeenCalledTimes(2);
-    });
-});
-
-describe("parseRepoSlug", () => {
-    it("parses plain https GitHub URL", () => {
-        expect(parseRepoSlug("https://github.com/owner/repo")).toEqual({
-            host: "github.com",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("parses git+https URL with .git suffix", () => {
-        expect(parseRepoSlug("git+https://github.com/owner/repo.git")).toEqual({
-            host: "github.com",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("parses git:// URL", () => {
-        expect(parseRepoSlug("git://github.com/owner/repo.git")).toEqual({
-            host: "github.com",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("parses ssh://git@ URL", () => {
-        expect(parseRepoSlug("ssh://git@github.com/owner/repo.git")).toEqual({
-            host: "github.com",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("parses scp-like git@host:owner/repo URL", () => {
-        expect(parseRepoSlug("git@github.com:owner/repo.git")).toEqual({
-            host: "github.com",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("parses github: shorthand", () => {
-        expect(parseRepoSlug("github:owner/repo")).toEqual({
-            host: "github.com",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("parses GitLab and Codeberg URLs", () => {
-        expect(parseRepoSlug("https://gitlab.com/owner/repo")).toEqual({
-            host: "gitlab.com",
-            owner: "owner",
-            repo: "repo",
-        });
-        expect(parseRepoSlug("https://codeberg.org/owner/repo")).toEqual({
-            host: "codeberg.org",
-            owner: "owner",
-            repo: "repo",
-        });
-    });
-
-    it("returns null for empty string or unsupported host", () => {
-        expect(parseRepoSlug("")).toBeNull();
-        expect(parseRepoSlug("https://bitbucket.org/owner/repo")).toBeNull();
-    });
-});
-
-describe("normaliseRepoUrl", () => {
-    it("returns null for missing URL", () => {
-        expect(normaliseRepoUrl(undefined)).toBeNull();
-        expect(normaliseRepoUrl("")).toBeNull();
-    });
-
-    it("strips git+ prefix and .git suffix", () => {
-        expect(normaliseRepoUrl("git+https://example.com/owner/repo.git")).toBe(
-            "https://example.com/owner/repo",
-        );
-    });
-
-    it("rewrites git:// and ssh://git@ to https://", () => {
-        expect(normaliseRepoUrl("git://example.com/owner/repo")).toBe(
-            "https://example.com/owner/repo",
-        );
-        expect(normaliseRepoUrl("ssh://git@example.com/owner/repo")).toBe(
-            "https://example.com/owner/repo",
-        );
-    });
-
-    it("leaves https URL untouched", () => {
-        expect(normaliseRepoUrl("https://example.com/owner/repo")).toBe(
-            "https://example.com/owner/repo",
-        );
-    });
-});
-
-describe("extractLicense", () => {
-    it("returns null for missing value", () => {
-        expect(extractLicense(undefined)).toBeNull();
-    });
-
-    it("passes through plain SPDX string", () => {
-        expect(extractLicense("MIT")).toBe("MIT");
-    });
-
-    it("reads legacy { type } object shape", () => {
-        expect(extractLicense({ type: "MIT" })).toBe("MIT");
-    });
-
-    it("returns null for { type } object without type", () => {
-        expect(extractLicense({})).toBeNull();
-    });
-
-    it("joins license array with OR", () => {
-        expect(extractLicense(["MIT", { type: "Apache-2.0" }])).toBe("MIT OR Apache-2.0");
-    });
-
-    it("returns null for array without resolvable entries", () => {
-        expect(extractLicense([{}, {}])).toBeNull();
-    });
-});
-
-describe("memoizeAsync", () => {
-    it("caches resolved value by key, calls fn once", async () => {
-        const cache = new Map<string, Promise<number>>();
-        const fn = vi.fn(async () => 42);
-
-        const first = await memoizeAsync(cache, "key", fn);
-        const second = await memoizeAsync(cache, "key", fn);
-
-        expect(first).toBe(42);
-        expect(second).toBe(42);
-        expect(fn).toHaveBeenCalledTimes(1);
-    });
-
-    it("coalesces concurrent same-key calls into one fn call", async () => {
-        const cache = new Map<string, Promise<number>>();
-        let resolveFn: (value: number) => void;
-        const fn = vi.fn(
-            () =>
-                new Promise<number>((resolve) => {
-                    resolveFn = resolve;
-                }),
-        );
-
-        const first = memoizeAsync(cache, "key", fn);
-        const second = memoizeAsync(cache, "key", fn);
-        resolveFn!(7);
-
-        expect(await first).toBe(7);
-        expect(await second).toBe(7);
-        expect(fn).toHaveBeenCalledTimes(1);
-    });
-
-    it("keeps cache separate per key", async () => {
-        const cache = new Map<string, Promise<number>>();
-        const fn = vi.fn(async () => 1);
-
-        await memoizeAsync(cache, "a", fn);
-        await memoizeAsync(cache, "b", fn);
-
-        expect(fn).toHaveBeenCalledTimes(2);
-    });
-
-    it("evicts failed lookup, next same-key call retries", async () => {
-        const cache = new Map<string, Promise<number>>();
-        const fn = vi.fn().mockRejectedValueOnce(new Error("fail")).mockResolvedValueOnce(9);
-
-        await expect(memoizeAsync(cache, "key", fn)).rejects.toThrow("fail");
-        const result = await memoizeAsync(cache, "key", fn);
-
-        expect(result).toBe(9);
-        expect(fn).toHaveBeenCalledTimes(2);
     });
 });

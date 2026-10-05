@@ -1,4 +1,5 @@
 import { ref, defineComponent } from "vue";
+import { TOOLTIP_OFFSET_PX } from "../constants";
 
 export default defineComponent({
     name: "Tooltip",
@@ -30,7 +31,10 @@ export default defineComponent({
             const rect = wrapperRef.value.getBoundingClientRect();
             coords.value = {
                 left: rect.left + rect.width / 2,
-                top: props.position === "bottom" ? rect.bottom + 6 : rect.top - 6,
+                top:
+                    props.position === "bottom"
+                        ? rect.bottom + TOOLTIP_OFFSET_PX
+                        : rect.top - TOOLTIP_OFFSET_PX,
             };
             visible.value = true;
         }

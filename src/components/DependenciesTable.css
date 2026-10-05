@@ -137,23 +137,6 @@ tbody tr:not(.deps-table__status-row):hover {
     white-space: nowrap;
 }
 
-.deps-table__sort-icons {
-    display: inline-flex;
-    flex-direction: column;
-    font-size: 0.7em;
-    justify-content: center;
-    line-height: 0.6;
-}
-
-.deps-table__sort-arrow {
-    opacity: 0.35;
-}
-
-.deps-table__sort-arrow--active {
-    font-weight: bold;
-    opacity: 1;
-}
-
 .deps-table__status-row {
     cursor: default;
 }

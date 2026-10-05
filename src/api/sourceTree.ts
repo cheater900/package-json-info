@@ -1,6 +1,7 @@
-import { gunzip, parseTar } from "./tarball";
-import { buildFileTree } from "./fileTree";
-import type { FileTreeNode } from "./fileTree";
+import { gunzip, parseTar } from "../utils/tarball";
+import { buildFileTree } from "../utils/fileTree";
+import type { FileTreeNode } from "../utils/fileTree";
+import { githubHeaders, githubRawFileUrl, githubRepoApiUrl } from "./github";
 
 export type SourceTreeRef =
     | { provider: "npm"; tarballUrl: string }
@@ -8,8 +9,18 @@ export type SourceTreeRef =
 
 export type SourceTree = {
     tree: FileTreeNode[];
-    /** Reads one file's content, decoded as text. Fetches lazily for GitHub - never for every file up front. */
+    /** Reads one file's content as text. GitHub fetches lazily, one file per call. */
     readFile: (path: string) => Promise<string>;
+};
+
+type GithubTreeEntry = {
+    path: string;
+    type: "blob" | "tree";
+    size?: number;
+};
+
+type GithubTreeResponse = {
+    tree?: GithubTreeEntry[];
 };
 
 /** npm tarballs wrap every entry under a single top-level "package/" directory. */
@@ -30,11 +41,9 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     const entries = parseTar(rawTar)
         .map((entry) => ({ ...entry, path: entry.path.replace(NPM_TARBALL_ROOT, "") }))
         .filter((entry) => entry.path !== "");
-
     const contentByPath = new Map(
         entries.filter((e) => e.type === "file").map((e) => [e.path, e.content]),
     );
-
     return {
         tree: buildFileTree(entries),
         readFile: async (path) => {
@@ -47,24 +56,15 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     };
 }
 
-type GithubTreeEntry = {
-    path: string;
-    type: "blob" | "tree";
-    size?: number;
-};
-
-type GithubTreeResponse = {
-    tree?: GithubTreeEntry[];
-};
-
 async function fetchGithubSourceTree(
     owner: string,
     repo: string,
     tag: string,
 ): Promise<SourceTree> {
+    const encodedTag = encodeURIComponent(tag);
     const response = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(tag)}?recursive=1`,
-        { headers: { Accept: "application/vnd.github+json" } },
+        `${githubRepoApiUrl(owner, repo)}/git/trees/${encodedTag}?recursive=1`,
+        { headers: githubHeaders() },
     );
     if (!response.ok) {
         throw new Error(`Could not fetch the repository tree (status ${response.status}).`);
@@ -75,13 +75,12 @@ async function fetchGithubSourceTree(
         type: entry.type === "tree" ? ("directory" as const) : ("file" as const),
         size: entry.size ?? 0,
     }));
-
     return {
         tree: buildFileTree(entries),
         readFile: async (path) => {
             const encodedPath = path.split("/").map(encodeURIComponent).join("/");
             const fileResponse = await fetch(
-                `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(tag)}/${encodedPath}`,
+                githubRawFileUrl(owner, repo, encodedTag, encodedPath),
             );
             if (!fileResponse.ok) {
                 throw new Error(`Could not fetch file contents (status ${fileResponse.status}).`);
@@ -89,29 +88,4 @@ async function fetchGithubSourceTree(
             return fileResponse.text();
         },
     };
-}
-
-/**
- * Finds a release tag on GitHub matching `version`, trying the two
- * conventional naming patterns ("v1.2.3" then "1.2.3"). Checks each
- * candidate's existence directly via the refs API (a single request, 404 if
- * absent) rather than listing every tag - popular repos can have thousands.
- * Returns null if neither pattern matches.
- */
-export async function findGithubReleaseTag(
-    owner: string,
-    repo: string,
-    version: string,
-    headers: Record<string, string> = {},
-): Promise<string | null> {
-    for (const candidate of [`v${version}`, version]) {
-        const response = await fetch(
-            `https://api.github.com/repos/${owner}/${repo}/git/refs/tags/${encodeURIComponent(candidate)}`,
-            { headers },
-        );
-        if (response.ok) {
-            return candidate;
-        }
-    }
-    return null;
 }

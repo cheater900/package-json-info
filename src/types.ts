@@ -1,4 +1,4 @@
-import type { SourceTreeRef } from "./utils/sourceTree";
+import type { SourceTreeRef } from "./api/sourceTree";
 
 export type PackageInput = {
     name: string;

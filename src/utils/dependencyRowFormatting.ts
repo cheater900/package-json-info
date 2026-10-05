@@ -1,49 +1,52 @@
 import { hasLicenseWarning } from "./license";
+import { BYTES_PER_KB, MISSING_VALUE, NUMBER_LOCALE } from "../constants";
+
+const LICENSE_WARNING_MARK = "⚠";
+/** Drops the weekday from `Date#toDateString` ("Mon Jan 01 2024" -> "Jan 01 2024"). */
+const WEEKDAY_PREFIX_LENGTH = 4;
 
 export function fmtDate(dateStr) {
     if (!dateStr) {
-        return "-";
+        return MISSING_VALUE;
     }
-    return new Date(dateStr).toDateString().slice(4);
+    return new Date(dateStr).toDateString().slice(WEEKDAY_PREFIX_LENGTH);
 }
 
 export function fmtList(names) {
     if (!names || names.length === 0) {
-        return "-";
+        return MISSING_VALUE;
     }
     return names.join(", ");
 }
 
 export function fmtOutdated(isOutdated) {
-    if (isOutdated === null || isOutdated === undefined) {
-        return "-";
+    if (isOutdated == null) {
+        return MISSING_VALUE;
     }
     return isOutdated ? "Yes" : "No";
 }
 
 export function fmtLicense(license) {
-    const label = license ?? "-";
-    return hasLicenseWarning(license) ? `${label} ⚠` : label;
+    const label = license ?? MISSING_VALUE;
+    return hasLicenseWarning(license) ? `${label} ${LICENSE_WARNING_MARK}` : label;
 }
 
 export function fmtBundleSize(gzipBytes) {
-    if (gzipBytes === null || gzipBytes === undefined) {
-        return "-";
+    if (gzipBytes == null) {
+        return MISSING_VALUE;
     }
-    return `${(gzipBytes / 1024).toFixed(1)} KB`;
+    return `${(gzipBytes / BYTES_PER_KB).toFixed(1)} KB`;
 }
 
 export function fmtNumber(n) {
-    if (n === null || n === undefined) {
-        return "-";
+    if (n == null) {
+        return MISSING_VALUE;
     }
-    return n.toLocaleString("en-US");
+    return n.toLocaleString(NUMBER_LOCALE);
 }
 
-// Per-column cell formatters, keyed by column key. Columns without an entry
-// here fall back to a plain value ?? "-" passthrough (see formatCell).
-// sourceCode isn't included: it renders a link instead of text, and is
-// special-cased directly in DependenciesTable's template.
+// Columns without an entry fall back to `value ?? MISSING_VALUE`. Link and
+// button columns render markup instead (see DependencyCell).
 const CELL_FORMATTERS = {
     versionDate: (d) => fmtDate(d.versionDate),
     latestReleaseDate: (d) => fmtDate(d.latestReleaseDate),
@@ -64,26 +67,8 @@ const CELL_FORMATTERS = {
 
 export function formatCell(key, dependency) {
     const formatter = CELL_FORMATTERS[key];
-    return formatter ? formatter(dependency) : (dependency[key] ?? "-");
+    return formatter ? formatter(dependency) : (dependency[key] ?? MISSING_VALUE);
 }
-
-// Columns whose values are meaningful to sort by (excludes the source-code
-// link, the raw semver ranges, and list-valued columns).
-const SORT_ACCESSORS = {
-    name: (d) => d.name,
-    versionDate: (d) => d.versionDate,
-    latestReleaseDate: (d) => d.latestReleaseDate,
-    latestUpdateDate: (d) => d.latestUpdateDate,
-    isOutdated: (d) => d.isOutdated,
-    weeklyDownloads: (d) => d.weeklyDownloads,
-    gitStars: (d) => d.gitStars,
-    openPRs: (d) => d.openPRs,
-    closedPRs: (d) => d.closedPRs,
-    openIssues: (d) => d.openIssues,
-    closedIssues: (d) => d.closedIssues,
-    vulnerabilityCount: (d) => d.vulnerabilityCount,
-    bundleSizeGzip: (d) => d.bundleSizeGzip,
-};
 
 /** Missing values always sort last, regardless of direction. */
 export function compareValues(a, b, dir) {
@@ -101,14 +86,13 @@ export function compareValues(a, b, dir) {
 }
 
 /**
- * Sorts `dependencies` by the given column key/direction, using
- * SORT_ACCESSORS to pull each row's comparable value. Returns `dependencies`
- * unchanged (same reference) when `sortKey` is falsy - nothing to sort by.
+ * Sorts `dependencies` by the raw value under `sortKey` (a `sortable`
+ * column). Returns `dependencies` unchanged (same reference) when
+ * `sortKey` is falsy.
  */
 export function sortDependencies(dependencies, sortKey, sortDir) {
     if (!sortKey) {
         return dependencies;
     }
-    const accessor = SORT_ACCESSORS[sortKey];
-    return [...dependencies].sort((a, b) => compareValues(accessor(a), accessor(b), sortDir));
+    return [...dependencies].sort((a, b) => compareValues(a[sortKey], b[sortKey], sortDir));
 }

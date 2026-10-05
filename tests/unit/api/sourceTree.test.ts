@@ -1,43 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { gzipSync } from "node:zlib";
-import { fetchSourceTree, findGithubReleaseTag } from "../../../src/utils/sourceTree";
-
-const BLOCK_SIZE = 512;
-
-function writeOctal(bytes: Uint8Array, offset: number, length: number, value: number): void {
-    bytes.set(new TextEncoder().encode(value.toString(8).padStart(length - 1, "0")), offset);
-}
-
-function tarHeader(name: string, size: number): Uint8Array {
-    const header = new Uint8Array(BLOCK_SIZE);
-    header.set(new TextEncoder().encode(name), 0);
-    writeOctal(header, 124, 12, size);
-    header[156] = "0".charCodeAt(0);
-    return header;
-}
-
-/** Builds a minimal gzipped npm-style tarball (single top-level "package/" prefix) with the given files. */
-function buildNpmTarball(files: Record<string, string>): ArrayBuffer {
-    const chunks: Uint8Array[] = [];
-    for (const [name, content] of Object.entries(files)) {
-        const bytes = new TextEncoder().encode(content);
-        chunks.push(tarHeader(`package/${name}`, bytes.length));
-        const padded = new Uint8Array(Math.ceil(bytes.length / BLOCK_SIZE) * BLOCK_SIZE);
-        padded.set(bytes);
-        chunks.push(padded);
-    }
-    chunks.push(new Uint8Array(BLOCK_SIZE * 2));
-
-    const total = chunks.reduce((sum, c) => sum + c.length, 0);
-    const tar = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-        tar.set(chunk, offset);
-        offset += chunk.length;
-    }
-    const gzipped = gzipSync(tar);
-    return gzipped.buffer.slice(gzipped.byteOffset, gzipped.byteOffset + gzipped.byteLength);
-}
+import { fetchSourceTree } from "../../../src/api/sourceTree";
+import { findGithubReleaseTag } from "../../../src/api/github";
+import { buildNpmTarball } from "../../fixtures/tarball";
 
 beforeEach(() => {
     vi.unstubAllGlobals();

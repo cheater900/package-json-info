@@ -1,4 +1,4 @@
-const QUERY_PARAM = "inputUrl";
+import { INPUT_URL_QUERY_PARAM } from "../constants";
 
 /**
  * Reads the `inputUrl` query param from a `location.search` string (e.g.
@@ -6,7 +6,7 @@ const QUERY_PARAM = "inputUrl";
  * absent, same as an empty text input.
  */
 export function readInputUrlParam(search: string): string {
-    return new URLSearchParams(search).get(QUERY_PARAM) ?? "";
+    return new URLSearchParams(search).get(INPUT_URL_QUERY_PARAM) ?? "";
 }
 
 /**
@@ -17,9 +17,9 @@ export function readInputUrlParam(search: string): string {
 export function withInputUrlParam(search: string, value: string): string {
     const params = new URLSearchParams(search);
     if (value) {
-        params.set(QUERY_PARAM, value);
+        params.set(INPUT_URL_QUERY_PARAM, value);
     } else {
-        params.delete(QUERY_PARAM);
+        params.delete(INPUT_URL_QUERY_PARAM);
     }
     const query = params.toString();
     return query ? `?${query}` : "";
