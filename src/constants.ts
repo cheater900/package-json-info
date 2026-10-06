@@ -20,6 +20,7 @@ export const CODEBERG_API_URL = "https://codeberg.org/api/v1";
 export const DEFAULT_BRANCH_CANDIDATES = ["main", "master"];
 
 export const DEFAULT_FETCH_CONCURRENCY = 5;
+export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 
 const STORAGE_KEY_PREFIX = "package-json-info";
 export const VISIBLE_COLUMNS_STORAGE_KEY = `${STORAGE_KEY_PREFIX}:visibleColumns`;

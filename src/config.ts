@@ -1,4 +1,4 @@
-import { DEFAULT_FETCH_CONCURRENCY } from "./constants";
+import { DEFAULT_FETCH_CONCURRENCY, DEFAULT_FETCH_TIMEOUT_MS } from "./constants";
 
 /**
  * Parses an env value as a positive integer. Empty values use `fallback`;
@@ -27,5 +27,10 @@ export const config = {
         "VITE_FETCH_CONCURRENCY",
         import.meta.env.VITE_FETCH_CONCURRENCY,
         DEFAULT_FETCH_CONCURRENCY,
+    ),
+    fetchTimeoutMs: readPositiveInt(
+        "VITE_FETCH_TIMEOUT_MS",
+        import.meta.env.VITE_FETCH_TIMEOUT_MS,
+        DEFAULT_FETCH_TIMEOUT_MS,
     ),
 };

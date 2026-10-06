@@ -43,6 +43,8 @@ privileged token into a build you publish.
   to call GitHub anonymously.
 - `VITE_FETCH_CONCURRENCY`: number of packages fetched in parallel per table.
   Defaults to 5.
+- `VITE_FETCH_TIMEOUT_MS`: milliseconds before a network request is aborted.
+  Defaults to 30000.
 
 Numeric settings must be positive integers. Any other value logs a warning
 in the browser console and falls back to the default.

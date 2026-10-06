@@ -7,6 +7,7 @@ import {
 } from "../constants";
 import { t } from "../i18n";
 import { githubRawFileUrl } from "./github";
+import { fetchWithTimeout } from "./http";
 
 /** Builds the raw-file URL for a repo's root package.json on a branch. */
 type RawUrlBuilder = (owner: string, repo: string, branch: string) => string;
@@ -55,7 +56,7 @@ export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string 
         );
     }
     for (const branch of DEFAULT_BRANCH_CANDIDATES) {
-        const response = await fetch(buildRawUrl(owner, repo, branch));
+        const response = await fetchWithTimeout(buildRawUrl(owner, repo, branch));
         if (response.ok) {
             return response.text();
         }

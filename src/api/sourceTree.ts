@@ -2,6 +2,7 @@ import { gunzip, parseTar } from "../utils/tarball";
 import { buildFileTree } from "../utils/fileTree";
 import type { FileTreeNode } from "../utils/fileTree";
 import { githubHeaders, githubRawFileUrl, githubRepoApiUrl } from "./github";
+import { fetchWithTimeout } from "./http";
 import { t } from "../i18n";
 
 export type SourceTreeRef =
@@ -34,7 +35,7 @@ export async function fetchSourceTree(ref: SourceTreeRef): Promise<SourceTree> {
 }
 
 async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
-    const response = await fetch(tarballUrl);
+    const response = await fetchWithTimeout(tarballUrl);
     if (!response.ok) {
         throw new Error(t("errors.tarballDownload", { status: response.status }));
     }
@@ -63,7 +64,7 @@ async function fetchGithubSourceTree(
     tag: string,
 ): Promise<SourceTree> {
     const encodedTag = encodeURIComponent(tag);
-    const response = await fetch(
+    const response = await fetchWithTimeout(
         `${githubRepoApiUrl(owner, repo)}/git/trees/${encodedTag}?recursive=1`,
         { headers: githubHeaders() },
     );
@@ -80,7 +81,7 @@ async function fetchGithubSourceTree(
         tree: buildFileTree(entries),
         readFile: async (path) => {
             const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-            const fileResponse = await fetch(
+            const fileResponse = await fetchWithTimeout(
                 githubRawFileUrl(owner, repo, encodedTag, encodedPath),
             );
             if (!fileResponse.ok) {

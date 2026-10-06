@@ -1,5 +1,6 @@
 import { config } from "../config";
 import { GITHUB_ACCEPT_HEADER, GITHUB_API_URL, GITHUB_RAW_URL } from "../constants";
+import { fetchWithTimeout } from "./http";
 import type { HttpHeaders } from "./http";
 
 export function githubHeaders(token: string | undefined = config.githubToken): HttpHeaders {
@@ -29,7 +30,7 @@ export async function findGithubReleaseTag(
     headers: HttpHeaders = githubHeaders(),
 ): Promise<string | null> {
     for (const candidate of [`v${version}`, version]) {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
             `${githubRepoApiUrl(owner, repo)}/git/refs/tags/${encodeURIComponent(candidate)}`,
             { headers },
         );

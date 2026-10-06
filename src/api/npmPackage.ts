@@ -15,7 +15,7 @@ import type { NpmLicenseField } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
-import { fetchJson } from "./http";
+import { fetchJson, fetchWithTimeout } from "./http";
 import type { HttpHeaders } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
 import { EMPTY_REPO_METADATA, fetchRepoMetadata } from "./repoMetadata";
@@ -265,7 +265,7 @@ function fetchWeeklyDownloads(name: string): Promise<number | null> {
 function fetchVulnerabilityCount(name: string): Promise<number | null> {
     return memoizeAsync(vulnerabilityCountCache, name, async () => {
         try {
-            const response = await fetch(OSV_QUERY_URL, {
+            const response = await fetchWithTimeout(OSV_QUERY_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ package: { name, ecosystem: OSV_NPM_ECOSYSTEM } }),
