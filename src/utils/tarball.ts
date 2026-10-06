@@ -1,3 +1,10 @@
+export type TarEntry = {
+    path: string;
+    size: number;
+    type: "file" | "directory";
+    content: Uint8Array;
+};
+
 export const TAR_BLOCK_SIZE = 512;
 
 /** USTAR header field offsets and lengths, in bytes. */
@@ -14,13 +21,6 @@ export const TAR_TYPEFLAG = {
     directory: "5",
     paxHeader: "x",
     paxGlobalHeader: "X",
-};
-
-export type TarEntry = {
-    path: string;
-    size: number;
-    type: "file" | "directory";
-    content: Uint8Array;
 };
 
 /** Decompresses a gzip-compressed buffer using the native Compression Streams API. */
@@ -97,12 +97,10 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
     const entries: TarEntry[] = [];
     let offset = 0;
     let longPathOverride: string | null = null;
-
     while (offset + TAR_BLOCK_SIZE <= bytes.length) {
         if (isZeroBlock(bytes, offset)) {
             break;
         }
-
         const name = readString(bytes, offset + TAR_HEADER.name.offset, TAR_HEADER.name.length);
         const size = readOctal(bytes, offset + TAR_HEADER.size.offset, TAR_HEADER.size.length);
         const typeflag = String.fromCharCode(bytes[offset + TAR_HEADER.typeflag.offset]);
@@ -115,19 +113,18 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
         const data = bytes.subarray(dataStart, dataStart + size);
         const path = longPathOverride ?? (prefix ? `${prefix}/${name}` : name);
         offset = dataStart + Math.ceil(size / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;
-
         if (typeflag === TAR_TYPEFLAG.paxHeader || typeflag === TAR_TYPEFLAG.paxGlobalHeader) {
             longPathOverride = parsePaxRecords(data).path || longPathOverride;
             continue;
         }
-
         longPathOverride = null;
         if (typeflag === TAR_TYPEFLAG.directory) {
             entries.push({ path, size: 0, type: "directory", content: new Uint8Array(0) });
-        } else if (typeflag === TAR_TYPEFLAG.file || typeflag === TAR_TYPEFLAG.legacyFile) {
+            continue;
+        }
+        if (typeflag === TAR_TYPEFLAG.file || typeflag === TAR_TYPEFLAG.legacyFile) {
             entries.push({ path, size, type: "file", content: data.slice() });
         }
     }
-
     return entries;
 }

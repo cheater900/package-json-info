@@ -74,7 +74,7 @@ describe("fmtBundleSize", () => {
 });
 
 describe("formatCell", () => {
-    it("uses column formatter when present", () => {
+    it("uses column formatter if present", () => {
         expect(formatCell("license", { license: "MIT" })).toBe("MIT");
         expect(formatCell("isOutdated", { isOutdated: true })).toBe("Yes");
     });

@@ -29,7 +29,7 @@ afterEach(() => {
 });
 
 describe("Modal", () => {
-    it("renders its slot content", () => {
+    it("renders slot content", () => {
         mountModal();
 
         expect(document.body.textContent).toContain("panel content");

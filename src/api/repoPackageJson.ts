@@ -29,11 +29,10 @@ const REPO_URL_PATTERN = /^https:\/\/([^/]+)\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]
  * counts as "not a repo URL"; whichever fetch runs next reports the error.
  */
 export function isRepoHostUrl(url: string): boolean {
-    try {
-        return SUPPORTED_REPO_HOSTS.includes(new URL(url).hostname);
-    } catch {
+    if (!URL.canParse(url)) {
         return false;
     }
+    return SUPPORTED_REPO_HOSTS.includes(new URL(url).hostname);
 }
 
 /**

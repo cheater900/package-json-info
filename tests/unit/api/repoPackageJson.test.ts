@@ -112,20 +112,20 @@ describe("fetchPackageJsonFromRepo", () => {
 });
 
 describe("isRepoHostUrl", () => {
-    it("is true for URL on supported repo host", () => {
+    it("returns true for URL on supported repo host", () => {
         expect(isRepoHostUrl("https://github.com/owner/repo")).toBe(true);
         expect(isRepoHostUrl("https://gitlab.com/owner/repo")).toBe(true);
         expect(isRepoHostUrl("https://codeberg.org/owner/repo")).toBe(true);
     });
 
-    it("is false for URL on other host", () => {
+    it("returns false for URL on other host", () => {
         expect(isRepoHostUrl("https://example.com/package.json")).toBe(false);
         expect(
             isRepoHostUrl("https://raw.githubusercontent.com/owner/repo/main/package.json"),
         ).toBe(false);
     });
 
-    it("is false for unparseable URL, no throw", () => {
+    it("returns false for unparseable URL, no throw", () => {
         expect(isRepoHostUrl("not a url")).toBe(false);
         expect(isRepoHostUrl("")).toBe(false);
     });

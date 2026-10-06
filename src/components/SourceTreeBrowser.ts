@@ -39,7 +39,6 @@ export default defineComponent({
                 if (!sourceTreeRef) {
                     return;
                 }
-
                 loading.value = true;
                 try {
                     const result = await fetchSourceTree(sourceTreeRef);
@@ -63,7 +62,6 @@ export default defineComponent({
             if (!readFile) {
                 return;
             }
-
             loadingContent.value = true;
             try {
                 selectedContent.value = await readFile(path);

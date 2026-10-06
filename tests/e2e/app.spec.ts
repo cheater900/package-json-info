@@ -89,7 +89,7 @@ test("hides Vulnerabilities, Bundle size, Maintainers by default, skips third-pa
     await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible();
 });
 
-test("Columns, Deps, Dev Deps are collapsible accordions; Deps and Dev Deps start open", async ({
+test("Columns, Deps, Dev Deps collapse as accordions; Deps and Dev Deps start open", async ({
     page,
 }) => {
     await page.goto("/");
@@ -500,7 +500,7 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, maintai
     await expect(row.getByRole("cell", { name: "alice, bob", exact: true })).toBeVisible();
 });
 
-test("hidden column skips its request, re-shown column fetches missing data", async ({ page }) => {
+test("hidden column skips request, re-shown column fetches missing data", async ({ page }) => {
     const osvRequestedNames: string[] = [];
     await page.route("https://api.osv.dev/v1/query", async (route) => {
         const body = route.request().postDataJSON() as { package: { name: string } };

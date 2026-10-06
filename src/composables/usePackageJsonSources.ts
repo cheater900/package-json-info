@@ -28,27 +28,32 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
     async function loadFromSource(fetchContent, notFoundMessage) {
         isLoadingInput.value = true;
         loadError.value = null;
+        let content;
         try {
-            const content = await fetchContent();
-            if (!content) {
-                loadError.value = notFoundMessage;
-                return;
-            }
-            loadPackageJsonText(content);
+            content = await fetchContent();
         } catch (err) {
             loadError.value = err.message;
+            return;
         } finally {
             isLoadingInput.value = false;
         }
+        if (!content) {
+            loadError.value = notFoundMessage;
+            return;
+        }
+        loadPackageJsonText(content);
     }
 
     async function loadFromClipboard() {
         loadError.value = null;
+        let text;
         try {
-            loadPackageJsonText(await navigator.clipboard.readText());
+            text = await navigator.clipboard.readText();
         } catch {
             loadError.value = t("errors.clipboard");
+            return;
         }
+        loadPackageJsonText(text);
     }
 
     function loadFromFile(event) {

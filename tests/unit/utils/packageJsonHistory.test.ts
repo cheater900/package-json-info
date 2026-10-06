@@ -75,19 +75,19 @@ describe("canGoBack / canGoForward", () => {
 });
 
 describe("visibleColumnsEqual", () => {
-    it("is true for sets with same members in any order", () => {
+    it("returns true for sets with same members in any order", () => {
         expect(visibleColumnsEqual(new Set(["a", "b"]), new Set(["b", "a"]))).toBe(true);
     });
 
-    it("is false for sets of different sizes", () => {
+    it("returns false for sets of different sizes", () => {
         expect(visibleColumnsEqual(new Set(["a"]), new Set(["a", "b"]))).toBe(false);
     });
 
-    it("is false for same-size sets with different members", () => {
+    it("returns false for same-size sets with different members", () => {
         expect(visibleColumnsEqual(new Set(["a"]), new Set(["b"]))).toBe(false);
     });
 
-    it("is false if either side is null", () => {
+    it("returns false for null on either side", () => {
         expect(visibleColumnsEqual(null, new Set())).toBe(false);
         expect(visibleColumnsEqual(new Set(), null)).toBe(false);
         expect(visibleColumnsEqual(null, null)).toBe(false);
@@ -95,12 +95,12 @@ describe("visibleColumnsEqual", () => {
 });
 
 describe("isEntryCacheValid", () => {
-    it("is false for never-fetched entry", () => {
+    it("returns false for never-fetched entry", () => {
         const entry = createHistoryEntry("{}", {});
         expect(isEntryCacheValid(entry, new Set())).toBe(false);
     });
 
-    it("is true once fetched under same visibleColumns", () => {
+    it("returns true once fetched under same visibleColumns", () => {
         const entry = createHistoryEntry("{}", {});
         entry.deps = [];
         entry.devDeps = [];
@@ -109,7 +109,7 @@ describe("isEntryCacheValid", () => {
         expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(true);
     });
 
-    it("is false when visibleColumns changed since fetch", () => {
+    it("returns false for visibleColumns changed since fetch", () => {
         const entry = createHistoryEntry("{}", {});
         entry.deps = [];
         entry.devDeps = [];

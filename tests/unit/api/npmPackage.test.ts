@@ -199,7 +199,7 @@ describe("fetchPackageInfo", () => {
         expect(info.maintainers).toEqual(["alice", "bob"]);
     });
 
-    it("falls back to package-level license when version has none", async () => {
+    it("falls back to package-level license without version license", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -218,7 +218,7 @@ describe("fetchPackageInfo", () => {
         expect(info.license).toBe("Apache-2.0");
     });
 
-    it("marks package up to date when declared version is latest", async () => {
+    it("marks package up to date for latest declared version", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({
@@ -690,7 +690,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countFetchCalls(fetchMock, "api.npmjs.org/downloads")).toBe(0);
     });
 
-    it("skips repo metadata request with its columns hidden, License visible", async () => {
+    it("skips repo metadata request with repo columns hidden, License visible", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("registry.npmjs.org/license-only")) {
                 return jsonResponse({
@@ -727,7 +727,7 @@ describe("fetchPackageInfo column gating", () => {
         expect(countFetchCalls(fetchMock, "api.github.com")).toBe(0);
     });
 
-    it("skips npm registry request with all its columns hidden", async () => {
+    it("skips npm registry request with all registry columns hidden", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/registry-not-needed": {
                 "dist-tags": { latest: "1.0.0" },
@@ -814,7 +814,7 @@ describe("fetchPackageJsonForVersion", () => {
         });
     });
 
-    it("falls back to latest version when declared version not registry key", async () => {
+    it("falls back to latest version for declared version not in registry", async () => {
         vi.stubGlobal(
             "fetch",
             mockFetchByUrl({

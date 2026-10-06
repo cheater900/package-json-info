@@ -10,7 +10,7 @@ describe("isCopyleftLicense", () => {
         expect(isCopyleftLicense("MPL-2.0")).toBe(true);
     });
 
-    it("is case-insensitive", () => {
+    it("matches case-insensitively", () => {
         expect(isCopyleftLicense("gpl-3.0")).toBe(true);
     });
 

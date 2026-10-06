@@ -47,7 +47,7 @@ describe("withInputUrlParam", () => {
         );
     });
 
-    it("preserves other query params when clearing inputUrl", () => {
+    it("preserves other query params on clearing inputUrl", () => {
         expect(withInputUrlParam("?foo=bar&inputUrl=https://example.com", "")).toBe("?foo=bar");
     });
 });

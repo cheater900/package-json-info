@@ -12,7 +12,16 @@ export type FileTreeNode = {
     children?: FileTreeNode[];
 };
 
-function splitPath(path: string): { parentPath: string; name: string } {
+type PathParts = {
+    parentPath: string;
+    name: string;
+};
+
+type HasEntryType = {
+    type: FileTreeEntry["type"];
+};
+
+function splitPath(path: string): PathParts {
     const lastSlash = path.lastIndexOf("/");
     if (lastSlash === -1) {
         return { parentPath: "", name: path };
@@ -21,7 +30,7 @@ function splitPath(path: string): { parentPath: string; name: string } {
 }
 
 /** Directories before files, then by the given text key. */
-function compareDirectoriesFirst<T extends { type: string }>(
+function compareDirectoriesFirst<T extends HasEntryType>(
     a: T,
     b: T,
     textA: string,
@@ -60,7 +69,6 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
     // Process directories before files so every parent exists by the time a
     // file needing it is inserted, regardless of the archive's own order.
     const sorted = [...entries].sort((a, b) => compareDirectoriesFirst(a, b, a.path, b.path));
-
     for (const entry of sorted) {
         const path = entry.path.replace(/\/+$/, "");
         if (!path) {
@@ -78,7 +86,6 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
             size: entry.size ?? 0,
         });
     }
-
     sortTree(root.children!);
     return root.children!;
 }

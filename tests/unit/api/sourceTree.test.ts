@@ -119,7 +119,7 @@ describe("fetchSourceTree - github provider", () => {
 });
 
 describe("findGithubReleaseTag", () => {
-    it("returns v-prefixed tag when present", async () => {
+    it("returns v-prefixed tag if present", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string) => ({ ok: url.endsWith("/tags/v1.2.3") })),
@@ -137,7 +137,7 @@ describe("findGithubReleaseTag", () => {
         expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBe("1.2.3");
     });
 
-    it("returns null when no tag pattern matches", async () => {
+    it("returns null without matching tag pattern", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => ({ ok: false })),

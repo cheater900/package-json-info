@@ -81,7 +81,7 @@ describe("visibleColumnKeys", () => {
         );
     });
 
-    it("updates when hidden column toggled visible", () => {
+    it("updates on hidden column toggled visible", () => {
         const { visibleColumnKeys, toggleColumn } = useColumnPreferences();
         expect(visibleColumnKeys.value).not.toContain("maintainers");
 

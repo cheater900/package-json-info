@@ -286,18 +286,15 @@ function fetchVulnerabilityCount(name: string): Promise<number | null> {
  * Version-scoped, since size differs across versions.
  */
 function fetchBundleGzipSize(name: string, version: string): Promise<number | null> {
-    return memoizeAsync(bundleSizeCache, `${name}@${version}`, async () => {
-        try {
-            const pinnedVersion = parseLeadingSemver(version)?.join(".");
-            const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
-            const data = await fetchJson<BundlephobiaData>(
-                `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
-            );
-            return data?.gzip ?? null;
-        } catch {
-            return null;
-        }
-    });
+    const pinnedVersion = parseLeadingSemver(version)?.join(".");
+    const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
+    return memoizeAsync(bundleSizeCache, `${name}@${version}`, () =>
+        fetchJson<BundlephobiaData>(
+            `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
+        )
+            .then((data) => data?.gzip ?? null)
+            .catch(() => null),
+    );
 }
 
 function fetchCachedRepoMetadata(slug: RepoSlug, headers: HttpHeaders): Promise<RepoMetadata> {

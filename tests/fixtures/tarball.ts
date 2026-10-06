@@ -48,18 +48,20 @@ export function buildTar(inputs: TarInput[]): ArrayBuffer {
     for (const input of inputs) {
         if (input.type === "directory") {
             chunks.push(tarHeader(input.name, 0, TAR_TYPEFLAG.directory));
-        } else if (input.type === "pax") {
+            continue;
+        }
+        if (input.type === "pax") {
             const text = Object.entries(input.records)
                 .map(([k, v]) => paxRecord(k, v))
                 .join("");
             const bytes = new TextEncoder().encode(text);
             chunks.push(tarHeader("", bytes.length, TAR_TYPEFLAG.paxHeader));
             chunks.push(pad(bytes));
-        } else {
-            const bytes = new TextEncoder().encode(input.content);
-            chunks.push(tarHeader(input.name, bytes.length, TAR_TYPEFLAG.file));
-            chunks.push(pad(bytes));
+            continue;
         }
+        const bytes = new TextEncoder().encode(input.content);
+        chunks.push(tarHeader(input.name, bytes.length, TAR_TYPEFLAG.file));
+        chunks.push(pad(bytes));
     }
     chunks.push(new Uint8Array(TAR_BLOCK_SIZE * END_OF_ARCHIVE_BLOCKS));
 

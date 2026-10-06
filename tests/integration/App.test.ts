@@ -31,7 +31,7 @@ describe("App", () => {
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
     });
 
-    it("expand button opens table in modal, close removes it", async () => {
+    it("expand button opens table modal, close removes modal", async () => {
         const wrapper = await mountApp();
 
         await wrapper.findAll(".table-toolbar__expand")[1].trigger("click");

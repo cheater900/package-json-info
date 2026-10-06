@@ -33,10 +33,8 @@ export function usePackageJsonHistory(visibleColumns) {
     const isLoadingDeps = ref(false);
     const isLoadingDevDeps = ref(false);
     const loadError = ref(null);
-
     const history = ref([]);
     const historyIndex = ref(-1);
-
     const canGoBack = computed(() => canGoBackPure(historyIndex.value));
     const canGoForward = computed(() => canGoForwardPure(history.value, historyIndex.value));
 
@@ -61,7 +59,6 @@ export function usePackageJsonHistory(visibleColumns) {
             return false;
         }
         loadError.value = null;
-
         const pushed = pushHistoryEntry(
             history.value,
             historyIndex.value,
@@ -94,9 +91,7 @@ export function usePackageJsonHistory(visibleColumns) {
         if (!entry) {
             return;
         }
-
         pkg.value = entry.pkg;
-
         if (isEntryCacheValid(entry, visibleColumns.value)) {
             deps.value = entry.deps;
             devDeps.value = entry.devDeps;
@@ -104,7 +99,6 @@ export function usePackageJsonHistory(visibleColumns) {
             isLoadingDevDeps.value = false;
             return;
         }
-
         fetchEntryDependencies(entry, historyIndex.value);
     }
 
@@ -118,7 +112,6 @@ export function usePackageJsonHistory(visibleColumns) {
         const rawDeps = toPackageInputs(entry.pkg.dependencies);
         const rawDevDeps = toPackageInputs(entry.pkg.devDependencies);
         const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
-
         if (historyIndex.value === index) {
             isLoadingDeps.value = rawDeps.length > 0;
             isLoadingDevDeps.value = rawDevDeps.length > 0;
@@ -128,11 +121,9 @@ export function usePackageJsonHistory(visibleColumns) {
             fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime }),
             fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime }),
         ]);
-
         entry.deps = depsResult;
         entry.devDeps = devDepsResult;
         entry.visibleColumnsSnapshot = visibleColumnsAtFetchTime;
-
         if (historyIndex.value === index) {
             deps.value = depsResult;
             devDeps.value = devDepsResult;

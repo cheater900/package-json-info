@@ -71,9 +71,9 @@ describe("DependenciesTable", () => {
             }
             if (index === licenseIndex) {
                 expect(cell.text()).toBe("- ⚠");
-            } else {
-                expect(cell.text()).toBe("-");
+                return;
             }
+            expect(cell.text()).toBe("-");
         });
         expect(wrapper.find("tbody a").exists()).toBe(false);
     });
@@ -307,7 +307,7 @@ describe("DependenciesTable column labels", () => {
         expect(headerLabels(wrapper)).toContain("Latest release date");
     });
 
-    it("abbreviates multi-word labels when shrinkLabels true", () => {
+    it("abbreviates multi-word labels with shrinkLabels true", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
