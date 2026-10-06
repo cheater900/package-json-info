@@ -44,6 +44,9 @@ privileged token into a build you publish.
 - `VITE_FETCH_CONCURRENCY`: number of packages fetched in parallel per table.
   Defaults to 5.
 
+Numeric settings must be positive integers. Any other value logs a warning
+in the browser console and falls back to the default.
+
 Column visibility, column order and the "shrink columns" toggle are user
 settings. The app stores them in `localStorage`.
 
