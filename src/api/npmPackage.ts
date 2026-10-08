@@ -13,6 +13,7 @@ import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense } from "../utils/license";
 import type { NpmLicenseField } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
+import { resolveRegistrySpec } from "../utils/npmSpec";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
 import { fetchJson } from "./http";
@@ -160,17 +161,26 @@ export async function fetchPackageInfo(
     options: FetchPackageOptions = {},
 ): Promise<PackageInfo> {
     const { githubToken, visibleColumns = ALL_TOGGLEABLE_COLUMN_KEYS } = options;
+    const { registryName, range } = resolveRegistrySpec(name, version);
     const headers = githubHeaders(githubToken);
     const isVisible = (key: string) => isColumnVisible(visibleColumns, key);
     const [npmData, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
-        anyColumnVisible(visibleColumns, REGISTRY_DATA_COLUMNS) ? fetchRegistryData(name) : null,
-        isVisible("weeklyDownloads") ? withFallback(fetchWeeklyDownloads(name), null) : null,
-        isVisible("vulnerabilityCount") ? withFallback(fetchVulnerabilityCount(name), null) : null,
-        isVisible("bundleSizeGzip") ? withFallback(fetchBundleGzipSize(name, version), null) : null,
+        anyColumnVisible(visibleColumns, REGISTRY_DATA_COLUMNS)
+            ? fetchRegistryData(registryName)
+            : null,
+        isVisible("weeklyDownloads")
+            ? withFallback(fetchWeeklyDownloads(registryName), null)
+            : null,
+        isVisible("vulnerabilityCount")
+            ? withFallback(fetchVulnerabilityCount(registryName), null)
+            : null,
+        isVisible("bundleSizeGzip")
+            ? withFallback(fetchBundleGzipSize(registryName, range), null)
+            : null,
     ]);
     const times = npmData?.time ?? {};
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
-    const versionData = resolveVersionData(npmData, version);
+    const versionData = resolveVersionData(npmData, range);
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
     const [gitStars, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
@@ -180,13 +190,13 @@ export async function fetchPackageInfo(
             ? withFallback(fetchCachedIssueCounts(slug, headers), EMPTY_ISSUE_COUNTS)
             : EMPTY_ISSUE_COUNTS,
         isVisible("sourceCodeTree")
-            ? withFallback(resolveSourceTree(versionData, slug, version, headers), null)
+            ? withFallback(resolveSourceTree(versionData, slug, range, headers), null)
             : null,
     ]);
     return {
         name,
         version,
-        versionDate: times[version] ?? null,
+        versionDate: times[range] ?? null,
         latestVersion,
         latestReleaseDate: latestVersion ? (times[latestVersion] ?? null) : null,
         latestUpdateDate: times.modified ?? null,
@@ -199,7 +209,7 @@ export async function fetchPackageInfo(
         ...issueCounts,
         dependencies: versionData?.dependencies ? Object.keys(versionData.dependencies) : null,
         license: extractLicense(versionData?.license) ?? extractLicense(npmData?.license),
-        isOutdated: isVersionOutdated(version, latestVersion),
+        isOutdated: isVersionOutdated(range, latestVersion),
         deprecated: versionData?.deprecated ?? null,
         vulnerabilityCount,
         bundleSizeGzip,
@@ -219,7 +229,8 @@ export async function fetchPackageJsonForVersion(
     name: string,
     version: string,
 ): Promise<string | null> {
-    const versionData = resolveVersionData(await fetchRegistryData(name), version);
+    const { registryName, range } = resolveRegistrySpec(name, version);
+    const versionData = resolveVersionData(await fetchRegistryData(registryName), range);
     if (!versionData) {
         return null;
     }
@@ -280,8 +291,8 @@ function fetchVulnerabilityCount(name: string): Promise<number | null> {
 }
 
 /** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
-function fetchBundleGzipSize(name: string, version: string): Promise<number | null> {
-    const pinnedVersion = parseLeadingSemver(version)?.join(".");
+function fetchBundleGzipSize(name: string, range: string): Promise<number | null> {
+    const pinnedVersion = parseLeadingSemver(range)?.join(".");
     const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
     return memoizeAsync(bundleSizeCache, packageSpec, () =>
         fetchJson<BundlephobiaData>(
@@ -308,14 +319,14 @@ function fetchCachedIssueCounts(slug: RepoSlug, headers: HttpHeaders): Promise<R
 async function resolveSourceTree(
     versionData: NpmVersionData | undefined,
     slug: RepoSlug | null,
-    version: string,
+    range: string,
     headers: HttpHeaders,
 ): Promise<SourceTreeRef | null> {
     const tarballUrl = versionData?.dist?.tarball;
     if (tarballUrl) {
         return { provider: "npm", tarballUrl };
     }
-    const pinnedVersion = parseLeadingSemver(version)?.join(".");
+    const pinnedVersion = parseLeadingSemver(range)?.join(".");
     if (slug?.host !== GITHUB_HOST || !pinnedVersion) {
         return null;
     }

@@ -995,6 +995,24 @@ describe("fetchPackageInfo failures", () => {
 });
 
 describe("fetchPackageInfo input edge cases", () => {
+    it("looks up real package for npm alias spec", async () => {
+        const fetchMock = mockFetchByUrl({
+            "registry.npmjs.org/real-pkg": {
+                "dist-tags": { latest: "2.0.0" },
+                time: { "2.0.0": "2022-01-01T00:00:00.000Z" },
+                versions: { "2.0.0": { dependencies: { dep: "1.0.0" } } },
+            },
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("my-alias", "npm:real-pkg@2.0.0");
+
+        expect(info.name).toBe("my-alias");
+        expect(info.versionDate).toBe("2022-01-01T00:00:00.000Z");
+        expect(info.dependencies).toEqual(["dep"]);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/my-alias")).toBe(0);
+    });
+
     it("skips GitHub tag lookup for non-semver range", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/tagless": {
