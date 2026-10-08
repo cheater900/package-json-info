@@ -130,3 +130,15 @@ describe("isRepoHostUrl", () => {
         expect(isRepoHostUrl("")).toBe(false);
     });
 });
+
+describe("fetchPackageJsonFromRepo failures", () => {
+    const HTTP_TOO_MANY_REQUESTS = 429;
+
+    it("throws on rate limit instead of trying next branch", async () => {
+        const fetchMock = vi.fn(async () => ({ ok: false, status: HTTP_TOO_MANY_REQUESTS }));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(fetchPackageJsonFromRepo("https://github.com/o/r")).rejects.toThrow("429");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+});

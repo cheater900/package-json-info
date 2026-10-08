@@ -3,11 +3,12 @@ import {
     DEFAULT_BRANCH_CANDIDATES,
     GITHUB_HOST,
     GITLAB_HOST,
+    HTTP_NOT_FOUND,
     SUPPORTED_REPO_HOSTS,
 } from "../constants";
 import { t } from "../i18n";
 import { githubRawFileUrl } from "./github";
-import { fetchWithTimeout } from "./http";
+import { fetchWithTimeout, HttpError } from "./http";
 
 /** Builds the raw-file URL for a repo's root package.json on a branch. */
 type RawUrlBuilder = (owner: string, repo: string, branch: string) => string;
@@ -38,7 +39,8 @@ export function isRepoHostUrl(url: string): boolean {
 
 /**
  * Fetches the raw package.json of a GitHub/GitLab/Codeberg repository,
- * trying each of DEFAULT_BRANCH_CANDIDATES in order.
+ * trying each of DEFAULT_BRANCH_CANDIDATES in order. Only a 404 moves on
+ * to the next branch; other failures throw.
  *
  * @returns The raw package.json text, or null if no branch has one.
  * @throws  If the URL isn't `https://<host>/<owner>/<repo>` on a supported host.
@@ -59,6 +61,9 @@ export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string 
         const response = await fetchWithTimeout(buildRawUrl(owner, repo, branch));
         if (response.ok) {
             return response.text();
+        }
+        if (response.status !== HTTP_NOT_FOUND) {
+            throw new HttpError(response.status);
         }
     }
     return null;

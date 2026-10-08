@@ -901,6 +901,7 @@ describe("fetchPackagesInfo", () => {
 
 describe("fetchPackageInfo failures", () => {
     const HTTP_SERVER_ERROR = 503;
+    const HTTP_FORBIDDEN = 403;
     const registryDoc = {
         "dist-tags": { latest: "1.0.0" },
         time: {},
@@ -936,6 +937,15 @@ describe("fetchPackageInfo failures", () => {
         });
     }
 
+    it("keeps row with null downloads on downloads server error", async () => {
+        vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "status"));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.weeklyDownloads).toBeNull();
+        expect(info.gitStars).toBe(9);
+    });
+
     it("keeps row with null downloads on network failure", async () => {
         vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
 
@@ -952,5 +962,34 @@ describe("fetchPackageInfo failures", () => {
 
         expect(info.gitStars).toBeNull();
         expect(info.weeklyDownloads).toBe(7);
+    });
+
+    it("retries failed downloads lookup on next fetch instead of caching null", async () => {
+        const fetchMock = failingFetch("api.npmjs.org/downloads", "status");
+        vi.stubGlobal("fetch", fetchMock);
+
+        await fetchPackageInfo("pkg", "1.0.0");
+        await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(countFetchCalls(fetchMock, "api.npmjs.org/downloads")).toBe(2);
+    });
+
+    it("keeps stars with null issue counts on rate-limited search", async () => {
+        vi.stubGlobal("fetch", failingFetch("search/issues", "status", HTTP_FORBIDDEN));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.gitStars).toBe(9);
+        expect(info.openPRs).toBeNull();
+        expect(info.closedIssues).toBeNull();
+    });
+
+    it("rejects on registry server error, retries on next fetch", async () => {
+        const fetchMock = failingFetch("registry.npmjs.org", "status");
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(fetchPackageInfo("pkg", "1.0.0")).rejects.toThrow("503");
+        await expect(fetchPackageInfo("pkg", "1.0.0")).rejects.toThrow("503");
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org")).toBe(2);
     });
 });

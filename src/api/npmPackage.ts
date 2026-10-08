@@ -15,11 +15,11 @@ import type { NpmLicenseField } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
-import { fetchJson, fetchWithTimeout } from "./http";
+import { fetchJson } from "./http";
 import type { HttpHeaders } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
-import { EMPTY_REPO_METADATA, fetchRepoMetadata } from "./repoMetadata";
-import type { RepoMetadata } from "./repoMetadata";
+import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repoMetadata";
+import type { RepoIssueCounts } from "./repoMetadata";
 import type { SourceTreeRef } from "./sourceTree";
 
 export type FetchPackageOptions = {
@@ -87,20 +87,23 @@ const REGISTRY_DATA_COLUMNS = [
     "closedIssues",
 ];
 
-/** Columns backed by the stars/PR/issue-count lookup against the repo host. */
-const REPO_METADATA_COLUMNS = ["gitStars", "openPRs", "closedPRs", "openIssues", "closedIssues"];
+/** Columns backed by the PR/issue-count search against the repo host. */
+const ISSUE_COUNT_COLUMNS = ["openPRs", "closedPRs", "openIssues", "closedIssues"];
 
 // Caches hold promises keyed by each lookup's natural key (package name,
 // name@version, or repo slug), so concurrent callers share one in-flight
 // request and packages sharing a name or monorepo share results. No
 // whole-PackageInfo cache: which sub-fetches run depends on visible columns.
-// Caches live for the page load. The GitHub token of the first caller for
+// Caches live for the page load. Failed lookups reject and are evicted
+// (see memoizeAsync), so a rate limit or outage is retried on the next
+// fetch instead of being cached as "no data". The GitHub token of the first caller for
 // a slug wins; the app uses one token, so this never differs.
 const registryDataCache = new Map<string, Promise<NpmRegistryData | null>>();
 const weeklyDownloadsCache = new Map<string, Promise<number | null>>();
 const vulnerabilityCountCache = new Map<string, Promise<number | null>>();
 const bundleSizeCache = new Map<string, Promise<number | null>>();
-const repoMetadataCache = new Map<string, Promise<RepoMetadata>>();
+const repoStarsCache = new Map<string, Promise<number | null>>();
+const repoIssueCountsCache = new Map<string, Promise<RepoIssueCounts>>();
 const githubReleaseTagCache = new Map<string, Promise<string | null>>();
 
 /** Clears every in-memory metadata cache. Exposed for tests. */
@@ -109,7 +112,8 @@ export function clearPackageInfoCache(): void {
     weeklyDownloadsCache.clear();
     vulnerabilityCountCache.clear();
     bundleSizeCache.clear();
-    repoMetadataCache.clear();
+    repoStarsCache.clear();
+    repoIssueCountsCache.clear();
     githubReleaseTagCache.clear();
 }
 
@@ -168,10 +172,13 @@ export async function fetchPackageInfo(
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
     const versionData = resolveVersionData(npmData, version);
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
-    const [repoMetadata, sourceTree] = await Promise.all([
-        slug != null && anyColumnVisible(visibleColumns, REPO_METADATA_COLUMNS)
-            ? withFallback(fetchCachedRepoMetadata(slug, headers), EMPTY_REPO_METADATA)
-            : EMPTY_REPO_METADATA,
+    const [gitStars, issueCounts, sourceTree] = await Promise.all([
+        slug != null && isVisible("gitStars")
+            ? withFallback(fetchCachedRepoStars(slug, headers), null)
+            : null,
+        slug != null && anyColumnVisible(visibleColumns, ISSUE_COUNT_COLUMNS)
+            ? withFallback(fetchCachedIssueCounts(slug, headers), EMPTY_ISSUE_COUNTS)
+            : EMPTY_ISSUE_COUNTS,
         isVisible("sourceCodeTree")
             ? withFallback(resolveSourceTree(versionData, slug, version, headers), null)
             : null,
@@ -188,11 +195,8 @@ export async function fetchPackageInfo(
             slug != null
                 ? repoWebUrl(slug)
                 : (normaliseRepoUrl(repositoryUrl(npmData)) ?? npmData?.homepage ?? null),
-        gitStars: repoMetadata.stars,
-        openPRs: repoMetadata.openPRs,
-        closedPRs: repoMetadata.closedPRs,
-        openIssues: repoMetadata.openIssues,
-        closedIssues: repoMetadata.closedIssues,
+        gitStars,
+        ...issueCounts,
         dependencies: versionData?.dependencies ? Object.keys(versionData.dependencies) : null,
         license: extractLicense(versionData?.license) ?? extractLicense(npmData?.license),
         isOutdated: isVersionOutdated(version, latestVersion),
@@ -264,48 +268,35 @@ function fetchWeeklyDownloads(name: string): Promise<number | null> {
     );
 }
 
-/**
- * Known security advisories via OSV. Best-effort: OSV may be unreachable
- * from a browser (rate limits, CORS), so failure resolves to null.
- */
+/** Known security advisories via OSV. Throws on failure; OSV may block browser requests (CORS, rate limits). */
 function fetchVulnerabilityCount(name: string): Promise<number | null> {
-    return memoizeAsync(vulnerabilityCountCache, name, async () => {
-        try {
-            const response = await fetchWithTimeout(OSV_QUERY_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ package: { name, ecosystem: OSV_NPM_ECOSYSTEM } }),
-            });
-            if (!response.ok) {
-                return null;
-            }
-            const data = (await response.json()) as OsvQueryResponse;
-            return data.vulns?.length ?? 0;
-        } catch {
-            return null;
-        }
-    });
-}
-
-/**
- * Min+gzip size via Bundlephobia. Best-effort like fetchVulnerabilityCount.
- * Version-scoped, since size differs across versions.
- */
-function fetchBundleGzipSize(name: string, version: string): Promise<number | null> {
-    const pinnedVersion = parseLeadingSemver(version)?.join(".");
-    const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
-    return memoizeAsync(bundleSizeCache, `${name}@${version}`, () =>
-        fetchJson<BundlephobiaData>(
-            `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
-        )
-            .then((data) => data?.gzip ?? null)
-            .catch(() => null),
+    return memoizeAsync(vulnerabilityCountCache, name, () =>
+        fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ package: { name, ecosystem: OSV_NPM_ECOSYSTEM } }),
+        }).then((data) => (data ? (data.vulns?.length ?? 0) : null)),
     );
 }
 
-function fetchCachedRepoMetadata(slug: RepoSlug, headers: HttpHeaders): Promise<RepoMetadata> {
-    return memoizeAsync(repoMetadataCache, repoSlugKey(slug), () =>
-        fetchRepoMetadata(slug, headers),
+/** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
+function fetchBundleGzipSize(name: string, version: string): Promise<number | null> {
+    const pinnedVersion = parseLeadingSemver(version)?.join(".");
+    const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
+    return memoizeAsync(bundleSizeCache, packageSpec, () =>
+        fetchJson<BundlephobiaData>(
+            `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
+        ).then((data) => data?.gzip ?? null),
+    );
+}
+
+function fetchCachedRepoStars(slug: RepoSlug, headers: HttpHeaders): Promise<number | null> {
+    return memoizeAsync(repoStarsCache, repoSlugKey(slug), () => fetchRepoStars(slug, headers));
+}
+
+function fetchCachedIssueCounts(slug: RepoSlug, headers: HttpHeaders): Promise<RepoIssueCounts> {
+    return memoizeAsync(repoIssueCountsCache, repoSlugKey(slug), () =>
+        fetchRepoIssueCounts(slug, headers),
     );
 }
 

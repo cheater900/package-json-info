@@ -1,6 +1,6 @@
 import { config } from "../config";
-import { GITHUB_ACCEPT_HEADER, GITHUB_API_URL, GITHUB_RAW_URL } from "../constants";
-import { fetchWithTimeout } from "./http";
+import { GITHUB_ACCEPT_HEADER, GITHUB_API_URL, GITHUB_RAW_URL, HTTP_NOT_FOUND } from "../constants";
+import { fetchWithTimeout, HttpError } from "./http";
 import type { HttpHeaders } from "./http";
 
 export function githubHeaders(token: string | undefined = config.githubToken): HttpHeaders {
@@ -22,6 +22,8 @@ export function githubRawFileUrl(owner: string, repo: string, ref: string, path:
  * Finds a release tag on GitHub matching `version`, trying "v1.2.3" then
  * "1.2.3". Checks each candidate via the refs API (one request, 404 when
  * absent) instead of listing every tag - popular repos have thousands.
+ * Throws on other failures (rate limit, network) so they aren't mistaken
+ * for "no such tag".
  */
 export async function findGithubReleaseTag(
     owner: string,
@@ -36,6 +38,9 @@ export async function findGithubReleaseTag(
         );
         if (response.ok) {
             return candidate;
+        }
+        if (response.status !== HTTP_NOT_FOUND) {
+            throw new HttpError(response.status);
         }
     }
     return null;

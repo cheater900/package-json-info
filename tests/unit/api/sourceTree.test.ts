@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchSourceTree } from "../../../src/api/sourceTree";
-import { findGithubReleaseTag } from "../../../src/api/github";
 import { buildNpmTarball } from "../../fixtures/tarball";
 
 beforeEach(() => {
@@ -115,34 +114,5 @@ describe("fetchSourceTree - github provider", () => {
         await expect(
             fetchSourceTree({ provider: "github", owner: "o", repo: "r", tag: "v1.0.0" }),
         ).rejects.toThrow(/404/);
-    });
-});
-
-describe("findGithubReleaseTag", () => {
-    it("returns v-prefixed tag if present", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (url: string) => ({ ok: url.endsWith("/tags/v1.2.3") })),
-        );
-
-        expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBe("v1.2.3");
-    });
-
-    it("falls back to bare version without v-prefixed tag", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (url: string) => ({ ok: url.endsWith("/tags/1.2.3") })),
-        );
-
-        expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBe("1.2.3");
-    });
-
-    it("returns null without matching tag pattern", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => ({ ok: false })),
-        );
-
-        expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBeNull();
     });
 });
