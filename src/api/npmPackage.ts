@@ -315,11 +315,14 @@ async function resolveSourceTree(
     if (tarballUrl) {
         return { provider: "npm", tarballUrl };
     }
-    if (slug?.host !== GITHUB_HOST) {
+    const pinnedVersion = parseLeadingSemver(version)?.join(".");
+    if (slug?.host !== GITHUB_HOST || !pinnedVersion) {
         return null;
     }
-    const tag = await memoizeAsync(githubReleaseTagCache, `${repoSlugKey(slug)}@${version}`, () =>
-        findGithubReleaseTag(slug.owner, slug.repo, version, headers),
+    const tag = await memoizeAsync(
+        githubReleaseTagCache,
+        `${repoSlugKey(slug)}@${pinnedVersion}`,
+        () => findGithubReleaseTag(slug.owner, slug.repo, pinnedVersion, headers),
     );
     if (!tag) {
         return null;

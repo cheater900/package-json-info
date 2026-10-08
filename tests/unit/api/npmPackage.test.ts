@@ -993,3 +993,44 @@ describe("fetchPackageInfo failures", () => {
         expect(countFetchCalls(fetchMock, "registry.npmjs.org")).toBe(2);
     });
 });
+
+describe("fetchPackageInfo input edge cases", () => {
+    it("skips GitHub tag lookup for non-semver range", async () => {
+        const fetchMock = mockFetchByUrl({
+            "registry.npmjs.org/tagless": {
+                "dist-tags": { latest: "1.0.0" },
+                repository: "github:o/tagless",
+                versions: { "1.0.0": {} },
+            },
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("tagless", "latest");
+
+        expect(info.sourceTree).toBeNull();
+        expect(countFetchCalls(fetchMock, "git/refs/tags")).toBe(0);
+    });
+
+    it("looks up tag by leading version of caret range", async () => {
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url.includes("registry.npmjs.org")) {
+                return jsonResponse({
+                    "dist-tags": { latest: "1.2.3" },
+                    repository: "github:o/r",
+                    versions: { "1.2.3": {} },
+                });
+            }
+            return jsonResponse({}, url.endsWith("/git/refs/tags/v1.2.3"));
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("r", "^1.2.3");
+
+        expect(info.sourceTree).toEqual({
+            provider: "github",
+            owner: "o",
+            repo: "r",
+            tag: "v1.2.3",
+        });
+    });
+});
