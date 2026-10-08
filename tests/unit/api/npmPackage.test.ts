@@ -898,3 +898,59 @@ describe("fetchPackagesInfo", () => {
         expect(results[1]).toMatchObject({ name: "bad", error: "network down" });
     });
 });
+
+describe("fetchPackageInfo failures", () => {
+    const HTTP_SERVER_ERROR = 503;
+    const registryDoc = {
+        "dist-tags": { latest: "1.0.0" },
+        time: {},
+        repository: "git+https://github.com/o/r.git",
+        versions: { "1.0.0": {} },
+    };
+
+    function failingFetch(
+        failPattern: string,
+        failure: "status" | "network",
+        status = HTTP_SERVER_ERROR,
+    ) {
+        return vi.fn(async (url: string) => {
+            if (url.includes(failPattern)) {
+                if (failure === "network") {
+                    throw new TypeError("Failed to fetch");
+                }
+                return { ok: false, status, json: async () => ({}) };
+            }
+            if (url.includes("registry.npmjs.org")) {
+                return jsonResponse(registryDoc);
+            }
+            if (url.includes("api.npmjs.org/downloads")) {
+                return jsonResponse({ downloads: 7 });
+            }
+            if (url.includes("search/issues")) {
+                return jsonResponse({ total_count: 2 });
+            }
+            if (url.includes("api.github.com/repos")) {
+                return jsonResponse({ stargazers_count: 9 });
+            }
+            return jsonResponse(null, false);
+        });
+    }
+
+    it("keeps row with null downloads on network failure", async () => {
+        vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.weeklyDownloads).toBeNull();
+        expect(info.latestVersion).toBe("1.0.0");
+    });
+
+    it("keeps npm data with null stars on repo host network failure", async () => {
+        vi.stubGlobal("fetch", failingFetch("api.github.com", "network"));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.gitStars).toBeNull();
+        expect(info.weeklyDownloads).toBe(7);
+    });
+});

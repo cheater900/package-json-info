@@ -113,6 +113,11 @@ export function clearPackageInfoCache(): void {
     githubReleaseTagCache.clear();
 }
 
+/** Optional per-field lookups fall back to `fallback` so one failing service can't fail the row. */
+function withFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
+    return request.catch(() => fallback);
+}
+
 function anyColumnVisible(visibleColumns: ReadonlySet<string>, keys: string[]): boolean {
     return keys.some((key) => isColumnVisible(visibleColumns, key));
 }
@@ -155,21 +160,22 @@ export async function fetchPackageInfo(
     const isVisible = (key: string) => isColumnVisible(visibleColumns, key);
     const [npmData, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
         anyColumnVisible(visibleColumns, REGISTRY_DATA_COLUMNS) ? fetchRegistryData(name) : null,
-        isVisible("weeklyDownloads") ? fetchWeeklyDownloads(name) : null,
-        isVisible("vulnerabilityCount") ? fetchVulnerabilityCount(name) : null,
-        isVisible("bundleSizeGzip") ? fetchBundleGzipSize(name, version) : null,
+        isVisible("weeklyDownloads") ? withFallback(fetchWeeklyDownloads(name), null) : null,
+        isVisible("vulnerabilityCount") ? withFallback(fetchVulnerabilityCount(name), null) : null,
+        isVisible("bundleSizeGzip") ? withFallback(fetchBundleGzipSize(name, version), null) : null,
     ]);
     const times = npmData?.time ?? {};
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
     const versionData = resolveVersionData(npmData, version);
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
-    const repoMetadata =
+    const [repoMetadata, sourceTree] = await Promise.all([
         slug != null && anyColumnVisible(visibleColumns, REPO_METADATA_COLUMNS)
-            ? await fetchCachedRepoMetadata(slug, headers)
-            : EMPTY_REPO_METADATA;
-    const sourceTree = isVisible("sourceCodeTree")
-        ? await resolveSourceTree(versionData, slug, version, headers)
-        : null;
+            ? withFallback(fetchCachedRepoMetadata(slug, headers), EMPTY_REPO_METADATA)
+            : EMPTY_REPO_METADATA,
+        isVisible("sourceCodeTree")
+            ? withFallback(resolveSourceTree(versionData, slug, version, headers), null)
+            : null,
+    ]);
     return {
         name,
         version,
