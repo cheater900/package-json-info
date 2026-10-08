@@ -1013,6 +1013,22 @@ describe("fetchPackageInfo input edge cases", () => {
         expect(countFetchCalls(fetchMock, "registry.npmjs.org/my-alias")).toBe(0);
     });
 
+    it("drops non-http homepage as source link", async () => {
+        vi.stubGlobal(
+            "fetch",
+            mockFetchByUrl({
+                "registry.npmjs.org/evil": {
+                    "dist-tags": { latest: "1.0.0" },
+                    homepage: "javascript:alert(1)",
+                },
+            }),
+        );
+
+        const info = await fetchPackageInfo("evil", "1.0.0");
+
+        expect(info.sourceCode).toBeNull();
+    });
+
     it("skips GitHub tag lookup for non-semver range", async () => {
         const fetchMock = mockFetchByUrl({
             "registry.npmjs.org/tagless": {

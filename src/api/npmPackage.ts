@@ -14,6 +14,7 @@ import { extractLicense } from "../utils/license";
 import type { NpmLicenseField } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { resolveRegistrySpec } from "../utils/npmSpec";
+import { isHttpUrl } from "../utils/url";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
 import { fetchJson } from "./http";
@@ -193,6 +194,10 @@ export async function fetchPackageInfo(
             ? withFallback(resolveSourceTree(versionData, slug, range, headers), null)
             : null,
     ]);
+    const sourceCode =
+        slug != null
+            ? repoWebUrl(slug)
+            : (normaliseRepoUrl(repositoryUrl(npmData)) ?? npmData?.homepage);
     return {
         name,
         version,
@@ -201,10 +206,7 @@ export async function fetchPackageInfo(
         latestReleaseDate: latestVersion ? (times[latestVersion] ?? null) : null,
         latestUpdateDate: times.modified ?? null,
         weeklyDownloads,
-        sourceCode:
-            slug != null
-                ? repoWebUrl(slug)
-                : (normaliseRepoUrl(repositoryUrl(npmData)) ?? npmData?.homepage ?? null),
+        sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
         gitStars,
         ...issueCounts,
         dependencies: versionData?.dependencies ? Object.keys(versionData.dependencies) : null,
