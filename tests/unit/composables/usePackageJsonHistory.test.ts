@@ -182,3 +182,66 @@ describe("reacting to visibleColumns changes", () => {
         await vi.waitFor(() => expect(fetchSpy.mock.calls.length).toBeGreaterThan(callsBefore));
     });
 });
+
+describe("async fetch ordering", () => {
+    type PendingRequest = { url: string; resolve: (response: unknown) => void };
+
+    /** Fetch mock whose requests stay pending until released by URL fragment. */
+    function deferredFetch() {
+        const pending: PendingRequest[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((url: string) => new Promise((resolve) => pending.push({ url, resolve }))),
+        );
+        return async function release(urlFragment: string, body: unknown) {
+            for (const request of pending.filter((p) => p.url.includes(urlFragment))) {
+                request.resolve(jsonResponse(body));
+            }
+            await flushPromises();
+        };
+    }
+
+    async function flushPromises() {
+        for (let i = 0; i < 20; i++) {
+            await Promise.resolve();
+        }
+        await nextTick();
+    }
+
+    function packageJsonWith(dependency: string) {
+        return JSON.stringify({ name: dependency, dependencies: { [dependency]: "1.0.0" } });
+    }
+
+    it("ignores late result of entry replaced at same index", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, goBack, deps } = usePackageJsonHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("first"));
+        await release("/first", { downloads: 1 });
+        loadPackageJsonText(packageJsonWith("slow"));
+        goBack();
+        loadPackageJsonText(packageJsonWith("latest"));
+
+        await release("/slow", { downloads: 2 });
+        expect(deps.value.map((d) => d.name)).not.toContain("slow");
+        await release("/latest", { downloads: 3 });
+
+        expect(deps.value.map((d) => d.name)).toEqual(["latest"]);
+    });
+
+    it("keeps newest fetch when older fetch of same entry finishes later", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref(new Set(["vulnerabilityCount"]));
+        const { loadPackageJsonText, deps, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("pkg"));
+        visibleColumns.value = new Set(["weeklyDownloads"]);
+        await nextTick();
+
+        await release("api.npmjs.org/downloads", { downloads: 5 });
+        await release("api.osv.dev", { vulns: [] });
+
+        expect(deps.value[0].weeklyDownloads).toBe(5);
+        expect(deps.value[0].vulnerabilityCount).toBeNull();
+        expect(isLoadingDeps.value).toBe(false);
+    });
+});

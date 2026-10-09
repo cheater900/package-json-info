@@ -1,4 +1,4 @@
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, toRaw } from "vue";
 import { fetchPackagesInfo } from "../api/npmPackage.ts";
 import {
     createHistoryEntry,
@@ -37,6 +37,13 @@ export function usePackageJsonHistory(visibleColumns) {
     const historyIndex = ref(-1);
     const canGoBack = computed(() => canGoBackPure(historyIndex.value));
     const canGoForward = computed(() => canGoForwardPure(history.value, historyIndex.value));
+    // Latest fetch started per entry. A slower, older fetch for the same entry
+    // (e.g. columns toggled mid-fetch) finishes later and must not win.
+    const latestFetchByEntry = new WeakMap();
+
+    function isCurrentEntry(entry) {
+        return history.value[historyIndex.value] === entry;
+    }
 
     /**
      * Validates raw package.json text and, on success, records it as a new
@@ -99,37 +106,40 @@ export function usePackageJsonHistory(visibleColumns) {
             isLoadingDevDeps.value = false;
             return;
         }
-        fetchEntryDependencies(entry, historyIndex.value);
+        fetchEntryDependencies(entry);
     }
 
     /**
      * Fetches (or re-fetches, if visibleColumns has changed) an entry's
-     * deps/devDeps, caches the result on the entry itself, and - only if
-     * the user hasn't navigated elsewhere in the meantime - applies it to
-     * the visible state.
+     * deps/devDeps and caches them on the entry. Results apply to the view
+     * only while this entry is still the current one; position alone isn't
+     * enough, since loading after going back reuses the same index.
      */
-    async function fetchEntryDependencies(entry, index) {
+    async function fetchEntryDependencies(entry) {
+        const fetchToken = Symbol();
+        latestFetchByEntry.set(toRaw(entry), fetchToken);
         const rawDeps = toPackageInputs(entry.pkg.dependencies);
         const rawDevDeps = toPackageInputs(entry.pkg.devDependencies);
         const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
-        if (historyIndex.value === index) {
-            isLoadingDeps.value = rawDeps.length > 0;
-            isLoadingDevDeps.value = rawDevDeps.length > 0;
-        }
-
+        isLoadingDeps.value = rawDeps.length > 0;
+        isLoadingDevDeps.value = rawDevDeps.length > 0;
         const [depsResult, devDepsResult] = await Promise.all([
             fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime }),
             fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime }),
         ]);
+        if (latestFetchByEntry.get(toRaw(entry)) !== fetchToken) {
+            return;
+        }
         entry.deps = depsResult;
         entry.devDeps = devDepsResult;
         entry.visibleColumnsSnapshot = visibleColumnsAtFetchTime;
-        if (historyIndex.value === index) {
-            deps.value = depsResult;
-            devDeps.value = devDepsResult;
-            isLoadingDeps.value = false;
-            isLoadingDevDeps.value = false;
+        if (!isCurrentEntry(entry)) {
+            return;
         }
+        deps.value = depsResult;
+        devDeps.value = devDepsResult;
+        isLoadingDeps.value = false;
+        isLoadingDevDeps.value = false;
     }
 
     // When column visibility changes, re-check whether the current entry's
