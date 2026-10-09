@@ -66,7 +66,16 @@
                     </span>
                 </td>
                 <td
+                    v-if="dependency.error"
+                    class="deps-table__error-cell"
+                    role="alert"
+                    :colspan="orderedVisibleColumns.length"
+                >
+                    {{ t("table.rowError", { error: dependency.error }) }}
+                </td>
+                <td
                     v-for="col in orderedVisibleColumns"
+                    v-else
                     :key="col.key"
                     :class="{
                         'deps-table__centered': isCentered(col.key),

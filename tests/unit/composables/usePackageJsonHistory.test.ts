@@ -244,4 +244,24 @@ describe("async fetch ordering", () => {
         expect(deps.value[0].vulnerabilityCount).toBeNull();
         expect(isLoadingDeps.value).toBe(false);
     });
+
+    it("refetches entry with failed rows on revisit", async () => {
+        const fetchMock = vi.fn(async () => {
+            throw new TypeError("Failed to fetch");
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const visibleColumns = ref(new Set(["latestVersion"]));
+        const { loadPackageJsonText, goBack, deps } = usePackageJsonHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("broken"));
+        await flushPromises();
+        loadPackageJsonText(packageJsonWith("other"));
+        await flushPromises();
+        const callsBeforeRevisit = fetchMock.mock.calls.length;
+
+        goBack();
+        await flushPromises();
+
+        expect(deps.value[0]).toMatchObject({ name: "broken", error: "Failed to fetch" });
+        expect(fetchMock.mock.calls.length).toBe(callsBeforeRevisit + 1);
+    });
 });

@@ -31,8 +31,8 @@ textarea {
 
 .banner--error {
     background: var(--code-bg, #0a1a0d);
-    border: 1px solid #ff5555;
-    color: #ff5555;
+    border: 1px solid var(--error);
+    color: var(--error);
 }
 
 .banner--loading {

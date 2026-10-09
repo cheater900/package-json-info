@@ -146,3 +146,8 @@ tbody tr:not(.deps-table__status-row):hover {
     padding: 12px;
     text-align: center;
 }
+
+.deps-table__error-cell {
+    color: var(--error);
+    text-align: left;
+}

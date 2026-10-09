@@ -5,6 +5,7 @@
     --bg: #010401;
     --border: #1e5c2e;
     --code-bg: #0a1a0d;
+    --error: #ff5555;
     --heading: var(--mono);
     --mono: "Courier New", ui-monospace, Consolas, monospace;
     --sans: var(--mono);

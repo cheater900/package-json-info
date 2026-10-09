@@ -1,4 +1,5 @@
 import { defineComponent } from "vue";
+import { t } from "../i18n";
 import { TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import DependencyCell from "./DependencyCell.vue";
 
@@ -16,6 +17,7 @@ export default defineComponent({
         // same set DependenciesTable renders, so the card always mirrors
         // whatever columns exist without a second list to keep in sync.
         return {
+            t,
             summaryColumns: TOGGLEABLE_COLUMNS,
         };
     },

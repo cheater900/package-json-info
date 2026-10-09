@@ -567,3 +567,20 @@ describe("DependenciesTable source tree", () => {
         expect(wrapper.emitted("open-source-tree")).toEqual([[dependency]]);
     });
 });
+
+describe("DependenciesTable failed rows", () => {
+    it("shows row error message instead of dashes", () => {
+        const failed = {
+            name: "broken",
+            version: "1.0.0",
+            error: "Request failed with status 503",
+        };
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [failed], columns: ["version", "license"] },
+        });
+
+        const errorCell = wrapper.find(".deps-table__error-cell");
+        expect(errorCell.text()).toContain("Request failed with status 503");
+        expect(errorCell.attributes("colspan")).toBe("2");
+    });
+});

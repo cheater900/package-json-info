@@ -55,6 +55,7 @@
     "table": {
         "loading": "Loading…",
         "empty": "No dependencies",
+        "rowError": "Could not load package data: {error}",
         "sourceLink": "link",
         "viewTree": "View tree"
     },

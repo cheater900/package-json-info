@@ -12,6 +12,11 @@
     white-space: nowrap;
 }
 
+.package-summary__error {
+    color: var(--error);
+    margin: 0 0 16px;
+}
+
 .package-summary__list {
     display: grid;
     gap: 10px 16px;

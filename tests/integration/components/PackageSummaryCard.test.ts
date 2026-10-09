@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import PackageSummaryCard from "../../../src/components/PackageSummaryCard.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
-import { fullDependency, npmSourceTree } from "../../fixtures/dependencies";
+import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/dependencies";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
 
@@ -54,5 +54,15 @@ describe("PackageSummaryCard", () => {
         });
 
         expect(wrapper.find("button").exists()).toBe(false);
+    });
+});
+
+describe("PackageSummaryCard failed package", () => {
+    it("shows load error", () => {
+        const wrapper = mount(PackageSummaryCard, {
+            props: { dependency: { ...sparseDependency, error: "network down" } },
+        });
+
+        expect(wrapper.find(".package-summary__error").text()).toContain("network down");
     });
 });

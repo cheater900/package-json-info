@@ -65,13 +65,15 @@ export function visibleColumnsEqual(
     return true;
 }
 
+function hasFailedRow(rows: unknown[]): boolean {
+    return rows.some((row) => typeof row === "object" && row !== null && "error" in row);
+}
+
 /**
  * True if a history entry's cached deps/devDeps are still good for the
- * given visibleColumns - i.e. they were already fetched, under the same
- * column visibility that's active now - so navigating to this entry needs
- * no fetch at all. False for a never-fetched entry, or one fetched under a
- * different column set (some currently-visible column's data might be
- * missing).
+ * given visibleColumns - fetched under the same column visibility, with no
+ * failed rows - so navigating to it needs no fetch. Failed rows count as
+ * stale so revisiting an entry retries them.
  */
 export function isEntryCacheValid(
     entry: HistoryEntry,
@@ -80,6 +82,8 @@ export function isEntryCacheValid(
     return (
         entry.deps !== null &&
         entry.devDeps !== null &&
+        !hasFailedRow(entry.deps) &&
+        !hasFailedRow(entry.devDeps) &&
         visibleColumnsEqual(entry.visibleColumnsSnapshot, visibleColumns)
     );
 }
