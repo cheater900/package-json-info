@@ -264,4 +264,17 @@ describe("async fetch ordering", () => {
         expect(deps.value[0]).toMatchObject({ name: "broken", error: "Failed to fetch" });
         expect(fetchMock.mock.calls.length).toBe(callsBeforeRevisit + 1);
     });
+
+    it("clears load error on back navigation", async () => {
+        stubFetchResolvesEmpty();
+        const visibleColumns = ref(new Set<string>());
+        const { loadPackageJsonText, goBack, loadError } = usePackageJsonHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("a"));
+        loadPackageJsonText(packageJsonWith("b"));
+        loadPackageJsonText("{bad");
+
+        goBack();
+
+        expect(loadError.value).toBeNull();
+    });
 });

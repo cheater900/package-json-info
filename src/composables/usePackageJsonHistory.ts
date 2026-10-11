@@ -82,6 +82,7 @@ export function usePackageJsonHistory(visibleColumns) {
             return;
         }
         historyIndex.value -= 1;
+        loadError.value = null;
         applyCurrentHistoryEntry();
     }
 
@@ -90,6 +91,7 @@ export function usePackageJsonHistory(visibleColumns) {
             return;
         }
         historyIndex.value += 1;
+        loadError.value = null;
         applyCurrentHistoryEntry();
     }
 

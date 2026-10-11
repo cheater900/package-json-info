@@ -68,7 +68,11 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
 
     // Process directories before files so every parent exists by the time a
     // file needing it is inserted, regardless of the archive's own order.
-    const sorted = [...entries].sort((a, b) => compareDirectoriesFirst(a, b, a.path, b.path));
+    // Archives may list one path twice; like tar extraction, the last one wins.
+    const uniqueEntries = [
+        ...new Map(entries.map((e) => [e.path.replace(/\/+$/, ""), e])).values(),
+    ];
+    const sorted = uniqueEntries.sort((a, b) => compareDirectoriesFirst(a, b, a.path, b.path));
     for (const entry of sorted) {
         const path = entry.path.replace(/\/+$/, "");
         if (!path) {

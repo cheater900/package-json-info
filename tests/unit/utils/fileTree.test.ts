@@ -91,3 +91,23 @@ describe("buildFileTree", () => {
         expect(buildFileTree([])).toEqual([]);
     });
 });
+
+describe("buildFileTree duplicates", () => {
+    it("keeps one node for path listed twice", () => {
+        const tree = buildFileTree([
+            { path: "index.js", type: "file", size: 1 },
+            { path: "index.js", type: "file", size: 2 },
+        ]);
+
+        expect(tree).toEqual([{ name: "index.js", path: "index.js", type: "file", size: 2 }]);
+    });
+
+    it("keeps one directory for trailing-slash duplicate", () => {
+        const tree = buildFileTree([
+            { path: "src", type: "directory" },
+            { path: "src/", type: "directory" },
+        ]);
+
+        expect(tree).toHaveLength(1);
+    });
+});

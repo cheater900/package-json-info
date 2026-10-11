@@ -7,10 +7,11 @@ const LICENSE_WARNING_MARK = "⚠";
 const WEEKDAY_PREFIX_LENGTH = 4;
 
 export function fmtDate(dateStr) {
-    if (!dateStr) {
+    const date = new Date(dateStr);
+    if (!dateStr || Number.isNaN(date.getTime())) {
         return MISSING_VALUE;
     }
-    return new Date(dateStr).toDateString().slice(WEEKDAY_PREFIX_LENGTH);
+    return date.toDateString().slice(WEEKDAY_PREFIX_LENGTH);
 }
 
 export function fmtList(names) {
