@@ -15,6 +15,8 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
     // Mirrors ?inputUrl= so the URL input can be shared and reloaded.
     // replaceState keeps typing out of browser history.
     const urlInput = ref(readInputUrlParam(window.location.search));
+    // Only the most recent load may apply; an older, slower one is dropped.
+    let latestLoadToken;
 
     watch(urlInput, (value) => {
         const search = withInputUrlParam(window.location.search, value);
@@ -25,35 +27,45 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
         );
     });
 
-    async function loadFromSource(fetchContent, notFoundMessage) {
+    /**
+     * Runs one load: `readContent` resolves to package.json text. Empty text
+     * shows `emptyMessage`; a failure shows `failureMessage`, or the error's
+     * own message when none is given. Only the most recent load applies, so
+     * a slow fetch can't overwrite a newer paste or upload.
+     */
+    async function loadFromSource(readContent, emptyMessage, failureMessage = null) {
+        const loadToken = Symbol();
+        latestLoadToken = loadToken;
         isLoadingInput.value = true;
         loadError.value = null;
         let content;
+        let failure;
         try {
-            content = await fetchContent();
+            content = await readContent();
         } catch (err) {
-            loadError.value = err.message;
+            failure = err;
+        }
+        if (latestLoadToken !== loadToken) {
             return;
-        } finally {
-            isLoadingInput.value = false;
+        }
+        isLoadingInput.value = false;
+        if (failure) {
+            loadError.value = failureMessage ?? failure.message;
+            return;
         }
         if (!content) {
-            loadError.value = notFoundMessage;
+            loadError.value = emptyMessage;
             return;
         }
         loadPackageJsonText(content);
     }
 
-    async function loadFromClipboard() {
-        loadError.value = null;
-        let text;
-        try {
-            text = await navigator.clipboard.readText();
-        } catch {
-            loadError.value = t("errors.clipboard");
-            return;
-        }
-        loadPackageJsonText(text);
+    function loadFromClipboard() {
+        return loadFromSource(
+            () => navigator.clipboard.readText(),
+            t("errors.clipboardEmpty"),
+            t("errors.clipboard"),
+        );
     }
 
     function loadFromFile(event) {
@@ -61,12 +73,7 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
         if (!file) {
             return;
         }
-        const reader = new FileReader();
-        reader.onload = () => loadPackageJsonText(String(reader.result));
-        reader.onerror = () => {
-            loadError.value = t("errors.fileRead");
-        };
-        reader.readAsText(file);
+        return loadFromSource(() => file.text(), t("errors.fileEmpty"), t("errors.fileRead"));
     }
 
     /** Repo host URLs resolve to the repo's package.json; any other URL is fetched as-is. */
