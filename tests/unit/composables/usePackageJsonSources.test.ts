@@ -5,6 +5,7 @@ import { URL_SYNC_DEBOUNCE_MS } from "../../../src/constants";
 import { jsonResponse } from "../../helpers/fetchMock";
 
 const HTTP_SERVER_ERROR = 500;
+const PACKAGE_JSON = '{"name":"x"}';
 
 function setup() {
     const loadPackageJsonText = vi.fn();
@@ -58,6 +59,18 @@ describe("load ordering", () => {
 });
 
 describe("loadFromUrlInput", () => {
+    it("shows error for blank URL without fetching", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        const { urlInput, loadFromUrlInput, loadError } = setup();
+        urlInput.value = "   ";
+
+        await loadFromUrlInput();
+
+        expect(loadError.value).toBe("Enter a URL first.");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("surfaces request failure message", async () => {
         vi.stubGlobal(
             "fetch",
@@ -91,6 +104,21 @@ describe("loadFromClipboard", () => {
 
         expect(loadError.value).toBe("The clipboard is empty.");
         expect(loadPackageJsonText).not.toHaveBeenCalled();
+    });
+});
+
+describe("loadFromFile", () => {
+    it("loads file text, resets input for same-file reselect", async () => {
+        const { loadFromFile, loadPackageJsonText } = setup();
+        const input = {
+            files: [new File([PACKAGE_JSON], "package.json")],
+            value: "C:\\package.json",
+        };
+
+        await loadFromFile({ target: input });
+
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON);
+        expect(input.value).toBe("");
     });
 });
 

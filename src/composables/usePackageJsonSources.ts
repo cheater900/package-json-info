@@ -76,16 +76,23 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
     }
 
     function loadFromFile(event) {
-        const file = event.target.files?.[0];
+        const input = event.target;
+        const file = input.files?.[0];
         if (!file) {
             return;
         }
+        // Reset so choosing the same file again still fires `change`.
+        input.value = "";
         return loadFromSource(() => file.text(), t("errors.fileEmpty"), t("errors.fileRead"));
     }
 
     /** Repo host URLs resolve to the repo's package.json; any other URL is fetched as-is. */
     function loadFromUrlInput() {
-        const url = urlInput.value;
+        const url = urlInput.value.trim();
+        if (!url) {
+            loadError.value = t("errors.urlEmpty");
+            return;
+        }
         return loadFromSource(
             () => (isRepoHostUrl(url) ? fetchPackageJsonFromRepo(url) : fetchText(url)),
             t("errors.urlNotFound"),
