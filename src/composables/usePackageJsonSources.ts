@@ -1,4 +1,5 @@
-import { ref, watch } from "vue";
+import { ref, watch, onScopeDispose } from "vue";
+import { URL_SYNC_DEBOUNCE_MS } from "../constants";
 import { fetchPackageJsonForVersion } from "../api/npmPackage.ts";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../api/repoPackageJson.ts";
 import { fetchText } from "../api/http.ts";
@@ -13,19 +14,25 @@ import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync.ts";
 export function usePackageJsonSources(loadPackageJsonText, loadError) {
     const isLoadingInput = ref(false);
     // Mirrors ?inputUrl= so the URL input can be shared and reloaded.
-    // replaceState keeps typing out of browser history.
+    // replaceState keeps typing out of browser history; debounced because
+    // browsers throw once a page calls it ~100 times in a few seconds.
     const urlInput = ref(readInputUrlParam(window.location.search));
+    let urlSyncTimer;
     // Only the most recent load may apply; an older, slower one is dropped.
     let latestLoadToken;
 
     watch(urlInput, (value) => {
-        const search = withInputUrlParam(window.location.search, value);
-        window.history.replaceState(
-            null,
-            "",
-            `${window.location.pathname}${search}${window.location.hash}`,
-        );
+        clearTimeout(urlSyncTimer);
+        urlSyncTimer = setTimeout(() => {
+            const search = withInputUrlParam(window.location.search, value);
+            window.history.replaceState(
+                null,
+                "",
+                `${window.location.pathname}${search}${window.location.hash}`,
+            );
+        }, URL_SYNC_DEBOUNCE_MS);
     });
+    onScopeDispose(() => clearTimeout(urlSyncTimer));
 
     /**
      * Runs one load: `readContent` resolves to package.json text. Empty text

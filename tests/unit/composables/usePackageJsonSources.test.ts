@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref, effectScope } from "vue";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ref, nextTick, effectScope } from "vue";
 import { usePackageJsonSources } from "../../../src/composables/usePackageJsonSources";
+import { URL_SYNC_DEBOUNCE_MS } from "../../../src/constants";
 import { jsonResponse } from "../../helpers/fetchMock";
 
 const HTTP_SERVER_ERROR = 500;
@@ -16,6 +17,10 @@ function setup() {
 beforeEach(() => {
     vi.unstubAllGlobals();
     window.history.replaceState(null, "", "/");
+});
+
+afterEach(() => {
+    vi.useRealTimers();
 });
 
 describe("load ordering", () => {
@@ -86,5 +91,37 @@ describe("loadFromClipboard", () => {
 
         expect(loadError.value).toBe("The clipboard is empty.");
         expect(loadPackageJsonText).not.toHaveBeenCalled();
+    });
+});
+
+describe("URL query sync", () => {
+    it("writes address bar once after typing pauses", async () => {
+        vi.useFakeTimers();
+        const replaceState = vi.spyOn(window.history, "replaceState");
+        const { urlInput } = setup();
+
+        for (const value of ["h", "ht", "https://a.example"]) {
+            urlInput.value = value;
+            await nextTick();
+        }
+        vi.advanceTimersByTime(URL_SYNC_DEBOUNCE_MS);
+
+        expect(replaceState).toHaveBeenCalledTimes(1);
+        expect(window.location.search).toBe("?inputUrl=https%3A%2F%2Fa.example");
+        replaceState.mockRestore();
+    });
+
+    it("cancels pending sync on scope dispose", async () => {
+        vi.useFakeTimers();
+        const replaceState = vi.spyOn(window.history, "replaceState");
+        const { urlInput, scope } = setup();
+        urlInput.value = "https://a.example";
+        await nextTick();
+
+        scope.stop();
+        vi.advanceTimersByTime(URL_SYNC_DEBOUNCE_MS);
+
+        expect(replaceState).not.toHaveBeenCalled();
+        replaceState.mockRestore();
     });
 });
