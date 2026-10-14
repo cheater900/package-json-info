@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { gzipSync } from "node:zlib";
-import { gunzip, parseTar } from "../../../src/utils/tarball";
+import { gunzip, parseTar, TAR_BLOCK_SIZE } from "../../../src/utils/tarball";
 import { buildTar } from "../../fixtures/tarball";
 
 describe("parseTar", () => {
@@ -90,5 +90,38 @@ describe("gunzip", () => {
 
         expect(entries).toHaveLength(1);
         expect(new TextDecoder().decode(entries[0].content)).toBe("module.exports = 1;");
+    });
+});
+
+describe("parseTar edge cases", () => {
+    it("reads non-ASCII PAX path and following entry", () => {
+        const unicodePath = `package/${"日本語-ファイル-".repeat(8)}.js`;
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    { type: "pax", records: { path: unicodePath, comment: "é" } },
+                    { name: "package/short-name.js", content: "a" },
+                    { name: "package/next.js", content: "b" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual([unicodePath, "package/next.js"]);
+    });
+
+    it("returns entries parsed before truncation", () => {
+        const tar = new Uint8Array(
+            buildTar([
+                { name: "package/a.js", content: "a" },
+                { name: "package/b.js", content: "b" },
+            ]),
+        );
+        const truncated = tar.subarray(0, TAR_BLOCK_SIZE * 3);
+
+        expect(parseTar(truncated).map((e) => e.path)).toEqual(["package/a.js", "package/b.js"]);
+    });
+
+    it("returns empty list for empty input", () => {
+        expect(parseTar(new Uint8Array(0))).toEqual([]);
     });
 });

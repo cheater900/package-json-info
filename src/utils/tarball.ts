@@ -55,33 +55,39 @@ function isZeroBlock(bytes: Uint8Array, offset: number): boolean {
     return true;
 }
 
+const SPACE_BYTE = 0x20;
+const EQUALS_BYTE = 0x3d;
+/** Every PAX record ends in "\n", which isn't part of its value. */
+const PAX_RECORD_TERMINATOR_LENGTH = 1;
+
 /**
- * Parses a PAX extended-header data block ("<len> <key>=<value>\n" records,
- * length-prefixed) into a key/value map. Only the fields this app cares
- * about (currently just "path") need to survive here.
+ * Parses a PAX extended-header data block ("<len> <key>=<value>\n" records)
+ * into a key/value map. `<len>` counts bytes, so records are sliced as bytes
+ * and decoded one by one: non-ASCII paths would misalign a string-based scan.
+ * Stops at the first malformed record.
  */
 function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
-    const text = new TextDecoder().decode(bytes);
+    const decoder = new TextDecoder();
     const records: Record<string, string> = {};
     let offset = 0;
-    while (offset < text.length) {
-        const spaceIndex = text.indexOf(" ", offset);
+    while (offset < bytes.length) {
+        const spaceIndex = bytes.indexOf(SPACE_BYTE, offset);
         if (spaceIndex === -1) {
             break;
         }
-        const recordLength = parseInt(text.slice(offset, spaceIndex), 10);
-        if (!recordLength || recordLength <= spaceIndex - offset) {
+        const recordLength = parseInt(decoder.decode(bytes.subarray(offset, spaceIndex)), 10);
+        const recordEnd = offset + recordLength;
+        if (!(recordLength > spaceIndex - offset) || recordEnd > bytes.length) {
             break;
         }
-        const record = text.slice(offset, offset + recordLength);
-        const eq = record.indexOf("=", spaceIndex - offset + 1);
-        if (eq !== -1) {
-            const key = record.slice(spaceIndex - offset + 1, eq);
-            // Drop the trailing "\n" the record is required to end with.
-            const value = record.slice(eq + 1, record.length - 1);
-            records[key] = value;
+        const equalsIndex = bytes.indexOf(EQUALS_BYTE, spaceIndex + 1);
+        if (equalsIndex !== -1 && equalsIndex < recordEnd) {
+            const key = decoder.decode(bytes.subarray(spaceIndex + 1, equalsIndex));
+            records[key] = decoder.decode(
+                bytes.subarray(equalsIndex + 1, recordEnd - PAX_RECORD_TERMINATOR_LENGTH),
+            );
         }
-        offset += recordLength;
+        offset = recordEnd;
     }
     return records;
 }

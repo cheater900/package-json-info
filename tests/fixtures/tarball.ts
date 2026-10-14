@@ -3,8 +3,6 @@ import { TAR_BLOCK_SIZE, TAR_HEADER, TAR_TYPEFLAG } from "../../src/utils/tarbal
 
 /** Tar archives end with two zero-filled blocks. */
 const END_OF_ARCHIVE_BLOCKS = 2;
-/** The " ", "=" and "\n" around a PAX record's key and value. */
-const PAX_RECORD_SEPARATOR_CHARS = 3;
 
 function writeOctal(bytes: Uint8Array, offset: number, length: number, value: number): void {
     bytes.set(new TextEncoder().encode(value.toString(8).padStart(length - 1, "0")), offset);
@@ -18,12 +16,12 @@ function tarHeader(name: string, size: number, typeflag: string): Uint8Array {
     return header;
 }
 
-/** A PAX record is "<total-length> <key>=<value>\n" - the length field includes its own digit count. */
+/** A PAX record is "<total-length> <key>=<value>\n"; the length counts bytes, including its own digits. */
 function paxRecord(key: string, value: string): string {
-    let len = key.length + value.length + PAX_RECORD_SEPARATOR_CHARS;
+    const bodyLength = new TextEncoder().encode(`${key}=${value}\n`).length + 1;
+    let len = bodyLength;
     for (;;) {
-        const candidate =
-            String(len).length + key.length + value.length + PAX_RECORD_SEPARATOR_CHARS;
+        const candidate = String(len).length + bodyLength;
         if (candidate === len) {
             break;
         }
