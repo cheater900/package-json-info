@@ -29,7 +29,12 @@ export default defineComponent({
 
         watch(
             () => props.sourceTree,
-            async (sourceTreeRef) => {
+            async (sourceTreeRef, _previous, onCleanup) => {
+                // A tree swapped out mid-download must not overwrite the new one.
+                let isStale = false;
+                onCleanup(() => {
+                    isStale = true;
+                });
                 tree.value = [];
                 readFile = null;
                 error.value = null;
@@ -40,15 +45,23 @@ export default defineComponent({
                     return;
                 }
                 loading.value = true;
+                let result;
+                let failure;
                 try {
-                    const result = await fetchSourceTree(sourceTreeRef);
-                    tree.value = result.tree;
-                    readFile = result.readFile;
+                    result = await fetchSourceTree(sourceTreeRef);
                 } catch (err) {
-                    error.value = err.message;
-                } finally {
-                    loading.value = false;
+                    failure = err;
                 }
+                if (isStale) {
+                    return;
+                }
+                loading.value = false;
+                if (failure) {
+                    error.value = failure.message;
+                    return;
+                }
+                tree.value = result.tree;
+                readFile = result.readFile;
             },
             // Fires on mount too - the parent only mounts this component once
             // there's a dependency to show, so sourceTree is already set.
@@ -63,13 +76,23 @@ export default defineComponent({
                 return;
             }
             loadingContent.value = true;
+            let content;
+            let failure;
             try {
-                selectedContent.value = await readFile(path);
+                content = await readFile(path);
             } catch (err) {
-                contentError.value = err.message;
-            } finally {
-                loadingContent.value = false;
+                failure = err;
             }
+            // Another file clicked while this one loaded: its result wins.
+            if (selectedPath.value !== path) {
+                return;
+            }
+            loadingContent.value = false;
+            if (failure) {
+                contentError.value = failure.message;
+                return;
+            }
+            selectedContent.value = content;
         }
 
         return {

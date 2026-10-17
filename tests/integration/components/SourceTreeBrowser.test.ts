@@ -89,4 +89,59 @@ describe("SourceTreeBrowser", () => {
         expect(fetchSourceTree).toHaveBeenCalledWith(otherSourceTree);
         expect(fetchSourceTree).toHaveBeenCalledTimes(2);
     });
+
+    it("shows last clicked file when earlier file loads slower", async () => {
+        const twoFileTree = [
+            { name: "slow.js", path: "slow.js", type: "file", size: 1 },
+            { name: "fast.js", path: "fast.js", type: "file", size: 1 },
+        ];
+        let resolveSlow: (value: string) => void;
+        const readFile = vi.fn((path: string) =>
+            path === "slow.js"
+                ? new Promise<string>((resolve) => {
+                      resolveSlow = resolve;
+                  })
+                : Promise.resolve("fast content"),
+        );
+        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: twoFileTree, readFile });
+        const wrapper = mount(SourceTreeBrowser, {
+            props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
+        });
+        await flushPromises();
+        const [slowButton, fastButton] = wrapper.findAll("button.file-tree-item__file");
+
+        await slowButton.trigger("click");
+        await fastButton.trigger("click");
+        await flushPromises();
+        resolveSlow!("slow content");
+        await flushPromises();
+
+        expect(wrapper.find(".source-tree__content").text()).toBe("fast content");
+    });
+
+    it("ignores tree download replaced by newer sourceTree", async () => {
+        let resolveFirst: (value: unknown) => void;
+        vi.mocked(fetchSourceTree)
+            .mockReturnValueOnce(
+                new Promise((resolve) => {
+                    resolveFirst = resolve;
+                }),
+            )
+            .mockResolvedValueOnce({ tree: sampleTree, readFile: vi.fn() });
+        const wrapper = mount(SourceTreeBrowser, {
+            props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
+        });
+        const otherSourceTree = { provider: "github", owner: "o", repo: "r", tag: "v1.0.0" };
+        await wrapper.setProps({ sourceTree: otherSourceTree });
+        await flushPromises();
+
+        resolveFirst!({
+            tree: [{ name: "stale.js", path: "stale.js", type: "file", size: 1 }],
+            readFile: vi.fn(),
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).not.toContain("stale.js");
+        expect(wrapper.text()).toContain("index.js");
+    });
 });
