@@ -9,7 +9,8 @@ export type RepoSlug = {
 
 const HOST_SLUG_PATTERNS = SUPPORTED_REPO_HOSTS.map((host) => ({
     host,
-    pattern: new RegExp(`${host.replace(/\./g, "\\.")}/([^/]+)/([^/?#\\s]+)`, "i"),
+    // Host must start the string or follow "/", "@" or "." so "notgithub.com" never matches.
+    pattern: new RegExp(`(?:^|[/@.])${host.replace(/\./g, "\\.")}/([^/]+)/([^/?#\\s]+)`, "i"),
 }));
 
 /** Rewrites git+https://, git:// and ssh://git@ repository URLs to plain https, dropping `.git`. */

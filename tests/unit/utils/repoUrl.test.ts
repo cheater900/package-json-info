@@ -96,3 +96,17 @@ describe("normaliseRepoUrl", () => {
         );
     });
 });
+
+describe("parseRepoSlug host matching", () => {
+    it("ignores lookalike host containing supported host name", () => {
+        expect(parseRepoSlug("https://notgithub.com/owner/repo")).toBeNull();
+    });
+
+    it("accepts www subdomain", () => {
+        expect(parseRepoSlug("https://www.github.com/owner/repo")).toEqual({
+            host: "github.com",
+            owner: "owner",
+            repo: "repo",
+        });
+    });
+});
