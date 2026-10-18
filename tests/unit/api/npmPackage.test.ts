@@ -374,7 +374,7 @@ describe("fetchPackageInfo sourceTree", () => {
             if (url.includes("api.npmjs.org/downloads")) {
                 return jsonResponse({ downloads: 0 });
             }
-            if (url.includes("git/refs/tags/v1.0.0")) {
+            if (url.includes("git/ref/tags/v1.0.0")) {
                 return jsonResponse({ ref: "refs/tags/v1.0.0" });
             }
             return jsonResponse(null, false);
@@ -407,7 +407,7 @@ describe("fetchPackageInfo sourceTree", () => {
             if (url.includes("api.npmjs.org/downloads")) {
                 return jsonResponse({ downloads: 0 });
             }
-            if (url.includes("git/refs/tags/2.0.0")) {
+            if (url.includes("git/ref/tags/2.0.0")) {
                 return jsonResponse({ ref: "refs/tags/2.0.0" });
             }
             return jsonResponse(null, false);
@@ -473,7 +473,7 @@ describe("fetchPackageInfo sourceTree", () => {
         });
 
         expect(info.sourceTree).toBeNull();
-        expect(countFetchCalls(fetchMock, "git/refs/tags")).toBe(0);
+        expect(countFetchCalls(fetchMock, "git/ref/tags")).toBe(0);
     });
 
     it("caches GitHub tag lookup by repo slug and version across package names", async () => {
@@ -495,7 +495,7 @@ describe("fetchPackageInfo sourceTree", () => {
             if (url.includes("api.npmjs.org/downloads")) {
                 return jsonResponse({ downloads: 0 });
             }
-            if (url.includes("git/refs/tags/v1.0.0")) {
+            if (url.includes("git/ref/tags/v1.0.0")) {
                 return jsonResponse({ ref: "refs/tags/v1.0.0" });
             }
             return jsonResponse(null, false);
@@ -512,7 +512,7 @@ describe("fetchPackageInfo sourceTree", () => {
             tag: "v1.0.0",
         });
         expect(b.sourceTree).toEqual(a.sourceTree);
-        expect(countFetchCalls(fetchMock, "git/refs/tags/v1.0.0")).toBe(1);
+        expect(countFetchCalls(fetchMock, "git/ref/tags/v1.0.0")).toBe(1);
     });
 });
 
@@ -1042,7 +1042,7 @@ describe("fetchPackageInfo input edge cases", () => {
         const info = await fetchPackageInfo("tagless", "latest");
 
         expect(info.sourceTree).toBeNull();
-        expect(countFetchCalls(fetchMock, "git/refs/tags")).toBe(0);
+        expect(countFetchCalls(fetchMock, "git/ref/tags")).toBe(0);
     });
 
     it("looks up tag by leading version of caret range", async () => {
@@ -1054,7 +1054,7 @@ describe("fetchPackageInfo input edge cases", () => {
                     versions: { "1.2.3": {} },
                 });
             }
-            return jsonResponse({}, url.endsWith("/git/refs/tags/v1.2.3"));
+            return jsonResponse({}, url.endsWith("/git/ref/tags/v1.2.3"));
         });
         vi.stubGlobal("fetch", fetchMock);
 

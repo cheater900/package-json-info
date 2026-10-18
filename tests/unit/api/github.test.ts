@@ -36,6 +36,17 @@ describe("findGithubReleaseTag", () => {
         expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBeNull();
     });
 
+    it("uses exact-match ref endpoint, not prefix-matching refs list", async () => {
+        const fetchMock = vi.fn(async () => jsonResponse({}, true));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await findGithubReleaseTag("o", "r", "1.2.3");
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://api.github.com/repos/o/r/git/ref/tags/v1.2.3",
+        );
+    });
+
     it("throws on rate limit instead of reporting missing tag", async () => {
         vi.stubGlobal(
             "fetch",

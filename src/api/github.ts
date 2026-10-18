@@ -20,8 +20,10 @@ export function githubRawFileUrl(owner: string, repo: string, ref: string, path:
 
 /**
  * Finds a release tag on GitHub matching `version`, trying "v1.2.3" then
- * "1.2.3". Checks each candidate via the refs API (one request, 404 when
- * absent) instead of listing every tag - popular repos have thousands.
+ * "1.2.3". Checks each candidate via the single-ref API (one request, 404
+ * when absent) instead of listing every tag - popular repos have thousands.
+ * The plural `git/refs` endpoint is avoided: for a missing ref it returns
+ * 200 with every ref sharing the prefix (v1.2.3 -> v1.2.30).
  * Throws on other failures (rate limit, network) so they aren't mistaken
  * for "no such tag".
  */
@@ -33,7 +35,7 @@ export async function findGithubReleaseTag(
 ): Promise<string | null> {
     for (const candidate of [`v${version}`, version]) {
         const response = await fetchWithTimeout(
-            `${githubRepoApiUrl(owner, repo)}/git/refs/tags/${encodeURIComponent(candidate)}`,
+            `${githubRepoApiUrl(owner, repo)}/git/ref/tags/${encodeURIComponent(candidate)}`,
             { headers },
         );
         if (response.ok) {
