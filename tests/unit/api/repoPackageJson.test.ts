@@ -88,6 +88,33 @@ describe("fetchPackageJsonFromRepo", () => {
         expect(JSON.parse(content!)).toEqual({ name: "repo" });
     });
 
+    it.each([
+        "https://github.com/owner/repo.git",
+        "https://GitHub.com/owner/repo",
+        "https://github.com/owner/repo?tab=readme",
+        "https://github.com/owner/repo#readme",
+    ])("resolves %s to repo's raw package.json", async (url) => {
+        const fetchMock = vi.fn(async () => jsonResponse({ name: "repo" }));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await fetchPackageJsonFromRepo(url);
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://raw.githubusercontent.com/owner/repo/main/package.json",
+        );
+    });
+
+    it("keeps .git inside repo name", async () => {
+        const fetchMock = vi.fn(async () => jsonResponse({ name: "repo" }));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await fetchPackageJsonFromRepo("https://github.com/owner/my.git.repo");
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://raw.githubusercontent.com/owner/my.git.repo/main/package.json",
+        );
+    });
+
     it("throws descriptive error for unsupported host", async () => {
         vi.stubGlobal("fetch", vi.fn());
 

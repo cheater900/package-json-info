@@ -2,6 +2,13 @@ import { describe, it, expect } from "vitest";
 import { parseRepoSlug, normaliseRepoUrl } from "../../../src/utils/repoUrl";
 
 describe("parseRepoSlug", () => {
+    it.each(["git+https://github.com/owner/repo.git#main", "https://github.com/owner/repo.git/"])(
+        "drops .git suffix followed by ref or slash in %s",
+        (raw) => {
+            expect(parseRepoSlug(raw)?.repo).toBe("repo");
+        },
+    );
+
     it("parses plain https GitHub URL", () => {
         expect(parseRepoSlug("https://github.com/owner/repo")).toEqual({
             host: "github.com",

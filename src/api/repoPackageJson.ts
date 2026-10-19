@@ -24,7 +24,9 @@ const RAW_PACKAGE_JSON_URL_BUILDERS: Record<string, RawUrlBuilder> = {
         `https://${CODEBERG_HOST}/${owner}/${repo}/raw/branch/${branch}/${PACKAGE_JSON_PATH}`,
 };
 
-const REPO_URL_PATTERN = /^https:\/\/([^/]+)\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)(?:\/.*)?$/;
+/** Accepts a clone URL's ".git" suffix and a trailing path, query, or fragment. */
+const REPO_URL_PATTERN =
+    /^https:\/\/([^/]+)\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+?)(?:\.git)?(?:[/?#].*)?$/;
 
 /**
  * True if `url`'s host is one of SUPPORTED_REPO_HOSTS. An unparseable URL
@@ -50,7 +52,9 @@ export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string 
     if (!match) {
         throw new Error(t("errors.invalidRepoUrl"));
     }
-    const [, host, owner, repo] = match;
+    const [, rawHost, owner, repo] = match;
+    // isRepoHostUrl compares the URL's lowercased hostname; match it here.
+    const host = rawHost.toLowerCase();
     const buildRawUrl = RAW_PACKAGE_JSON_URL_BUILDERS[host];
     if (!buildRawUrl) {
         throw new Error(
