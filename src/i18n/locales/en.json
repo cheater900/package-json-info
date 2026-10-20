@@ -83,6 +83,7 @@
         "fileRead": "Failed to read the selected file.",
         "fileEmpty": "The selected file is empty.",
         "urlEmpty": "Enter a URL first.",
+        "urlInvalid": "Enter a full URL starting with http:// or https://.",
         "urlNotFound": "Could not find a package.json at that URL.",
         "dependencyNotFound": "Could not find package.json data for \"{name}\".",
         "invalidJson": "That's not valid JSON: {message}",

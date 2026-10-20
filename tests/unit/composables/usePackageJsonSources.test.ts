@@ -71,6 +71,21 @@ describe("loadFromUrlInput", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it.each(["example.com/package.json", "ftp://example.com/package.json"])(
+        "rejects non-http URL %s without fetching",
+        async (url) => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+            const { urlInput, loadFromUrlInput, loadError } = setup();
+            urlInput.value = url;
+
+            await loadFromUrlInput();
+
+            expect(loadError.value).toBe("Enter a full URL starting with http:// or https://.");
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
+
     it("surfaces request failure message", async () => {
         vi.stubGlobal(
             "fetch",

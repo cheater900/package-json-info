@@ -5,6 +5,7 @@ import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../api/repoPackageJson.
 import { fetchText } from "../api/http.ts";
 import { t } from "../i18n";
 import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync.ts";
+import { isHttpUrl } from "../utils/url.ts";
 
 /**
  * Owns every way of bringing in package.json text (URL, repo URL, file,
@@ -91,6 +92,11 @@ export function usePackageJsonSources(loadPackageJsonText, loadError) {
         const url = urlInput.value.trim();
         if (!url) {
             loadError.value = t("errors.urlEmpty");
+            return;
+        }
+        // fetch() resolves a scheme-less input against this app's own origin.
+        if (!isHttpUrl(url)) {
+            loadError.value = t("errors.urlInvalid");
             return;
         }
         return loadFromSource(
