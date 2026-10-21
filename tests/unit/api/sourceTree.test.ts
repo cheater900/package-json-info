@@ -105,7 +105,7 @@ describe("fetchSourceTree - github provider", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it("omits submodule entries, which have no readable content", async () => {
+    it("omits submodule entries", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => ({

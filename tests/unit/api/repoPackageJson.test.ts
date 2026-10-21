@@ -93,7 +93,7 @@ describe("fetchPackageJsonFromRepo", () => {
         "https://GitHub.com/owner/repo",
         "https://github.com/owner/repo?tab=readme",
         "https://github.com/owner/repo#readme",
-    ])("resolves %s to repo's raw package.json", async (url) => {
+    ])("resolves %s to raw package.json", async (url) => {
         const fetchMock = vi.fn(async () => jsonResponse({ name: "repo" }));
         vi.stubGlobal("fetch", fetchMock);
 

@@ -54,7 +54,7 @@ describe("memoizeAsync", () => {
         expect(fn).toHaveBeenCalledTimes(2);
     });
 
-    it("late failure of cleared request keeps newer cached request", async () => {
+    it("keeps newer request on late failure of cleared one", async () => {
         const cache = new Map<string, Promise<number>>();
         let rejectStale: (error: Error) => void;
         const stale = memoizeAsync(

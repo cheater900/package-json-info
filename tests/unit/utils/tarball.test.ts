@@ -4,7 +4,7 @@ import { gunzip, parseTar, TAR_BLOCK_SIZE } from "../../../src/utils/tarball";
 import { buildTar } from "../../fixtures/tarball";
 
 describe("parseTar", () => {
-    it("throws on archive cut off mid-file instead of returning partial tree", () => {
+    it("throws on archive cut mid-file", () => {
         const tar = new Uint8Array(
             buildTar([{ name: "package/index.js", content: "x".repeat(TAR_BLOCK_SIZE * 2) }]),
         );

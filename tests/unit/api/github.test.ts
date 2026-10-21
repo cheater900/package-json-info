@@ -36,7 +36,7 @@ describe("findGithubReleaseTag", () => {
         expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBeNull();
     });
 
-    it("uses exact-match ref endpoint, not prefix-matching refs list", async () => {
+    it("uses exact-match ref endpoint", async () => {
         const fetchMock = vi.fn(async () => jsonResponse({}, true));
         vi.stubGlobal("fetch", fetchMock);
 
