@@ -53,4 +53,24 @@ describe("memoizeAsync", () => {
         expect(result).toBe(9);
         expect(fn).toHaveBeenCalledTimes(2);
     });
+
+    it("late failure of cleared request keeps newer cached request", async () => {
+        const cache = new Map<string, Promise<number>>();
+        let rejectStale: (error: Error) => void;
+        const stale = memoizeAsync(
+            cache,
+            "key",
+            () =>
+                new Promise<number>((_resolve, reject) => {
+                    rejectStale = reject;
+                }),
+        );
+        cache.clear();
+        const fresh = memoizeAsync(cache, "key", async () => 5);
+
+        rejectStale!(new Error("late"));
+        await expect(stale).rejects.toThrow("late");
+
+        expect(cache.get("key")).toBe(fresh);
+    });
 });
