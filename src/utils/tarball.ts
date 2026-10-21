@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 export type TarEntry = {
     path: string;
     size: number;
@@ -98,6 +100,7 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
  * PAX extended headers (typeflag "x"), which npm tarballs commonly use for
  * paths over the 100-character classic tar limit. Symlinks and other
  * exotic entry types are skipped - nothing this app needs to browse.
+ * Throws when a header's size is unreadable or runs past the archive's end.
  */
 export function parseTar(bytes: Uint8Array): TarEntry[] {
     const entries: TarEntry[] = [];
@@ -116,6 +119,11 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
             TAR_HEADER.prefix.length,
         );
         const dataStart = offset + TAR_BLOCK_SIZE;
+        // A garbled size field or a cut-off download would otherwise yield a
+        // silently partial tree.
+        if (!Number.isInteger(size) || size < 0 || dataStart + size > bytes.length) {
+            throw new Error(t("errors.tarballCorrupt"));
+        }
         const data = bytes.subarray(dataStart, dataStart + size);
         const path = longPathOverride ?? (prefix ? `${prefix}/${name}` : name);
         offset = dataStart + Math.ceil(size / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;

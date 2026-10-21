@@ -4,6 +4,23 @@ import { gunzip, parseTar, TAR_BLOCK_SIZE } from "../../../src/utils/tarball";
 import { buildTar } from "../../fixtures/tarball";
 
 describe("parseTar", () => {
+    it("throws on archive cut off mid-file instead of returning partial tree", () => {
+        const tar = new Uint8Array(
+            buildTar([{ name: "package/index.js", content: "x".repeat(TAR_BLOCK_SIZE * 2) }]),
+        );
+
+        expect(() => parseTar(tar.subarray(0, TAR_BLOCK_SIZE * 2))).toThrow(
+            /corrupt or incomplete/,
+        );
+    });
+
+    it("throws on unreadable size field", () => {
+        const tar = new Uint8Array(buildTar([{ name: "package/index.js", content: "x" }]));
+        tar.set(new TextEncoder().encode("zzzzzzzzzzz"), 124);
+
+        expect(() => parseTar(tar)).toThrow(/corrupt or incomplete/);
+    });
+
     it("parses single file entry with content intact", () => {
         const entries = parseTar(
             new Uint8Array(buildTar([{ name: "package/index.js", content: "console.log(1);" }])),
@@ -107,18 +124,6 @@ describe("parseTar edge cases", () => {
         );
 
         expect(entries.map((e) => e.path)).toEqual([unicodePath, "package/next.js"]);
-    });
-
-    it("returns entries parsed before truncation", () => {
-        const tar = new Uint8Array(
-            buildTar([
-                { name: "package/a.js", content: "a" },
-                { name: "package/b.js", content: "b" },
-            ]),
-        );
-        const truncated = tar.subarray(0, TAR_BLOCK_SIZE * 3);
-
-        expect(parseTar(truncated).map((e) => e.path)).toEqual(["package/a.js", "package/b.js"]);
     });
 
     it("returns empty list for empty input", () => {

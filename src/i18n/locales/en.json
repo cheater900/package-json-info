@@ -92,6 +92,7 @@
         "invalidRepoUrl": "Invalid repository URL. Must be in format: https://<host>/<owner>/<repo>",
         "unsupportedRepoHost": "Unsupported git host \"{host}\". Supported hosts: {hosts}",
         "tarballDownload": "Could not download the package tarball (status {status}).",
+        "tarballCorrupt": "The package tarball is corrupt or incomplete.",
         "tarballFileMissing": "File not found in the downloaded tarball: {path}",
         "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
         "fileContentFetch": "Could not fetch file contents (status {status})."
