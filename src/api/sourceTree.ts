@@ -17,7 +17,8 @@ export type SourceTree = {
 
 type GithubTreeEntry = {
     path: string;
-    type: "blob" | "tree";
+    /** "commit" is a submodule: a pointer to another repo, with no content here. */
+    type: "blob" | "tree" | "commit";
     size?: number;
 };
 
@@ -72,11 +73,13 @@ async function fetchGithubSourceTree(
         throw new Error(t("errors.repoTreeFetch", { status: response.status }));
     }
     const data = (await response.json()) as GithubTreeResponse;
-    const entries = (data.tree ?? []).map((entry) => ({
-        path: entry.path,
-        type: entry.type === "tree" ? ("directory" as const) : ("file" as const),
-        size: entry.size ?? 0,
-    }));
+    const entries = (data.tree ?? [])
+        .filter((entry) => entry.type !== "commit")
+        .map((entry) => ({
+            path: entry.path,
+            type: entry.type === "tree" ? ("directory" as const) : ("file" as const),
+            size: entry.size ?? 0,
+        }));
     return {
         tree: buildFileTree(entries),
         readFile: async (path) => {

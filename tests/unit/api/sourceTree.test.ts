@@ -105,6 +105,30 @@ describe("fetchSourceTree - github provider", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    it("omits submodule entries, which have no readable content", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({
+                    tree: [
+                        { path: "index.js", type: "blob", size: 1 },
+                        { path: "vendor", type: "commit" },
+                    ],
+                }),
+            })),
+        );
+
+        const { tree } = await fetchSourceTree({
+            provider: "github",
+            owner: "o",
+            repo: "r",
+            tag: "v1.0.0",
+        });
+
+        expect(tree.map((n) => n.name)).toEqual(["index.js"]);
+    });
+
     it("throws on tree request failure", async () => {
         vi.stubGlobal(
             "fetch",
