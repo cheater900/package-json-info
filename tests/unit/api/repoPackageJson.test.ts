@@ -131,6 +131,14 @@ describe("fetchPackageJsonFromRepo", () => {
         );
     });
 
+    it("throws invalid-URL error for URL without repo segment", async () => {
+        vi.stubGlobal("fetch", vi.fn());
+
+        await expect(fetchPackageJsonFromRepo("https://github.com/owner")).rejects.toThrow(
+            /Invalid repository URL/,
+        );
+    });
+
     it("exports every supported host", () => {
         expect(SUPPORTED_REPO_HOSTS).toEqual(
             expect.arrayContaining(["github.com", "gitlab.com", "codeberg.org"]),

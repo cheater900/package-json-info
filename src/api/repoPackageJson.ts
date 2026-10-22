@@ -7,6 +7,7 @@ import {
     SUPPORTED_REPO_HOSTS,
 } from "../constants";
 import { t } from "../i18n";
+import { parseRepoSlug } from "../utils/repoUrl";
 import { githubRawFileUrl } from "./github";
 import { fetchWithTimeout, HttpError } from "./http";
 
@@ -23,10 +24,6 @@ const RAW_PACKAGE_JSON_URL_BUILDERS: Record<string, RawUrlBuilder> = {
     [CODEBERG_HOST]: (owner, repo, branch) =>
         `https://${CODEBERG_HOST}/${owner}/${repo}/raw/branch/${branch}/${PACKAGE_JSON_PATH}`,
 };
-
-/** Accepts a clone URL's ".git" suffix and a trailing path, query, or fragment. */
-const REPO_URL_PATTERN =
-    /^https:\/\/([^/]+)\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+?)(?:\.git)?(?:[/?#].*)?$/;
 
 /**
  * True if `url`'s host is one of SUPPORTED_REPO_HOSTS. An unparseable URL
@@ -48,21 +45,22 @@ export function isRepoHostUrl(url: string): boolean {
  * @throws  If the URL isn't `https://<host>/<owner>/<repo>` on a supported host.
  */
 export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string | null> {
-    const match = repoUrl.match(REPO_URL_PATTERN);
-    if (!match) {
+    if (!URL.canParse(repoUrl)) {
         throw new Error(t("errors.invalidRepoUrl"));
     }
-    const [, rawHost, owner, repo] = match;
-    // isRepoHostUrl compares the URL's lowercased hostname; match it here.
-    const host = rawHost.toLowerCase();
+    const host = new URL(repoUrl).hostname;
     const buildRawUrl = RAW_PACKAGE_JSON_URL_BUILDERS[host];
     if (!buildRawUrl) {
         throw new Error(
             t("errors.unsupportedRepoHost", { host, hosts: SUPPORTED_REPO_HOSTS.join(", ") }),
         );
     }
+    const slug = parseRepoSlug(repoUrl);
+    if (!slug) {
+        throw new Error(t("errors.invalidRepoUrl"));
+    }
     for (const branch of DEFAULT_BRANCH_CANDIDATES) {
-        const response = await fetchWithTimeout(buildRawUrl(owner, repo, branch));
+        const response = await fetchWithTimeout(buildRawUrl(slug.owner, slug.repo, branch));
         if (response.ok) {
             return response.text();
         }
