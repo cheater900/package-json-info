@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { gzipSync } from "node:zlib";
-import { gunzip, parseTar, TAR_BLOCK_SIZE } from "../../../src/utils/tarball";
+import { gunzip, parseTar, TAR_BLOCK_SIZE, TAR_HEADER } from "../../../src/utils/tarball";
 import { buildTar } from "../../fixtures/tarball";
 
 describe("parseTar", () => {
@@ -16,7 +16,10 @@ describe("parseTar", () => {
 
     it("throws on unreadable size field", () => {
         const tar = new Uint8Array(buildTar([{ name: "package/index.js", content: "x" }]));
-        tar.set(new TextEncoder().encode("zzzzzzzzzzz"), 124);
+        tar.set(
+            new TextEncoder().encode("z".repeat(TAR_HEADER.size.length - 1)),
+            TAR_HEADER.size.offset,
+        );
 
         expect(() => parseTar(tar)).toThrow(/corrupt or incomplete/);
     });

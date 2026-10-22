@@ -119,9 +119,9 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
             TAR_HEADER.prefix.length,
         );
         const dataStart = offset + TAR_BLOCK_SIZE;
-        // A garbled size field or a cut-off download would otherwise yield a
-        // silently partial tree.
-        if (!Number.isInteger(size) || size < 0 || dataStart + size > bytes.length) {
+        const isSizeGarbled = !Number.isInteger(size) || size < 0;
+        const isArchiveTruncated = dataStart + size > bytes.length;
+        if (isSizeGarbled || isArchiveTruncated) {
             throw new Error(t("errors.tarballCorrupt"));
         }
         const data = bytes.subarray(dataStart, dataStart + size);

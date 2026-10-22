@@ -17,14 +17,16 @@ export type SourceTree = {
 
 type GithubTreeEntry = {
     path: string;
-    /** "commit" is a submodule: a pointer to another repo, with no content here. */
-    type: "blob" | "tree" | "commit";
+    type: "blob" | "tree" | typeof GITHUB_SUBMODULE_ENTRY_TYPE;
     size?: number;
 };
 
 type GithubTreeResponse = {
     tree?: GithubTreeEntry[];
 };
+
+/** Git-trees entry type of a submodule: a pointer to another repo, with no content here. */
+const GITHUB_SUBMODULE_ENTRY_TYPE = "commit";
 
 /** npm tarballs wrap every entry under a single top-level "package/" directory. */
 const NPM_TARBALL_ROOT = /^package\//;
@@ -74,7 +76,7 @@ async function fetchGithubSourceTree(
     }
     const data = (await response.json()) as GithubTreeResponse;
     const entries = (data.tree ?? [])
-        .filter((entry) => entry.type !== "commit")
+        .filter((entry) => entry.type !== GITHUB_SUBMODULE_ENTRY_TYPE)
         .map((entry) => ({
             path: entry.path,
             type: entry.type === "tree" ? ("directory" as const) : ("file" as const),

@@ -13,11 +13,12 @@ export function memoizeAsync<T>(
     }
     const request = fn();
     cache.set(key, request);
-    // Only evict this request: after a cache clear, the key may hold a newer one.
     request.catch(() => {
-        if (cache.get(key) === request) {
-            cache.delete(key);
+        const isNewerRequestCached = cache.get(key) !== request;
+        if (isNewerRequestCached) {
+            return;
         }
+        cache.delete(key);
     });
     return request;
 }
