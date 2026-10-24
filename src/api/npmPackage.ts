@@ -128,16 +128,28 @@ function anyColumnVisible(visibleColumns: ReadonlySet<string>, keys: string[]): 
     return keys.some((key) => isColumnVisible(visibleColumns, key));
 }
 
-/** Data for `version`, or for the latest version when `version` is a range rather than a registry key. */
+/** Leading `major.minor.patch` of a range ("^1.2.3" -> "1.2.3"), or undefined. */
+function pinnedVersionOf(range: string): string | undefined {
+    return parseLeadingSemver(range)?.join(".");
+}
+
+/**
+ * Registry key `range` refers to: itself when published, else its leading
+ * semver ("^1.2.3" -> "1.2.3") when published, else the latest version.
+ */
+function resolveVersionKey(npmData: NpmRegistryData | null, range: string): string | undefined {
+    const versions = npmData?.versions ?? {};
+    return [range, pinnedVersionOf(range), npmData?.["dist-tags"]?.latest].find(
+        (key) => key != null && Object.hasOwn(versions, key),
+    );
+}
+
 function resolveVersionData(
     npmData: NpmRegistryData | null,
-    version: string,
+    range: string,
 ): NpmVersionData | undefined {
-    const latestVersion = npmData?.["dist-tags"]?.latest;
-    return (
-        npmData?.versions?.[version] ??
-        (latestVersion ? npmData?.versions?.[latestVersion] : undefined)
-    );
+    const key = resolveVersionKey(npmData, range);
+    return key ? npmData?.versions?.[key] : undefined;
 }
 
 function repositoryUrl(npmData: NpmRegistryData | null): string | undefined {
@@ -201,7 +213,7 @@ export async function fetchPackageInfo(
     return {
         name,
         version,
-        versionDate: times[range] ?? null,
+        versionDate: times[range] ?? times[pinnedVersionOf(range) ?? ""] ?? null,
         latestVersion,
         latestReleaseDate: latestVersion ? (times[latestVersion] ?? null) : null,
         latestUpdateDate: times.modified ?? null,
@@ -294,7 +306,7 @@ function fetchVulnerabilityCount(name: string): Promise<number | null> {
 
 /** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
 function fetchBundleGzipSize(name: string, range: string): Promise<number | null> {
-    const pinnedVersion = parseLeadingSemver(range)?.join(".");
+    const pinnedVersion = pinnedVersionOf(range);
     const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
     return memoizeAsync(bundleSizeCache, packageSpec, () =>
         fetchJson<BundlephobiaData>(
@@ -328,7 +340,7 @@ async function resolveSourceTree(
     if (tarballUrl) {
         return { provider: "npm", tarballUrl };
     }
-    const pinnedVersion = parseLeadingSemver(range)?.join(".");
+    const pinnedVersion = pinnedVersionOf(range);
     if (slug?.host !== GITHUB_HOST || !pinnedVersion) {
         return null;
     }

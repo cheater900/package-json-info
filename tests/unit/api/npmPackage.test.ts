@@ -1013,6 +1013,28 @@ describe("fetchPackageInfo input edge cases", () => {
         expect(countFetchCalls(fetchMock, "registry.npmjs.org/my-alias")).toBe(0);
     });
 
+    it("uses leading version of caret range for date and version data", async () => {
+        vi.stubGlobal(
+            "fetch",
+            mockFetchByUrl({
+                "registry.npmjs.org/ranged": {
+                    "dist-tags": { latest: "2.0.0" },
+                    time: { "1.2.3": "2021-01-01T00:00:00.000Z" },
+                    versions: {
+                        "1.2.3": { dependencies: { old: "1.0.0" }, deprecated: "old" },
+                        "2.0.0": { dependencies: { new: "1.0.0" } },
+                    },
+                },
+            }),
+        );
+
+        const info = await fetchPackageInfo("ranged", "^1.2.3");
+
+        expect(info.versionDate).toBe("2021-01-01T00:00:00.000Z");
+        expect(info.dependencies).toEqual(["old"]);
+        expect(info.deprecated).toBe("old");
+    });
+
     it("drops non-http homepage as source link", async () => {
         vi.stubGlobal(
             "fetch",
