@@ -70,6 +70,16 @@ describe("parseRepoSlug", () => {
         });
     });
 
+    it.each([
+        "https://github.com/../..",
+        "https://github.com/owner/..",
+        "github:owner/repo&per_page=100",
+        "https://github.com/own er/repo",
+        "https://github.com/owner?x=1/repo",
+    ])("rejects unsafe owner or repo in %s", (raw) => {
+        expect(parseRepoSlug(raw)).toBeNull();
+    });
+
     it("returns null for empty string or unsupported host", () => {
         expect(parseRepoSlug("")).toBeNull();
         expect(parseRepoSlug("https://bitbucket.org/owner/repo")).toBeNull();
