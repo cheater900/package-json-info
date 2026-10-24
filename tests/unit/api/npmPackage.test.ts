@@ -252,6 +252,37 @@ describe("fetchPackageInfo", () => {
         expect(info.vulnerabilityCount).toBe(2);
     });
 
+    it("sums vulnerabilities across OSV pages", async () => {
+        const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+            if (!url.includes("api.osv.dev")) {
+                return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} });
+            }
+            const { page_token } = JSON.parse(String(init?.body));
+            return page_token === "p2"
+                ? jsonResponse({ vulns: [{ id: "B" }] })
+                : jsonResponse({ vulns: [{ id: "A" }], next_page_token: "p2" });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("paged-pkg", "1.0.0");
+
+        expect(info.vulnerabilityCount).toBe(2);
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(2);
+    });
+
+    it("stops OSV paging on repeated token", async () => {
+        const fetchMock = mockFetchByUrl({
+            "registry.npmjs.org/loop-pkg": { "dist-tags": { latest: "1.0.0" }, time: {} },
+            "api.osv.dev/v1/query": { vulns: [{ id: "A" }], next_page_token: "same" },
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("loop-pkg", "1.0.0");
+
+        expect(info.vulnerabilityCount).toBe(2);
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(2);
+    });
+
     it("reports 0 vulnerabilities, not null, for empty OSV response", async () => {
         vi.stubGlobal(
             "fetch",

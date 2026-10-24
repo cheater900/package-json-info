@@ -61,6 +61,7 @@ type NpmDownloadsData = {
 
 type OsvQueryResponse = {
     vulns?: Array<{ id: string }>;
+    next_page_token?: string;
 };
 
 type BundlephobiaData = {
@@ -293,15 +294,33 @@ function fetchWeeklyDownloads(name: string): Promise<number | null> {
     );
 }
 
-/** Known security advisories via OSV. Throws on failure; OSV may block browser requests (CORS, rate limits). */
+/**
+ * Known security advisories via OSV, following `next_page_token` across
+ * result pages. Throws on failure; OSV may block browser requests (CORS,
+ * rate limits).
+ */
 function fetchVulnerabilityCount(name: string): Promise<number | null> {
-    return memoizeAsync(vulnerabilityCountCache, name, () =>
-        fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ package: { name, ecosystem: OSV_NPM_ECOSYSTEM } }),
-        }).then((data) => (data ? (data.vulns?.length ?? 0) : null)),
-    );
+    return memoizeAsync(vulnerabilityCountCache, name, async () => {
+        let count = 0;
+        let pageToken: string | undefined;
+        do {
+            const data = await fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    package: { name, ecosystem: OSV_NPM_ECOSYSTEM },
+                    page_token: pageToken,
+                }),
+            });
+            if (!data) {
+                return null;
+            }
+            count += data.vulns?.length ?? 0;
+            // A repeated token would loop forever; treat it as the last page.
+            pageToken = data.next_page_token === pageToken ? undefined : data.next_page_token;
+        } while (pageToken);
+        return count;
+    });
 }
 
 /** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
