@@ -26,7 +26,11 @@ export const TAR_TYPEFLAG = {
     gnuLongName: "L",
 };
 
-/** Decompresses a gzip-compressed buffer using the native Compression Streams API. */
+/**
+ * Decompresses a gzip-compressed buffer using the native Compression Streams
+ * API. Throws a translated "corrupt tarball" error for non-gzip or truncated
+ * data instead of the browser's own message.
+ */
 export async function gunzip(data: ArrayBuffer): Promise<Uint8Array> {
     const stream = new ReadableStream({
         start(controller) {
@@ -34,7 +38,11 @@ export async function gunzip(data: ArrayBuffer): Promise<Uint8Array> {
             controller.close();
         },
     }).pipeThrough(new DecompressionStream("gzip"));
-    return new Uint8Array(await new Response(stream).arrayBuffer());
+    try {
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+    } catch {
+        throw new Error(t("errors.tarballCorrupt"));
+    }
 }
 
 function readString(bytes: Uint8Array, offset: number, length: number): string {

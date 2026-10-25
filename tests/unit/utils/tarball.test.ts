@@ -103,6 +103,12 @@ describe("parseTar", () => {
 });
 
 describe("gunzip", () => {
+    it("rejects non-gzip data as corrupt tarball", async () => {
+        const notGzip = new TextEncoder().encode("<html>not a tarball</html>");
+
+        await expect(gunzip(notGzip.buffer)).rejects.toThrow("tarball is corrupt");
+    });
+
     it("decompresses gzip buffer to original bytes", async () => {
         const original = new TextEncoder().encode("hello world");
         const gzipped = gzipSync(original);
