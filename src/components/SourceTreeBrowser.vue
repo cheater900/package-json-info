@@ -9,6 +9,9 @@
                     })
                 }}
             </span>
+            <span v-if="truncated" class="source-tree__notice" role="status">
+                {{ t("sourceTree.truncated") }}
+            </span>
         </div>
         <div class="source-tree__body">
             <div v-if="loading" class="source-tree__status">

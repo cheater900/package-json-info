@@ -75,7 +75,8 @@
         },
         "downloading": "Downloading source…",
         "selectFile": "Select a file to view its contents.",
-        "loadingFile": "Loading…"
+        "loadingFile": "Loading…",
+        "truncated": "This repository is too large to list in full. Some files are missing."
     },
     "errors": {
         "clipboard": "Could not read the clipboard. Check the browser's clipboard permission and try again.",

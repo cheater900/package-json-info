@@ -30,6 +30,11 @@
     font-size: 0.8rem;
 }
 
+.source-tree__notice {
+    color: var(--error);
+    font-size: 0.8rem;
+}
+
 .source-tree__body {
     display: flex;
     flex: 1;

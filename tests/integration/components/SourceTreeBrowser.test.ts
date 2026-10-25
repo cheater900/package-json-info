@@ -47,6 +47,21 @@ describe("SourceTreeBrowser", () => {
         expect(wrapper.text()).not.toContain("Downloading source");
     });
 
+    it("shows notice for truncated tree", async () => {
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: true,
+            readFile: vi.fn(),
+        });
+
+        const wrapper = mount(SourceTreeBrowser, {
+            props: { dependencyName: "big-repo", sourceTree: npmSourceTree },
+        });
+        await flushPromises();
+
+        expect(wrapper.find('[role="status"]').text()).toContain("too large");
+    });
+
     it("shows error on source tree fetch failure", async () => {
         vi.mocked(fetchSourceTree).mockRejectedValue(new Error("network down"));
 

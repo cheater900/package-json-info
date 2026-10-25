@@ -11,6 +11,8 @@ export type SourceTreeRef =
 
 export type SourceTree = {
     tree: FileTreeNode[];
+    /** True when the host listed only part of the tree (GitHub caps large repos). */
+    truncated: boolean;
     /** Reads one file's content as text. GitHub fetches lazily, one file per call. */
     readFile: (path: string) => Promise<string>;
 };
@@ -23,6 +25,7 @@ type GithubTreeEntry = {
 
 type GithubTreeResponse = {
     tree?: GithubTreeEntry[];
+    truncated?: boolean;
 };
 
 /** Git-trees entry type of a submodule: a pointer to another repo, with no content here. */
@@ -51,6 +54,7 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     );
     return {
         tree: buildFileTree(entries),
+        truncated: false,
         readFile: async (path) => {
             const content = contentByPath.get(path);
             if (!content) {
@@ -84,6 +88,7 @@ async function fetchGithubSourceTree(
         }));
     return {
         tree: buildFileTree(entries),
+        truncated: data.truncated === true,
         readFile: async (path) => {
             const encodedPath = path.split("/").map(encodeURIComponent).join("/");
             const fileResponse = await fetchWithTimeout(

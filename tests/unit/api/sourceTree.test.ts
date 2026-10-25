@@ -105,6 +105,25 @@ describe("fetchSourceTree - github provider", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    it("flags truncated tree", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({ tree: [{ path: "a.js", type: "blob" }], truncated: true }),
+            })),
+        );
+
+        const { truncated } = await fetchSourceTree({
+            provider: "github",
+            owner: "o",
+            repo: "r",
+            tag: "v1.0.0",
+        });
+
+        expect(truncated).toBe(true);
+    });
+
     it("omits submodule entries", async () => {
         vi.stubGlobal(
             "fetch",

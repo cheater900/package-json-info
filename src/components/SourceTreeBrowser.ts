@@ -19,6 +19,7 @@ export default defineComponent({
         const loading = ref(false);
         const error = ref(null);
         const tree = ref([]);
+        const truncated = ref(false);
         const selectedPath = ref(null);
         const selectedContent = ref(null);
         const loadingContent = ref(false);
@@ -36,6 +37,7 @@ export default defineComponent({
                     isStale = true;
                 });
                 tree.value = [];
+                truncated.value = false;
                 readFile = null;
                 error.value = null;
                 selectedPath.value = null;
@@ -61,6 +63,7 @@ export default defineComponent({
                     return;
                 }
                 tree.value = result.tree;
+                truncated.value = result.truncated;
                 readFile = result.readFile;
             },
             // Fires on mount too - the parent only mounts this component once
@@ -100,6 +103,7 @@ export default defineComponent({
             loading,
             error,
             tree,
+            truncated,
             selectedPath,
             selectedContent,
             loadingContent,
