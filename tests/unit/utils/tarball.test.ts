@@ -85,6 +85,21 @@ describe("parseTar", () => {
 
         expect(entries.map((e) => e.path)).toEqual([longPath, "package/normal.js"]);
     });
+
+    it("applies GNU long-name path to next entry only", () => {
+        const longPath = `package/${"deep/".repeat(25)}file.js`;
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    { type: "gnuLongName", path: longPath },
+                    { name: "truncated-name.js", content: "content" },
+                    { name: "package/normal.js", content: "normal" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual([longPath, "package/normal.js"]);
+    });
 });
 
 describe("gunzip", () => {

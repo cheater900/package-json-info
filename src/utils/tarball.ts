@@ -23,6 +23,7 @@ export const TAR_TYPEFLAG = {
     directory: "5",
     paxHeader: "x",
     paxGlobalHeader: "X",
+    gnuLongName: "L",
 };
 
 /** Decompresses a gzip-compressed buffer using the native Compression Streams API. */
@@ -96,9 +97,10 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
 
 /**
  * Parses raw (already gunzipped) tar bytes into a flat list of file/
- * directory entries. Supports USTAR-style long names (prefix + name) and
- * PAX extended headers (typeflag "x"), which npm tarballs commonly use for
- * paths over the 100-character classic tar limit. Symlinks and other
+ * directory entries. Supports USTAR-style long names (prefix + name), PAX
+ * extended headers (typeflag "x"), which npm tarballs commonly use for
+ * paths over the 100-character classic tar limit, and GNU tar's long-name
+ * entries (typeflag "L") from tarballs packed with other tools. Symlinks and other
  * exotic entry types are skipped - nothing this app needs to browse.
  * Throws when a header's size is unreadable or runs past the archive's end.
  */
@@ -127,6 +129,10 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
         const data = bytes.subarray(dataStart, dataStart + size);
         const path = longPathOverride ?? (prefix ? `${prefix}/${name}` : name);
         offset = dataStart + Math.ceil(size / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;
+        if (typeflag === TAR_TYPEFLAG.gnuLongName) {
+            longPathOverride = readString(data, 0, data.length);
+            continue;
+        }
         if (typeflag === TAR_TYPEFLAG.paxHeader || typeflag === TAR_TYPEFLAG.paxGlobalHeader) {
             longPathOverride = parsePaxRecords(data).path || longPathOverride;
             continue;

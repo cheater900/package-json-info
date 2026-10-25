@@ -33,7 +33,8 @@ function paxRecord(key: string, value: string): string {
 export type TarInput =
     | { name: string; content: string; type?: "file" }
     | { type: "directory"; name: string }
-    | { type: "pax"; records: Record<string, string> };
+    | { type: "pax"; records: Record<string, string> }
+    | { type: "gnuLongName"; path: string };
 
 export function buildTar(inputs: TarInput[]): ArrayBuffer {
     const chunks: Uint8Array[] = [];
@@ -46,6 +47,12 @@ export function buildTar(inputs: TarInput[]): ArrayBuffer {
     for (const input of inputs) {
         if (input.type === "directory") {
             chunks.push(tarHeader(input.name, 0, TAR_TYPEFLAG.directory));
+            continue;
+        }
+        if (input.type === "gnuLongName") {
+            const bytes = new TextEncoder().encode(`${input.path}\0`);
+            chunks.push(tarHeader("././@LongLink", bytes.length, TAR_TYPEFLAG.gnuLongName));
+            chunks.push(pad(bytes));
             continue;
         }
         if (input.type === "pax") {
