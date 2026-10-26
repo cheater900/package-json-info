@@ -389,6 +389,24 @@ describe("fetchPackageInfo sourceTree", () => {
         });
     });
 
+    it("ignores non-http tarball URL", async () => {
+        vi.stubGlobal(
+            "fetch",
+            mockFetchByUrl({
+                "registry.npmjs.org/data-tarball": {
+                    "dist-tags": { latest: "1.0.0" },
+                    versions: {
+                        "1.0.0": { dist: { tarball: "data:application/gzip;base64,AA==" } },
+                    },
+                },
+            }),
+        );
+
+        const info = await fetchPackageInfo("data-tarball", "1.0.0");
+
+        expect(info.sourceTree).toBeNull();
+    });
+
     it("falls back to matching GitHub release tag without npm tarball", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("registry.npmjs.org/no-tarball")) {

@@ -355,8 +355,9 @@ async function resolveSourceTree(
     range: string,
     headers: HttpHeaders,
 ): Promise<SourceTreeRef | null> {
+    // Registry data picks the URL; only http(s) may be fetched, never data: or blob:.
     const tarballUrl = versionData?.dist?.tarball;
-    if (tarballUrl) {
+    if (isHttpUrl(tarballUrl)) {
         return { provider: "npm", tarballUrl };
     }
     const pinnedVersion = pinnedVersionOf(range);
