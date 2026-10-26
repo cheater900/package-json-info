@@ -9,6 +9,10 @@ export type TarEntry = {
 
 export const TAR_BLOCK_SIZE = 512;
 
+const BYTES_PER_MB = 1024 * 1024;
+/** Unpacked size cap for browsing a tarball; real npm packages stay far below it. */
+const MAX_UNPACKED_TARBALL_BYTES = 256 * BYTES_PER_MB;
+
 /** USTAR header field offsets and lengths, in bytes. */
 export const TAR_HEADER = {
     name: { offset: 0, length: 100 },
@@ -29,20 +33,47 @@ export const TAR_TYPEFLAG = {
 /**
  * Decompresses a gzip-compressed buffer using the native Compression Streams
  * API. Throws a translated "corrupt tarball" error for non-gzip or truncated
- * data instead of the browser's own message.
+ * data instead of the browser's own message, and stops once output exceeds
+ * `maxBytes`, so a gzip bomb can't exhaust the tab's memory.
  */
-export async function gunzip(data: ArrayBuffer): Promise<Uint8Array> {
-    const stream = new ReadableStream({
+export async function gunzip(
+    data: ArrayBuffer,
+    maxBytes: number = MAX_UNPACKED_TARBALL_BYTES,
+): Promise<Uint8Array> {
+    const reader = new ReadableStream({
         start(controller) {
             controller.enqueue(new Uint8Array(data));
             controller.close();
         },
-    }).pipeThrough(new DecompressionStream("gzip"));
-    try {
-        return new Uint8Array(await new Response(stream).arrayBuffer());
-    } catch {
-        throw new Error(t("errors.tarballCorrupt"));
+    })
+        .pipeThrough(new DecompressionStream("gzip"))
+        .getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    for (;;) {
+        let chunk: ReadableStreamReadResult<Uint8Array>;
+        try {
+            chunk = await reader.read();
+        } catch {
+            throw new Error(t("errors.tarballCorrupt"));
+        }
+        if (chunk.done) {
+            break;
+        }
+        totalBytes += chunk.value.length;
+        if (totalBytes > maxBytes) {
+            await reader.cancel();
+            throw new Error(t("errors.tarballTooLarge", { megabytes: maxBytes / BYTES_PER_MB }));
+        }
+        chunks.push(chunk.value);
     }
+    const result = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+    }
+    return result;
 }
 
 function readString(bytes: Uint8Array, offset: number, length: number): string {

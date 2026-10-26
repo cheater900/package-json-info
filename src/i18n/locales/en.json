@@ -94,6 +94,7 @@
         "unsupportedRepoHost": "Unsupported git host \"{host}\". Supported hosts: {hosts}",
         "tarballDownload": "Could not download the package tarball (status {status}).",
         "tarballCorrupt": "The package tarball is corrupt or incomplete.",
+        "tarballTooLarge": "The package tarball unpacks to more than {megabytes} MB, too large to browse.",
         "tarballFileMissing": "File not found in the downloaded tarball: {path}",
         "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
         "fileContentFetch": "Could not fetch file contents (status {status})."

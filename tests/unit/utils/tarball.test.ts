@@ -103,6 +103,17 @@ describe("parseTar", () => {
 });
 
 describe("gunzip", () => {
+    it("rejects output over size cap", async () => {
+        const gzipped = gzipSync(new Uint8Array(4096));
+
+        await expect(
+            gunzip(
+                gzipped.buffer.slice(gzipped.byteOffset, gzipped.byteOffset + gzipped.byteLength),
+                1024,
+            ),
+        ).rejects.toThrow("too large to browse");
+    });
+
     it("rejects non-gzip data as corrupt tarball", async () => {
         const notGzip = new TextEncoder().encode("<html>not a tarball</html>");
 
