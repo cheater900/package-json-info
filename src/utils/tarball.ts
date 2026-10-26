@@ -1,4 +1,6 @@
+import { BYTES_PER_MB, MAX_UNPACKED_TARBALL_BYTES } from "../constants";
 import { t } from "../i18n";
+import { concatBytes } from "./bytes";
 
 export type TarEntry = {
     path: string;
@@ -8,10 +10,6 @@ export type TarEntry = {
 };
 
 export const TAR_BLOCK_SIZE = 512;
-
-const BYTES_PER_MB = 1024 * 1024;
-/** Unpacked size cap for browsing a tarball; real npm packages stay far below it. */
-const MAX_UNPACKED_TARBALL_BYTES = 256 * BYTES_PER_MB;
 
 /** USTAR header field offsets and lengths, in bytes. */
 export const TAR_HEADER = {
@@ -67,13 +65,7 @@ export async function gunzip(
         }
         chunks.push(chunk.value);
     }
-    const result = new Uint8Array(totalBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
-    }
-    return result;
+    return concatBytes(chunks);
 }
 
 function readString(bytes: Uint8Array, offset: number, length: number): string {

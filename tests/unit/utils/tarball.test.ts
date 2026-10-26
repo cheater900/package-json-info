@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { gzipSync } from "node:zlib";
 import { gunzip, parseTar, TAR_BLOCK_SIZE, TAR_HEADER } from "../../../src/utils/tarball";
-import { buildTar } from "../../fixtures/tarball";
+import { buildTar, gzipToArrayBuffer } from "../../fixtures/tarball";
 
 describe("parseTar", () => {
     it("throws on archive cut mid-file", () => {
@@ -104,14 +103,10 @@ describe("parseTar", () => {
 
 describe("gunzip", () => {
     it("rejects output over size cap", async () => {
-        const gzipped = gzipSync(new Uint8Array(4096));
+        const maxBytes = 1024;
+        const oversized = gzipToArrayBuffer(new Uint8Array(maxBytes + 1));
 
-        await expect(
-            gunzip(
-                gzipped.buffer.slice(gzipped.byteOffset, gzipped.byteOffset + gzipped.byteLength),
-                1024,
-            ),
-        ).rejects.toThrow("too large to browse");
+        await expect(gunzip(oversized, maxBytes)).rejects.toThrow("too large to browse");
     });
 
     it("rejects non-gzip data as corrupt tarball", async () => {
@@ -122,22 +117,15 @@ describe("gunzip", () => {
 
     it("decompresses gzip buffer to original bytes", async () => {
         const original = new TextEncoder().encode("hello world");
-        const gzipped = gzipSync(original);
 
-        const result = await gunzip(
-            gzipped.buffer.slice(gzipped.byteOffset, gzipped.byteOffset + gzipped.byteLength),
-        );
+        const result = await gunzip(gzipToArrayBuffer(original));
 
         expect(new TextDecoder().decode(result)).toBe("hello world");
     });
 
     it("round-trips gzipped tar archive", async () => {
         const tar = buildTar([{ name: "package/index.js", content: "module.exports = 1;" }]);
-        const gzipped = gzipSync(new Uint8Array(tar));
-
-        const rawTar = await gunzip(
-            gzipped.buffer.slice(gzipped.byteOffset, gzipped.byteOffset + gzipped.byteLength),
-        );
+        const rawTar = await gunzip(gzipToArrayBuffer(new Uint8Array(tar)));
         const entries = parseTar(rawTar);
 
         expect(entries).toHaveLength(1);

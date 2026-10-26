@@ -1,4 +1,5 @@
 import { gzipSync } from "node:zlib";
+import { concatBytes } from "../../src/utils/bytes";
 import { TAR_BLOCK_SIZE, TAR_HEADER, TAR_TYPEFLAG } from "../../src/utils/tarball";
 
 /** Tar archives end with two zero-filled blocks. */
@@ -70,14 +71,7 @@ export function buildTar(inputs: TarInput[]): ArrayBuffer {
     }
     chunks.push(new Uint8Array(TAR_BLOCK_SIZE * END_OF_ARCHIVE_BLOCKS));
 
-    const total = chunks.reduce((sum, c) => sum + c.length, 0);
-    const result = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
-    }
-    return result.buffer;
+    return concatBytes(chunks).buffer;
 }
 
 /** Gzipped npm-style tarball: every file under the top-level "package/" directory. */
@@ -85,6 +79,11 @@ export function buildNpmTarball(files: Record<string, string>): ArrayBuffer {
     const tar = buildTar(
         Object.entries(files).map(([name, content]) => ({ name: `package/${name}`, content })),
     );
-    const gzipped = gzipSync(new Uint8Array(tar));
+    return gzipToArrayBuffer(new Uint8Array(tar));
+}
+
+/** Gzips bytes into a standalone ArrayBuffer, as `fetch` would hand over a download. */
+export function gzipToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+    const gzipped = gzipSync(bytes);
     return gzipped.buffer.slice(gzipped.byteOffset, gzipped.byteOffset + gzipped.byteLength);
 }

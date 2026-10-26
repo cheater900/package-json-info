@@ -36,5 +36,8 @@ export const INPUT_URL_QUERY_PARAM = "inputUrl";
 export const MISSING_VALUE = "-";
 export const NUMBER_LOCALE = "en-US";
 export const BYTES_PER_KB = 1024;
+export const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
+/** Unpacked size cap for browsing a tarball; real npm packages stay far below it. */
+export const MAX_UNPACKED_TARBALL_BYTES = 256 * BYTES_PER_MB;
 
 export const TOOLTIP_OFFSET_PX = 6;
