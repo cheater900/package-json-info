@@ -8,7 +8,7 @@ import {
     OSV_NPM_ECOSYSTEM,
     OSV_QUERY_URL,
 } from "../constants";
-import { isVersionOutdated, parseLeadingSemver } from "../utils/semver";
+import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense } from "../utils/license";
 import type { NpmLicenseField } from "../utils/license";
@@ -127,11 +127,6 @@ function withFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
 
 function anyColumnVisible(visibleColumns: ReadonlySet<string>, keys: string[]): boolean {
     return keys.some((key) => isColumnVisible(visibleColumns, key));
-}
-
-/** Leading `major.minor.patch` of a range ("^1.2.3" -> "1.2.3"), or undefined. */
-function pinnedVersionOf(range: string): string | undefined {
-    return parseLeadingSemver(range)?.join(".");
 }
 
 /**

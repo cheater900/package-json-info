@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isVersionOutdated, parseLeadingSemver, compareSemver } from "../../../src/utils/semver";
+import {
+    isVersionOutdated,
+    parseLeadingSemver,
+    compareSemver,
+    pinnedVersionOf,
+} from "../../../src/utils/semver";
 
 describe("isVersionOutdated", () => {
     it("returns false for declared version equal to latest", () => {
@@ -60,5 +65,15 @@ describe("compareSemver", () => {
     it("falls back to patch for equal major and minor", () => {
         expect(compareSemver([1, 2, 4], [1, 2, 3])).toBeGreaterThan(0);
         expect(compareSemver([1, 2, 3], [1, 2, 4])).toBeLessThan(0);
+    });
+});
+
+describe("pinnedVersionOf", () => {
+    it.each([
+        ["^1.2.3", "1.2.3"],
+        ["~0.10.0", "0.10.0"],
+        ["latest", undefined],
+    ])("maps %s to %s", (range, expected) => {
+        expect(pinnedVersionOf(range)).toBe(expected);
     });
 });

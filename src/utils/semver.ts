@@ -9,6 +9,11 @@ export function parseLeadingSemver(raw: string): SemverTuple | null {
     return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
+/** Leading `major.minor.patch` of a range ("^1.2.3" -> "1.2.3"), or undefined. */
+export function pinnedVersionOf(range: string): string | undefined {
+    return parseLeadingSemver(range)?.join(".");
+}
+
 /** Compares two parsed semver tuples: negative if `a` < `b`, positive if `a` > `b`, 0 if equal. */
 export function compareSemver(a: SemverTuple, b: SemverTuple): number {
     for (let i = 0; i < 3; i++) {
