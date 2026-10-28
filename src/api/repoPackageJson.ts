@@ -3,13 +3,12 @@ import {
     DEFAULT_BRANCH_CANDIDATES,
     GITHUB_HOST,
     GITLAB_HOST,
-    HTTP_NOT_FOUND,
     SUPPORTED_REPO_HOSTS,
 } from "../constants";
 import { t } from "../i18n";
 import { parseRepoSlug } from "../utils/repoUrl";
 import { githubRawFileUrl } from "./github";
-import { fetchWithTimeout, HttpError } from "./http";
+import { findFirstFound } from "./http";
 
 /** Builds the raw-file URL for a repo's root package.json on a branch. */
 type RawUrlBuilder = (owner: string, repo: string, branch: string) => string;
@@ -59,14 +58,8 @@ export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string 
     if (!slug) {
         throw new Error(t("errors.invalidRepoUrl"));
     }
-    for (const branch of DEFAULT_BRANCH_CANDIDATES) {
-        const response = await fetchWithTimeout(buildRawUrl(slug.owner, slug.repo, branch));
-        if (response.ok) {
-            return response.text();
-        }
-        if (response.status !== HTTP_NOT_FOUND) {
-            throw new HttpError(response.status);
-        }
-    }
-    return null;
+    const found = await findFirstFound(DEFAULT_BRANCH_CANDIDATES, (branch) =>
+        buildRawUrl(slug.owner, slug.repo, branch),
+    );
+    return found ? found.response.text() : null;
 }

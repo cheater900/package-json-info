@@ -4,6 +4,11 @@ import { t } from "../i18n";
 
 export type HttpHeaders = Record<string, string>;
 
+export type FoundCandidate<T> = {
+    candidate: T;
+    response: Response;
+};
+
 export class HttpError extends Error {
     readonly status: number;
 
@@ -42,4 +47,27 @@ export async function fetchText(url: string): Promise<string> {
         throw new HttpError(response.status);
     }
     return response.text();
+}
+
+/**
+ * Requests `toUrl(candidate)` for each candidate in order and returns the
+ * first one answering 2xx, with its response. A 404 moves on to the next
+ * candidate; any other status throws HttpError so a rate limit or outage
+ * isn't mistaken for "not found". Null when every candidate 404s.
+ */
+export async function findFirstFound<T>(
+    candidates: readonly T[],
+    toUrl: (candidate: T) => string,
+    init: RequestInit = {},
+): Promise<FoundCandidate<T> | null> {
+    for (const candidate of candidates) {
+        const response = await fetchWithTimeout(toUrl(candidate), init);
+        if (response.ok) {
+            return { candidate, response };
+        }
+        if (response.status !== HTTP_NOT_FOUND) {
+            throw new HttpError(response.status);
+        }
+    }
+    return null;
 }

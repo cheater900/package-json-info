@@ -1,6 +1,6 @@
 import { config } from "../config";
-import { GITHUB_ACCEPT_HEADER, GITHUB_API_URL, GITHUB_RAW_URL, HTTP_NOT_FOUND } from "../constants";
-import { fetchWithTimeout, HttpError } from "./http";
+import { GITHUB_ACCEPT_HEADER, GITHUB_API_URL, GITHUB_RAW_URL } from "../constants";
+import { findFirstFound } from "./http";
 import type { HttpHeaders } from "./http";
 
 export function githubHeaders(token: string | undefined = config.githubToken): HttpHeaders {
@@ -33,17 +33,11 @@ export async function findGithubReleaseTag(
     version: string,
     headers: HttpHeaders = githubHeaders(),
 ): Promise<string | null> {
-    for (const candidate of [`v${version}`, version]) {
-        const response = await fetchWithTimeout(
+    const found = await findFirstFound(
+        [`v${version}`, version],
+        (candidate) =>
             `${githubRepoApiUrl(owner, repo)}/git/ref/tags/${encodeURIComponent(candidate)}`,
-            { headers },
-        );
-        if (response.ok) {
-            return candidate;
-        }
-        if (response.status !== HTTP_NOT_FOUND) {
-            throw new HttpError(response.status);
-        }
-    }
-    return null;
+        { headers },
+    );
+    return found?.candidate ?? null;
 }
