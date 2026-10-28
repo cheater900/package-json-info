@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../../../src/api/repoPackageJson";
 import { SUPPORTED_REPO_HOSTS } from "../../../src/constants";
-import { jsonResponse } from "../../helpers/fetchMock";
+import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
 
 beforeEach(() => {
     vi.unstubAllGlobals();
@@ -167,10 +167,8 @@ describe("isRepoHostUrl", () => {
 });
 
 describe("fetchPackageJsonFromRepo failures", () => {
-    const HTTP_TOO_MANY_REQUESTS = 429;
-
     it("throws on rate limit instead of trying next branch", async () => {
-        const fetchMock = vi.fn(async () => ({ ok: false, status: HTTP_TOO_MANY_REQUESTS }));
+        const fetchMock = vi.fn(async () => statusResponse(HTTP_STATUS.tooManyRequests));
         vi.stubGlobal("fetch", fetchMock);
 
         await expect(fetchPackageJsonFromRepo("https://github.com/o/r")).rejects.toThrow("429");

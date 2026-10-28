@@ -2,9 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref, nextTick, effectScope } from "vue";
 import { usePackageJsonSources } from "../../../src/composables/usePackageJsonSources";
 import { URL_SYNC_DEBOUNCE_MS } from "../../../src/constants";
-import { jsonResponse } from "../../helpers/fetchMock";
+import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
 
-const HTTP_SERVER_ERROR = 500;
 const PACKAGE_JSON = '{"name":"x"}';
 
 function setup() {
@@ -89,14 +88,14 @@ describe("loadFromUrlInput", () => {
     it("surfaces request failure message", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: false, status: HTTP_SERVER_ERROR })),
+            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
         );
         const { urlInput, loadFromUrlInput, loadError, isLoadingInput } = setup();
         urlInput.value = "https://example.com/package.json";
 
         await loadFromUrlInput();
 
-        expect(loadError.value).toContain(String(HTTP_SERVER_ERROR));
+        expect(loadError.value).toContain(String(HTTP_STATUS.serverError));
         expect(isLoadingInput.value).toBe(false);
     });
 });

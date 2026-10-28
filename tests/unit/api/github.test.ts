@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
-import { jsonResponse } from "../../helpers/fetchMock";
-
-const HTTP_FORBIDDEN = 403;
+import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
 
 beforeEach(() => {
     vi.unstubAllGlobals();
@@ -50,7 +48,7 @@ describe("findGithubReleaseTag", () => {
     it("throws on rate limit instead of reporting missing tag", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: false, status: HTTP_FORBIDDEN })),
+            vi.fn(async () => statusResponse(HTTP_STATUS.forbidden)),
         );
 
         await expect(findGithubReleaseTag("o", "r", "1.2.3")).rejects.toThrow("403");

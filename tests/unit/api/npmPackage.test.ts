@@ -6,7 +6,13 @@ import {
     clearPackageInfoCache,
 } from "../../../src/api/npmPackage";
 import { columnKeysExcept } from "../../helpers/columns";
-import { countFetchCalls, jsonResponse, mockFetchByUrl } from "../../helpers/fetchMock";
+import {
+    countFetchCalls,
+    jsonResponse,
+    mockFetchByUrl,
+    HTTP_STATUS,
+    statusResponse,
+} from "../../helpers/fetchMock";
 
 function visibleColumnsExcept(...excluded: string[]): Set<string> {
     return new Set(columnKeysExcept(...excluded));
@@ -949,8 +955,6 @@ describe("fetchPackagesInfo", () => {
 });
 
 describe("fetchPackageInfo failures", () => {
-    const HTTP_SERVER_ERROR = 503;
-    const HTTP_FORBIDDEN = 403;
     const registryDoc = {
         "dist-tags": { latest: "1.0.0" },
         time: {},
@@ -961,14 +965,14 @@ describe("fetchPackageInfo failures", () => {
     function failingFetch(
         failPattern: string,
         failure: "status" | "network",
-        status = HTTP_SERVER_ERROR,
+        status: number = HTTP_STATUS.serviceUnavailable,
     ) {
         return vi.fn(async (url: string) => {
             if (url.includes(failPattern)) {
                 if (failure === "network") {
                     throw new TypeError("Failed to fetch");
                 }
-                return { ok: false, status, json: async () => ({}) };
+                return statusResponse(status);
             }
             if (url.includes("registry.npmjs.org")) {
                 return jsonResponse(registryDoc);
@@ -1024,7 +1028,7 @@ describe("fetchPackageInfo failures", () => {
     });
 
     it("keeps stars with null issue counts on rate-limited search", async () => {
-        vi.stubGlobal("fetch", failingFetch("search/issues", "status", HTTP_FORBIDDEN));
+        vi.stubGlobal("fetch", failingFetch("search/issues", "status", HTTP_STATUS.forbidden));
 
         const info = await fetchPackageInfo("pkg", "1.0.0");
 

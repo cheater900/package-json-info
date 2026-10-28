@@ -1,6 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchSourceTree } from "../../../src/api/sourceTree";
 import { buildNpmTarball } from "../../fixtures/tarball";
+import {
+    HTTP_STATUS,
+    binaryResponse,
+    jsonResponse,
+    statusResponse,
+    textResponse,
+} from "../../helpers/fetchMock";
+
+const NPM_TREE_REF = {
+    provider: "npm",
+    tarballUrl: "https://registry.npmjs.org/x/-/x-1.0.0.tgz",
+} as const;
+
+const GITHUB_TREE_REF = { provider: "github", owner: "o", repo: "r", tag: "v1.0.0" } as const;
 
 beforeEach(() => {
     vi.unstubAllGlobals();
@@ -14,13 +28,10 @@ describe("fetchSourceTree - npm provider", () => {
         });
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: true, arrayBuffer: async () => tarball })),
+            vi.fn(async () => binaryResponse(tarball)),
         );
 
-        const { tree, readFile } = await fetchSourceTree({
-            provider: "npm",
-            tarballUrl: "https://registry.npmjs.org/x/-/x-1.0.0.tgz",
-        });
+        const { tree, readFile } = await fetchSourceTree(NPM_TREE_REF);
 
         const names = tree.map((n) => n.name).sort();
         expect(names).toEqual(["index.js", "src"]);
@@ -32,13 +43,10 @@ describe("fetchSourceTree - npm provider", () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: true, arrayBuffer: async () => tarball })),
+            vi.fn(async () => binaryResponse(tarball)),
         );
 
-        const { tree } = await fetchSourceTree({
-            provider: "npm",
-            tarballUrl: "https://registry.npmjs.org/x/-/x-1.0.0.tgz",
-        });
+        const { tree } = await fetchSourceTree(NPM_TREE_REF);
 
         expect(tree[0].path).toBe("index.js");
     });
@@ -46,7 +54,7 @@ describe("fetchSourceTree - npm provider", () => {
     it("throws on tarball download failure", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: false, status: 404 })),
+            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
         );
 
         await expect(
@@ -58,13 +66,10 @@ describe("fetchSourceTree - npm provider", () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: true, arrayBuffer: async () => tarball })),
+            vi.fn(async () => binaryResponse(tarball)),
         );
 
-        const { readFile } = await fetchSourceTree({
-            provider: "npm",
-            tarballUrl: "https://registry.npmjs.org/x/-/x-1.0.0.tgz",
-        });
+        const { readFile } = await fetchSourceTree(NPM_TREE_REF);
 
         await expect(readFile("nope.js")).rejects.toThrow();
     });
@@ -74,19 +79,16 @@ describe("fetchSourceTree - github provider", () => {
     it("builds tree from git-trees API, fetches file content lazily", async () => {
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("api.github.com")) {
-                return {
-                    ok: true,
-                    json: async () => ({
-                        tree: [
-                            { path: "index.js", type: "blob", size: 10 },
-                            { path: "src", type: "tree" },
-                            { path: "src/helper.js", type: "blob", size: 5 },
-                        ],
-                    }),
-                };
+                return jsonResponse({
+                    tree: [
+                        { path: "index.js", type: "blob", size: 10 },
+                        { path: "src", type: "tree" },
+                        { path: "src/helper.js", type: "blob", size: 5 },
+                    ],
+                });
             }
             if (url.includes("raw.githubusercontent.com")) {
-                return { ok: true, text: async () => "file content" };
+                return textResponse("file content");
             }
             throw new Error(`unexpected url: ${url}`);
         });
@@ -108,18 +110,12 @@ describe("fetchSourceTree - github provider", () => {
     it("flags truncated tree", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({
-                ok: true,
-                json: async () => ({ tree: [{ path: "a.js", type: "blob" }], truncated: true }),
-            })),
+            vi.fn(async () =>
+                jsonResponse({ tree: [{ path: "a.js", type: "blob" }], truncated: true }),
+            ),
         );
 
-        const { truncated } = await fetchSourceTree({
-            provider: "github",
-            owner: "o",
-            repo: "r",
-            tag: "v1.0.0",
-        });
+        const { truncated } = await fetchSourceTree(GITHUB_TREE_REF);
 
         expect(truncated).toBe(true);
     });
@@ -127,23 +123,17 @@ describe("fetchSourceTree - github provider", () => {
     it("omits submodule entries", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({
-                ok: true,
-                json: async () => ({
+            vi.fn(async () =>
+                jsonResponse({
                     tree: [
                         { path: "index.js", type: "blob", size: 1 },
                         { path: "vendor", type: "commit" },
                     ],
                 }),
-            })),
+            ),
         );
 
-        const { tree } = await fetchSourceTree({
-            provider: "github",
-            owner: "o",
-            repo: "r",
-            tag: "v1.0.0",
-        });
+        const { tree } = await fetchSourceTree(GITHUB_TREE_REF);
 
         expect(tree.map((n) => n.name)).toEqual(["index.js"]);
     });
@@ -151,11 +141,9 @@ describe("fetchSourceTree - github provider", () => {
     it("throws on tree request failure", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => ({ ok: false, status: 404 })),
+            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
         );
 
-        await expect(
-            fetchSourceTree({ provider: "github", owner: "o", repo: "r", tag: "v1.0.0" }),
-        ).rejects.toThrow(/404/);
+        await expect(fetchSourceTree(GITHUB_TREE_REF)).rejects.toThrow(/404/);
     });
 });

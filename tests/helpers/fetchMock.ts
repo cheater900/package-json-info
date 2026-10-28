@@ -1,16 +1,37 @@
 import { vi } from "vitest";
 
-export const HTTP_OK = 200;
-export const HTTP_NOT_FOUND = 404;
+export const HTTP_STATUS = {
+    ok: 200,
+    forbidden: 403,
+    notFound: 404,
+    tooManyRequests: 429,
+    serverError: 500,
+    serviceUnavailable: 503,
+} as const;
 
 /** Minimal `Response` stand-in: `ok` true -> 200, false -> 404. */
 export function jsonResponse(body: unknown, ok = true) {
     return {
         ok,
-        status: ok ? HTTP_OK : HTTP_NOT_FOUND,
+        status: ok ? HTTP_STATUS.ok : HTTP_STATUS.notFound,
         json: async () => body,
         text: async () => JSON.stringify(body),
     };
+}
+
+/** Failed response with the given non-2xx status and an empty body. */
+export function statusResponse(status: number) {
+    return { ok: false, status, json: async () => ({}), text: async () => "" };
+}
+
+/** 200 response carrying raw text, as a raw file host returns it. */
+export function textResponse(text: string) {
+    return { ok: true, status: HTTP_STATUS.ok, text: async () => text };
+}
+
+/** 200 response carrying binary data, such as a tarball download. */
+export function binaryResponse(body: ArrayBuffer) {
+    return { ok: true, status: HTTP_STATUS.ok, arrayBuffer: async () => body };
 }
 
 /** Fetch mock answering the first `handlers` key contained in the URL; 404 otherwise. */
