@@ -1,14 +1,15 @@
 import { ref, computed, watch, toRaw } from "vue";
-import { fetchPackagesInfo } from "../api/npmPackage.ts";
+import type { Ref } from "vue";
+import { fetchPackagesInfo } from "../api/npmPackage";
 import {
     createHistoryEntry,
     pushHistoryEntry,
     canGoBack as canGoBackPure,
     canGoForward as canGoForwardPure,
     isEntryCacheValid,
-} from "../utils/packageJsonHistory.ts";
-import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson.ts";
-import type { DependencyMap } from "../utils/packageJson.ts";
+} from "../utils/packageJsonHistory";
+import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
+import type { DependencyMap } from "../utils/packageJson";
 import { t } from "../i18n";
 
 function toPackageInputs(dependencies: DependencyMap | undefined) {
@@ -26,7 +27,7 @@ function toPackageInputs(dependencies: DependencyMap | undefined) {
  * then npmPackage's own name/slug-level caching means only genuinely new
  * data triggers a request.
  */
-export function usePackageJsonHistory(visibleColumns) {
+export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) {
     const pkg = ref(null);
     const deps = ref([]);
     const devDeps = ref([]);

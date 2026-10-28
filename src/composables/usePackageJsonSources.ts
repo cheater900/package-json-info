@@ -1,18 +1,22 @@
 import { ref, watch, onScopeDispose } from "vue";
+import type { Ref } from "vue";
 import { URL_SYNC_DEBOUNCE_MS } from "../constants";
-import { fetchPackageJsonForVersion } from "../api/npmPackage.ts";
-import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../api/repoPackageJson.ts";
-import { fetchText } from "../api/http.ts";
+import { fetchPackageJsonForVersion } from "../api/npmPackage";
+import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../api/repoPackageJson";
+import { fetchText } from "../api/http";
 import { t } from "../i18n";
-import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync.ts";
-import { isHttpUrl } from "../utils/url.ts";
+import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync";
+import { isHttpUrl } from "../utils/url";
 
 /**
  * Owns every way of bringing in package.json text (URL, repo URL, file,
  * clipboard, drill-down into a dependency) and hands the text to
  * `loadPackageJsonText`. Failures land in `loadError`.
  */
-export function usePackageJsonSources(loadPackageJsonText, loadError) {
+export function usePackageJsonSources(
+    loadPackageJsonText: (text: string) => boolean,
+    loadError: Ref<string | null>,
+) {
     const isLoadingInput = ref(false);
     // Mirrors ?inputUrl= so the URL input can be shared and reloaded.
     // replaceState keeps typing out of browser history; debounced because

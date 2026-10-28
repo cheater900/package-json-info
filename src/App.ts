@@ -1,7 +1,7 @@
 import { ref, computed, useId, defineComponent } from "vue";
-import { useColumnPreferences } from "./composables/useColumnPreferences.ts";
-import { usePackageJsonHistory } from "./composables/usePackageJsonHistory.ts";
-import { usePackageJsonSources } from "./composables/usePackageJsonSources.ts";
+import { useColumnPreferences } from "./composables/useColumnPreferences";
+import { usePackageJsonHistory } from "./composables/usePackageJsonHistory";
+import { usePackageJsonSources } from "./composables/usePackageJsonSources";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import Modal from "./components/Modal.vue";

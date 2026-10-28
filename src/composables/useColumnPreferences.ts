@@ -5,7 +5,7 @@ import {
     isColumnVisible,
     orderColumns,
     mergeColumnOrder,
-} from "../utils/tableColumns.ts";
+} from "../utils/tableColumns";
 import {
     loadVisibleColumns,
     saveVisibleColumns,
@@ -13,7 +13,7 @@ import {
     saveColumnOrder,
     loadShrinkColumnLabels,
     saveShrinkColumnLabels,
-} from "../utils/columnPreferencesStorage.ts";
+} from "../utils/columnPreferencesStorage";
 
 /**
  * Owns everything about which dependency-table columns are visible, in what
@@ -29,7 +29,7 @@ export function useColumnPreferences() {
     watch(columnOrder, saveColumnOrder, { deep: true });
     watch(shrinkColumnLabels, saveShrinkColumnLabels);
 
-    function toggleColumn(key) {
+    function toggleColumn(key: string) {
         visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);
     }
 
@@ -37,7 +37,7 @@ export function useColumnPreferences() {
     // columns (what DependenciesTable emits after a drag) - merge it back
     // into the full persisted order so each hidden column keeps its own
     // slot, ready to reappear in place if it's shown again later.
-    function reorderColumns(newVisibleOrder) {
+    function reorderColumns(newVisibleOrder: string[]) {
         columnOrder.value = mergeColumnOrder(columnOrder.value, newVisibleOrder);
     }
 
