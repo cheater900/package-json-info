@@ -5,6 +5,7 @@ import { t } from "../i18n";
 const LICENSE_WARNING_MARK = "⚠";
 /** Drops the weekday from `Date#toDateString` ("Mon Jan 01 2024" -> "Jan 01 2024"). */
 const WEEKDAY_PREFIX_LENGTH = 4;
+const KILOBYTE_DECIMALS = 1;
 
 export function fmtDate(dateStr) {
     const date = new Date(dateStr);
@@ -37,7 +38,7 @@ export function fmtBundleSize(gzipBytes) {
     if (gzipBytes == null) {
         return MISSING_VALUE;
     }
-    return t("cell.kilobytes", { size: (gzipBytes / BYTES_PER_KB).toFixed(1) });
+    return t("cell.kilobytes", { size: (gzipBytes / BYTES_PER_KB).toFixed(KILOBYTE_DECIMALS) });
 }
 
 export function fmtNumber(n) {

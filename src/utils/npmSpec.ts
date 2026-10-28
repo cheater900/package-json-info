@@ -5,6 +5,8 @@ export type RegistrySpec = {
 };
 
 const NPM_ALIAS_PREFIX = "npm:";
+/** Version "@" search starts past a scope's leading "@" (npm:@scope/pkg@1.0.0). */
+const SCOPE_MARKER_LENGTH = "@".length;
 
 /**
  * Resolves npm alias specs (`"my-alias": "npm:real-pkg@^1.0.0"`) to the
@@ -16,8 +18,7 @@ export function resolveRegistrySpec(name: string, spec: string): RegistrySpec {
         return { registryName: name, range: spec };
     }
     const aliased = spec.slice(NPM_ALIAS_PREFIX.length);
-    // Index 1 skips a scope's leading "@" (npm:@scope/pkg@1.0.0).
-    const versionSeparator = aliased.indexOf("@", 1);
+    const versionSeparator = aliased.indexOf("@", SCOPE_MARKER_LENGTH);
     if (versionSeparator === -1) {
         return { registryName: aliased, range: "" };
     }
