@@ -1,4 +1,7 @@
+import type { PackageError, PackageInfo } from "../types";
 import type { PackageJson } from "./packageJson";
+
+type DependencyRow = PackageInfo | PackageError;
 
 /**
  * One visited package.json state. `deps`/`devDeps` start out null (not yet
@@ -9,8 +12,8 @@ import type { PackageJson } from "./packageJson";
 export type HistoryEntry = {
     content: string;
     pkg: PackageJson;
-    deps: unknown[] | null;
-    devDeps: unknown[] | null;
+    deps: DependencyRow[] | null;
+    devDeps: DependencyRow[] | null;
     visibleColumnsSnapshot: ReadonlySet<string> | null;
 };
 
@@ -65,8 +68,8 @@ export function visibleColumnsEqual(
     return true;
 }
 
-function hasFailedRow(rows: unknown[]): boolean {
-    return rows.some((row) => typeof row === "object" && row !== null && "error" in row);
+function hasFailedRow(rows: DependencyRow[]): boolean {
+    return rows.some((row) => "error" in row);
 }
 
 /**
