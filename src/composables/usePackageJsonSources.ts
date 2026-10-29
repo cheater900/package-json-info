@@ -7,6 +7,7 @@ import { fetchText } from "../api/http";
 import { t } from "../i18n";
 import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync";
 import { isHttpUrl } from "../utils/url";
+import { settle } from "../utils/settle";
 
 /**
  * Owns every way of bringing in package.json text (URL, repo URL, file,
@@ -50,26 +51,20 @@ export function usePackageJsonSources(
         latestLoadToken = loadToken;
         isLoadingInput.value = true;
         loadError.value = null;
-        let content;
-        let failure;
-        try {
-            content = await readContent();
-        } catch (err) {
-            failure = err;
-        }
+        const result = await settle(readContent);
         if (latestLoadToken !== loadToken) {
             return;
         }
         isLoadingInput.value = false;
-        if (failure) {
-            loadError.value = failureMessage ?? failure.message;
+        if (!result.ok) {
+            loadError.value = failureMessage ?? result.error.message;
             return;
         }
-        if (!content) {
+        if (!result.value) {
             loadError.value = emptyMessage;
             return;
         }
-        loadPackageJsonText(content);
+        loadPackageJsonText(result.value);
     }
 
     function loadFromClipboard() {

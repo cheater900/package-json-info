@@ -1,6 +1,7 @@
 import { ref, watch, defineComponent } from "vue";
 import { t } from "../i18n";
 import { fetchSourceTree } from "../api/sourceTree";
+import { settle } from "../utils/settle";
 import FileTreeItem from "./FileTreeItem.vue";
 
 export default defineComponent({
@@ -47,24 +48,18 @@ export default defineComponent({
                     return;
                 }
                 loading.value = true;
-                let result;
-                let failure;
-                try {
-                    result = await fetchSourceTree(sourceTreeRef);
-                } catch (err) {
-                    failure = err;
-                }
+                const result = await settle(() => fetchSourceTree(sourceTreeRef));
                 if (isStale) {
                     return;
                 }
                 loading.value = false;
-                if (failure) {
-                    error.value = failure.message;
+                if (!result.ok) {
+                    error.value = result.error.message;
                     return;
                 }
-                tree.value = result.tree;
-                truncated.value = result.truncated;
-                readFile = result.readFile;
+                tree.value = result.value.tree;
+                truncated.value = result.value.truncated;
+                readFile = result.value.readFile;
             },
             // Fires on mount too - the parent only mounts this component once
             // there's a dependency to show, so sourceTree is already set.
@@ -79,23 +74,17 @@ export default defineComponent({
                 return;
             }
             loadingContent.value = true;
-            let content;
-            let failure;
-            try {
-                content = await readFile(path);
-            } catch (err) {
-                failure = err;
-            }
-            // Another file clicked while this one loaded: its result wins.
-            if (selectedPath.value !== path) {
+            const result = await settle(() => readFile(path));
+            const isOtherFileSelected = selectedPath.value !== path;
+            if (isOtherFileSelected) {
                 return;
             }
             loadingContent.value = false;
-            if (failure) {
-                contentError.value = failure.message;
+            if (!result.ok) {
+                contentError.value = result.error.message;
                 return;
             }
-            selectedContent.value = content;
+            selectedContent.value = result.value;
         }
 
         return {
