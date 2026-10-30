@@ -11,5 +11,6 @@ is - without having to open npm, GitHub, and changelogs one tab at a time.
 
 ## Documentation
 
+- [Intent](docs/INTENT.md): purpose, audience, design principles, and non-goals.
 - [Features](docs/FEATURES.md): input methods, table columns, and the feature checklist.
 - [Development](docs/DEVELOPMENT.md): code layout, stack, configuration, and how to run, build, and test.
