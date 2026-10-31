@@ -46,7 +46,7 @@ package, or when someone takes over an unfamiliar codebase.
   URLs and tarballs come from package authors. The app validates them
   before they become links, API paths or downloads.
 - **Fail visibly.** Every failed load tells the user what went wrong, in
-  words they can act on. Errors are never swallowed silently.
+  words they can act on.
 - **Stay small.** The app uses native browser features (fetch, Compression
   Streams, localStorage) and few dependencies.
 

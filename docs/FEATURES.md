@@ -33,11 +33,11 @@ the data is available:
 
 Direct `dependencies`/`devDependencies` are only the tip of what a package
 manager actually installs. To show the real footprint of a `package.json`,
-the app recursively walks each package's own dependency tree - fetching each
+the app recursively walks each package's own dependency tree. It fetches each
 dependency's `package.json` in turn, then its dependencies' `package.json`
-files, and so on - the same way a package manager would resolve the tree.
+files, and so on, the same way a package manager resolves the tree.
 
-**Not implemented yet.** This should be done gracefully:
+**Not implemented yet.** The resolution should:
 
 - [ ] **Deduplicate** shared dependencies encountered multiple times across the
       tree, so they're only counted once (mirroring how a package manager
@@ -64,8 +64,7 @@ input for the table. Clicking it:
 
 ## Desired features (must-have)
 
-Beyond the core goals above, these are required for a first usable version -
-not optional extras to consider later.
+Beyond the core goals above, a first usable version needs all of these.
 
 ### Table / input data
 
@@ -93,8 +92,8 @@ not optional extras to consider later.
 
 ## Optional / nice-to-have features
 
-Ideas beyond the core goals and must-haves above, not committed to - lower
-priority, for later review and pick-and-choose, may not be implemented.
+Ideas beyond the core goals and must-haves above. They have lower priority,
+nothing here is committed to, and some may never be implemented.
 
 ### Input
 
@@ -143,4 +142,4 @@ Input methods, the full dependency table, sorting, search, column
 visibility, drill-down with history navigation, and in-memory metadata
 caching are implemented and tested (unit, component, and e2e). Transitive
 dependency resolution, responsive/accessible UI, and most of the
-nice-to-have list remain outstanding - see the unchecked boxes above.
+nice-to-have list remain outstanding (see the unchecked boxes above).

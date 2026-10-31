@@ -7,7 +7,7 @@ table of its dependencies and devDependencies.
 
 Let a user bring in a `package.json` from wherever they have it, and get back
 a table that tells them, at a glance, how healthy and active every dependency
-is - without having to open npm, GitHub, and changelogs one tab at a time.
+is, without opening npm, GitHub, and changelogs one tab at a time.
 
 ## Documentation
 
