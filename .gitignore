@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+# Vite reads every .env file; keep tokens out of the repo.
+.env
+.env.*
+!.env.example
 
 # Playwright
 /test-results/
