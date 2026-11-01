@@ -1,18 +1,24 @@
 import { DEFAULT_FETCH_CONCURRENCY, DEFAULT_FETCH_TIMEOUT_MS } from "./constants";
 
+/** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
+const MAX_CONFIG_INT = 2 ** 31 - 1;
+
 /**
- * Parses an env value as a positive integer. Empty values use `fallback`;
- * invalid ones (zero, negative, fractional, non-numeric) warn and use it.
+ * Parses an env value as a positive integer up to MAX_CONFIG_INT. Empty
+ * values use `fallback`; invalid ones (zero, negative, fractional,
+ * non-numeric, too large) warn and use it.
  */
 export function readPositiveInt(name: string, raw: string | undefined, fallback: number): number {
     if (raw == null || raw.trim() === "") {
         return fallback;
     }
     const value = Number(raw);
-    if (Number.isInteger(value) && value > 0) {
+    if (Number.isInteger(value) && value > 0 && value <= MAX_CONFIG_INT) {
         return value;
     }
-    console.warn(`Ignoring ${name}="${raw}": expected a positive integer. Using ${fallback}.`);
+    console.warn(
+        `Ignoring ${name}="${raw}": expected a positive integer up to ${MAX_CONFIG_INT}. Using ${fallback}.`,
+    );
     return fallback;
 }
 

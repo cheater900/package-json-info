@@ -46,8 +46,9 @@ privileged token into a build you publish.
 - `VITE_FETCH_TIMEOUT_MS`: milliseconds before a network request is aborted.
   Defaults to 30000.
 
-Numeric settings must be positive integers. Any other value logs a warning
-in the browser console and falls back to the default.
+Numeric settings must be positive integers up to 2147483647, the largest
+delay browser timers support. Any other value logs a warning in the browser
+console and falls back to the default.
 
 Column visibility, column order and the "shrink columns" toggle are user
 settings. The app stores them in `localStorage`.

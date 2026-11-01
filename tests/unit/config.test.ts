@@ -13,14 +13,15 @@ describe("readPositiveInt", () => {
 
     it("parses positive integer", () => {
         expect(readPositiveInt("X", "12", 5)).toBe(12);
+        expect(readPositiveInt("X", "2147483647", 5)).toBe(2147483647);
     });
 
-    it("warns and returns fallback for zero, negative, fraction, text", () => {
+    it("warns and returns fallback for zero, negative, fraction, text, timer overflow", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-        for (const raw of ["0", "-3", "2.5", "abc"]) {
+        for (const raw of ["0", "-3", "2.5", "abc", "2147483648", "1e20"]) {
             expect(readPositiveInt("X", raw, 5)).toBe(5);
         }
-        expect(warn).toHaveBeenCalledTimes(4);
+        expect(warn).toHaveBeenCalledTimes(6);
     });
 });
