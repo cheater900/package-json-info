@@ -16,6 +16,7 @@ import { extractLicense } from "../utils/license";
 import type { NpmLicenseField } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { resolveRegistrySpec } from "../utils/npmSpec";
+import { settle } from "../utils/settle";
 import { isHttpUrl } from "../utils/url";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
@@ -262,11 +263,8 @@ export async function fetchPackagesInfo(
         while (nextIndex < packages.length) {
             const i = nextIndex++;
             const { name, version } = packages[i];
-            try {
-                results[i] = await fetchPackageInfo(name, version, fetchOptions);
-            } catch (err) {
-                results[i] = { name, version, error: err.message };
-            }
+            const result = await settle(() => fetchPackageInfo(name, version, fetchOptions));
+            results[i] = result.ok ? result.value : { name, version, error: result.error.message };
         }
     }
 

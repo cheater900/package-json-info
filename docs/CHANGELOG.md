@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Settle each package fetch with shared settle helper instead of local try/catch
 - Share stubFetchByUrl helper and minimal registry doc fixture across tests
 - Build e2e mock routes from API constants, name screenshot viewports, stop json viewer test closing open section
 - Import en.json with type attribute so Playwright can load specs that pull in i18n
