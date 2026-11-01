@@ -124,6 +124,10 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         const rawDeps = toPackageInputs(entry.pkg.dependencies);
         const rawDevDeps = toPackageInputs(entry.pkg.devDependencies);
         const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
+        // An empty list isn't shown as loading, so drop the previous entry's
+        // rows now instead of showing them until the other list finishes.
+        deps.value = [];
+        devDeps.value = [];
         isLoadingDeps.value = rawDeps.length > 0;
         isLoadingDevDeps.value = rawDevDeps.length > 0;
         const [depsResult, devDepsResult] = await Promise.all([

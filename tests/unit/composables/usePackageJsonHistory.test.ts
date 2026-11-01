@@ -245,6 +245,20 @@ describe("async fetch ordering", () => {
         expect(isLoadingDeps.value).toBe(false);
     });
 
+    it("clears previous rows from list with nothing to fetch", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, deps, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("first"));
+        await release("/first", { downloads: 1 });
+
+        loadPackageJsonText(JSON.stringify({ devDependencies: { slow: "1.0.0" } }));
+
+        expect(isLoadingDeps.value).toBe(false);
+        expect(deps.value).toEqual([]);
+        await release("/slow", { downloads: 2 });
+    });
+
     it("refetches entry with failed rows on revisit", async () => {
         const fetchMock = vi.fn(async () => {
             throw new TypeError("Failed to fetch");
