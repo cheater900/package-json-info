@@ -51,6 +51,19 @@ describe("fetchSourceTree - npm provider", () => {
         expect(tree[0].path).toBe("index.js");
     });
 
+    it("reads file listed under repeated slashes by normalized path", async () => {
+        const tarball = buildNpmTarball({ "/lib//a.js": "a" });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => binaryResponse(tarball)),
+        );
+
+        const { tree, readFile } = await fetchSourceTree(NPM_TREE_REF);
+
+        expect(tree[0].children![0].path).toBe("lib/a.js");
+        expect(await readFile("lib/a.js")).toBe("a");
+    });
+
     it("throws on tarball download failure", async () => {
         vi.stubGlobal(
             "fetch",

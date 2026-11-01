@@ -1,5 +1,5 @@
 import { gunzip, parseTar } from "../utils/tarball";
-import { buildFileTree } from "../utils/fileTree";
+import { buildFileTree, normalizePath } from "../utils/fileTree";
 import type { FileTreeNode } from "../utils/fileTree";
 import { githubHeaders, githubRawFileUrl, githubRepoApiUrl } from "./github";
 import { fetchWithTimeout } from "./http";
@@ -47,7 +47,10 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     }
     const rawTar = await gunzip(await response.arrayBuffer());
     const entries = parseTar(rawTar)
-        .map((entry) => ({ ...entry, path: entry.path.replace(NPM_TARBALL_ROOT, "") }))
+        .map((entry) => ({
+            ...entry,
+            path: normalizePath(entry.path.replace(NPM_TARBALL_ROOT, "")),
+        }))
         .filter((entry) => entry.path !== "");
     const contentByPath = new Map(
         entries.filter((e) => e.type === "file").map((e) => [e.path, e.content]),

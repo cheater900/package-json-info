@@ -87,6 +87,14 @@ describe("buildFileTree", () => {
         expect(tree[0].path).toBe("dir");
     });
 
+    it("collapses long inner slash run in linear time", () => {
+        const start = performance.now();
+        const tree = buildFileTree([{ path: `a${"/".repeat(200_000)}b`, type: "file" }]);
+
+        expect(performance.now() - start).toBeLessThan(1000);
+        expect(tree[0].children![0].path).toBe("a/b");
+    });
+
     it("returns empty tree for no entries", () => {
         expect(buildFileTree([])).toEqual([]);
     });

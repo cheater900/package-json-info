@@ -21,6 +21,15 @@ type HasEntryType = {
     type: FileTreeEntry["type"];
 };
 
+/**
+ * Drops leading, trailing and repeated slashes ("a//b/" -> "a/b"), as tar
+ * extraction does. Split, not regex: `/\/+$/` is O(n²) on a long inner
+ * slash run, and each empty segment would nest one more directory.
+ */
+export function normalizePath(path: string): string {
+    return path.split("/").filter(Boolean).join("/");
+}
+
 function splitPath(path: string): PathParts {
     const lastSlash = path.lastIndexOf("/");
     if (lastSlash === -1) {
@@ -69,12 +78,10 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
     // Process directories before files so every parent exists by the time a
     // file needing it is inserted, regardless of the archive's own order.
     // Archives may list one path twice; like tar extraction, the last one wins.
-    const uniqueEntries = [
-        ...new Map(entries.map((e) => [e.path.replace(/\/+$/, ""), e])).values(),
-    ];
+    const uniqueEntries = [...new Map(entries.map((e) => [normalizePath(e.path), e])).values()];
     const sorted = uniqueEntries.sort((a, b) => compareDirectoriesFirst(a, b, a.path, b.path));
     for (const entry of sorted) {
-        const path = entry.path.replace(/\/+$/, "");
+        const path = normalizePath(entry.path);
         if (!path) {
             continue;
         }
