@@ -1,4 +1,4 @@
-import en from "./locales/en.json";
+import en from "./locales/en.json" with { type: "json" };
 
 type MessageTree = { [key: string]: string | MessageTree };
 
