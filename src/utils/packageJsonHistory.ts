@@ -1,7 +1,5 @@
-import type { PackageError, PackageInfo } from "../types";
+import type { DependencyRow } from "../types";
 import type { PackageJson } from "./packageJson";
-
-type DependencyRow = PackageInfo | PackageError;
 
 /**
  * One visited package.json state. `deps`/`devDeps` start out null (not yet

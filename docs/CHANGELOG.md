@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Move SourceTreeRef and DependencyRow to types so domain types don't import from api layer
 - Split planned work out of FEATURES into ROADMAP and IDEA, backfill CHANGELOG from git log
 - Reject config ints above 2^31-1 so huge timeout can't overflow timer and abort every fetch
 - Clear previous entry's rows on fetch start so empty list doesn't show stale deps

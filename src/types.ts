@@ -1,4 +1,7 @@
-import type { SourceTreeRef } from "./api/sourceTree";
+/** How to fetch a package version's browsable source: npm tarball or GitHub release tag. */
+export type SourceTreeRef =
+    | { provider: "npm"; tarballUrl: string }
+    | { provider: "github"; owner: string; repo: string; tag: string };
 
 export type PackageInput = {
     name: string;
@@ -35,3 +38,6 @@ export type PackageError = {
     version: string;
     error: string;
 };
+
+/** One table row: fetched metadata, or the error that stopped the fetch. */
+export type DependencyRow = PackageInfo | PackageError;

@@ -1,4 +1,4 @@
-import type { PackageInfo, PackageInput, PackageError } from "../types";
+import type { DependencyRow, PackageInfo, PackageInput, SourceTreeRef } from "../types";
 import { config } from "../config";
 import {
     BUNDLEPHOBIA_SIZE_URL,
@@ -22,7 +22,6 @@ import type { HttpHeaders } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
 import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repoMetadata";
 import type { RepoIssueCounts } from "./repoMetadata";
-import type { SourceTreeRef } from "./sourceTree";
 
 export type FetchPackageOptions = {
     githubToken?: string;
@@ -257,9 +256,9 @@ export async function fetchPackageJsonForVersion(
 export async function fetchPackagesInfo(
     packages: PackageInput[],
     options: FetchPackagesOptions = {},
-): Promise<Array<PackageInfo | PackageError>> {
+): Promise<DependencyRow[]> {
     const { concurrency = config.fetchConcurrency, ...fetchOptions } = options;
-    const results = Array.from<PackageInfo | PackageError>({ length: packages.length });
+    const results = Array.from<DependencyRow>({ length: packages.length });
     let nextIndex = 0;
 
     async function worker(): Promise<void> {

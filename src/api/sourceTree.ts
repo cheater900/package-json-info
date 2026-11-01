@@ -4,10 +4,7 @@ import type { FileTreeNode } from "../utils/fileTree";
 import { githubHeaders, githubRawFileUrl, githubRepoApiUrl } from "./github";
 import { fetchWithTimeout } from "./http";
 import { t } from "../i18n";
-
-export type SourceTreeRef =
-    | { provider: "npm"; tarballUrl: string }
-    | { provider: "github"; owner: string; repo: string; tag: string };
+import type { SourceTreeRef } from "../types";
 
 export type SourceTree = {
     tree: FileTreeNode[];
