@@ -5,6 +5,7 @@ import {
     fetchPackageJsonForVersion,
     clearPackageInfoCache,
 } from "../../../src/api/npmPackage";
+import { OSV_MAX_PAGES } from "../../../src/constants";
 import { columnKeysExcept } from "../../helpers/columns";
 import {
     countFetchCalls,
@@ -320,7 +321,7 @@ describe("fetchPackageInfo", () => {
         const info = await fetchPackageInfo("endless-pkg", "1.0.0");
 
         expect(info.vulnerabilityCount).toBeNull();
-        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(10);
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(OSV_MAX_PAGES);
     });
 
     it("reports 0 vulnerabilities, not null, for empty OSV response", async () => {

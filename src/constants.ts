@@ -2,6 +2,8 @@ export const NPM_REGISTRY_URL = "https://registry.npmjs.org";
 export const NPM_WEEKLY_DOWNLOADS_URL = "https://api.npmjs.org/downloads/point/last-week";
 export const OSV_QUERY_URL = "https://api.osv.dev/v1/query";
 export const OSV_NPM_ECOSYSTEM = "npm";
+/** OSV result pages followed per package; a real package needs one or two. */
+export const OSV_MAX_PAGES = 10;
 export const BUNDLEPHOBIA_SIZE_URL = "https://bundlephobia.com/api/size";
 
 export const GITHUB_HOST = "github.com";
@@ -21,6 +23,8 @@ export const DEFAULT_BRANCH_CANDIDATES = ["main", "master"];
 
 export const DEFAULT_FETCH_CONCURRENCY = 5;
 export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+/** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
+export const MAX_CONFIG_INT = 2 ** 31 - 1;
 export const HTTP_NOT_FOUND = 404;
 /** Delay before mirroring the URL input into the address bar; browsers throttle replaceState. */
 export const URL_SYNC_DEBOUNCE_MS = 300;

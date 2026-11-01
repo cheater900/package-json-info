@@ -5,6 +5,7 @@ import {
     GITHUB_HOST,
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
+    OSV_MAX_PAGES,
     OSV_NPM_ECOSYSTEM,
     OSV_QUERY_URL,
 } from "../constants";
@@ -65,9 +66,6 @@ type OsvQueryResponse = {
 type BundlephobiaData = {
     gzip?: number;
 };
-
-/** OSV result pages followed per package; a real package needs one or two. */
-const OSV_MAX_PAGES = 10;
 
 const COLUMNS_ALL_TOGGLEABLE = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
 

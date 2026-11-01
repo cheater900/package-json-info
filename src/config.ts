@@ -1,7 +1,4 @@
-import { DEFAULT_FETCH_CONCURRENCY, DEFAULT_FETCH_TIMEOUT_MS } from "./constants";
-
-/** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
-const MAX_CONFIG_INT = 2 ** 31 - 1;
+import { DEFAULT_FETCH_CONCURRENCY, DEFAULT_FETCH_TIMEOUT_MS, MAX_CONFIG_INT } from "./constants";
 
 /**
  * Parses an env value as a positive integer up to MAX_CONFIG_INT. Empty

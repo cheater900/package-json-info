@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Move OSV page cap and config int limit into constants
 - Rename storage key, tar byte and fetch column group constants to shared-prefix names
 - Replace always-true isCentered check with static class, name Name column key
 - Drop unused per-call githubToken option from package fetch; headers always come from config
