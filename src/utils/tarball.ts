@@ -84,8 +84,8 @@ function isZeroBlock(bytes: Uint8Array, offset: number): boolean {
     return true;
 }
 
-const SPACE_BYTE = 0x20;
-const EQUALS_BYTE = 0x3d;
+const BYTE_SPACE = 0x20;
+const BYTE_EQUALS = 0x3d;
 /** Every PAX record ends in "\n", which isn't part of its value. */
 const PAX_RECORD_TERMINATOR_LENGTH = 1;
 
@@ -100,7 +100,7 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
     const records: Record<string, string> = {};
     let offset = 0;
     while (offset < bytes.length) {
-        const spaceIndex = bytes.indexOf(SPACE_BYTE, offset);
+        const spaceIndex = bytes.indexOf(BYTE_SPACE, offset);
         if (spaceIndex === -1) {
             break;
         }
@@ -112,7 +112,7 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
         // Search within this record only: scanning to the block's end for
         // every record lacking "=" would make parsing O(n²).
         const keyValue = bytes.subarray(spaceIndex + 1, recordEnd - PAX_RECORD_TERMINATOR_LENGTH);
-        const equalsIndex = keyValue.indexOf(EQUALS_BYTE);
+        const equalsIndex = keyValue.indexOf(BYTE_EQUALS);
         if (equalsIndex !== -1) {
             const key = decoder.decode(keyValue.subarray(0, equalsIndex));
             records[key] = decoder.decode(keyValue.subarray(equalsIndex + 1));

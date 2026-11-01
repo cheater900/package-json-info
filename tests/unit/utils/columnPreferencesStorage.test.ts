@@ -13,9 +13,9 @@ import {
     TOGGLEABLE_COLUMNS,
 } from "../../../src/utils/tableColumns";
 import {
-    VISIBLE_COLUMNS_STORAGE_KEY,
-    COLUMN_ORDER_STORAGE_KEY,
-    SHRINK_LABELS_STORAGE_KEY,
+    STORAGE_KEY_VISIBLE_COLUMNS,
+    STORAGE_KEY_COLUMN_ORDER,
+    STORAGE_KEY_SHRINK_LABELS,
 } from "../../../src/constants";
 
 beforeEach(() => {
@@ -30,7 +30,7 @@ describe("loadVisibleColumns", () => {
 
     it("returns saved set", () => {
         localStorage.setItem(
-            VISIBLE_COLUMNS_STORAGE_KEY,
+            STORAGE_KEY_VISIBLE_COLUMNS,
             JSON.stringify(["license", "sourceCode"]),
         );
 
@@ -38,20 +38,20 @@ describe("loadVisibleColumns", () => {
     });
 
     it("falls back to defaults for non-array stored value", () => {
-        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify({ not: "an array" }));
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLUMNS, JSON.stringify({ not: "an array" }));
 
         expect(loadVisibleColumns()).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
     });
 
     it("falls back to defaults for invalid stored JSON", () => {
-        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, "{not valid json");
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLUMNS, "{not valid json");
 
         expect(loadVisibleColumns()).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
     });
 
     it("drops keys of removed toggleable columns", () => {
         localStorage.setItem(
-            VISIBLE_COLUMNS_STORAGE_KEY,
+            STORAGE_KEY_VISIBLE_COLUMNS,
             JSON.stringify(["license", "sourceCode", "some-removed-column", "name", 42, null]),
         );
 
@@ -59,14 +59,14 @@ describe("loadVisibleColumns", () => {
     });
 
     it("falls back to defaults for empty stored set", () => {
-        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLUMNS, JSON.stringify([]));
 
         expect(loadVisibleColumns()).toEqual(new Set(DEFAULT_VISIBLE_COLUMNS));
     });
 
     it("keeps stored set with one visible column", () => {
         const oneKey = [TOGGLEABLE_COLUMNS[0].key];
-        localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify(oneKey));
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLUMNS, JSON.stringify(oneKey));
 
         expect(loadVisibleColumns()).toEqual(new Set(oneKey));
     });
@@ -84,7 +84,7 @@ describe("saveVisibleColumns", () => {
     it("persists set as JSON array", () => {
         saveVisibleColumns(new Set(["license", "sourceCode"]));
 
-        expect(JSON.parse(localStorage.getItem(VISIBLE_COLUMNS_STORAGE_KEY)!)).toEqual([
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_VISIBLE_COLUMNS)!)).toEqual([
             "license",
             "sourceCode",
         ]);
@@ -113,19 +113,19 @@ describe("loadColumnOrder", () => {
 
     it("returns saved full permutation unchanged", () => {
         const order = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
-        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(order));
+        localStorage.setItem(STORAGE_KEY_COLUMN_ORDER, JSON.stringify(order));
 
         expect(loadColumnOrder()).toEqual(order);
     });
 
     it("falls back to default order for non-array stored value", () => {
-        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify({ not: "an array" }));
+        localStorage.setItem(STORAGE_KEY_COLUMN_ORDER, JSON.stringify({ not: "an array" }));
 
         expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
     });
 
     it("falls back to default order for invalid stored JSON", () => {
-        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, "{not valid json");
+        localStorage.setItem(STORAGE_KEY_COLUMN_ORDER, "{not valid json");
 
         expect(loadColumnOrder()).toEqual([...DEFAULT_COLUMN_ORDER]);
     });
@@ -133,14 +133,14 @@ describe("loadColumnOrder", () => {
     it("drops keys of removed toggleable columns", () => {
         const validOrder = TOGGLEABLE_COLUMNS.map((c) => c.key).reverse();
         const order = [validOrder[0], "some-removed-column", ...validOrder.slice(1)];
-        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(order));
+        localStorage.setItem(STORAGE_KEY_COLUMN_ORDER, JSON.stringify(order));
 
         expect(loadColumnOrder()).toEqual(validOrder);
     });
 
     it("appends valid column missing from stored order", () => {
         const order = TOGGLEABLE_COLUMNS.slice(1).map((c) => c.key);
-        localStorage.setItem(COLUMN_ORDER_STORAGE_KEY, JSON.stringify(order));
+        localStorage.setItem(STORAGE_KEY_COLUMN_ORDER, JSON.stringify(order));
 
         expect(loadColumnOrder()).toEqual([...order, TOGGLEABLE_COLUMNS[0].key]);
     });
@@ -159,7 +159,7 @@ describe("saveColumnOrder", () => {
         const order = [TOGGLEABLE_COLUMNS[1].key, TOGGLEABLE_COLUMNS[0].key];
         saveColumnOrder(order);
 
-        expect(JSON.parse(localStorage.getItem(COLUMN_ORDER_STORAGE_KEY)!)).toEqual(order);
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_COLUMN_ORDER)!)).toEqual(order);
     });
 
     it("round-trips full permutation through loadColumnOrder", () => {
@@ -184,25 +184,25 @@ describe("loadShrinkColumnLabels", () => {
     });
 
     it("returns true for saved true", () => {
-        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify(true));
+        localStorage.setItem(STORAGE_KEY_SHRINK_LABELS, JSON.stringify(true));
 
         expect(loadShrinkColumnLabels()).toBe(true);
     });
 
     it("returns false for saved false", () => {
-        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify(false));
+        localStorage.setItem(STORAGE_KEY_SHRINK_LABELS, JSON.stringify(false));
 
         expect(loadShrinkColumnLabels()).toBe(false);
     });
 
     it("returns false for invalid stored JSON", () => {
-        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, "{not valid json");
+        localStorage.setItem(STORAGE_KEY_SHRINK_LABELS, "{not valid json");
 
         expect(loadShrinkColumnLabels()).toBe(false);
     });
 
     it("returns false for non-boolean stored value", () => {
-        localStorage.setItem(SHRINK_LABELS_STORAGE_KEY, JSON.stringify("true"));
+        localStorage.setItem(STORAGE_KEY_SHRINK_LABELS, JSON.stringify("true"));
 
         expect(loadShrinkColumnLabels()).toBe(false);
     });
@@ -220,7 +220,7 @@ describe("saveShrinkColumnLabels", () => {
     it("persists true as JSON boolean", () => {
         saveShrinkColumnLabels(true);
 
-        expect(JSON.parse(localStorage.getItem(SHRINK_LABELS_STORAGE_KEY)!)).toBe(true);
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_SHRINK_LABELS)!)).toBe(true);
     });
 
     it("round-trips through loadShrinkColumnLabels", () => {

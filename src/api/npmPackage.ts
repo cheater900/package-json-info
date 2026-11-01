@@ -69,10 +69,10 @@ type BundlephobiaData = {
 /** OSV result pages followed per package; a real package needs one or two. */
 const OSV_MAX_PAGES = 10;
 
-const ALL_TOGGLEABLE_COLUMN_KEYS = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
+const COLUMNS_ALL_TOGGLEABLE = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
 
 /** Columns derived from the npm registry document, directly or via its repo slug. */
-const REGISTRY_DATA_COLUMNS = [
+const COLUMNS_FROM_REGISTRY = [
     "versionDate",
     "latestVersion",
     "latestReleaseDate",
@@ -92,7 +92,7 @@ const REGISTRY_DATA_COLUMNS = [
 ];
 
 /** Columns backed by the PR/issue-count search against the repo host. */
-const ISSUE_COUNT_COLUMNS = ["openPRs", "closedPRs", "openIssues", "closedIssues"];
+const COLUMNS_FROM_ISSUE_SEARCH = ["openPRs", "closedPRs", "openIssues", "closedIssues"];
 
 // Caches hold promises keyed by each lookup's natural key (package name,
 // name@version, or repo slug), so concurrent callers share one in-flight
@@ -169,12 +169,12 @@ export async function fetchPackageInfo(
     version: string,
     options: FetchPackageOptions = {},
 ): Promise<PackageInfo> {
-    const { visibleColumns = ALL_TOGGLEABLE_COLUMN_KEYS } = options;
+    const { visibleColumns = COLUMNS_ALL_TOGGLEABLE } = options;
     const { registryName, range } = resolveRegistrySpec(name, version);
     const headers = githubHeaders();
     const isVisible = (key: string) => isColumnVisible(visibleColumns, key);
     const [npmData, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
-        anyColumnVisible(visibleColumns, REGISTRY_DATA_COLUMNS)
+        anyColumnVisible(visibleColumns, COLUMNS_FROM_REGISTRY)
             ? fetchRegistryData(registryName)
             : null,
         isVisible("weeklyDownloads")
@@ -195,7 +195,7 @@ export async function fetchPackageInfo(
         slug != null && isVisible("gitStars")
             ? withFallback(fetchCachedRepoStars(slug, headers), null)
             : null,
-        slug != null && anyColumnVisible(visibleColumns, ISSUE_COUNT_COLUMNS)
+        slug != null && anyColumnVisible(visibleColumns, COLUMNS_FROM_ISSUE_SEARCH)
             ? withFallback(fetchCachedIssueCounts(slug, headers), EMPTY_ISSUE_COUNTS)
             : EMPTY_ISSUE_COUNTS,
         isVisible("sourceCodeTree")

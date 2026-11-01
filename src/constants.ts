@@ -25,10 +25,10 @@ export const HTTP_NOT_FOUND = 404;
 /** Delay before mirroring the URL input into the address bar; browsers throttle replaceState. */
 export const URL_SYNC_DEBOUNCE_MS = 300;
 
-const STORAGE_KEY_PREFIX = "package-json-info";
-export const VISIBLE_COLUMNS_STORAGE_KEY = `${STORAGE_KEY_PREFIX}:visibleColumns`;
-export const COLUMN_ORDER_STORAGE_KEY = `${STORAGE_KEY_PREFIX}:columnOrder`;
-export const SHRINK_LABELS_STORAGE_KEY = `${STORAGE_KEY_PREFIX}:shrinkColumnLabels`;
+const STORAGE_KEY_NAMESPACE = "package-json-info";
+export const STORAGE_KEY_VISIBLE_COLUMNS = `${STORAGE_KEY_NAMESPACE}:visibleColumns`;
+export const STORAGE_KEY_COLUMN_ORDER = `${STORAGE_KEY_NAMESPACE}:columnOrder`;
+export const STORAGE_KEY_SHRINK_LABELS = `${STORAGE_KEY_NAMESPACE}:shrinkColumnLabels`;
 
 export const INPUT_URL_QUERY_PARAM = "inputUrl";
 

@@ -3,9 +3,9 @@ import { nextTick } from "vue";
 import { useColumnPreferences } from "../../../src/composables/useColumnPreferences";
 import { TOGGLEABLE_COLUMNS, DEFAULT_VISIBLE_COLUMNS } from "../../../src/utils/tableColumns";
 import {
-    VISIBLE_COLUMNS_STORAGE_KEY,
-    COLUMN_ORDER_STORAGE_KEY,
-    SHRINK_LABELS_STORAGE_KEY,
+    STORAGE_KEY_VISIBLE_COLUMNS,
+    STORAGE_KEY_COLUMN_ORDER,
+    STORAGE_KEY_SHRINK_LABELS,
 } from "../../../src/constants";
 
 beforeEach(() => {
@@ -37,7 +37,7 @@ describe("toggleColumn", () => {
         toggleColumn("maintainers");
         await nextTick();
 
-        expect(JSON.parse(localStorage.getItem(VISIBLE_COLUMNS_STORAGE_KEY)!)).toContain(
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_VISIBLE_COLUMNS)!)).toContain(
             "maintainers",
         );
     });
@@ -67,7 +67,7 @@ describe("reorderColumns", () => {
         reorderColumns(reversedVisible);
         await nextTick();
 
-        const stored = JSON.parse(localStorage.getItem(COLUMN_ORDER_STORAGE_KEY)!);
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY_COLUMN_ORDER)!);
         expect(stored.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key))).toEqual(reversedVisible);
     });
 });
@@ -98,6 +98,6 @@ describe("shrinkColumnLabels", () => {
         shrinkColumnLabels.value = true;
         await nextTick();
 
-        expect(JSON.parse(localStorage.getItem(SHRINK_LABELS_STORAGE_KEY)!)).toBe(true);
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_SHRINK_LABELS)!)).toBe(true);
     });
 });

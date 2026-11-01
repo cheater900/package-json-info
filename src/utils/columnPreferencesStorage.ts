@@ -7,9 +7,9 @@ import {
 } from "./tableColumns";
 import { readStoredJson, writeStoredJson } from "./storage";
 import {
-    VISIBLE_COLUMNS_STORAGE_KEY,
-    COLUMN_ORDER_STORAGE_KEY,
-    SHRINK_LABELS_STORAGE_KEY,
+    STORAGE_KEY_VISIBLE_COLUMNS,
+    STORAGE_KEY_COLUMN_ORDER,
+    STORAGE_KEY_SHRINK_LABELS,
 } from "../constants";
 
 function readStoredStringArray(key: string): string[] | null {
@@ -26,7 +26,7 @@ function readStoredStringArray(key: string): string[] | null {
  * valid is stored or the result would break MIN_VISIBLE_COLUMNS.
  */
 export function loadVisibleColumns(): Set<string> {
-    const stored = readStoredStringArray(VISIBLE_COLUMNS_STORAGE_KEY);
+    const stored = readStoredStringArray(STORAGE_KEY_VISIBLE_COLUMNS);
     const validKeys = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
     const visible = new Set(stored?.filter((key) => validKeys.has(key)));
     if (stored == null || !meetsMinVisible(visible)) {
@@ -36,7 +36,7 @@ export function loadVisibleColumns(): Set<string> {
 }
 
 export function saveVisibleColumns(visibleColumns: ReadonlySet<string>): void {
-    writeStoredJson(VISIBLE_COLUMNS_STORAGE_KEY, [...visibleColumns]);
+    writeStoredJson(STORAGE_KEY_VISIBLE_COLUMNS, [...visibleColumns]);
 }
 
 /**
@@ -45,7 +45,7 @@ export function saveVisibleColumns(visibleColumns: ReadonlySet<string>): void {
  * valid is stored.
  */
 export function loadColumnOrder(): string[] {
-    const stored = readStoredStringArray(COLUMN_ORDER_STORAGE_KEY);
+    const stored = readStoredStringArray(STORAGE_KEY_COLUMN_ORDER);
     if (stored == null) {
         return [...DEFAULT_COLUMN_ORDER];
     }
@@ -53,14 +53,14 @@ export function loadColumnOrder(): string[] {
 }
 
 export function saveColumnOrder(order: readonly string[]): void {
-    writeStoredJson(COLUMN_ORDER_STORAGE_KEY, order);
+    writeStoredJson(STORAGE_KEY_COLUMN_ORDER, order);
 }
 
 /** True only when the stored value is the literal JSON `true`. */
 export function loadShrinkColumnLabels(): boolean {
-    return readStoredJson(SHRINK_LABELS_STORAGE_KEY) === true;
+    return readStoredJson(STORAGE_KEY_SHRINK_LABELS) === true;
 }
 
 export function saveShrinkColumnLabels(value: boolean): void {
-    writeStoredJson(SHRINK_LABELS_STORAGE_KEY, value);
+    writeStoredJson(STORAGE_KEY_SHRINK_LABELS, value);
 }
