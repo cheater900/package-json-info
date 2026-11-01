@@ -1,4 +1,11 @@
 import type { Page } from "@playwright/test";
+import {
+    BUNDLEPHOBIA_SIZE_URL,
+    GITHUB_API_URL,
+    NPM_REGISTRY_URL,
+    NPM_WEEKLY_DOWNLOADS_URL,
+    OSV_QUERY_URL,
+} from "../../src/constants";
 
 /**
  * The app talks to the real npm registry, npm downloads API, and GitHub API.
@@ -6,7 +13,7 @@ import type { Page } from "@playwright/test";
  * offline and aren't at the mercy of rate limits or flaky third parties.
  */
 export async function mockExternalApis(page: Page) {
-    await page.route("https://registry.npmjs.org/**", async (route) => {
+    await page.route(`${NPM_REGISTRY_URL}/**`, async (route) => {
         const name = decodeURIComponent(new URL(route.request().url()).pathname.slice(1));
         await route.fulfill({
             json: {
@@ -18,23 +25,23 @@ export async function mockExternalApis(page: Page) {
         });
     });
 
-    await page.route("https://api.npmjs.org/**", async (route) => {
+    await page.route(`${NPM_WEEKLY_DOWNLOADS_URL}/**`, async (route) => {
         await route.fulfill({ json: { downloads: 12345 } });
     });
 
-    await page.route("https://api.github.com/repos/**", async (route) => {
+    await page.route(`${GITHUB_API_URL}/repos/**`, async (route) => {
         await route.fulfill({ json: { stargazers_count: 42 } });
     });
 
-    await page.route("https://api.github.com/search/issues**", async (route) => {
+    await page.route(`${GITHUB_API_URL}/search/issues**`, async (route) => {
         await route.fulfill({ json: { total_count: 3 } });
     });
 
-    await page.route("https://api.osv.dev/**", async (route) => {
+    await page.route(OSV_QUERY_URL, async (route) => {
         await route.fulfill({ json: { vulns: [] } });
     });
 
-    await page.route("https://bundlephobia.com/**", async (route) => {
+    await page.route(`${BUNDLEPHOBIA_SIZE_URL}**`, async (route) => {
         await route.fulfill({ json: { gzip: 1024 } });
     });
 }

@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Build e2e mock routes from API constants, name screenshot viewports, stop json viewer test closing open section
 - Import en.json with type attribute so Playwright can load specs that pull in i18n
 - Restore spies and stubbed globals via vitest config instead of per-file hooks
 - Replace modal and column comments with ModalContent type and names, share JSON_INDENT constant
