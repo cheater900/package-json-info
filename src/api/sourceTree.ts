@@ -45,7 +45,7 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     if (!response.ok) {
         throw new Error(t("errors.tarballDownload", { status: response.status }));
     }
-    const rawTar = await gunzip(await response.arrayBuffer());
+    const rawTar = await gunzip(response.body);
     const entries = parseTar(rawTar)
         .map((entry) => ({
             ...entry,

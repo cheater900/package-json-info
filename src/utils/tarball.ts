@@ -29,23 +29,18 @@ export const TAR_TYPEFLAG = {
 };
 
 /**
- * Decompresses a gzip-compressed buffer using the native Compression Streams
- * API. Throws a translated "corrupt tarball" error for non-gzip or truncated
- * data instead of the browser's own message, and stops once output exceeds
- * `maxBytes`, so a gzip bomb can't exhaust the tab's memory.
+ * Decompresses a gzip stream using the native Compression Streams API.
+ * Throws a translated "corrupt tarball" error for non-gzip, truncated or
+ * interrupted data instead of the browser's own message, and stops once
+ * output exceeds `maxBytes`, cancelling the source. Input is streamed, never
+ * buffered whole, so neither a gzip bomb nor an endless download can
+ * exhaust the tab's memory.
  */
 export async function gunzip(
-    data: ArrayBuffer,
+    compressed: ReadableStream<Uint8Array>,
     maxBytes: number = MAX_UNPACKED_TARBALL_BYTES,
 ): Promise<Uint8Array> {
-    const reader = new ReadableStream({
-        start(controller) {
-            controller.enqueue(new Uint8Array(data));
-            controller.close();
-        },
-    })
-        .pipeThrough(new DecompressionStream("gzip"))
-        .getReader();
+    const reader = compressed.pipeThrough(new DecompressionStream("gzip")).getReader();
     const chunks: Uint8Array[] = [];
     let totalBytes = 0;
     for (;;) {

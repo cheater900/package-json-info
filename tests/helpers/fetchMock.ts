@@ -31,7 +31,7 @@ export function textResponse(text: string) {
 
 /** 200 response carrying binary data, such as a tarball download. */
 export function binaryResponse(body: ArrayBuffer) {
-    return { ok: true, status: HTTP_STATUS.ok, arrayBuffer: async () => body };
+    return { ok: true, status: HTTP_STATUS.ok, body: new Response(body).body };
 }
 
 /** Fetch mock answering the first `handlers` key contained in the URL; 404 otherwise. */

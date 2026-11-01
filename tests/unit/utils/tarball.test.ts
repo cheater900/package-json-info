@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { gunzip, parseTar, TAR_BLOCK_SIZE, TAR_HEADER } from "../../../src/utils/tarball";
 import { buildTar, gzipToArrayBuffer } from "../../fixtures/tarball";
 
+function streamOf(buffer: ArrayBuffer): ReadableStream<Uint8Array> {
+    return new Response(buffer).body!;
+}
+
 describe("parseTar", () => {
     it("throws on archive cut mid-file", () => {
         const tar = new Uint8Array(
@@ -106,26 +110,46 @@ describe("gunzip", () => {
         const maxBytes = 1024;
         const oversized = gzipToArrayBuffer(new Uint8Array(maxBytes + 1));
 
-        await expect(gunzip(oversized, maxBytes)).rejects.toThrow("too large to browse");
+        await expect(gunzip(streamOf(oversized), maxBytes)).rejects.toThrow("too large to browse");
+    });
+
+    it("stops endless download once output passes cap", async () => {
+        const endless = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                controller.enqueue(new Uint8Array(TAR_BLOCK_SIZE));
+            },
+        }).pipeThrough(new CompressionStream("gzip"));
+
+        await expect(gunzip(endless, TAR_BLOCK_SIZE * 4)).rejects.toThrow("too large to browse");
+    });
+
+    it("rejects interrupted download as corrupt tarball", async () => {
+        const interrupted = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                controller.error(new TypeError("network error"));
+            },
+        });
+
+        await expect(gunzip(interrupted)).rejects.toThrow("tarball is corrupt");
     });
 
     it("rejects non-gzip data as corrupt tarball", async () => {
         const notGzip = new TextEncoder().encode("<html>not a tarball</html>");
 
-        await expect(gunzip(notGzip.buffer)).rejects.toThrow("tarball is corrupt");
+        await expect(gunzip(streamOf(notGzip.buffer))).rejects.toThrow("tarball is corrupt");
     });
 
     it("decompresses gzip buffer to original bytes", async () => {
         const original = new TextEncoder().encode("hello world");
 
-        const result = await gunzip(gzipToArrayBuffer(original));
+        const result = await gunzip(streamOf(gzipToArrayBuffer(original)));
 
         expect(new TextDecoder().decode(result)).toBe("hello world");
     });
 
     it("round-trips gzipped tar archive", async () => {
         const tar = buildTar([{ name: "package/index.js", content: "module.exports = 1;" }]);
-        const rawTar = await gunzip(gzipToArrayBuffer(new Uint8Array(tar)));
+        const rawTar = await gunzip(streamOf(gzipToArrayBuffer(new Uint8Array(tar))));
         const entries = parseTar(rawTar);
 
         expect(entries).toHaveLength(1);
