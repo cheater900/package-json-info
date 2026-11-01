@@ -24,7 +24,6 @@ import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repo
 import type { RepoIssueCounts } from "./repoMetadata";
 
 export type FetchPackageOptions = {
-    githubToken?: string;
     /**
      * Columns currently visible in the UI. Network calls backing only
      * hidden columns are skipped. Omit to fetch everything.
@@ -101,8 +100,7 @@ const ISSUE_COUNT_COLUMNS = ["openPRs", "closedPRs", "openIssues", "closedIssues
 // whole-PackageInfo cache: which sub-fetches run depends on visible columns.
 // Caches live for the page load. Failed lookups reject and are evicted
 // (see memoizeAsync), so a rate limit or outage is retried on the next
-// fetch instead of being cached as "no data". The GitHub token of the first caller for
-// a slug wins; the app uses one token, so this never differs.
+// fetch instead of being cached as "no data".
 const registryDataCache = new Map<string, Promise<NpmRegistryData | null>>();
 const weeklyDownloadsCache = new Map<string, Promise<number | null>>();
 const vulnerabilityCountCache = new Map<string, Promise<number | null>>();
@@ -171,9 +169,9 @@ export async function fetchPackageInfo(
     version: string,
     options: FetchPackageOptions = {},
 ): Promise<PackageInfo> {
-    const { githubToken, visibleColumns = ALL_TOGGLEABLE_COLUMN_KEYS } = options;
+    const { visibleColumns = ALL_TOGGLEABLE_COLUMN_KEYS } = options;
     const { registryName, range } = resolveRegistrySpec(name, version);
-    const headers = githubHeaders(githubToken);
+    const headers = githubHeaders();
     const isVisible = (key: string) => isColumnVisible(visibleColumns, key);
     const [npmData, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
         anyColumnVisible(visibleColumns, REGISTRY_DATA_COLUMNS)
