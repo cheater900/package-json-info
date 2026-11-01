@@ -68,6 +68,9 @@ type BundlephobiaData = {
     gzip?: number;
 };
 
+/** OSV result pages followed per package; a real package needs one or two. */
+const OSV_MAX_PAGES = 10;
+
 const ALL_TOGGLEABLE_COLUMN_KEYS = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
 
 /** Columns derived from the npm registry document, directly or via its repo slug. */
@@ -296,9 +299,10 @@ function fetchWeeklyDownloads(name: string): Promise<number | null> {
  */
 function fetchVulnerabilityCount(name: string): Promise<number | null> {
     return memoizeAsync(vulnerabilityCountCache, name, async () => {
+        const seenPageTokens = new Set<string>();
         let count = 0;
         let pageToken: string | undefined;
-        do {
+        for (let page = 1; page <= OSV_MAX_PAGES; page++) {
             const data = await fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -311,10 +315,15 @@ function fetchVulnerabilityCount(name: string): Promise<number | null> {
                 return null;
             }
             count += data.vulns?.length ?? 0;
-            // A repeated token would loop forever; treat it as the last page.
-            pageToken = data.next_page_token === pageToken ? undefined : data.next_page_token;
-        } while (pageToken);
-        return count;
+            pageToken = data.next_page_token;
+            // A token seen before (A -> B -> A) would loop forever; treat it as the last page.
+            if (!pageToken || seenPageTokens.has(pageToken)) {
+                return count;
+            }
+            seenPageTokens.add(pageToken);
+        }
+        // Still paging after OSV_MAX_PAGES: the total is unknown, not `count`.
+        return null;
     });
 }
 

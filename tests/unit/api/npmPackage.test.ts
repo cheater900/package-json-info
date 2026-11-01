@@ -289,6 +289,40 @@ describe("fetchPackageInfo", () => {
         expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(2);
     });
 
+    it("stops OSV paging on token cycle", async () => {
+        const nextToken: Record<string, string> = { start: "A", A: "B", B: "A" };
+        const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+            if (!url.includes("api.osv.dev")) {
+                return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} });
+            }
+            const { page_token = "start" } = JSON.parse(String(init?.body));
+            return jsonResponse({ vulns: [{ id: "X" }], next_page_token: nextToken[page_token] });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("cycle-pkg", "1.0.0");
+
+        expect(info.vulnerabilityCount).toBe(3);
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(3);
+    });
+
+    it("gives up with null count on endless OSV tokens", async () => {
+        let page = 0;
+        const fetchMock = vi.fn(async (url: string) => {
+            if (!url.includes("api.osv.dev")) {
+                return jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} });
+            }
+            page++;
+            return jsonResponse({ vulns: [{ id: "X" }], next_page_token: `p${page}` });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const info = await fetchPackageInfo("endless-pkg", "1.0.0");
+
+        expect(info.vulnerabilityCount).toBeNull();
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(10);
+    });
+
     it("reports 0 vulnerabilities, not null, for empty OSV response", async () => {
         vi.stubGlobal(
             "fetch",
