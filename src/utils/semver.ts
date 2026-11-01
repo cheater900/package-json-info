@@ -1,8 +1,11 @@
 export type SemverTuple = [number, number, number];
 
+/** Lookbehind anchors the match at a digit run's start; without it a long digit run costs O(n²). */
+const LEADING_SEMVER = /(?<!\d)(\d+)\.(\d+)\.(\d+)/;
+
 /** Extracts the leading `major.minor.patch` from a version or range string. */
 export function parseLeadingSemver(raw: string): SemverTuple | null {
-    const match = raw.match(/(\d+)\.(\d+)\.(\d+)/);
+    const match = raw.match(LEADING_SEMVER);
     if (!match) {
         return null;
     }

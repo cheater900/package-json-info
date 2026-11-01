@@ -45,6 +45,13 @@ describe("parseLeadingSemver", () => {
         expect(parseLeadingSemver("latest")).toBeNull();
         expect(parseLeadingSemver("")).toBeNull();
     });
+
+    it("scans long digit run in linear time", () => {
+        const start = performance.now();
+
+        expect(parseLeadingSemver("1".repeat(200_000))).toBeNull();
+        expect(performance.now() - start).toBeLessThan(1000);
+    });
 });
 
 describe("compareSemver", () => {
