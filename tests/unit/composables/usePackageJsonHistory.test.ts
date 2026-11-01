@@ -20,7 +20,6 @@ const validPackageJson = JSON.stringify({
 });
 
 beforeEach(() => {
-    vi.unstubAllGlobals();
     clearPackageInfoCache();
 });
 

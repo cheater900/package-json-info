@@ -15,7 +15,6 @@ function setup() {
 }
 
 beforeEach(() => {
-    vi.unstubAllGlobals();
     window.history.replaceState(null, "", "/");
 });
 

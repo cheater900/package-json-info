@@ -1,11 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { fetchPackageJsonFromRepo } from "../../../src/api/repoPackageJson";
 import { SUPPORTED_REPO_HOSTS } from "../../../src/constants";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
-
-beforeEach(() => {
-    vi.unstubAllGlobals();
-});
 
 describe("fetchPackageJsonFromRepo", () => {
     it("fetches from GitHub raw content URL on main branch", async () => {

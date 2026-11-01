@@ -7,7 +7,6 @@ import { clearPackageInfoCache } from "../../src/api/npmPackage";
 import { jsonResponse } from "../helpers/fetchMock";
 
 beforeEach(() => {
-    vi.unstubAllGlobals();
     vi.stubGlobal(
         "fetch",
         vi.fn(async () => jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} })),

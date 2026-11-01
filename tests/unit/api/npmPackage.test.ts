@@ -20,7 +20,6 @@ function visibleColumnsExcept(...excluded: string[]): Set<string> {
 }
 
 beforeEach(() => {
-    vi.unstubAllGlobals();
     clearPackageInfoCache();
 });
 

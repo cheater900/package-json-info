@@ -1,9 +1,5 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readPositiveInt } from "../../src/config";
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
 
 describe("readPositiveInt", () => {
     it("returns fallback for missing or blank value", () => {

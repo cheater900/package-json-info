@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { fetchSourceTree } from "../../../src/api/sourceTree";
 import { buildNpmTarball } from "../../fixtures/tarball";
 import {
@@ -15,10 +15,6 @@ const NPM_TREE_REF = {
 } as const;
 
 const GITHUB_TREE_REF = { provider: "github", owner: "o", repo: "r", tag: "v1.0.0" } as const;
-
-beforeEach(() => {
-    vi.unstubAllGlobals();
-});
 
 describe("fetchSourceTree - npm provider", () => {
     it("downloads and decompresses tarball into browsable tree", async () => {

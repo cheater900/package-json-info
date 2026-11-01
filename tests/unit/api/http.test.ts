@@ -1,10 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { findFirstFound } from "../../../src/api/http";
 import { jsonResponse } from "../../helpers/fetchMock";
-
-beforeEach(() => {
-    vi.unstubAllGlobals();
-});
 
 describe("findFirstFound", () => {
     it("skips 404 candidates, returns first found", async () => {

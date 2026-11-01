@@ -20,7 +20,6 @@ import {
 
 beforeEach(() => {
     localStorage.clear();
-    vi.restoreAllMocks();
 });
 
 describe("loadVisibleColumns", () => {

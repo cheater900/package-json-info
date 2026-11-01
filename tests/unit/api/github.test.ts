@@ -1,10 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
-
-beforeEach(() => {
-    vi.unstubAllGlobals();
-});
 
 describe("findGithubReleaseTag", () => {
     it("returns v-prefixed tag if present", async () => {

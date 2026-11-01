@@ -20,6 +20,8 @@ export default defineConfig({
     },
     test: {
         environment: "jsdom",
+        restoreMocks: true,
+        unstubGlobals: true,
         include: ["tests/unit/**/*.test.{js,ts}", "tests/integration/**/*.test.{js,ts}"],
     },
 });

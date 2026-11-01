@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Restore spies and stubbed globals via vitest config instead of per-file hooks
 - Replace modal and column comments with ModalContent type and names, share JSON_INDENT constant
 - Move OSV page cap and config int limit into constants
 - Rename storage key, tar byte and fetch column group constants to shared-prefix names
