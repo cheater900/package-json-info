@@ -139,6 +139,18 @@ describe("fetchPackageJsonFromRepo", () => {
         );
     });
 
+    it.each([
+        "https://github.com/trusted?next=/github.com/evil/repo",
+        "https://github.com/trusted#/github.com/evil/repo",
+        "https://gitlab.com/x/github.com/evil/repo",
+    ])("rejects slug outside URL's own host path: %s", async (url) => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(fetchPackageJsonFromRepo(url)).rejects.toThrow(/Invalid repository URL/);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("exports every supported host", () => {
         expect(SUPPORTED_REPO_HOSTS).toEqual(
             expect.arrayContaining(["github.com", "gitlab.com", "codeberg.org"]),

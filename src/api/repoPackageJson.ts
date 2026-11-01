@@ -47,15 +47,17 @@ export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<string 
     if (!URL.canParse(repoUrl)) {
         throw new Error(t("errors.invalidRepoUrl"));
     }
-    const host = new URL(repoUrl).hostname;
+    const { hostname: host, origin, pathname } = new URL(repoUrl);
     const buildRawUrl = RAW_PACKAGE_JSON_URL_BUILDERS[host];
     if (!buildRawUrl) {
         throw new Error(
             t("errors.unsupportedRepoHost", { host, hosts: SUPPORTED_REPO_HOSTS.join(", ") }),
         );
     }
-    const slug = parseRepoSlug(repoUrl);
-    if (!slug) {
+    // Slug from this host's path only: one in the query, hash or naming
+    // another host would load a different repo than the URL shows.
+    const slug = parseRepoSlug(`${origin}${pathname}`);
+    if (slug?.host !== host) {
         throw new Error(t("errors.invalidRepoUrl"));
     }
     const found = await findFirstFound(DEFAULT_BRANCH_CANDIDATES, (branch) =>
