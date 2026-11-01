@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseRepoSlug, normaliseRepoUrl } from "../../../src/utils/repoUrl";
+import { isRepoHostUrl, parseRepoSlug, normaliseRepoUrl } from "../../../src/utils/repoUrl";
 
 describe("parseRepoSlug", () => {
     it.each(["git+https://github.com/owner/repo.git#main", "https://github.com/owner/repo.git/"])(
@@ -125,5 +125,25 @@ describe("parseRepoSlug host matching", () => {
             owner: "owner",
             repo: "repo",
         });
+    });
+});
+
+describe("isRepoHostUrl", () => {
+    it("returns true for URL on supported repo host", () => {
+        expect(isRepoHostUrl("https://github.com/owner/repo")).toBe(true);
+        expect(isRepoHostUrl("https://gitlab.com/owner/repo")).toBe(true);
+        expect(isRepoHostUrl("https://codeberg.org/owner/repo")).toBe(true);
+    });
+
+    it("returns false for URL on other host", () => {
+        expect(isRepoHostUrl("https://example.com/package.json")).toBe(false);
+        expect(
+            isRepoHostUrl("https://raw.githubusercontent.com/owner/repo/main/package.json"),
+        ).toBe(false);
+    });
+
+    it("returns false for unparseable URL, no throw", () => {
+        expect(isRepoHostUrl("not a url")).toBe(false);
+        expect(isRepoHostUrl("")).toBe(false);
     });
 });

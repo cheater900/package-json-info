@@ -54,6 +54,17 @@ export function parseRepoSlug(raw: string): RepoSlug | null {
     return null;
 }
 
+/**
+ * True if `url`'s host is one of SUPPORTED_REPO_HOSTS. An unparseable URL
+ * counts as "not a repo URL"; whichever fetch runs next reports the error.
+ */
+export function isRepoHostUrl(url: string): boolean {
+    if (!URL.canParse(url)) {
+        return false;
+    }
+    return SUPPORTED_REPO_HOSTS.includes(new URL(url).hostname);
+}
+
 export function repoWebUrl(slug: RepoSlug): string {
     return `https://${slug.host}/${slug.owner}/${slug.repo}`;
 }

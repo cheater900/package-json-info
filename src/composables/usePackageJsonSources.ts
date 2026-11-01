@@ -2,11 +2,12 @@ import { ref, watch, onScopeDispose } from "vue";
 import type { Ref } from "vue";
 import { URL_SYNC_DEBOUNCE_MS } from "../constants";
 import { fetchPackageJsonForVersion } from "../api/npmPackage";
-import { fetchPackageJsonFromRepo, isRepoHostUrl } from "../api/repoPackageJson";
+import { fetchPackageJsonFromRepo } from "../api/repoPackageJson";
 import { fetchText } from "../api/http";
 import { t } from "../i18n";
 import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync";
 import { isHttpUrl } from "../utils/url";
+import { isRepoHostUrl } from "../utils/repoUrl";
 import { settle } from "../utils/settle";
 
 /**
