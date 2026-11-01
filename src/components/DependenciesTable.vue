@@ -9,21 +9,21 @@
                 :force-fallback="true"
             >
                 <template #header>
-                    <th :class="{ 'deps-table__centered': isCentered('name') }">
+                    <th>
                         <span class="deps-table__th-inner">
                             <button
                                 type="button"
                                 class="deps-table__sort-trigger"
-                                @click="toggleSort('name')"
+                                @click="toggleSort(NAME_COLUMN_KEY)"
                             >
                                 <span class="deps-table__col-label">{{ t("columns.name") }}</span>
-                                <sort-indicator :direction="sortDirectionFor('name')" />
+                                <sort-indicator :direction="sortDirectionFor(NAME_COLUMN_KEY)" />
                             </button>
                         </span>
                     </th>
                 </template>
                 <template #item="{ element: col }">
-                    <th :class="{ 'deps-table__centered': isCentered(col.key) }">
+                    <th class="deps-table__centered">
                         <span class="deps-table__th-inner">
                             <span class="deps-table__drag-handle" aria-hidden="true"></span>
                             <button
@@ -77,8 +77,8 @@
                     v-for="col in orderedVisibleColumns"
                     v-else
                     :key="col.key"
+                    class="deps-table__centered"
                     :class="{
-                        'deps-table__centered': isCentered(col.key),
                         'deps-table__truncate-cell': col.truncatable,
                         'deps-table__truncate-cell--expanded':
                             col.truncatable && isExpanded(dependency.name, col.key),

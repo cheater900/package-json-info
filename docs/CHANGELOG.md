@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Replace always-true isCentered check with static class, name Name column key
 - Drop unused per-call githubToken option from package fetch; headers always come from config
 - Move isRepoHostUrl to repoUrl utils, build GitLab/Codeberg raw URLs from repoWebUrl
 - Move SourceTreeRef and DependencyRow to types so domain types don't import from api layer

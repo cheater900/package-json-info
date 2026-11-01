@@ -15,8 +15,11 @@ export type ColumnDef = {
     truncatable?: boolean;
 };
 
+/** The row's identity column: always shown, left-aligned, not draggable. */
+export const NAME_COLUMN_KEY = "name";
+
 const COLUMN_SPECS: Omit<ColumnDef, "label">[] = [
-    { key: "name", sortable: true },
+    { key: NAME_COLUMN_KEY, sortable: true },
     { key: "version", sortable: false },
     { key: "versionDate", sortable: true },
     { key: "latestVersion", sortable: false },
@@ -44,14 +47,8 @@ export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = COLUMN_SPECS.map((spec) => 
     label: t(`columns.${spec.key}`),
 }));
 
-/**
- * Columns that can never be hidden: just Name (identity). Not tracked in a
- * visibleColumns set at all - isColumnVisible treats it as visible
- * unconditionally. The drill-down "load this package's table" action lives
- * on the Name cell itself now, so it doesn't need its own always-visible
- * column.
- */
-const ALWAYS_VISIBLE_COLUMNS = new Set(["name"]);
+/** Never tracked in a visibleColumns set; isColumnVisible treats them as visible. */
+const ALWAYS_VISIBLE_COLUMNS = new Set([NAME_COLUMN_KEY]);
 
 /** Every column except the always-visible ones above can be toggled. */
 export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter(

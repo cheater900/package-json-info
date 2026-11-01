@@ -1,7 +1,12 @@
 import { ref, computed, watch, defineComponent } from "vue";
 import { t } from "../i18n";
 import draggable from "vuedraggable";
-import { TOGGLEABLE_COLUMNS, DEFAULT_COLUMN_ORDER, abbreviateLabel } from "../utils/tableColumns";
+import {
+    TOGGLEABLE_COLUMNS,
+    DEFAULT_COLUMN_ORDER,
+    NAME_COLUMN_KEY,
+    abbreviateLabel,
+} from "../utils/tableColumns";
 import { sortDependencies } from "../utils/dependencyRowFormatting";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
@@ -44,12 +49,6 @@ export default defineComponent({
     },
     emits: ["load-package", "reorder-columns", "open-source-tree", "select-package"],
     setup(props, { emit }) {
-        // Every column is center-aligned except Name, which reads better
-        // left-aligned as the row's identifying label.
-        function isCentered(key) {
-            return key !== "name";
-        }
-
         const filteredDependencies = computed(() => {
             const query = props.searchQuery.trim().toLowerCase();
             if (!query) {
@@ -180,7 +179,7 @@ export default defineComponent({
 
         return {
             t,
-            isCentered,
+            NAME_COLUMN_KEY,
             labelFor,
             titleFor,
             orderedVisibleColumns,
