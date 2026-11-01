@@ -152,4 +152,15 @@ describe("parseTar edge cases", () => {
     it("returns empty list for empty input", () => {
         expect(parseTar(new Uint8Array(0))).toEqual([]);
     });
+
+    it("skips many PAX records lacking = in linear time", () => {
+        const tar = buildTar([
+            { type: "paxRaw", text: "4 a\n".repeat(200_000) },
+            { name: "package/a.js", content: "a" },
+        ]);
+        const start = performance.now();
+
+        expect(parseTar(new Uint8Array(tar)).map((e) => e.path)).toEqual(["package/a.js"]);
+        expect(performance.now() - start).toBeLessThan(1000);
+    });
 });

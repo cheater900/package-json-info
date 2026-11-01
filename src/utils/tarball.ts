@@ -114,12 +114,13 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
         if (!(recordLength > spaceIndex - offset) || recordEnd > bytes.length) {
             break;
         }
-        const equalsIndex = bytes.indexOf(EQUALS_BYTE, spaceIndex + 1);
-        if (equalsIndex !== -1 && equalsIndex < recordEnd) {
-            const key = decoder.decode(bytes.subarray(spaceIndex + 1, equalsIndex));
-            records[key] = decoder.decode(
-                bytes.subarray(equalsIndex + 1, recordEnd - PAX_RECORD_TERMINATOR_LENGTH),
-            );
+        // Search within this record only: scanning to the block's end for
+        // every record lacking "=" would make parsing O(n²).
+        const keyValue = bytes.subarray(spaceIndex + 1, recordEnd - PAX_RECORD_TERMINATOR_LENGTH);
+        const equalsIndex = keyValue.indexOf(EQUALS_BYTE);
+        if (equalsIndex !== -1) {
+            const key = decoder.decode(keyValue.subarray(0, equalsIndex));
+            records[key] = decoder.decode(keyValue.subarray(equalsIndex + 1));
         }
         offset = recordEnd;
     }

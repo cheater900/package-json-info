@@ -35,6 +35,7 @@ export type TarInput =
     | { name: string; content: string; type?: "file" }
     | { type: "directory"; name: string }
     | { type: "pax"; records: Record<string, string> }
+    | { type: "paxRaw"; text: string }
     | { type: "gnuLongName"; path: string };
 
 export function buildTar(inputs: TarInput[]): ArrayBuffer {
@@ -56,10 +57,13 @@ export function buildTar(inputs: TarInput[]): ArrayBuffer {
             chunks.push(pad(bytes));
             continue;
         }
-        if (input.type === "pax") {
-            const text = Object.entries(input.records)
-                .map(([k, v]) => paxRecord(k, v))
-                .join("");
+        if (input.type === "pax" || input.type === "paxRaw") {
+            const text =
+                input.type === "paxRaw"
+                    ? input.text
+                    : Object.entries(input.records)
+                          .map(([k, v]) => paxRecord(k, v))
+                          .join("");
             const bytes = new TextEncoder().encode(text);
             chunks.push(tarHeader("", bytes.length, TAR_TYPEFLAG.paxHeader));
             chunks.push(pad(bytes));
