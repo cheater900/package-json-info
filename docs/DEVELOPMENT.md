@@ -18,8 +18,9 @@
 | `tests/unit/`               | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.  |
 | `tests/integration/`        | Vitest component tests mounted with `@vue/test-utils`.                   |
 | `tests/e2e/`                | Playwright end-to-end tests. `visual/` holds the screenshot run.         |
-| `tests/helpers/`            | Shared test helpers: fetch mocks, column key helpers.                    |
-| `tests/fixtures/`           | Shared test data: dependency rows, tarball builders.                     |
+| `tests/helpers/`            | Shared test helpers: fetch stubs and mocks, column key helpers.          |
+| `tests/fixtures/`           | Shared test data: dependency rows, registry docs, tarball builders.      |
+| `docs/`                     | Project docs: intent, features, roadmap, ideas, changelog.               |
 
 ## Stack
 
@@ -90,6 +91,10 @@ npm run build
 ```
 
 ## Test
+
+Vitest restores spies and stubbed globals after each test (`restoreMocks`,
+`unstubGlobals` in `vite.config.js`), so test files need no cleanup hooks
+for them.
 
 Run unit and component tests:
 

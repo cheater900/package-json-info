@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Document test helper layout, docs folder and vitest auto-restore in DEVELOPMENT
 - Settle each package fetch with shared settle helper instead of local try/catch
 - Share stubFetchByUrl helper and minimal registry doc fixture across tests
 - Build e2e mock routes from API constants, name screenshot viewports, stop json viewer test closing open section
