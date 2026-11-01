@@ -3,6 +3,7 @@ import { config } from "../config";
 import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_HOST,
+    JSON_INDENT,
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_MAX_PAGES,
@@ -242,7 +243,7 @@ export async function fetchPackageJsonForVersion(
     if (!versionData) {
         return null;
     }
-    return JSON.stringify(versionData, null, 2);
+    return JSON.stringify(versionData, null, JSON_INDENT);
 }
 
 /**

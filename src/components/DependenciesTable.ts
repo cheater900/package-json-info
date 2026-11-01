@@ -21,11 +21,7 @@ export default defineComponent({
             type: Array,
             required: true,
         },
-        // Ordered list of the currently-visible column keys - the only
-        // column-visibility/order information this component needs from its
-        // parent. Column text, abbreviation, and how each column's content
-        // renders (plain text, numbers, links, buttons) are this
-        // component's own business, not something a parent should decide.
+        /** Visible column keys in display order. Labels and cell rendering stay in this component. */
         columns: {
             type: Array,
             default: () => DEFAULT_COLUMN_ORDER,
@@ -34,10 +30,7 @@ export default defineComponent({
             type: String,
             default: "",
         },
-        // Whether to abbreviate multi-word column labels (e.g. "Version
-        // Date" -> "VD"), with the full name shown as a hover tooltip. A
-        // plain display-preference toggle - turning it into actual label
-        // text is this component's job, via abbreviateLabel.
+        /** Abbreviate multi-word labels ("Version Date" -> "VD"); the full label shows as a tooltip. */
         shrinkLabels: {
             type: Boolean,
             default: false,

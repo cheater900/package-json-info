@@ -9,8 +9,15 @@ import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
-import packageJson from "../package.json";
+import appPackageJson from "../package.json";
+import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
+import type { DependencyRow, PackageInfo } from "./types";
+
+type ModalContent =
+    | { kind: "table"; sectionId: string }
+    | { kind: "sourceTree"; dependency: PackageInfo }
+    | { kind: "summary"; dependency: DependencyRow };
 
 export default defineComponent({
     components: {
@@ -58,8 +65,7 @@ export default defineComponent({
             loadDependency,
         } = usePackageJsonSources(loadPackageJsonText, loadError);
 
-        // This app's own package.json is the first history entry.
-        loadPackageJsonText(JSON.stringify(packageJson, null, 2));
+        loadPackageJsonText(JSON.stringify(appPackageJson, null, JSON_INDENT));
 
         const tableSections = computed(() => [
             {
@@ -76,9 +82,7 @@ export default defineComponent({
             },
         ]);
 
-        // One shared modal; at most one of these shows at a time:
-        // { kind: "table", sectionId } | { kind: "sourceTree", dependency } | { kind: "summary", dependency }
-        const modalContent = ref(null);
+        const modalContent = ref<ModalContent | null>(null);
         const expandedSection = computed(() =>
             modalContent.value?.kind === "table"
                 ? tableSections.value.find((s) => s.id === modalContent.value.sectionId)

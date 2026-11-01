@@ -39,6 +39,8 @@ export const INPUT_URL_QUERY_PARAM = "inputUrl";
 /** Cell text shown when a value is unavailable. */
 export const MISSING_VALUE = "-";
 export const NUMBER_LOCALE = "en-US";
+/** Spaces per level when the app pretty-prints a package.json. */
+export const JSON_INDENT = 2;
 export const BYTES_PER_KB = 1024;
 export const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
 /** Unpacked size cap for browsing a tarball; real npm packages stay far below it. */

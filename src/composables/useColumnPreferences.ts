@@ -33,17 +33,10 @@ export function useColumnPreferences() {
         visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);
     }
 
-    // `newVisibleOrder` is a permutation of just the currently-visible
-    // columns (what DependenciesTable emits after a drag) - merge it back
-    // into the full persisted order so each hidden column keeps its own
-    // slot, ready to reappear in place if it's shown again later.
     function reorderColumns(newVisibleOrder: string[]) {
         columnOrder.value = mergeColumnOrder(columnOrder.value, newVisibleOrder);
     }
 
-    // The currently-visible toggleable column keys, in display order - the
-    // only column-visibility/order info DependenciesTable needs. It owns
-    // everything else about a column (label, abbreviation, cell rendering).
     const visibleColumnKeys = computed(() =>
         orderColumns(columnOrder.value, TOGGLEABLE_COLUMNS)
             .filter((c) => isColumnVisible(visibleColumns.value, c.key))

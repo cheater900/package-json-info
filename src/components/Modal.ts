@@ -2,10 +2,7 @@ import { onMounted, onUnmounted, defineComponent } from "vue";
 import { t } from "../i18n";
 import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
 
-// Callers control this component's lifecycle with v-if - mounted means
-// open, unmounted means closed. That keeps escape/backdrop-click/scroll-lock
-// wiring here, instead of duplicated in every modal that used to roll its
-// own overlay.
+/** Open while mounted: callers toggle it with v-if. Owns Escape, backdrop click and scroll lock. */
 export default defineComponent({
     emits: ["close"],
     setup(_props, { emit }) {
