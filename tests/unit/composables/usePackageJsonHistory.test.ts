@@ -3,13 +3,14 @@ import { ref, nextTick } from "vue";
 import { usePackageJsonHistory } from "../../../src/composables/usePackageJsonHistory";
 import { clearPackageInfoCache } from "../../../src/api/npmPackage";
 import { jsonResponse } from "../../helpers/fetchMock";
+import { minimalRegistryDoc } from "../../fixtures/dependencies";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
  * for fetchPackageInfo to complete without needing per-package data. */
 function stubFetchResolvesEmpty() {
     vi.stubGlobal(
         "fetch",
-        vi.fn(async () => jsonResponse({ "dist-tags": { latest: "1.0.0" }, time: {} })),
+        vi.fn(async () => jsonResponse(minimalRegistryDoc)),
     );
 }
 

@@ -1,3 +1,6 @@
+/** Smallest npm registry document: one published version, no metadata. */
+export const minimalRegistryDoc = { "dist-tags": { latest: "1.0.0" }, time: {} };
+
 export const npmSourceTree = {
     provider: "npm",
     tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",

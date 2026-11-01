@@ -8,6 +8,7 @@ import {
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
 } from "../../src/constants";
+import { minimalRegistryDoc } from "../fixtures/dependencies";
 
 test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);
@@ -41,7 +42,7 @@ test("fetches package in both dependencies and devDependencies once", async ({ p
     let registryRequests = 0;
     await page.route(`${NPM_REGISTRY_URL}/shared-pkg`, async (route) => {
         registryRequests++;
-        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
+        await route.fulfill({ json: minimalRegistryDoc });
     });
 
     await page.goto("/");
@@ -225,7 +226,7 @@ test("row Name cell click loads package's package.json as input", async ({ page 
         });
     });
     await page.route(`${NPM_REGISTRY_URL}/nested-dep`, async (route) => {
-        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
+        await route.fulfill({ json: minimalRegistryDoc });
     });
 
     await page.goto("/");
@@ -309,7 +310,7 @@ test("history back/forward reuses cached data, no refetch", async ({ page }) => 
     let cachedPkgRequests = 0;
     await page.route(`${NPM_REGISTRY_URL}/cached-history-pkg`, async (route) => {
         cachedPkgRequests++;
-        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
+        await route.fulfill({ json: minimalRegistryDoc });
     });
 
     await page.goto("/");
@@ -512,7 +513,7 @@ test("hidden column skips request, re-shown column fetches missing data", async 
         await route.fulfill({ json: { vulns: [{ id: "GHSA-test" }] } });
     });
     await page.route(`${NPM_REGISTRY_URL}/gated-pkg`, async (route) => {
-        await route.fulfill({ json: { "dist-tags": { latest: "1.0.0" }, time: {} } });
+        await route.fulfill({ json: minimalRegistryDoc });
     });
 
     await page.goto("/");

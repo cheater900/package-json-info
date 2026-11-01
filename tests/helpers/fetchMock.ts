@@ -46,6 +46,13 @@ export function mockFetchByUrl(handlers: Record<string, unknown>) {
     });
 }
 
+/** Stubs global `fetch` with mockFetchByUrl(handlers) and returns the mock. */
+export function stubFetchByUrl(handlers: Record<string, unknown>) {
+    const fetchMock = mockFetchByUrl(handlers);
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+}
+
 export function countFetchCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {
     return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern)).length;
 }
