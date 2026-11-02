@@ -76,6 +76,17 @@ test("saved token authorizes GitHub, survives reload, purges", async ({ page }) 
     ).toBeNull();
 });
 
+test("mounts despite stored token when IndexedDB open hangs", async ({ page }) => {
+    await page.addInitScript((key) => {
+        localStorage.setItem(key, JSON.stringify({ iv: [1], data: [1] }));
+        indexedDB.open = () => ({}) as IDBOpenDBRequest;
+    }, STORAGE_KEY_GITHUB_TOKEN);
+
+    await page.goto("/");
+
+    await expect(gear(page)).toHaveAccessibleName("Open settings");
+});
+
 test("verify shows remaining / limit", async ({ page }) => {
     await page.goto("/");
     await saveToken(page);

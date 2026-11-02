@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Mount app after 2 s even if IndexedDB token load hangs, apply late token via refetch
 - Reject CORS proxy URL with user:password so credentials never stored or echoed in fetch errors
 - Add Green/Light/System themes and font/padding scales to settings menu
 - Add settings gear menu for GitHub token and network, drop build-time VITE_GITHUB_TOKEN so bundle never carries token

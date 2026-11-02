@@ -59,7 +59,8 @@ defaults for timeout and concurrency.
 `src/utils/githubTokenStorage.ts` keeps the GitHub token AES-GCM encrypted:
 IV and ciphertext in `localStorage`, the non-extractable key in the
 IndexedDB database `package-json-info`. `main.js` decrypts it into memory
-before mounting the app. It also mirrors the display settings onto `<html>`:
+before mounting the app, waiting at most `TOKEN_LOAD_TIMEOUT_MS` since
+IndexedDB can hang; a late token refetches the tables. It also mirrors the display settings onto `<html>`:
 `data-theme` picks the `color-scheme` that drives every `light-dark()` color
 in `style.css`, and `--font-scale` / `--space-scale` multiply font sizes and
 paddings.
