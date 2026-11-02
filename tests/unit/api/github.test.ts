@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { fetchGithubRateLimit, findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
 import { githubToken } from "../../../src/settings";
+import { GITHUB_RATE_LIMIT_URL } from "../../../src/constants";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
+import { resetSettings } from "../../helpers/settings";
+import { githubRateLimit, githubRateLimitBody } from "../../fixtures/github";
+
+afterEach(resetSettings);
 
 describe("findGithubReleaseTag", () => {
     it("returns v-prefixed tag if present", async () => {
@@ -61,7 +66,6 @@ describe("githubHeaders", () => {
         githubToken.value = "mem";
 
         expect(githubHeaders().Authorization).toBe("Bearer mem");
-        githubToken.value = undefined;
     });
 
     it("omits Authorization without token", () => {
@@ -71,14 +75,12 @@ describe("githubHeaders", () => {
 
 describe("fetchGithubRateLimit", () => {
     it("returns remaining and limit, sends token", async () => {
-        const fetchMock = vi.fn(async () =>
-            jsonResponse({ rate: { limit: 5000, remaining: 4999, used: 1 } }),
-        );
+        const fetchMock = vi.fn(async () => jsonResponse(githubRateLimitBody));
         vi.stubGlobal("fetch", fetchMock);
 
-        expect(await fetchGithubRateLimit("abc")).toEqual({ limit: 5000, remaining: 4999 });
+        expect(await fetchGithubRateLimit("abc")).toEqual(githubRateLimit);
         expect(fetchMock).toHaveBeenCalledWith(
-            "https://api.github.com/rate_limit",
+            GITHUB_RATE_LIMIT_URL,
             expect.objectContaining({
                 headers: expect.objectContaining({ Authorization: "Bearer abc" }),
             }),

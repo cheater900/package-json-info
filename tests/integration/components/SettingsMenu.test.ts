@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
-import { IDBFactory } from "fake-indexeddb";
 import SettingsMenu from "../../../src/components/SettingsMenu.vue";
 import { STORAGE_KEY_GITHUB_TOKEN } from "../../../src/constants";
 import { SETTINGS_DEFAULTS, githubToken, settings } from "../../../src/settings";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
-
-const TOKEN = "github_pat_abc123";
+import { resetSettings, stubIndexedDb } from "../../helpers/settings";
+import {
+    githubRateLimitBody,
+    githubRateLimitText,
+    githubTokenFixture as TOKEN,
+} from "../../fixtures/github";
 
 function mountMenu() {
     return mount(SettingsMenu, { attachTo: document.body });
@@ -24,13 +27,12 @@ function button(wrapper: ReturnType<typeof mountMenu>, label: string) {
 }
 
 beforeEach(() => {
-    vi.stubGlobal("indexedDB", new IDBFactory());
+    stubIndexedDb();
     localStorage.clear();
 });
 
 afterEach(() => {
-    githubToken.value = undefined;
-    Object.assign(settings, SETTINGS_DEFAULTS);
+    resetSettings();
     document.body.innerHTML = "";
 });
 
@@ -109,7 +111,7 @@ describe("SettingsMenu token", () => {
     it("shows remaining / limit on verify", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => jsonResponse({ rate: { limit: 5000, remaining: 4999 } })),
+            vi.fn(async () => jsonResponse(githubRateLimitBody)),
         );
         const wrapper = mountMenu();
         githubToken.value = TOKEN;
@@ -118,7 +120,7 @@ describe("SettingsMenu token", () => {
         await button(wrapper, "Verify").trigger("click");
         await flushPromises();
 
-        expect(wrapper.text()).toContain("4999 / 5000");
+        expect(wrapper.text()).toContain(githubRateLimitText);
     });
 
     it("drops verify result arriving after purge", async () => {
@@ -128,8 +130,7 @@ describe("SettingsMenu token", () => {
             vi.fn(
                 () =>
                     new Promise((resolve) => {
-                        answerVerify = () =>
-                            resolve(jsonResponse({ rate: { limit: 5000, remaining: 4999 } }));
+                        answerVerify = () => resolve(jsonResponse(githubRateLimitBody));
                     }),
             ),
         );

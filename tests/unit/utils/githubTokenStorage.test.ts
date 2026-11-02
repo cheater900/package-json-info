@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
+import { IDBObjectStore } from "fake-indexeddb";
 import { STORAGE_KEY_GITHUB_TOKEN } from "../../../src/constants";
 import {
     isTokenStorageAvailable,
@@ -8,11 +8,11 @@ import {
     saveGithubToken,
 } from "../../../src/utils/githubTokenStorage";
 import { settle } from "../../../src/utils/settle";
-
-const TOKEN = "github_pat_abc123";
+import { stubIndexedDb } from "../../helpers/settings";
+import { githubTokenFixture as TOKEN } from "../../fixtures/github";
 
 beforeEach(() => {
-    vi.stubGlobal("indexedDB", new IDBFactory());
+    stubIndexedDb();
     localStorage.clear();
 });
 
@@ -80,7 +80,7 @@ describe("githubTokenStorage", () => {
 
     it("purges, returns undefined for missing key", async () => {
         await saveGithubToken(TOKEN);
-        vi.stubGlobal("indexedDB", new IDBFactory());
+        stubIndexedDb();
 
         expect(await loadGithubToken()).toBeUndefined();
         expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
@@ -103,7 +103,7 @@ describe("githubTokenStorage", () => {
         expect(isTokenStorageAvailable()).toBe(true);
         vi.stubGlobal("indexedDB", undefined);
         expect(isTokenStorageAvailable()).toBe(false);
-        vi.stubGlobal("indexedDB", new IDBFactory());
+        stubIndexedDb();
         vi.stubGlobal("crypto", {});
         expect(isTokenStorageAvailable()).toBe(false);
     });

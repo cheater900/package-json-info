@@ -4,8 +4,10 @@ import type { Ref } from "vue";
 import { flushPromises } from "@vue/test-utils";
 import { usePackageJsonHistory } from "../../../src/composables/usePackageJsonHistory";
 import { clearPackageInfoCache } from "../../../src/api/npmPackage";
-import { SETTINGS_DEFAULTS, githubToken, settings } from "../../../src/settings";
-import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
+import { githubToken, settings } from "../../../src/settings";
+import { HTTP_STATUS, fetchCallsTo, jsonResponse, statusResponse } from "../../helpers/fetchMock";
+import { resetSettings } from "../../helpers/settings";
+import { GITHUB_API_URL, NPM_REGISTRY_URL } from "../../../src/constants";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
@@ -37,8 +39,7 @@ beforeEach(() => {
 afterEach(() => {
     scope.stop();
     scope = effectScope();
-    githubToken.value = undefined;
-    Object.assign(settings, SETTINGS_DEFAULTS);
+    resetSettings();
 });
 
 describe("loadPackageJsonText", () => {
@@ -310,21 +311,30 @@ describe("async fetch ordering", () => {
 
 describe("settings refetch", () => {
     const PACKAGE_NAME = "settings-refetch-pkg";
-    const REPO_API_URL = "https://api.github.com/repos/settings-org/settings-repo";
+    const REPO_API_URL = `${GITHUB_API_URL}/repos/settings-org/settings-repo`;
+
+    /** GitHub repo answer: 403 (rate limit) unless the request carries a token. */
+    function githubStarsResponse(init: RequestInit) {
+        if (!new Headers(init.headers).has("Authorization")) {
+            return statusResponse(HTTP_STATUS.forbidden);
+        }
+        return jsonResponse({ stargazers_count: 7 });
+    }
+
+    function registryDocWithRepo(repo: string) {
+        return jsonResponse({
+            ...minimalRegistryDoc,
+            repository: { url: `git+https://github.com/settings-org/${repo}.git` },
+        });
+    }
 
     /** Registry doc for every URL; GitHub answers 403 (rate limit) unless authorized. */
     function stubGithubRateLimitedWithoutToken() {
         const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
-            if (!url.includes("api.github.com")) {
-                return jsonResponse({
-                    ...minimalRegistryDoc,
-                    repository: { url: "git+https://github.com/settings-org/settings-repo.git" },
-                });
+            if (url.includes(GITHUB_API_URL)) {
+                return githubStarsResponse(init);
             }
-            if (!new Headers(init.headers).has("Authorization")) {
-                return statusResponse(HTTP_STATUS.forbidden);
-            }
-            return jsonResponse({ stargazers_count: 7 });
+            return registryDocWithRepo("settings-repo");
         });
         vi.stubGlobal("fetch", fetchMock);
         return fetchMock;
@@ -336,10 +346,6 @@ describe("settings refetch", () => {
         return history;
     }
 
-    function callsTo(fetchMock: ReturnType<typeof vi.fn>, fragment: string) {
-        return fetchMock.mock.calls.filter(([url]) => url.includes(fragment));
-    }
-
     it("refetches with Authorization after token set", async () => {
         const fetchMock = stubGithubRateLimitedWithoutToken();
         const { deps } = loadInScope(["gitStars"]);
@@ -349,7 +355,7 @@ describe("settings refetch", () => {
         githubToken.value = "abc";
         await flushPromises();
 
-        const calls = callsTo(fetchMock, REPO_API_URL);
+        const calls = fetchCallsTo(fetchMock, REPO_API_URL);
         expect(calls).toHaveLength(2);
         expect(calls[1][1].headers.Authorization).toBe("Bearer abc");
         expect(deps.value[0].gitStars).toBe(7);
@@ -364,7 +370,7 @@ describe("settings refetch", () => {
         githubToken.value = undefined;
         await flushPromises();
 
-        expect(callsTo(fetchMock, REPO_API_URL)).toHaveLength(1);
+        expect(fetchCallsTo(fetchMock, REPO_API_URL)).toHaveLength(1);
     });
 
     it("refetches entry whose load spanned token change", async () => {
@@ -375,19 +381,14 @@ describe("settings refetch", () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string, init: RequestInit = {}) => {
-                if (url.includes("api.github.com")) {
-                    return new Headers(init.headers).has("Authorization")
-                        ? jsonResponse({ stargazers_count: 7 })
-                        : statusResponse(HTTP_STATUS.forbidden);
+                if (url.includes(GITHUB_API_URL)) {
+                    return githubStarsResponse(init);
                 }
                 const name = url.split("/").pop();
                 if (name === "gated-pkg") {
                     await gate;
                 }
-                return jsonResponse({
-                    ...minimalRegistryDoc,
-                    repository: { url: `git+https://github.com/settings-org/${name}.git` },
-                });
+                return registryDocWithRepo(name);
             }),
         );
         const { loadPackageJsonText, goBack, deps } = useHistory(ref(new Set(["gitStars"])));
@@ -413,9 +414,9 @@ describe("settings refetch", () => {
         settings.proxyUrl = "https://p.test/";
         await flushPromises();
 
-        expect(callsTo(fetchMock, PACKAGE_NAME).map(([url]) => url)).toEqual([
-            `https://registry.npmjs.org/${PACKAGE_NAME}`,
-            `https://p.test/https://registry.npmjs.org/${PACKAGE_NAME}`,
+        expect(fetchCallsTo(fetchMock, PACKAGE_NAME).map(([url]) => url)).toEqual([
+            `${NPM_REGISTRY_URL}/${PACKAGE_NAME}`,
+            `https://p.test/${NPM_REGISTRY_URL}/${PACKAGE_NAME}`,
         ]);
     });
 });

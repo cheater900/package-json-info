@@ -2,26 +2,26 @@
 
 ## Code layout
 
-| Path                        | Purpose                                                                  |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `src/main.js`               | App entry point. Decrypts the GitHub token, then mounts `App.vue`.       |
-| `src/App.vue`, `src/App.ts` | Root component: input controls, tables, history controls, shared modal.  |
-| `src/constants.ts`          | API base URLs, supported repo hosts, storage keys, display constants.    |
-| `src/config.ts`             | Developer settings read from `.env` (see Configuration below).           |
-| `src/settings.ts`           | User settings store (Zod-validated, in `localStorage`), in-memory token. |
-| `src/types.ts`              | Shared `PackageInfo` / `PackageInput` / `PackageError` types.            |
-| `src/i18n/`                 | `t()` message lookup. UI text lives in `locales/en.json`.                |
-| `src/api/`                  | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees. |
-| `src/composables/`          | Vue state: column preferences, package.json history, input sources.      |
-| `src/components/`           | Vue components. Each has its own `.vue`, `.ts` and `.css` file.          |
-| `src/utils/`                | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.     |
-| `public/`                   | Static assets served as-is.                                              |
-| `tests/unit/`               | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.  |
-| `tests/integration/`        | Vitest component tests mounted with `@vue/test-utils`.                   |
-| `tests/e2e/`                | Playwright end-to-end tests. `visual/` holds the screenshot run.         |
-| `tests/helpers/`            | Shared test helpers: fetch stubs and mocks, column key helpers.          |
-| `tests/fixtures/`           | Shared test data: dependency rows, registry docs, tarball builders.      |
-| `docs/`                     | Project docs: intent, features, roadmap, ideas, changelog.               |
+| Path                        | Purpose                                                                   |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `src/main.js`               | App entry point. Decrypts the GitHub token, then mounts `App.vue`.        |
+| `src/App.vue`, `src/App.ts` | Root component: input controls, tables, history controls, shared modal.   |
+| `src/constants.ts`          | API base URLs, supported repo hosts, storage keys, display constants.     |
+| `src/config.ts`             | Developer settings read from `.env` (see Configuration below).            |
+| `src/settings.ts`           | User settings store (Zod-validated, in `localStorage`), in-memory token.  |
+| `src/types.ts`              | Shared `PackageInfo` / `PackageInput` / `PackageError` types.             |
+| `src/i18n/`                 | `t()` message lookup. UI text lives in `locales/en.json`.                 |
+| `src/api/`                  | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees.  |
+| `src/composables/`          | Vue state: column preferences, package.json history, input sources.       |
+| `src/components/`           | Vue components. Each has its own `.vue`, `.ts` and `.css` file.           |
+| `src/utils/`                | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.      |
+| `public/`                   | Static assets served as-is.                                               |
+| `tests/unit/`               | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.   |
+| `tests/integration/`        | Vitest component tests mounted with `@vue/test-utils`.                    |
+| `tests/e2e/`                | Playwright end-to-end tests. `visual/` holds the screenshot run.          |
+| `tests/helpers/`            | Shared test helpers: fetch stubs, column keys, IndexedDB, settings reset. |
+| `tests/fixtures/`           | Shared test data: dependency rows, registry docs, tarballs, GitHub token. |
+| `docs/`                     | Project docs: intent, features, roadmap, ideas, changelog.                |
 
 ## Stack
 

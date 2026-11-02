@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { fetchWithTimeout, findFirstFound, proxiedUrl } from "../../../src/api/http";
-import { SETTINGS_DEFAULTS, settings } from "../../../src/settings";
+import { settings } from "../../../src/settings";
 import { jsonResponse } from "../../helpers/fetchMock";
+import { resetSettings } from "../../helpers/settings";
 
-afterEach(() => {
-    Object.assign(settings, SETTINGS_DEFAULTS);
-});
+afterEach(resetSettings);
 
 describe("findFirstFound", () => {
     it("skips 404 candidates, returns first found", async () => {

@@ -6,13 +6,16 @@ import {
     GITHUB_RATE_LIMIT_URL,
     STORAGE_KEY_GITHUB_TOKEN,
 } from "../../src/constants";
-
-const TOKEN = "github_pat_e2e123";
+import {
+    githubRateLimitBody,
+    githubRateLimitText,
+    githubTokenFixture as TOKEN,
+} from "../fixtures/github";
 
 test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);
     await page.route(GITHUB_RATE_LIMIT_URL, async (route) => {
-        await route.fulfill({ json: { rate: { limit: 5000, remaining: 4999 } } });
+        await route.fulfill({ json: githubRateLimitBody });
     });
 });
 
@@ -93,7 +96,9 @@ test("verify shows remaining / limit", async ({ page }) => {
 
     await page.getByRole("button", { name: "Verify" }).click();
 
-    await expect(page.getByRole("status")).toHaveText("4999 / 5000 requests left this hour");
+    await expect(page.getByRole("status")).toHaveText(
+        `${githubRateLimitText} requests left this hour`,
+    );
 });
 
 function rootBackground(page: Page) {
