@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { IDBFactory } from "fake-indexeddb";
+import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
 import { STORAGE_KEY_GITHUB_TOKEN } from "../../../src/constants";
 import {
     isTokenStorageAvailable,
@@ -7,6 +7,7 @@ import {
     purgeGithubToken,
     saveGithubToken,
 } from "../../../src/utils/githubTokenStorage";
+import { settle } from "../../../src/utils/settle";
 
 const TOKEN = "github_pat_abc123";
 
@@ -36,6 +37,23 @@ describe("githubTokenStorage", () => {
         await saveGithubToken(TOKEN);
 
         expect(generateKey).toHaveBeenCalledWith(expect.anything(), false, expect.anything());
+    });
+
+    it("save rejects, writes no ciphertext when key commit aborts", async () => {
+        const put = IDBObjectStore.prototype.put;
+        vi.spyOn(IDBObjectStore.prototype, "put").mockImplementation(function (
+            this: IDBObjectStore,
+            ...args: Parameters<typeof put>
+        ) {
+            const request = put.apply(this, args);
+            request.addEventListener("success", () => this.transaction.abort());
+            return request;
+        });
+
+        const result = await settle(() => saveGithubToken(TOKEN));
+
+        expect(result.ok).toBe(false);
+        expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
     });
 
     it("returns undefined when nothing stored", async () => {

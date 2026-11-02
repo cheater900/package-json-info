@@ -31,6 +31,13 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
     });
 }
 
+function transactionDone(transaction: IDBTransaction): Promise<void> {
+    return new Promise((resolve, reject) => {
+        transaction.oncomplete = () => resolve();
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
+
 async function withKeyStore<T>(
     mode: IDBTransactionMode,
     use: (store: IDBObjectStore) => IDBRequest<T>,
@@ -39,9 +46,14 @@ async function withKeyStore<T>(
     openRequest.onupgradeneeded = () => openRequest.result.createObjectStore(TOKEN_DB_STORE);
     const db = await requestResult(openRequest);
     try {
-        return await requestResult(
-            use(db.transaction(TOKEN_DB_STORE, mode).objectStore(TOKEN_DB_STORE)),
-        );
+        const transaction = db.transaction(TOKEN_DB_STORE, mode);
+        // A write is only durable once its transaction commits; quota or
+        // disk errors abort the transaction after the request succeeded.
+        const [result] = await Promise.all([
+            requestResult(use(transaction.objectStore(TOKEN_DB_STORE))),
+            transactionDone(transaction),
+        ]);
+        return result;
     } finally {
         db.close();
     }
