@@ -1,10 +1,13 @@
 import { z } from "zod";
 import {
     STORAGE_KEY_GITHUB_TOKEN,
+    TOKEN_CIPHER,
     TOKEN_DB_KEY,
     TOKEN_DB_NAME,
     TOKEN_DB_STORE,
+    TOKEN_IV_BYTES,
 } from "../constants";
+import { withObjectStore } from "./indexedDb";
 import { settle } from "./settle";
 import { readStoredJson, removeStoredJson } from "./storage";
 
@@ -12,9 +15,6 @@ const StoredTokenSchema = z.object({
     iv: z.array(z.number()),
     data: z.array(z.number()),
 });
-
-const TOKEN_CIPHER = { name: "AES-GCM", length: 256 };
-const TOKEN_IV_BYTES = 12;
 
 /**
  * True when the browser can encrypt and keep the token: IndexedDB for the
@@ -24,39 +24,11 @@ export function isTokenStorageAvailable(): boolean {
     return typeof indexedDB !== "undefined" && globalThis.crypto?.subtle != null;
 }
 
-function requestResult<T>(request: IDBRequest<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-function transactionDone(transaction: IDBTransaction): Promise<void> {
-    return new Promise((resolve, reject) => {
-        transaction.oncomplete = () => resolve();
-        transaction.onabort = () => reject(transaction.error);
-    });
-}
-
-async function withKeyStore<T>(
+function withKeyStore<T>(
     mode: IDBTransactionMode,
     use: (store: IDBObjectStore) => IDBRequest<T>,
 ): Promise<T> {
-    const openRequest = indexedDB.open(TOKEN_DB_NAME);
-    openRequest.onupgradeneeded = () => openRequest.result.createObjectStore(TOKEN_DB_STORE);
-    const db = await requestResult(openRequest);
-    try {
-        const transaction = db.transaction(TOKEN_DB_STORE, mode);
-        // A write is only durable once its transaction commits; quota or
-        // disk errors abort the transaction after the request succeeded.
-        const [result] = await Promise.all([
-            requestResult(use(transaction.objectStore(TOKEN_DB_STORE))),
-            transactionDone(transaction),
-        ]);
-        return result;
-    } finally {
-        db.close();
-    }
+    return withObjectStore(TOKEN_DB_NAME, TOKEN_DB_STORE, mode, use);
 }
 
 /**
@@ -102,8 +74,8 @@ export async function loadGithubToken(): Promise<string | undefined> {
     const keyResult = await settle(() =>
         withKeyStore("readonly", (store) => store.get(TOKEN_DB_KEY)),
     );
-    // Lost connection or private mode says nothing about the token itself.
-    if (!keyResult.ok) {
+    const isIndexedDbFailing = !keyResult.ok;
+    if (isIndexedDbFailing) {
         return undefined;
     }
     const result = await settle(async () => {

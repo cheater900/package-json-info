@@ -14,7 +14,7 @@
 | `src/api/`                  | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees. |
 | `src/composables/`          | Vue state: column preferences, package.json history, input sources.      |
 | `src/components/`           | Vue components. Each has its own `.vue`, `.ts` and `.css` file.          |
-| `src/utils/`                | Pure helpers: formatting, columns, semver, tar parsing, storage, URLs.   |
+| `src/utils/`                | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.     |
 | `public/`                   | Static assets served as-is.                                              |
 | `tests/unit/`               | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.  |
 | `tests/integration/`        | Vitest component tests mounted with `@vue/test-utils`.                   |

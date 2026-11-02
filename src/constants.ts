@@ -49,6 +49,9 @@ export const STORAGE_KEY_GITHUB_TOKEN = `${STORAGE_KEY_NAMESPACE}:githubToken`;
 export const TOKEN_DB_NAME = STORAGE_KEY_NAMESPACE;
 export const TOKEN_DB_STORE = "cryptoKeys";
 export const TOKEN_DB_KEY = "githubToken";
+export const TOKEN_CIPHER = { name: "AES-GCM", length: 256 } as const;
+/** AES-GCM nonce length recommended by NIST SP 800-38D. */
+export const TOKEN_IV_BYTES = 12;
 /** Longest wait for the stored token before mounting; IndexedDB open can hang (seen in Safari). */
 export const TOKEN_LOAD_TIMEOUT_MS = 2000;
 

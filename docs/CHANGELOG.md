@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Move IndexedDB promisify helpers to indexedDb utils, token cipher constants to constants
 - Stop each history test's watchers after test so token and proxy changes can't refetch leaked composables
 - Drop verify result when token changed meanwhile so purged token never shows stale quota
 - Discard in-flight entry fetches on token or proxy change so back navigation can't restore stale rows
