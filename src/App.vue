@@ -5,6 +5,7 @@
             <span class="terminal-titlebar__dot"></span>
             <span class="terminal-titlebar__dot"></span>
             <span class="terminal-titlebar__path">{{ t("app.titlebarPath") }}</span>
+            <settings-menu />
         </div>
 
         <h1 class="title">

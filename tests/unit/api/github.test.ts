@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { fetchGithubRateLimit, findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
+import { githubToken } from "../../../src/settings";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
 
 describe("findGithubReleaseTag", () => {
@@ -54,6 +55,13 @@ describe("findGithubReleaseTag", () => {
 describe("githubHeaders", () => {
     it("adds bearer token if given", () => {
         expect(githubHeaders("abc").Authorization).toBe("Bearer abc");
+    });
+
+    it("defaults to in-memory token", () => {
+        githubToken.value = "mem";
+
+        expect(githubHeaders().Authorization).toBe("Bearer mem");
+        githubToken.value = undefined;
     });
 
     it("omits Authorization without token", () => {

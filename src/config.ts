@@ -20,12 +20,10 @@ export function readPositiveInt(name: string, raw: string | undefined, fallback:
 }
 
 /**
- * Developer settings read from `.env` at build time (see `.env.example`).
- * VITE_* values are inlined into the client bundle, so never ship a
- * privileged token in a public build.
+ * Defaults read from `.env` at build time (see `.env.example`). VITE_*
+ * values are inlined into the client bundle; users change them in settings.
  */
 export const config = {
-    githubToken: import.meta.env.VITE_GITHUB_TOKEN?.trim() || undefined,
     fetchConcurrency: readPositiveInt(
         "VITE_FETCH_CONCURRENCY",
         import.meta.env.VITE_FETCH_CONCURRENCY,

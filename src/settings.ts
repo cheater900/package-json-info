@@ -1,4 +1,4 @@
-import { reactive, watch } from "vue";
+import { reactive, shallowRef, watch } from "vue";
 import { z } from "zod";
 import { config } from "./config";
 import { MAX_CONFIG_INT, STORAGE_KEY_SETTINGS } from "./constants";
@@ -38,5 +38,11 @@ export function loadSettings(): Settings {
 export const settings = reactive(loadSettings());
 
 watch(settings, (value) => writeStoredJson(STORAGE_KEY_SETTINGS, value), { deep: true });
+
+/**
+ * Decrypted GitHub token, memory only; `githubTokenStorage` keeps it
+ * encrypted at rest. Never persisted with `settings`, never logged.
+ */
+export const githubToken = shallowRef<string | undefined>();
 
 export type Settings = z.infer<typeof SettingsSchema>;

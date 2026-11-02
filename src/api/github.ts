@@ -1,4 +1,3 @@
-import { config } from "../config";
 import {
     GITHUB_ACCEPT_HEADER,
     GITHUB_API_URL,
@@ -6,6 +5,7 @@ import {
     GITHUB_RAW_URL,
     HTTP_UNAUTHORIZED,
 } from "../constants";
+import { githubToken } from "../settings";
 import { fetchWithTimeout, findFirstFound, HttpError } from "./http";
 import type { HttpHeaders } from "./http";
 
@@ -18,7 +18,7 @@ type GithubRateLimitResponse = {
     rate: GithubRateLimit;
 };
 
-export function githubHeaders(token: string | undefined = config.githubToken): HttpHeaders {
+export function githubHeaders(token: string | undefined = githubToken.value): HttpHeaders {
     if (!token) {
         return { Accept: GITHUB_ACCEPT_HEADER };
     }

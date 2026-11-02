@@ -57,9 +57,9 @@ package, or when someone takes over an unfamiliar codebase.
   read as its lowest version, which is good enough for a health overview.
 - **Not a security scanner.** The vulnerability count is a pointer to look
   closer. It does not replace `npm audit` or a dedicated scanner.
-- **Not a hosted service.** Deploying it as a public site is possible, but
-  a GitHub token set at build time ends up in the bundle. Use a token only
-  in local or private builds.
+- **Not a hosted service.** The app has no server of its own. It can be
+  deployed as a public static site: the bundle carries no token, and each
+  user enters their own GitHub token, kept encrypted in their browser.
 
 ## Success
 

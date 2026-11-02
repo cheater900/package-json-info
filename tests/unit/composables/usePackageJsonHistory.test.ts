@@ -1,8 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref, nextTick } from "vue";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { effectScope, ref, nextTick } from "vue";
+import type { EffectScope } from "vue";
+import { flushPromises } from "@vue/test-utils";
 import { usePackageJsonHistory } from "../../../src/composables/usePackageJsonHistory";
 import { clearPackageInfoCache } from "../../../src/api/npmPackage";
-import { jsonResponse } from "../../helpers/fetchMock";
+import { SETTINGS_DEFAULTS, githubToken, settings } from "../../../src/settings";
+import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
@@ -290,5 +293,89 @@ describe("async fetch ordering", () => {
         goBack();
 
         expect(loadError.value).toBeNull();
+    });
+});
+
+describe("settings refetch", () => {
+    // Unique name: composables from earlier tests are never stopped and
+    // still react to settings changes.
+    const PACKAGE_NAME = "settings-refetch-pkg";
+    const REPO_API_URL = "https://api.github.com/repos/settings-org/settings-repo";
+    let scope: EffectScope;
+
+    /** Registry doc for every URL; GitHub answers 403 (rate limit) unless authorized. */
+    function stubGithubRateLimitedWithoutToken() {
+        const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
+            if (!url.includes("api.github.com")) {
+                return jsonResponse({
+                    ...minimalRegistryDoc,
+                    repository: { url: "git+https://github.com/settings-org/settings-repo.git" },
+                });
+            }
+            if (!new Headers(init.headers).has("Authorization")) {
+                return statusResponse(HTTP_STATUS.forbidden);
+            }
+            return jsonResponse({ stargazers_count: 7 });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        return fetchMock;
+    }
+
+    function loadInScope(columns: string[]) {
+        scope = effectScope();
+        const history = scope.run(() => usePackageJsonHistory(ref(new Set(columns))));
+        history.loadPackageJsonText(JSON.stringify({ dependencies: { [PACKAGE_NAME]: "1.0.0" } }));
+        return history;
+    }
+
+    function callsTo(fetchMock: ReturnType<typeof vi.fn>, fragment: string) {
+        return fetchMock.mock.calls.filter(([url]) => url.includes(fragment));
+    }
+
+    afterEach(() => {
+        scope.stop();
+        githubToken.value = undefined;
+        Object.assign(settings, SETTINGS_DEFAULTS);
+    });
+
+    it("refetches with Authorization after token set", async () => {
+        const fetchMock = stubGithubRateLimitedWithoutToken();
+        const { deps } = loadInScope(["gitStars"]);
+        await flushPromises();
+        expect(deps.value[0].gitStars).toBeNull();
+
+        githubToken.value = "abc";
+        await flushPromises();
+
+        const calls = callsTo(fetchMock, REPO_API_URL);
+        expect(calls).toHaveLength(2);
+        expect(calls[1][1].headers.Authorization).toBe("Bearer abc");
+        expect(deps.value[0].gitStars).toBe(7);
+    });
+
+    it("skips refetch on token purge", async () => {
+        githubToken.value = "abc";
+        const fetchMock = stubGithubRateLimitedWithoutToken();
+        loadInScope(["gitStars"]);
+        await flushPromises();
+
+        githubToken.value = undefined;
+        await flushPromises();
+
+        expect(callsTo(fetchMock, REPO_API_URL)).toHaveLength(1);
+    });
+
+    it("clears cache, refetches through new proxy", async () => {
+        const fetchMock = stubGithubRateLimitedWithoutToken();
+        loadInScope(["latestVersion"]);
+        await flushPromises();
+
+        settings.proxyUrl = "https://p.test/";
+        await flushPromises();
+
+        expect(callsTo(fetchMock, PACKAGE_NAME).map(([url]) => url)).toEqual([
+            `https://registry.npmjs.org/${PACKAGE_NAME}`,
+            `https://p.test/https://registry.npmjs.org/${PACKAGE_NAME}`,
+        ]);
     });
 });

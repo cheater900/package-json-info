@@ -1,0 +1,80 @@
+.settings-menu {
+    margin-left: auto;
+}
+
+.settings-menu__gear {
+    anchor-name: --settings-gear;
+    padding: 4px 8px;
+    position: relative;
+}
+
+.settings-menu__badge {
+    background: var(--accent);
+    border-radius: 50%;
+    height: 7px;
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    width: 7px;
+}
+
+.settings-menu__panel {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    box-sizing: border-box;
+    color: var(--text);
+    inset: auto;
+    margin: 4px 0 0;
+    max-height: calc(100vh - 96px);
+    max-width: calc(100vw - 24px);
+    padding: 12px;
+    position-anchor: --settings-gear;
+    right: anchor(right);
+    text-align: left;
+    top: anchor(bottom);
+    width: 360px;
+}
+
+@supports not (anchor-name: --settings-gear) {
+    .settings-menu__panel {
+        right: 12px;
+        top: 40px;
+    }
+}
+
+.settings-menu__section {
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 0 12px;
+    padding: 8px 12px 12px;
+}
+
+.settings-menu__section input {
+    width: 100%;
+}
+
+.settings-menu__row {
+    display: flex;
+    gap: 8px;
+}
+
+.settings-menu__row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-menu__status {
+    font-weight: 600;
+}
+
+.settings-menu__hint {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.settings-menu__error {
+    color: var(--error);
+}

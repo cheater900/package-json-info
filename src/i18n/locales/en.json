@@ -3,6 +3,40 @@
         "titlebarPath": "node ~/package.json",
         "title": "$ package.json info"
     },
+    "settings": {
+        "title": "Settings",
+        "open": "Open settings",
+        "openTokenSet": "Open settings (GitHub token set)",
+        "token": {
+            "legend": "GitHub token",
+            "set": "Token set",
+            "notSet": "No token set: 60 GitHub requests per hour",
+            "label": "Personal access token",
+            "save": "Save",
+            "verify": "Verify",
+            "purge": "Purge",
+            "saved": "Token saved.",
+            "purged": "Token purged.",
+            "invalidFormat": "A token has only letters, digits and underscores.",
+            "saveFailed": "Could not store the token in this browser.",
+            "verifying": "Verifying…",
+            "rateLimit": "{remaining} / {limit} requests left this hour",
+            "invalid": "GitHub rejected this token: invalid or expired.",
+            "verifyFailed": "Could not verify the token: {error}",
+            "unavailable": "Token storage needs IndexedDB and a secure context (HTTPS). Requests stay anonymous.",
+            "hint": "Stored encrypted in this browser. That protects it on disk, not from scripts on this page. Use a fine-grained token with no permissions. Sent only to api.github.com."
+        },
+        "network": {
+            "legend": "Network",
+            "proxy": "CORS proxy",
+            "proxyPlaceholder": "https://proxy.example/?url={url}",
+            "proxyHint": "{url} becomes the encoded target URL; without it the URL is appended. Requests carrying the GitHub token skip the proxy.",
+            "timeout": "Timeout (ms)",
+            "concurrency": "Parallel fetches per table",
+            "invalidProxy": "Enter an http(s) URL, or leave empty.",
+            "invalidInt": "Enter a whole number from 1 to 2147483647."
+        }
+    },
     "input": {
         "loading": "Loading package.json…",
         "urlLabel": "Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL",

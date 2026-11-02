@@ -4,11 +4,11 @@
 
 | Path                        | Purpose                                                                  |
 | --------------------------- | ------------------------------------------------------------------------ |
-| `src/main.js`               | App entry point. Mounts `App.vue`.                                       |
+| `src/main.js`               | App entry point. Decrypts the GitHub token, then mounts `App.vue`.       |
 | `src/App.vue`, `src/App.ts` | Root component: input controls, tables, history controls, shared modal.  |
 | `src/constants.ts`          | API base URLs, supported repo hosts, storage keys, display constants.    |
 | `src/config.ts`             | Developer settings read from `.env` (see Configuration below).           |
-| `src/settings.ts`           | User settings store, validated with Zod and persisted to `localStorage`. |
+| `src/settings.ts`           | User settings store (Zod-validated, in `localStorage`), in-memory token. |
 | `src/types.ts`              | Shared `PackageInfo` / `PackageInput` / `PackageError` types.            |
 | `src/i18n/`                 | `t()` message lookup. UI text lives in `locales/en.json`.                |
 | `src/api/`                  | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees. |
@@ -38,12 +38,10 @@
 ## Configuration
 
 Copy `.env.example` to `.env.local` and fill in the values you need. Vite
-inlines every `VITE_*` variable into the client bundle, so do not put a
-privileged token into a build you publish.
+inlines every `VITE_*` variable into the client bundle. The GitHub token is
+not a build setting: each user enters their own in the settings menu, so a
+public build carries no token.
 
-- `VITE_GITHUB_TOKEN`: GitHub personal access token with no scopes. It raises
-  the GitHub API rate limit from 60 to 5000 requests per hour. Leave it empty
-  to call GitHub anonymously.
 - `VITE_FETCH_CONCURRENCY`: default number of packages fetched in parallel
   per table. Defaults to 5.
 - `VITE_FETCH_TIMEOUT_MS`: default milliseconds before a network request is
@@ -57,6 +55,11 @@ Column visibility, column order and the "shrink columns" toggle are user
 settings. The app stores them in `localStorage`. So does `src/settings.ts`:
 CORS proxy, fetch timeout and concurrency. The `.env` values only seed the
 defaults for timeout and concurrency.
+
+`src/utils/githubTokenStorage.ts` keeps the GitHub token AES-GCM encrypted:
+IV and ciphertext in `localStorage`, the non-extractable key in the
+IndexedDB database `package-json-info`. `main.js` decrypts it into memory
+before mounting the app.
 
 ## Translations
 

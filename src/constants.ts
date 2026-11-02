@@ -16,6 +16,8 @@ export const GITHUB_API_URL = "https://api.github.com";
 export const GITHUB_RAW_URL = "https://raw.githubusercontent.com";
 export const GITHUB_RATE_LIMIT_URL = `${GITHUB_API_URL}/rate_limit`;
 export const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
+/** Classic and fine-grained PATs: letters, digits and underscores only. */
+export const GITHUB_TOKEN_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 export const GITLAB_API_URL = "https://gitlab.com/api/v4";
 export const CODEBERG_API_URL = "https://codeberg.org/api/v1";
 

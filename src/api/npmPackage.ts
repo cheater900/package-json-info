@@ -109,7 +109,7 @@ const repoStarsCache = new Map<string, Promise<number | null>>();
 const repoIssueCountsCache = new Map<string, Promise<RepoIssueCounts>>();
 const githubReleaseTagCache = new Map<string, Promise<string | null>>();
 
-/** Clears every in-memory metadata cache. Exposed for tests. */
+/** Clears every in-memory metadata cache, e.g. after the proxy changes. */
 export function clearPackageInfoCache(): void {
     registryDataCache.clear();
     weeklyDownloadsCache.clear();

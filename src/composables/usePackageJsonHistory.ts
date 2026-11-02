@@ -1,6 +1,6 @@
 import { ref, computed, watch, toRaw } from "vue";
 import type { Ref } from "vue";
-import { fetchPackagesInfo } from "../api/npmPackage";
+import { clearPackageInfoCache, fetchPackagesInfo } from "../api/npmPackage";
 import {
     createHistoryEntry,
     pushHistoryEntry,
@@ -11,6 +11,7 @@ import {
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
 import type { DependencyMap } from "../utils/packageJson";
 import { t } from "../i18n";
+import { githubToken, settings } from "../settings";
 
 function toPackageInputs(dependencies: DependencyMap | undefined) {
     return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
@@ -148,6 +149,34 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         isLoadingDeps.value = false;
         isLoadingDevDeps.value = false;
     }
+
+    /**
+     * Drops every entry's column snapshot so each one refetches when shown,
+     * then refetches the current one. Cells that failed earlier (rate limit,
+     * proxy) are cached as missing until then.
+     */
+    function refetchAllEntries() {
+        for (const entry of history.value) {
+            entry.visibleColumnsSnapshot = null;
+        }
+        applyCurrentHistoryEntry();
+    }
+
+    // A new token lifts the GitHub rate limit; purging it needs no refetch.
+    watch(githubToken, (token) => {
+        if (!token) {
+            return;
+        }
+        refetchAllEntries();
+    });
+
+    watch(
+        () => settings.proxyUrl,
+        () => {
+            clearPackageInfoCache();
+            refetchAllEntries();
+        },
+    );
 
     // When column visibility changes, re-check whether the current entry's
     // cached data still covers every visible column - and re-fetch if not.

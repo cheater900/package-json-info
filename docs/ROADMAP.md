@@ -26,13 +26,7 @@ manager resolves it, to show the real footprint of a `package.json`.
 
 ## Settings menu
 
-A gear-icon dropdown with user settings stored in `localStorage`:
-
-- GitHub token entered by the user, with a "token set" indicator and a
-  purge option; replaces build-time `VITE_GITHUB_TOKEN` so a static deploy
-  never bundles a token
-- Network proxy
-- Display theme, font size and padding
+- Display section: theme, font size and padding
 
 ## Reliability
 

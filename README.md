@@ -9,6 +9,9 @@ Let a user bring in a `package.json` from wherever they have it, and get back
 a table that tells them, at a glance, how healthy and active every dependency
 is, without opening npm, GitHub, and changelogs one tab at a time.
 
+Runs fully in the browser. Users add their own GitHub token in the settings
+menu; it stays encrypted in their browser, so a public static deploy is safe.
+
 ## Documentation
 
 - [Intent](docs/INTENT.md): purpose, audience, design principles, and non-goals.

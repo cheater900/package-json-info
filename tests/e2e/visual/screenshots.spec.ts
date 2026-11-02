@@ -80,3 +80,10 @@ test("columns panel - large desktop, three grids", async ({ page }) => {
         fullPage: true,
     });
 });
+
+test("settings menu - gear dropdown open", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Open settings" }).click();
+    await page.getByRole("dialog", { name: "Settings" }).waitFor();
+    await page.screenshot({ path: "screenshots/09-settings-menu.png" });
+});
