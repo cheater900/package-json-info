@@ -15,6 +15,7 @@ import {
     purgeGithubToken,
     saveGithubToken,
 } from "../utils/githubTokenStorage";
+import { formatPercent } from "../utils/percent";
 import { settle } from "../utils/settle";
 
 type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
@@ -37,6 +38,16 @@ export default defineComponent({
             isOpen.value = event.newState === "open";
         }
 
+        /**
+         * Purges the stored token and its in-memory copy. After a half-done
+         * save this also drops the stale ciphertext beside the new key, so
+         * memory matches what a reload would find.
+         */
+        async function forgetToken() {
+            await purgeGithubToken();
+            githubToken.value = undefined;
+        }
+
         async function saveToken() {
             const token = tokenDraft.value.trim();
             if (!GITHUB_TOKEN_PATTERN.test(token)) {
@@ -45,10 +56,7 @@ export default defineComponent({
             }
             const result = await settle(() => saveGithubToken(token));
             if (!result.ok) {
-                // A half-done save leaves the old ciphertext beside the new
-                // key; drop both so memory matches what a reload would find.
-                await purgeGithubToken();
-                githubToken.value = undefined;
+                await forgetToken();
                 tokenMessage.value = t("settings.token.saveFailed");
                 return;
             }
@@ -61,8 +69,8 @@ export default defineComponent({
             const token = githubToken.value;
             tokenMessage.value = t("settings.token.verifying");
             const result = await settle(() => fetchGithubRateLimit(token));
-            // Saved or purged meanwhile: this answer is about another token.
-            if (githubToken.value !== token) {
+            const isAnswerForReplacedToken = githubToken.value !== token;
+            if (isAnswerForReplacedToken) {
                 return;
             }
             if (!result.ok) {
@@ -77,8 +85,7 @@ export default defineComponent({
         }
 
         async function purgeToken() {
-            await purgeGithubToken();
-            githubToken.value = undefined;
+            await forgetToken();
             tokenMessage.value = t("settings.token.purged");
             tokenInputRef.value?.focus();
         }
@@ -91,10 +98,6 @@ export default defineComponent({
             }
             networkErrors.proxyUrl = "";
             settings.proxyUrl = value;
-        }
-
-        function percent(scale: number): string {
-            return `${Math.round(scale * 100)}%`;
         }
 
         function commitInt(key: SettingsIntKey, event: Event) {
@@ -121,7 +124,7 @@ export default defineComponent({
             themes: SETTINGS_THEMES,
             fontScales: SETTINGS_FONT_SCALES,
             spaceScales: SETTINGS_SPACE_SCALES,
-            percent,
+            formatPercent,
             onToggle,
             saveToken,
             verifyToken,

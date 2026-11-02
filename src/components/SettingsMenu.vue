@@ -129,13 +129,13 @@
                 <label :for="`${panelId}-font`">{{ t("settings.display.fontSize") }}</label>
                 <select :id="`${panelId}-font`" v-model="settings.fontScale">
                     <option v-for="scale in fontScales" :key="scale" :value="scale">
-                        {{ percent(scale) }}
+                        {{ formatPercent(scale) }}
                     </option>
                 </select>
                 <label :for="`${panelId}-space`">{{ t("settings.display.padding") }}</label>
                 <select :id="`${panelId}-space`" v-model="settings.spaceScale">
                     <option v-for="scale in spaceScales" :key="scale" :value="scale">
-                        {{ percent(scale) }}
+                        {{ formatPercent(scale) }}
                     </option>
                 </select>
             </fieldset>
