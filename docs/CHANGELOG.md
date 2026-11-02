@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Store GitHub token AES-GCM encrypted with non-extractable IndexedDB key, add rate limit check
 - Route fetch timeout, concurrency and CORS proxy through persisted settings store
 - Remove unused Vite scaffold styles
 - Move remaining TODO items (reliability, i18n, tests) into ROADMAP, detail settings token scope

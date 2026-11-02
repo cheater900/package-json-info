@@ -14,6 +14,7 @@ export const SUPPORTED_REPO_HOSTS = [GITHUB_HOST, GITLAB_HOST, CODEBERG_HOST];
 
 export const GITHUB_API_URL = "https://api.github.com";
 export const GITHUB_RAW_URL = "https://raw.githubusercontent.com";
+export const GITHUB_RATE_LIMIT_URL = `${GITHUB_API_URL}/rate_limit`;
 export const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
 export const GITLAB_API_URL = "https://gitlab.com/api/v4";
 export const CODEBERG_API_URL = "https://codeberg.org/api/v1";
@@ -26,6 +27,7 @@ export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 /** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
 export const MAX_CONFIG_INT = 2 ** 31 - 1;
 export const HTTP_NOT_FOUND = 404;
+export const HTTP_UNAUTHORIZED = 401;
 /** Marks where a CORS proxy template puts the encoded target URL; without it the proxy is a prefix. */
 export const PROXY_URL_PLACEHOLDER = "{url}";
 /** Delay before mirroring the URL input into the address bar; browsers throttle replaceState. */
@@ -36,6 +38,11 @@ export const STORAGE_KEY_VISIBLE_COLUMNS = `${STORAGE_KEY_NAMESPACE}:visibleColu
 export const STORAGE_KEY_COLUMN_ORDER = `${STORAGE_KEY_NAMESPACE}:columnOrder`;
 export const STORAGE_KEY_SHRINK_LABELS = `${STORAGE_KEY_NAMESPACE}:shrinkColumnLabels`;
 export const STORAGE_KEY_SETTINGS = `${STORAGE_KEY_NAMESPACE}:settings`;
+/** Encrypted GitHub token (IV + ciphertext); its AES key lives in IndexedDB. */
+export const STORAGE_KEY_GITHUB_TOKEN = `${STORAGE_KEY_NAMESPACE}:githubToken`;
+export const TOKEN_DB_NAME = STORAGE_KEY_NAMESPACE;
+export const TOKEN_DB_STORE = "cryptoKeys";
+export const TOKEN_DB_KEY = "githubToken";
 
 export const INPUT_URL_QUERY_PARAM = "inputUrl";
 

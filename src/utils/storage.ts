@@ -23,3 +23,12 @@ export function writeStoredJson(key: string, value: unknown): void {
         return;
     }
 }
+
+/** Deletes a localStorage value. Does nothing when storage is unavailable. Never throws. */
+export function removeStoredJson(key: string): void {
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        return;
+    }
+}

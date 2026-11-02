@@ -30,7 +30,8 @@
 - Zod for package.json validation
 - Built-in `t()` helper with JSON message catalogs for UI text
 - vue-json-pretty for the raw JSON viewer, vuedraggable for column reordering
-- Vitest with jsdom for unit and component tests
+- Vitest with jsdom for unit and component tests; fake-indexeddb stands in
+  for IndexedDB, which jsdom lacks
 - Playwright for end-to-end tests
 - oxlint and oxfmt for linting and formatting
 

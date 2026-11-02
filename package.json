@@ -25,6 +25,7 @@
         "@playwright/test": "^1.62.1",
         "@vitejs/plugin-vue": "^6.0.6",
         "@vue/test-utils": "^2.5.0",
+        "fake-indexeddb": "^6.2.7",
         "jsdom": "^30.0.1",
         "oxfmt": "^0.75.0",
         "oxlint": "^1.80.0",

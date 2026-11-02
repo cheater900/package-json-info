@@ -1,13 +1,46 @@
 import { config } from "../config";
-import { GITHUB_ACCEPT_HEADER, GITHUB_API_URL, GITHUB_RAW_URL } from "../constants";
-import { findFirstFound } from "./http";
+import {
+    GITHUB_ACCEPT_HEADER,
+    GITHUB_API_URL,
+    GITHUB_RATE_LIMIT_URL,
+    GITHUB_RAW_URL,
+    HTTP_UNAUTHORIZED,
+} from "../constants";
+import { fetchWithTimeout, findFirstFound, HttpError } from "./http";
 import type { HttpHeaders } from "./http";
+
+export type GithubRateLimit = {
+    limit: number;
+    remaining: number;
+};
+
+type GithubRateLimitResponse = {
+    rate: GithubRateLimit;
+};
 
 export function githubHeaders(token: string | undefined = config.githubToken): HttpHeaders {
     if (!token) {
         return { Accept: GITHUB_ACCEPT_HEADER };
     }
     return { Accept: GITHUB_ACCEPT_HEADER, Authorization: `Bearer ${token}` };
+}
+
+/**
+ * Core API quota for `token`; this request doesn't count against it. Null
+ * when GitHub rejects the token (401). Throws on other failures.
+ */
+export async function fetchGithubRateLimit(token: string): Promise<GithubRateLimit | null> {
+    const response = await fetchWithTimeout(GITHUB_RATE_LIMIT_URL, {
+        headers: githubHeaders(token),
+    });
+    if (response.status === HTTP_UNAUTHORIZED) {
+        return null;
+    }
+    if (!response.ok) {
+        throw new HttpError(response.status);
+    }
+    const { rate }: GithubRateLimitResponse = await response.json();
+    return { limit: rate.limit, remaining: rate.remaining };
 }
 
 export function githubRepoApiUrl(owner: string, repo: string): string {

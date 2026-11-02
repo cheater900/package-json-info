@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
+import { fetchGithubRateLimit, findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
 
 describe("findGithubReleaseTag", () => {
@@ -58,5 +58,40 @@ describe("githubHeaders", () => {
 
     it("omits Authorization without token", () => {
         expect(githubHeaders("")).not.toHaveProperty("Authorization");
+    });
+});
+
+describe("fetchGithubRateLimit", () => {
+    it("returns remaining and limit, sends token", async () => {
+        const fetchMock = vi.fn(async () =>
+            jsonResponse({ rate: { limit: 5000, remaining: 4999, used: 1 } }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        expect(await fetchGithubRateLimit("abc")).toEqual({ limit: 5000, remaining: 4999 });
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://api.github.com/rate_limit",
+            expect.objectContaining({
+                headers: expect.objectContaining({ Authorization: "Bearer abc" }),
+            }),
+        );
+    });
+
+    it("returns null on 401", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.unauthorized)),
+        );
+
+        expect(await fetchGithubRateLimit("bad")).toBeNull();
+    });
+
+    it("throws on 500", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
+        );
+
+        await expect(fetchGithubRateLimit("abc")).rejects.toThrow("500");
     });
 });
