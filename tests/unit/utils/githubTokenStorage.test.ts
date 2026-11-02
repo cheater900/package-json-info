@@ -86,6 +86,19 @@ describe("githubTokenStorage", () => {
         expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
     });
 
+    it("keeps token when IndexedDB open fails", async () => {
+        await saveGithubToken(TOKEN);
+        const stored = localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN);
+        vi.spyOn(indexedDB, "open").mockImplementation(() => {
+            throw new DOMException("Connection to Indexed Database server lost", "UnknownError");
+        });
+
+        expect(await loadGithubToken()).toBeUndefined();
+        expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBe(stored);
+        vi.mocked(indexedDB.open).mockRestore();
+        expect(await loadGithubToken()).toBe(TOKEN);
+    });
+
     it("reports unavailable without IndexedDB or crypto.subtle", () => {
         expect(isTokenStorageAvailable()).toBe(true);
         vi.stubGlobal("indexedDB", undefined);

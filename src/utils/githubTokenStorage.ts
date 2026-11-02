@@ -91,19 +91,26 @@ export async function purgeGithubToken(): Promise<void> {
 
 /**
  * Decrypts the stored token. Undefined when none is stored or storage is
- * unavailable. Corrupt data or a lost key purges the token. Never rejects.
+ * unavailable. Corrupt data or a lost key purges the token; a failing
+ * IndexedDB keeps it for the next load. Never rejects.
  */
 export async function loadGithubToken(): Promise<string | undefined> {
     const stored = readStoredJson(STORAGE_KEY_GITHUB_TOKEN);
     if (stored === undefined || !isTokenStorageAvailable()) {
         return undefined;
     }
+    const keyResult = await settle(() =>
+        withKeyStore("readonly", (store) => store.get(TOKEN_DB_KEY)),
+    );
+    // Lost connection or private mode says nothing about the token itself.
+    if (!keyResult.ok) {
+        return undefined;
+    }
     const result = await settle(async () => {
         const { iv, data } = StoredTokenSchema.parse(stored);
-        const key = await withKeyStore("readonly", (store) => store.get(TOKEN_DB_KEY));
         const plain = await crypto.subtle.decrypt(
             { name: TOKEN_CIPHER.name, iv: new Uint8Array(iv) },
-            key,
+            keyResult.value,
             new Uint8Array(data),
         );
         return new TextDecoder().decode(plain);
