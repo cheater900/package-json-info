@@ -1,8 +1,7 @@
 import { reactive, shallowRef, watch } from "vue";
 import { z } from "zod";
-import { config } from "./config";
+import { config, isConfigInt } from "./config";
 import {
-    MAX_CONFIG_INT,
     SETTINGS_FONT_SCALES,
     SETTINGS_SPACE_SCALES,
     SETTINGS_THEMES,
@@ -11,7 +10,7 @@ import {
 import { readStoredJson, writeStoredJson } from "./utils/storage";
 import { isHttpUrl } from "./utils/url";
 
-const SettingsIntSchema = z.number().int().positive().max(MAX_CONFIG_INT);
+const SettingsIntSchema = z.number().refine(isConfigInt);
 
 /**
  * True for "" (no proxy) or an http(s) URL without "user:pass@": fetch
@@ -21,7 +20,11 @@ export function isProxyUrl(value: string): boolean {
     if (value === "") {
         return true;
     }
-    return isHttpUrl(value) && !new URL(value).username && !new URL(value).password;
+    if (!isHttpUrl(value)) {
+        return false;
+    }
+    const { username, password } = new URL(value);
+    return !username && !password;
 }
 
 export const SETTINGS_DEFAULTS = {
@@ -44,11 +47,6 @@ export const SettingsSchema = z
         spaceScale: z.literal(SETTINGS_SPACE_SCALES).catch(SETTINGS_DEFAULTS.spaceScale),
     })
     .catch(() => ({ ...SETTINGS_DEFAULTS }));
-
-/** True for a positive integer small enough for a browser timer. */
-export function isSettingsInt(value: number): boolean {
-    return SettingsIntSchema.safeParse(value).success;
-}
 
 export function loadSettings(): Settings {
     return SettingsSchema.parse(readStoredJson(STORAGE_KEY_SETTINGS));

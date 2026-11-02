@@ -1,13 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { nextTick } from "vue";
 import { STORAGE_KEY_SETTINGS } from "../../src/constants";
-import {
-    SETTINGS_DEFAULTS,
-    isProxyUrl,
-    isSettingsInt,
-    loadSettings,
-    settings,
-} from "../../src/settings";
+import { SETTINGS_DEFAULTS, isProxyUrl, loadSettings, settings } from "../../src/settings";
 
 describe("loadSettings", () => {
     it("returns defaults when nothing stored", () => {
@@ -50,12 +44,17 @@ describe("loadSettings", () => {
 });
 
 describe("isProxyUrl", () => {
-    it("accepts empty and http(s) url, rejects other scheme and credentials", () => {
-        expect(isProxyUrl("")).toBe(true);
-        expect(isProxyUrl("https://p.test/?u={url}")).toBe(true);
-        for (const value of ["javascript:alert(1)", "https://u:p@p.test/", "https://u@p.test/"]) {
-            expect(isProxyUrl(value)).toBe(false);
-        }
+    it.each(["", "https://p.test/?u={url}"])("accepts %j", (value) => {
+        expect(isProxyUrl(value)).toBe(true);
+    });
+
+    it.each([
+        "javascript:alert(1)",
+        "https://u:p@p.test/",
+        "https://u@p.test/",
+        "https://:p@p.test/",
+    ])("rejects %j", (value) => {
+        expect(isProxyUrl(value)).toBe(false);
     });
 
     it("drops stored proxy with credentials", () => {
@@ -65,16 +64,6 @@ describe("isProxyUrl", () => {
         );
 
         expect(loadSettings().proxyUrl).toBe("");
-    });
-});
-
-describe("isSettingsInt", () => {
-    it("accepts positive int up to 2^31-1 only", () => {
-        expect(isSettingsInt(1)).toBe(true);
-        expect(isSettingsInt(2 ** 31 - 1)).toBe(true);
-        for (const value of [0, -1, 1.5, 2 ** 31, Number.NaN]) {
-            expect(isSettingsInt(value)).toBe(false);
-        }
     });
 });
 

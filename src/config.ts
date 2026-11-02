@@ -1,5 +1,10 @@
 import { DEFAULT_FETCH_CONCURRENCY, DEFAULT_FETCH_TIMEOUT_MS, MAX_CONFIG_INT } from "./constants";
 
+/** True for a positive integer small enough for a browser timer. */
+export function isConfigInt(value: number): boolean {
+    return Number.isInteger(value) && value > 0 && value <= MAX_CONFIG_INT;
+}
+
 /**
  * Parses an env value as a positive integer up to MAX_CONFIG_INT. Empty
  * values use `fallback`; invalid ones (zero, negative, fractional,
@@ -10,7 +15,7 @@ export function readPositiveInt(name: string, raw: string | undefined, fallback:
         return fallback;
     }
     const value = Number(raw);
-    if (Number.isInteger(value) && value > 0 && value <= MAX_CONFIG_INT) {
+    if (isConfigInt(value)) {
         return value;
     }
     console.warn(

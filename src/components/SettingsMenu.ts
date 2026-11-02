@@ -1,13 +1,15 @@
 import { defineComponent, reactive, ref, useId } from "vue";
 import { fetchGithubRateLimit } from "../api/github";
+import { isConfigInt } from "../config";
 import {
     GITHUB_TOKEN_PATTERN,
+    MAX_CONFIG_INT,
     SETTINGS_FONT_SCALES,
     SETTINGS_SPACE_SCALES,
     SETTINGS_THEMES,
 } from "../constants";
 import { t } from "../i18n";
-import { githubToken, isProxyUrl, isSettingsInt, settings } from "../settings";
+import { githubToken, isProxyUrl, settings } from "../settings";
 import {
     isTokenStorageAvailable,
     purgeGithubToken,
@@ -97,8 +99,8 @@ export default defineComponent({
 
         function commitInt(key: SettingsIntKey, event: Event) {
             const value = (event.target as HTMLInputElement).valueAsNumber;
-            if (!isSettingsInt(value)) {
-                networkErrors[key] = t("settings.network.invalidInt");
+            if (!isConfigInt(value)) {
+                networkErrors[key] = t("settings.network.invalidInt", { max: MAX_CONFIG_INT });
                 return;
             }
             networkErrors[key] = "";
