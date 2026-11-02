@@ -33,7 +33,7 @@
             "proxyHint": "{url} becomes the encoded target URL; without it the URL is appended. Requests carrying the GitHub token skip the proxy.",
             "timeout": "Timeout (ms)",
             "concurrency": "Parallel fetches per table",
-            "invalidProxy": "Enter an http(s) URL, or leave empty.",
+            "invalidProxy": "Enter an http(s) URL without user:password, or leave empty.",
             "invalidInt": "Enter a whole number from 1 to 2147483647."
         },
         "display": {

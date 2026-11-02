@@ -13,6 +13,17 @@ import { isHttpUrl } from "./utils/url";
 
 const SettingsIntSchema = z.number().int().positive().max(MAX_CONFIG_INT);
 
+/**
+ * True for "" (no proxy) or an http(s) URL without "user:pass@": fetch
+ * rejects such URLs and its error message echoes the credentials.
+ */
+export function isProxyUrl(value: string): boolean {
+    if (value === "") {
+        return true;
+    }
+    return isHttpUrl(value) && !new URL(value).username && !new URL(value).password;
+}
+
 export const SETTINGS_DEFAULTS = {
     proxyUrl: "",
     fetchTimeoutMs: config.fetchTimeoutMs,
@@ -25,10 +36,7 @@ export const SETTINGS_DEFAULTS = {
 /** Each invalid or missing field falls back to its default on its own. */
 export const SettingsSchema = z
     .object({
-        proxyUrl: z
-            .string()
-            .refine((value) => value === "" || isHttpUrl(value))
-            .catch(SETTINGS_DEFAULTS.proxyUrl),
+        proxyUrl: z.string().refine(isProxyUrl).catch(SETTINGS_DEFAULTS.proxyUrl),
         fetchTimeoutMs: SettingsIntSchema.catch(SETTINGS_DEFAULTS.fetchTimeoutMs),
         fetchConcurrency: SettingsIntSchema.catch(SETTINGS_DEFAULTS.fetchConcurrency),
         theme: z.enum(SETTINGS_THEMES).catch(SETTINGS_DEFAULTS.theme),

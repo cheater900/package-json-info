@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { nextTick } from "vue";
 import { STORAGE_KEY_SETTINGS } from "../../src/constants";
-import { SETTINGS_DEFAULTS, isSettingsInt, loadSettings, settings } from "../../src/settings";
+import {
+    SETTINGS_DEFAULTS,
+    isProxyUrl,
+    isSettingsInt,
+    loadSettings,
+    settings,
+} from "../../src/settings";
 
 describe("loadSettings", () => {
     it("returns defaults when nothing stored", () => {
@@ -40,6 +46,25 @@ describe("loadSettings", () => {
         localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ githubToken: "x" }));
 
         expect(loadSettings()).not.toHaveProperty("githubToken");
+    });
+});
+
+describe("isProxyUrl", () => {
+    it("accepts empty and http(s) url, rejects other scheme and credentials", () => {
+        expect(isProxyUrl("")).toBe(true);
+        expect(isProxyUrl("https://p.test/?u={url}")).toBe(true);
+        for (const value of ["javascript:alert(1)", "https://u:p@p.test/", "https://u@p.test/"]) {
+            expect(isProxyUrl(value)).toBe(false);
+        }
+    });
+
+    it("drops stored proxy with credentials", () => {
+        localStorage.setItem(
+            STORAGE_KEY_SETTINGS,
+            JSON.stringify({ proxyUrl: "https://u:p@p.test/" }),
+        );
+
+        expect(loadSettings().proxyUrl).toBe("");
     });
 });
 

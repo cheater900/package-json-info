@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Reject CORS proxy URL with user:password so credentials never stored or echoed in fetch errors
 - Add Green/Light/System themes and font/padding scales to settings menu
 - Add settings gear menu for GitHub token and network, drop build-time VITE_GITHUB_TOKEN so bundle never carries token
 - Store GitHub token AES-GCM encrypted with non-extractable IndexedDB key, add rate limit check

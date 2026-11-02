@@ -7,14 +7,13 @@ import {
     SETTINGS_THEMES,
 } from "../constants";
 import { t } from "../i18n";
-import { githubToken, isSettingsInt, settings } from "../settings";
+import { githubToken, isProxyUrl, isSettingsInt, settings } from "../settings";
 import {
     isTokenStorageAvailable,
     purgeGithubToken,
     saveGithubToken,
 } from "../utils/githubTokenStorage";
 import { settle } from "../utils/settle";
-import { isHttpUrl } from "../utils/url";
 
 type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
 
@@ -75,7 +74,7 @@ export default defineComponent({
 
         function commitProxy(event: Event) {
             const value = (event.target as HTMLInputElement).value.trim();
-            if (value !== "" && !isHttpUrl(value)) {
+            if (!isProxyUrl(value)) {
                 networkErrors.proxyUrl = t("settings.network.invalidProxy");
                 return;
             }

@@ -150,6 +150,15 @@ describe("SettingsMenu network", () => {
         expect(wrapper.text()).toContain("Enter an http(s) URL");
     });
 
+    it("rejects proxy with credentials", async () => {
+        const wrapper = mountMenu();
+        const proxy = wrapper.find('input[type="url"]');
+
+        await proxy.setValue("https://u:p@p.test/");
+        expect(settings.proxyUrl).not.toContain("u:p@");
+        expect(proxy.attributes("aria-invalid")).toBe("true");
+    });
+
     it("commits valid int, rejects zero and fraction", async () => {
         const wrapper = mountMenu();
         const [timeout, concurrency] = wrapper.findAll('input[type="number"]');
