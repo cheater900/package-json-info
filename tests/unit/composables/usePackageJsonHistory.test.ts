@@ -365,6 +365,47 @@ describe("settings refetch", () => {
         expect(callsTo(fetchMock, REPO_API_URL)).toHaveLength(1);
     });
 
+    it("refetches entry whose load spanned token change", async () => {
+        let releaseGated = () => {};
+        const gate = new Promise<void>((resolve) => {
+            releaseGated = resolve;
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string, init: RequestInit = {}) => {
+                if (url.includes("api.github.com")) {
+                    return new Headers(init.headers).has("Authorization")
+                        ? jsonResponse({ stargazers_count: 7 })
+                        : statusResponse(HTTP_STATUS.forbidden);
+                }
+                const name = url.split("/").pop();
+                if (name === "gated-pkg") {
+                    await gate;
+                }
+                return jsonResponse({
+                    ...minimalRegistryDoc,
+                    repository: { url: `git+https://github.com/settings-org/${name}.git` },
+                });
+            }),
+        );
+        scope = effectScope();
+        const { loadPackageJsonText, goBack, deps } = scope.run(() =>
+            usePackageJsonHistory(ref(new Set(["gitStars"]))),
+        );
+        loadPackageJsonText(JSON.stringify({ dependencies: { "gated-pkg": "1.0.0" } }));
+        loadPackageJsonText(JSON.stringify({ dependencies: { "other-pkg": "1.0.0" } }));
+        await flushPromises();
+
+        githubToken.value = "abc";
+        await flushPromises();
+        releaseGated();
+        await flushPromises();
+        goBack();
+        await flushPromises();
+
+        expect(deps.value[0].gitStars).toBe(7);
+    });
+
     it("clears cache, refetches through new proxy", async () => {
         const fetchMock = stubGithubRateLimitedWithoutToken();
         loadInScope(["latestVersion"]);

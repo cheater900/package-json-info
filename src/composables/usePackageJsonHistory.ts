@@ -153,11 +153,13 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     /**
      * Drops every entry's column snapshot so each one refetches when shown,
      * then refetches the current one. Cells that failed earlier (rate limit,
-     * proxy) are cached as missing until then.
+     * proxy) are cached as missing until then. Fetches still in flight
+     * started under the old settings, so their results are discarded too.
      */
     function refetchAllEntries() {
         for (const entry of history.value) {
             entry.visibleColumnsSnapshot = null;
+            latestFetchByEntry.delete(toRaw(entry));
         }
         applyCurrentHistoryEntry();
     }
