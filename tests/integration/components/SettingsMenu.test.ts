@@ -123,6 +123,19 @@ describe("SettingsMenu token", () => {
     });
 });
 
+describe("SettingsMenu display", () => {
+    it("writes theme and scales to settings", async () => {
+        const wrapper = mountMenu();
+        const [theme, font, space] = wrapper.findAll("select");
+
+        await theme.setValue("light");
+        await font.setValue(1.25);
+        await space.setValue(0.75);
+
+        expect(settings).toMatchObject({ theme: "light", fontScale: 1.25, spaceScale: 0.75 });
+    });
+});
+
 describe("SettingsMenu network", () => {
     it("commits valid proxy, rejects non-http proxy", async () => {
         const wrapper = mountMenu();

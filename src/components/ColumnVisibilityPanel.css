@@ -23,7 +23,7 @@
     break-inside: avoid;
     display: flex;
     gap: 4px;
-    padding: 3px 0;
+    padding: calc(3px * var(--space-scale)) 0;
     white-space: nowrap;
 }
 

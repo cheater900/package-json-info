@@ -22,7 +22,7 @@
 
 .modal__close {
     font-size: 0.85rem;
-    padding: 4px 10px;
+    padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
     position: absolute;
     right: 8px;
     top: 8px;

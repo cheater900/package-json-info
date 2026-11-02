@@ -1,31 +1,43 @@
 :root {
-    --accent: #33ff66;
-    --accent-bg: rgba(51, 255, 102, 0.1);
-    --accent-border: rgba(51, 255, 102, 0.5);
-    --bg: #010401;
-    --border: #1e5c2e;
-    --code-bg: #0a1a0d;
-    --error: #ff5555;
+    /* light-dark(light, dark): Green theme is dark, Light is light, System
+       follows the OS through color-scheme. */
+    --accent: light-dark(#08752b, #33ff66);
+    --accent-bg: light-dark(rgba(8, 117, 43, 0.1), rgba(51, 255, 102, 0.1));
+    --accent-border: light-dark(rgba(8, 117, 43, 0.5), rgba(51, 255, 102, 0.5));
+    --bg: light-dark(#f7fbf7, #010401);
+    --border: light-dark(#8fbf9b, #1e5c2e);
+    --code-bg: light-dark(#e9f4eb, #0a1a0d);
+    --error: light-dark(#c62828, #ff5555);
+    --font-scale: 1;
     --heading: var(--mono);
     --mono: "Courier New", ui-monospace, Consolas, monospace;
     --sans: var(--mono);
-    --shadow: rgba(51, 255, 102, 0.15) 0 0 12px 0;
-    --text: #33ff66;
-    --text-h: #66ffa0;
+    --shadow: light-dark(rgba(8, 117, 43, 0.15), rgba(51, 255, 102, 0.15)) 0 0 12px 0;
+    --space-scale: 1;
+    --text: light-dark(#14592a, #33ff66);
+    --text-h: light-dark(#0b4320, #66ffa0);
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
     background: var(--bg);
     color: var(--text);
     color-scheme: dark;
-    font: 18px/145% var(--sans);
+    font: calc(18px * var(--font-scale)) / 145% var(--sans);
     font-synthesis: none;
     letter-spacing: 0.18px;
     text-rendering: optimizeLegibility;
-    text-shadow: 0 0 1px currentColor;
+    text-shadow: 0 0 1px light-dark(transparent, currentColor);
 
     @media (max-width: 1024px) {
-        font-size: 16px;
+        font-size: calc(16px * var(--font-scale));
     }
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+}
+
+:root[data-theme="system"] {
+    color-scheme: light dark;
 }
 
 body {
@@ -37,7 +49,7 @@ body::before {
     background: repeating-linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0px,
-        rgba(0, 0, 0, 0.15) 1px,
+        light-dark(transparent, rgba(0, 0, 0, 0.15)) 1px,
         rgba(0, 0, 0, 0) 2px
     );
     content: "";
@@ -60,12 +72,12 @@ h2 {
 }
 
 h1 {
-    font-size: 40px;
+    font-size: calc(40px * var(--font-scale));
     letter-spacing: 0;
     margin: 32px 0;
 
     @media (max-width: 1024px) {
-        font-size: 28px;
+        font-size: calc(28px * var(--font-scale));
         margin: 20px 0;
     }
 }
@@ -81,13 +93,13 @@ h1 {
 }
 
 h2 {
-    font-size: 24px;
+    font-size: calc(24px * var(--font-scale));
     letter-spacing: -0.24px;
     line-height: 118%;
     margin: 0 0 8px;
 
     @media (max-width: 1024px) {
-        font-size: 20px;
+        font-size: calc(20px * var(--font-scale));
     }
 }
 
@@ -102,9 +114,9 @@ code {
     color: var(--text-h);
     display: inline-flex;
     font-family: var(--mono);
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale));
     line-height: 135%;
-    padding: 4px 8px;
+    padding: calc(4px * var(--space-scale)) calc(8px * var(--space-scale));
 }
 
 #app {
@@ -126,7 +138,7 @@ code {
     border-bottom: 1px solid var(--border);
     display: flex;
     gap: 8px;
-    padding: 8px 12px;
+    padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
     text-align: left;
 }
 
@@ -140,7 +152,7 @@ code {
 
 .terminal-titlebar__path {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale));
     margin-left: 8px;
     opacity: 0.7;
 }

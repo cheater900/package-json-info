@@ -117,6 +117,28 @@
                     {{ error }}
                 </p>
             </fieldset>
+
+            <fieldset class="settings-menu__section">
+                <legend>{{ t("settings.display.legend") }}</legend>
+                <label :for="`${panelId}-theme`">{{ t("settings.display.theme") }}</label>
+                <select :id="`${panelId}-theme`" v-model="settings.theme">
+                    <option v-for="theme in themes" :key="theme" :value="theme">
+                        {{ t(`settings.display.themes.${theme}`) }}
+                    </option>
+                </select>
+                <label :for="`${panelId}-font`">{{ t("settings.display.fontSize") }}</label>
+                <select :id="`${panelId}-font`" v-model="settings.fontScale">
+                    <option v-for="scale in fontScales" :key="scale" :value="scale">
+                        {{ percent(scale) }}
+                    </option>
+                </select>
+                <label :for="`${panelId}-space`">{{ t("settings.display.padding") }}</label>
+                <select :id="`${panelId}-space`" v-model="settings.spaceScale">
+                    <option v-for="scale in spaceScales" :key="scale" :value="scale">
+                        {{ percent(scale) }}
+                    </option>
+                </select>
+            </fieldset>
         </div>
     </div>
 </template>

@@ -1,7 +1,13 @@
 import { reactive, shallowRef, watch } from "vue";
 import { z } from "zod";
 import { config } from "./config";
-import { MAX_CONFIG_INT, STORAGE_KEY_SETTINGS } from "./constants";
+import {
+    MAX_CONFIG_INT,
+    SETTINGS_FONT_SCALES,
+    SETTINGS_SPACE_SCALES,
+    SETTINGS_THEMES,
+    STORAGE_KEY_SETTINGS,
+} from "./constants";
 import { readStoredJson, writeStoredJson } from "./utils/storage";
 import { isHttpUrl } from "./utils/url";
 
@@ -11,7 +17,10 @@ export const SETTINGS_DEFAULTS = {
     proxyUrl: "",
     fetchTimeoutMs: config.fetchTimeoutMs,
     fetchConcurrency: config.fetchConcurrency,
-};
+    theme: SETTINGS_THEMES[0],
+    fontScale: 1,
+    spaceScale: 1,
+} as const;
 
 /** Each invalid or missing field falls back to its default on its own. */
 export const SettingsSchema = z
@@ -22,6 +31,9 @@ export const SettingsSchema = z
             .catch(SETTINGS_DEFAULTS.proxyUrl),
         fetchTimeoutMs: SettingsIntSchema.catch(SETTINGS_DEFAULTS.fetchTimeoutMs),
         fetchConcurrency: SettingsIntSchema.catch(SETTINGS_DEFAULTS.fetchConcurrency),
+        theme: z.enum(SETTINGS_THEMES).catch(SETTINGS_DEFAULTS.theme),
+        fontScale: z.literal(SETTINGS_FONT_SCALES).catch(SETTINGS_DEFAULTS.fontScale),
+        spaceScale: z.literal(SETTINGS_SPACE_SCALES).catch(SETTINGS_DEFAULTS.spaceScale),
     })
     .catch(() => ({ ...SETTINGS_DEFAULTS }));
 

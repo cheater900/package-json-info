@@ -84,3 +84,45 @@ test("verify shows remaining / limit", async ({ page }) => {
 
     await expect(page.getByRole("status")).toHaveText("4999 / 5000 requests left this hour");
 });
+
+function rootBackground(page: Page) {
+    return page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
+}
+
+test("Light theme changes background, persists across reload", async ({ page }) => {
+    await page.goto("/");
+    const greenBackground = await rootBackground(page);
+
+    await gear(page).click();
+    await page.getByLabel("Theme").selectOption("light");
+
+    const lightBackground = await rootBackground(page);
+    expect(lightBackground).not.toBe(greenBackground);
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    expect(await rootBackground(page)).toBe(lightBackground);
+});
+
+test("System theme follows OS color scheme", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/");
+    await gear(page).click();
+    await page.getByLabel("Theme").selectOption("light");
+    const lightBackground = await rootBackground(page);
+
+    await page.getByLabel("Theme").selectOption("system");
+    expect(await rootBackground(page)).toBe(lightBackground);
+
+    await page.emulateMedia({ colorScheme: "dark" });
+    expect(await rootBackground(page)).not.toBe(lightBackground);
+});
+
+test("font size scales root font", async ({ page }) => {
+    await page.goto("/");
+    await gear(page).click();
+
+    await page.getByLabel("Font size").selectOption("125%");
+
+    const fontSize = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+    expect(fontSize).toBe("22.5px");
+});

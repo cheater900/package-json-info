@@ -35,6 +35,17 @@
             "concurrency": "Parallel fetches per table",
             "invalidProxy": "Enter an http(s) URL, or leave empty.",
             "invalidInt": "Enter a whole number from 1 to 2147483647."
+        },
+        "display": {
+            "legend": "Display",
+            "theme": "Theme",
+            "themes": {
+                "green": "Green",
+                "light": "Light",
+                "system": "System"
+            },
+            "fontSize": "Font size",
+            "padding": "Padding"
         }
     },
     "input": {

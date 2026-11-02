@@ -7,7 +7,7 @@
     border: 1px solid var(--border, #1e5c2e);
     color: var(--text-h, #66ffa0);
     font-size: 0.8rem;
-    padding: 4px 8px;
+    padding: calc(4px * var(--space-scale)) calc(8px * var(--space-scale));
     pointer-events: none;
     position: fixed;
     white-space: nowrap;

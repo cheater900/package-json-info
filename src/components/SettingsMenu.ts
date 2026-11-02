@@ -1,6 +1,11 @@
 import { defineComponent, reactive, ref, useId } from "vue";
 import { fetchGithubRateLimit } from "../api/github";
-import { GITHUB_TOKEN_PATTERN } from "../constants";
+import {
+    GITHUB_TOKEN_PATTERN,
+    SETTINGS_FONT_SCALES,
+    SETTINGS_SPACE_SCALES,
+    SETTINGS_THEMES,
+} from "../constants";
 import { t } from "../i18n";
 import { githubToken, isSettingsInt, settings } from "../settings";
 import {
@@ -14,8 +19,9 @@ import { isHttpUrl } from "../utils/url";
 type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
 
 /**
- * Gear button opening a native popover with the GitHub token and network
- * settings. Network inputs commit on change, only when valid.
+ * Gear button opening a native popover with the GitHub token, network and
+ * display settings. Network inputs commit on change, only when valid;
+ * display selects write straight to `settings`.
  */
 export default defineComponent({
     setup() {
@@ -77,6 +83,10 @@ export default defineComponent({
             settings.proxyUrl = value;
         }
 
+        function percent(scale: number): string {
+            return `${Math.round(scale * 100)}%`;
+        }
+
         function commitInt(key: SettingsIntKey, event: Event) {
             const value = (event.target as HTMLInputElement).valueAsNumber;
             if (!isSettingsInt(value)) {
@@ -98,6 +108,10 @@ export default defineComponent({
             tokenDraft,
             tokenMessage,
             networkErrors,
+            themes: SETTINGS_THEMES,
+            fontScales: SETTINGS_FONT_SCALES,
+            spaceScales: SETTINGS_SPACE_SCALES,
+            percent,
             onToggle,
             saveToken,
             verifyToken,

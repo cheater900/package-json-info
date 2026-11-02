@@ -24,10 +24,6 @@ manager resolves it, to show the real footprint of a `package.json`.
   keyboard access for input controls, table rows, column drag and
   drill-down/history navigation.
 
-## Settings menu
-
-- Display section: theme, font size and padding
-
 ## Reliability
 
 - **Default branch for repo URL input**: only `main`/`master` are probed;

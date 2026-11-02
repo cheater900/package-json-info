@@ -1,5 +1,5 @@
 #app {
-    padding: 32px;
+    padding: calc(32px * var(--space-scale));
     text-align: left;
 }
 
@@ -18,14 +18,14 @@ textarea {
     color: var(--text-h, #66ffa0);
     display: block;
     font-family: var(--mono);
-    padding: 6px 10px;
+    padding: calc(6px * var(--space-scale)) calc(10px * var(--space-scale));
 }
 
 .banner {
     border-radius: 0;
     font-weight: 600;
     margin-bottom: 16px;
-    padding: 8px 12px;
+    padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
     word-wrap: break-word;
 }
 
@@ -92,7 +92,7 @@ textarea {
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
-    padding: 8px 0;
+    padding: calc(8px * var(--space-scale)) 0;
     position: sticky;
     top: 0;
     z-index: 2;
@@ -122,14 +122,14 @@ textarea {
 .accordion > summary {
     cursor: pointer;
     font-weight: 600;
-    padding: 8px 4px;
+    padding: calc(8px * var(--space-scale)) calc(4px * var(--space-scale));
 }
 
 .package-name {
     border-bottom: 1px solid var(--border, #e5e4e7);
     font-weight: 700;
     margin: 24px 0 12px;
-    padding-bottom: 8px;
+    padding-bottom: calc(8px * var(--space-scale));
 }
 
 .table-toolbar {
@@ -140,7 +140,7 @@ textarea {
 
 .table-toolbar__expand {
     font-size: 0.85rem;
-    padding: 4px 10px;
+    padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
 }
 
 .table-modal-content {
@@ -150,7 +150,8 @@ textarea {
     overflow: auto;
     /* Top padding clears Modal's floating close button, which otherwise
        sits directly over the table's top-right corner. */
-    padding: 40px 16px 16px;
+    padding: calc(40px * var(--space-scale)) calc(16px * var(--space-scale))
+        calc(16px * var(--space-scale));
 }
 
 button {
@@ -164,7 +165,7 @@ button {
     font-family: var(--mono);
     font-size: 0.95rem;
     gap: 6px;
-    padding: 6px 14px;
+    padding: calc(6px * var(--space-scale)) calc(14px * var(--space-scale));
     text-transform: uppercase;
 }
 
@@ -181,4 +182,10 @@ button:hover:not(:disabled) {
 button:disabled {
     cursor: not-allowed;
     opacity: 0.4;
+}
+
+/* vue-json-pretty's light-blue hover clashes with both themes. */
+.accordion .vjs-tree-node.is-highlight,
+.accordion .vjs-tree-node:hover {
+    background-color: var(--accent-bg);
 }

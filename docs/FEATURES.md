@@ -92,3 +92,5 @@ shows when a GitHub token is set.
 - **Network**: CORS proxy, request timeout and parallel fetches per table.
   A proxy containing `{url}` gets the encoded target URL there; otherwise
   the target URL is appended. Changing the proxy refetches the tables.
+- **Display**: theme (Green terminal, Light, or System to follow the OS),
+  font size (87.5% to 125%) and padding (75% to 125%).

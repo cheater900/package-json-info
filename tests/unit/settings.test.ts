@@ -23,12 +23,16 @@ describe("loadSettings", () => {
                 proxyUrl: "javascript:alert(1)",
                 fetchTimeoutMs: 1000,
                 fetchConcurrency: 2.5,
+                theme: "neon",
+                fontScale: 1.25,
+                spaceScale: 3,
             }),
         );
 
         expect(loadSettings()).toEqual({
             ...SETTINGS_DEFAULTS,
             fetchTimeoutMs: 1000,
+            fontScale: 1.25,
         });
     });
 

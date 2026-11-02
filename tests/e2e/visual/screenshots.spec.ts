@@ -1,5 +1,6 @@
 import { test } from "@playwright/test";
 import { mockExternalApis, loadJson, expandAllSections } from "../helpers";
+import { STORAGE_KEY_SETTINGS } from "../../../src/constants";
 
 /**
  * Not part of the regular e2e suite: the chromium project ignores visual/.
@@ -86,4 +87,12 @@ test("settings menu - gear dropdown open", async ({ page }) => {
     await page.getByRole("button", { name: "Open settings" }).click();
     await page.getByRole("dialog", { name: "Settings" }).waitFor();
     await page.screenshot({ path: "screenshots/09-settings-menu.png" });
+});
+
+test("light theme - default view", async ({ page }) => {
+    await page.addInitScript((key) => {
+        localStorage.setItem(key, JSON.stringify({ theme: "light" }));
+    }, STORAGE_KEY_SETTINGS);
+    await page.goto("/");
+    await page.screenshot({ path: "screenshots/10-light-theme.png", fullPage: true });
 });

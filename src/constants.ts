@@ -39,6 +39,10 @@ const STORAGE_KEY_NAMESPACE = "package-json-info";
 export const STORAGE_KEY_VISIBLE_COLUMNS = `${STORAGE_KEY_NAMESPACE}:visibleColumns`;
 export const STORAGE_KEY_COLUMN_ORDER = `${STORAGE_KEY_NAMESPACE}:columnOrder`;
 export const STORAGE_KEY_SHRINK_LABELS = `${STORAGE_KEY_NAMESPACE}:shrinkColumnLabels`;
+export const SETTINGS_THEMES = ["green", "light", "system"] as const;
+export const SETTINGS_FONT_SCALES = [0.875, 1, 1.125, 1.25] as const;
+export const SETTINGS_SPACE_SCALES = [0.75, 1, 1.25] as const;
+
 export const STORAGE_KEY_SETTINGS = `${STORAGE_KEY_NAMESPACE}:settings`;
 /** Encrypted GitHub token (IV + ciphertext); its AES key lives in IndexedDB. */
 export const STORAGE_KEY_GITHUB_TOKEN = `${STORAGE_KEY_NAMESPACE}:githubToken`;

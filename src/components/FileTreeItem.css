@@ -4,7 +4,7 @@
 
 .file-tree-item__children {
     margin: 0;
-    padding-left: 16px;
+    padding-left: calc(16px * var(--space-scale));
 }
 
 .file-tree-item__toggle,
@@ -17,13 +17,13 @@
     display: flex;
     font: inherit;
     gap: 4px;
-    padding: 2px 4px;
+    padding: calc(2px * var(--space-scale)) calc(4px * var(--space-scale));
     white-space: nowrap;
     width: 100%;
 }
 
 .file-tree-item__file {
-    padding-left: 20px;
+    padding-left: calc(20px * var(--space-scale));
 }
 
 .file-tree-item__toggle:hover,
