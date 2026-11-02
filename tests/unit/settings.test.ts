@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { nextTick } from "vue";
 import { STORAGE_KEY_SETTINGS } from "../../src/constants";
-import { SETTINGS_DEFAULTS, isProxyUrl, loadSettings, settings } from "../../src/settings";
+import {
+    SETTINGS_DEFAULTS,
+    isProxyUrl,
+    loadSettings,
+    resolveColorScheme,
+    settings,
+} from "../../src/settings";
 
 describe("loadSettings", () => {
     it("returns defaults when nothing stored", () => {
@@ -76,5 +82,18 @@ describe("settings", () => {
             ...SETTINGS_DEFAULTS,
             proxyUrl: "https://proxy.example/",
         });
+    });
+});
+
+describe("resolveColorScheme", () => {
+    it.each([
+        ["green", false, "dark"],
+        ["green", true, "dark"],
+        ["light", false, "light"],
+        ["light", true, "light"],
+        ["system", false, "dark"],
+        ["system", true, "light"],
+    ] as const)("%s theme, prefers light %s -> %s", (theme, prefersLight, expected) => {
+        expect(resolveColorScheme(theme, prefersLight)).toBe(expected);
     });
 });

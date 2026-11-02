@@ -1,21 +1,21 @@
 :root {
-    /* light-dark(light, dark): Green theme is dark, Light is light, System
-       follows the OS through color-scheme. */
-    --accent: light-dark(#08752b, #33ff66);
-    --accent-bg: light-dark(rgba(8, 117, 43, 0.1), rgba(51, 255, 102, 0.1));
-    --accent-border: light-dark(rgba(8, 117, 43, 0.5), rgba(51, 255, 102, 0.5));
-    --bg: light-dark(#f7fbf7, #010401);
-    --border: light-dark(#8fbf9b, #1e5c2e);
-    --code-bg: light-dark(#e9f4eb, #0a1a0d);
-    --error: light-dark(#c62828, #ff5555);
+    --accent: #33ff66;
+    --accent-bg: rgba(51, 255, 102, 0.1);
+    --accent-border: rgba(51, 255, 102, 0.5);
+    --bg: #010401;
+    --border: #1e5c2e;
+    --code-bg: #0a1a0d;
+    --error: #ff5555;
     --font-scale: 1;
+    --glow: currentColor;
     --heading: var(--mono);
     --mono: "Courier New", ui-monospace, Consolas, monospace;
     --sans: var(--mono);
-    --shadow: light-dark(rgba(8, 117, 43, 0.15), rgba(51, 255, 102, 0.15)) 0 0 12px 0;
+    --scanline: rgba(0, 0, 0, 0.15);
+    --shadow: rgba(51, 255, 102, 0.15) 0 0 12px 0;
     --space-scale: 1;
-    --text: light-dark(#14592a, #33ff66);
-    --text-h: light-dark(#0b4320, #66ffa0);
+    --text: #33ff66;
+    --text-h: #66ffa0;
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
     background: var(--bg);
@@ -25,19 +25,28 @@
     font-synthesis: none;
     letter-spacing: 0.18px;
     text-rendering: optimizeLegibility;
-    text-shadow: 0 0 1px light-dark(transparent, currentColor);
+    text-shadow: 0 0 1px var(--glow);
 
     @media (max-width: 1024px) {
         font-size: calc(16px * var(--font-scale));
     }
 }
 
-:root[data-theme="light"] {
+/* main.js resolves the Light theme, or System on a light OS, to this. */
+:root[data-color-scheme="light"] {
+    --accent: #08752b;
+    --accent-bg: rgba(8, 117, 43, 0.1);
+    --accent-border: rgba(8, 117, 43, 0.5);
+    --bg: #f7fbf7;
+    --border: #8fbf9b;
+    --code-bg: #e9f4eb;
+    --error: #c62828;
+    --glow: transparent;
+    --scanline: transparent;
+    --shadow: rgba(8, 117, 43, 0.15) 0 0 12px 0;
+    --text: #14592a;
+    --text-h: #0b4320;
     color-scheme: light;
-}
-
-:root[data-theme="system"] {
-    color-scheme: light dark;
 }
 
 body {
@@ -49,7 +58,7 @@ body::before {
     background: repeating-linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0px,
-        light-dark(transparent, rgba(0, 0, 0, 0.15)) 1px,
+        var(--scanline) 1px,
         rgba(0, 0, 0, 0) 2px
     );
     content: "";

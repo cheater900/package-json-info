@@ -64,3 +64,11 @@ watch(settings, (value) => writeStoredJson(STORAGE_KEY_SETTINGS, value), { deep:
 export const githubToken = shallowRef<string | undefined>();
 
 export type Settings = z.infer<typeof SettingsSchema>;
+
+/** Color scheme a theme renders with; "system" follows the OS preference. */
+export function resolveColorScheme(theme: Settings["theme"], prefersLight: boolean): ColorScheme {
+    const isLight = theme === "light" || (theme === "system" && prefersLight);
+    return isLight ? "light" : "dark";
+}
+
+export type ColorScheme = "light" | "dark";

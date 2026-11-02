@@ -62,10 +62,10 @@ IndexedDB database `package-json-info`. `main.js` decrypts it into memory
 before mounting the app, waiting at most `TOKEN_LOAD_TIMEOUT_MS` since
 IndexedDB can hang; a late token refetches the tables.
 
-`main.js` also mirrors the display settings onto `<html>`: `data-theme`
-picks the `color-scheme` that drives every `light-dark()` color in
-`style.css`, and `--font-scale` / `--space-scale` multiply font sizes and
-paddings.
+`main.js` also mirrors the display settings onto `<html>`. It resolves
+the theme to `data-color-scheme` (`light` or `dark`; System follows the OS
+`prefers-color-scheme`), which picks the color variables in `style.css`.
+`--font-scale` / `--space-scale` multiply font sizes and paddings.
 
 ## Translations
 

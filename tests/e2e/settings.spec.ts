@@ -130,7 +130,7 @@ test("System theme follows OS color scheme", async ({ page }) => {
     expect(await rootBackground(page)).toBe(lightBackground);
 
     await page.emulateMedia({ colorScheme: "dark" });
-    expect(await rootBackground(page)).not.toBe(lightBackground);
+    await expect.poll(() => rootBackground(page)).not.toBe(lightBackground);
 });
 
 test("font size scales root font", async ({ page }) => {
