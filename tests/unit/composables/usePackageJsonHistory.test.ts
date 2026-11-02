@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { effectScope, ref, nextTick } from "vue";
-import type { EffectScope } from "vue";
+import type { Ref } from "vue";
 import { flushPromises } from "@vue/test-utils";
 import { usePackageJsonHistory } from "../../../src/composables/usePackageJsonHistory";
 import { clearPackageInfoCache } from "../../../src/api/npmPackage";
@@ -23,8 +23,22 @@ const validPackageJson = JSON.stringify({
     devDependencies: {},
 });
 
+// Watchers on the global token and settings outlive a test unless stopped.
+let scope = effectScope();
+
+function useHistory(visibleColumns: Ref<ReadonlySet<string>>) {
+    return scope.run(() => usePackageJsonHistory(visibleColumns));
+}
+
 beforeEach(() => {
     clearPackageInfoCache();
+});
+
+afterEach(() => {
+    scope.stop();
+    scope = effectScope();
+    githubToken.value = undefined;
+    Object.assign(settings, SETTINGS_DEFAULTS);
 });
 
 describe("loadPackageJsonText", () => {
@@ -32,7 +46,7 @@ describe("loadPackageJsonText", () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
         const { loadPackageJsonText, pkg, history, historyIndex, loadError } =
-            usePackageJsonHistory(visibleColumns);
+            useHistory(visibleColumns);
 
         const result = loadPackageJsonText(validPackageJson);
 
@@ -45,8 +59,7 @@ describe("loadPackageJsonText", () => {
 
     it("sets loadError, keeps state for invalid JSON", () => {
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, pkg, history, loadError } =
-            usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, pkg, history, loadError } = useHistory(visibleColumns);
 
         const result = loadPackageJsonText("{not valid json");
 
@@ -58,7 +71,7 @@ describe("loadPackageJsonText", () => {
 
     it("sets loadError for non-object JSON", () => {
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, loadError } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, loadError } = useHistory(visibleColumns);
 
         const result = loadPackageJsonText("[]");
 
@@ -68,8 +81,7 @@ describe("loadPackageJsonText", () => {
 
     it("sets loadError, keeps state for non-string dependency version", () => {
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, pkg, history, loadError } =
-            usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, pkg, history, loadError } = useHistory(visibleColumns);
 
         const result = loadPackageJsonText(JSON.stringify({ dependencies: { "left-pad": 1 } }));
 
@@ -82,7 +94,7 @@ describe("loadPackageJsonText", () => {
     it("clears previous loadError on successful load", () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, loadError } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, loadError } = useHistory(visibleColumns);
 
         loadPackageJsonText("{not valid json");
         expect(loadError.value).not.toBe(null);
@@ -94,7 +106,7 @@ describe("loadPackageJsonText", () => {
     it("fetches and populates deps for new entry", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, deps, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, deps, isLoadingDeps } = useHistory(visibleColumns);
 
         loadPackageJsonText(validPackageJson);
         expect(isLoadingDeps.value).toBe(true);
@@ -107,7 +119,7 @@ describe("loadPackageJsonText", () => {
 
 describe("history navigation", () => {
     async function loadTwoEntries(visibleColumns) {
-        const composable = usePackageJsonHistory(visibleColumns);
+        const composable = useHistory(visibleColumns);
         composable.loadPackageJsonText(JSON.stringify({ name: "first" }));
         await vi.waitFor(() => expect(composable.isLoadingDeps.value).toBe(false));
         composable.loadPackageJsonText(JSON.stringify({ name: "second" }));
@@ -172,7 +184,7 @@ describe("reacting to visibleColumns changes", () => {
     it("re-fetches current entry on visibleColumns change", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, isLoadingDeps } = useHistory(visibleColumns);
 
         loadPackageJsonText(validPackageJson);
         await vi.waitFor(() => expect(isLoadingDeps.value).toBe(false));
@@ -218,7 +230,7 @@ describe("async fetch ordering", () => {
     it("ignores late result of entry replaced at same index", async () => {
         const release = deferredFetch();
         const visibleColumns = ref(new Set(["weeklyDownloads"]));
-        const { loadPackageJsonText, goBack, deps } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, goBack, deps } = useHistory(visibleColumns);
         loadPackageJsonText(packageJsonWith("first"));
         await release("/first", { downloads: 1 });
         loadPackageJsonText(packageJsonWith("slow"));
@@ -235,7 +247,7 @@ describe("async fetch ordering", () => {
     it("keeps newest fetch when older fetch of same entry finishes later", async () => {
         const release = deferredFetch();
         const visibleColumns = ref(new Set(["vulnerabilityCount"]));
-        const { loadPackageJsonText, deps, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, deps, isLoadingDeps } = useHistory(visibleColumns);
         loadPackageJsonText(packageJsonWith("pkg"));
         visibleColumns.value = new Set(["weeklyDownloads"]);
         await nextTick();
@@ -251,7 +263,7 @@ describe("async fetch ordering", () => {
     it("clears previous rows from list with nothing to fetch", async () => {
         const release = deferredFetch();
         const visibleColumns = ref(new Set(["weeklyDownloads"]));
-        const { loadPackageJsonText, deps, isLoadingDeps } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, deps, isLoadingDeps } = useHistory(visibleColumns);
         loadPackageJsonText(packageJsonWith("first"));
         await release("/first", { downloads: 1 });
 
@@ -268,7 +280,7 @@ describe("async fetch ordering", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
         const visibleColumns = ref(new Set(["latestVersion"]));
-        const { loadPackageJsonText, goBack, deps } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, goBack, deps } = useHistory(visibleColumns);
         loadPackageJsonText(packageJsonWith("broken"));
         await flushPromises();
         loadPackageJsonText(packageJsonWith("other"));
@@ -285,7 +297,7 @@ describe("async fetch ordering", () => {
     it("clears load error on back navigation", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
-        const { loadPackageJsonText, goBack, loadError } = usePackageJsonHistory(visibleColumns);
+        const { loadPackageJsonText, goBack, loadError } = useHistory(visibleColumns);
         loadPackageJsonText(packageJsonWith("a"));
         loadPackageJsonText(packageJsonWith("b"));
         loadPackageJsonText("{bad");
@@ -297,11 +309,8 @@ describe("async fetch ordering", () => {
 });
 
 describe("settings refetch", () => {
-    // Unique name: composables from earlier tests are never stopped and
-    // still react to settings changes.
     const PACKAGE_NAME = "settings-refetch-pkg";
     const REPO_API_URL = "https://api.github.com/repos/settings-org/settings-repo";
-    let scope: EffectScope;
 
     /** Registry doc for every URL; GitHub answers 403 (rate limit) unless authorized. */
     function stubGithubRateLimitedWithoutToken() {
@@ -322,8 +331,7 @@ describe("settings refetch", () => {
     }
 
     function loadInScope(columns: string[]) {
-        scope = effectScope();
-        const history = scope.run(() => usePackageJsonHistory(ref(new Set(columns))));
+        const history = useHistory(ref(new Set(columns)));
         history.loadPackageJsonText(JSON.stringify({ dependencies: { [PACKAGE_NAME]: "1.0.0" } }));
         return history;
     }
@@ -331,12 +339,6 @@ describe("settings refetch", () => {
     function callsTo(fetchMock: ReturnType<typeof vi.fn>, fragment: string) {
         return fetchMock.mock.calls.filter(([url]) => url.includes(fragment));
     }
-
-    afterEach(() => {
-        scope.stop();
-        githubToken.value = undefined;
-        Object.assign(settings, SETTINGS_DEFAULTS);
-    });
 
     it("refetches with Authorization after token set", async () => {
         const fetchMock = stubGithubRateLimitedWithoutToken();
@@ -388,10 +390,7 @@ describe("settings refetch", () => {
                 });
             }),
         );
-        scope = effectScope();
-        const { loadPackageJsonText, goBack, deps } = scope.run(() =>
-            usePackageJsonHistory(ref(new Set(["gitStars"]))),
-        );
+        const { loadPackageJsonText, goBack, deps } = useHistory(ref(new Set(["gitStars"])));
         loadPackageJsonText(JSON.stringify({ dependencies: { "gated-pkg": "1.0.0" } }));
         loadPackageJsonText(JSON.stringify({ dependencies: { "other-pkg": "1.0.0" } }));
         await flushPromises();
