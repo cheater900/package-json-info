@@ -37,7 +37,7 @@ export const SETTINGS_DEFAULTS = {
 } as const;
 
 /** Each invalid or missing field falls back to its default on its own. */
-export const SettingsSchema = z
+const SettingsSchema = z
     .object({
         proxyUrl: z.string().refine(isProxyUrl).catch(SETTINGS_DEFAULTS.proxyUrl),
         fetchTimeoutMs: SettingsIntSchema.catch(SETTINGS_DEFAULTS.fetchTimeoutMs),

@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Unexport SettingsSchema and IndexedDB request helpers used only in their own module
 - Share IndexedDB stub, settings reset, GitHub token and rate limit fixtures, fetchCallsTo across tests
 - Name main.js startup steps instead of comments, move timer promise to delay util
 - Share token purge-and-forget step in settings menu, move percent formatter to utils with NUMBER_LOCALE

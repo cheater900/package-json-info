@@ -1,5 +1,5 @@
 /** Resolves with the request's result once it succeeds, rejects with its error. */
-export function requestResult<T>(request: IDBRequest<T>): Promise<T> {
+function requestResult<T>(request: IDBRequest<T>): Promise<T> {
     return new Promise((resolve, reject) => {
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
@@ -10,7 +10,7 @@ export function requestResult<T>(request: IDBRequest<T>): Promise<T> {
  * Resolves once the transaction commits. A write is durable only then:
  * quota or disk errors abort the transaction after its request succeeded.
  */
-export function transactionCommitted(transaction: IDBTransaction): Promise<void> {
+function transactionCommitted(transaction: IDBTransaction): Promise<void> {
     return new Promise((resolve, reject) => {
         transaction.oncomplete = () => resolve();
         transaction.onabort = () => reject(transaction.error);
