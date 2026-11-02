@@ -43,6 +43,10 @@ export default defineComponent({
             }
             const result = await settle(() => saveGithubToken(token));
             if (!result.ok) {
+                // A half-done save leaves the old ciphertext beside the new
+                // key; drop both so memory matches what a reload would find.
+                await purgeGithubToken();
+                githubToken.value = undefined;
                 tokenMessage.value = t("settings.token.saveFailed");
                 return;
             }

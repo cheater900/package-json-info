@@ -18,7 +18,7 @@
             "saved": "Token saved.",
             "purged": "Token purged.",
             "invalidFormat": "A token has only letters, digits and underscores.",
-            "saveFailed": "Could not store the token in this browser.",
+            "saveFailed": "Could not store the token in this browser. Any stored token was removed.",
             "verifying": "Verifying…",
             "rateLimit": "{remaining} / {limit} requests left this hour",
             "invalid": "GitHub rejected this token: invalid or expired.",

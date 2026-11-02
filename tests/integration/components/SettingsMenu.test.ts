@@ -71,6 +71,20 @@ describe("SettingsMenu token", () => {
         expect(wrapper.text()).toContain("Token saved.");
     });
 
+    it("purges old token when save fails midway", async () => {
+        const wrapper = mountMenu();
+        await saveToken(wrapper, TOKEN);
+        vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+            throw new DOMException("quota", "QuotaExceededError");
+        });
+
+        await saveToken(wrapper, "github_pat_other");
+        await vi.waitFor(() => expect(wrapper.text()).toContain("Any stored token was removed."));
+
+        expect(githubToken.value).toBeUndefined();
+        expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
+    });
+
     it("purges token, focuses token input", async () => {
         const wrapper = mountMenu();
         await saveToken(wrapper, TOKEN);

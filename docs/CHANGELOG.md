@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Purge token on failed save so half-written key and stale ciphertext can't silently drop it on reload
 - Keep stored token when IndexedDB fails on load, purge only for corrupt data or lost key
 - Wait for IndexedDB commit before token save resolves so aborted key write never reports saved
 - Mount app after 2 s even if IndexedDB token load hangs, apply late token via refetch
