@@ -26,6 +26,8 @@ export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 /** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
 export const MAX_CONFIG_INT = 2 ** 31 - 1;
 export const HTTP_NOT_FOUND = 404;
+/** Marks where a CORS proxy template puts the encoded target URL; without it the proxy is a prefix. */
+export const PROXY_URL_PLACEHOLDER = "{url}";
 /** Delay before mirroring the URL input into the address bar; browsers throttle replaceState. */
 export const URL_SYNC_DEBOUNCE_MS = 300;
 
@@ -33,6 +35,7 @@ const STORAGE_KEY_NAMESPACE = "package-json-info";
 export const STORAGE_KEY_VISIBLE_COLUMNS = `${STORAGE_KEY_NAMESPACE}:visibleColumns`;
 export const STORAGE_KEY_COLUMN_ORDER = `${STORAGE_KEY_NAMESPACE}:columnOrder`;
 export const STORAGE_KEY_SHRINK_LABELS = `${STORAGE_KEY_NAMESPACE}:shrinkColumnLabels`;
+export const STORAGE_KEY_SETTINGS = `${STORAGE_KEY_NAMESPACE}:settings`;
 
 export const INPUT_URL_QUERY_PARAM = "inputUrl";
 

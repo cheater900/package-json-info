@@ -8,6 +8,7 @@
 | `src/App.vue`, `src/App.ts` | Root component: input controls, tables, history controls, shared modal.  |
 | `src/constants.ts`          | API base URLs, supported repo hosts, storage keys, display constants.    |
 | `src/config.ts`             | Developer settings read from `.env` (see Configuration below).           |
+| `src/settings.ts`           | User settings store, validated with Zod and persisted to `localStorage`. |
 | `src/types.ts`              | Shared `PackageInfo` / `PackageInput` / `PackageError` types.            |
 | `src/i18n/`                 | `t()` message lookup. UI text lives in `locales/en.json`.                |
 | `src/api/`                  | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees. |
@@ -42,17 +43,19 @@ privileged token into a build you publish.
 - `VITE_GITHUB_TOKEN`: GitHub personal access token with no scopes. It raises
   the GitHub API rate limit from 60 to 5000 requests per hour. Leave it empty
   to call GitHub anonymously.
-- `VITE_FETCH_CONCURRENCY`: number of packages fetched in parallel per table.
-  Defaults to 5.
-- `VITE_FETCH_TIMEOUT_MS`: milliseconds before a network request is aborted.
-  Defaults to 30000.
+- `VITE_FETCH_CONCURRENCY`: default number of packages fetched in parallel
+  per table. Defaults to 5.
+- `VITE_FETCH_TIMEOUT_MS`: default milliseconds before a network request is
+  aborted. Defaults to 30000.
 
 Numeric settings must be positive integers up to 2147483647, the largest
 delay browser timers support. Any other value logs a warning in the browser
 console and falls back to the default.
 
 Column visibility, column order and the "shrink columns" toggle are user
-settings. The app stores them in `localStorage`.
+settings. The app stores them in `localStorage`. So does `src/settings.ts`:
+CORS proxy, fetch timeout and concurrency. The `.env` values only seed the
+defaults for timeout and concurrency.
 
 ## Translations
 

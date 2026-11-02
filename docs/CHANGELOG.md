@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Route fetch timeout, concurrency and CORS proxy through persisted settings store
 - Remove unused Vite scaffold styles
 - Move remaining TODO items (reliability, i18n, tests) into ROADMAP, detail settings token scope
 - Document test helper layout, docs folder and vitest auto-restore in DEVELOPMENT

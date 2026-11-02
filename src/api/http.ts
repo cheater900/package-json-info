@@ -1,6 +1,6 @@
-import { config } from "../config";
-import { HTTP_NOT_FOUND } from "../constants";
+import { HTTP_NOT_FOUND, PROXY_URL_PLACEHOLDER } from "../constants";
 import { t } from "../i18n";
+import { settings } from "../settings";
 
 export type HttpHeaders = Record<string, string>;
 
@@ -18,9 +18,31 @@ export class HttpError extends Error {
     }
 }
 
-/** `fetch` aborted after `config.fetchTimeoutMs`, so a stalled server can't hang the app. */
+/**
+ * Routes `url` through the CORS proxy template: `{url}` is replaced by the
+ * encoded target, otherwise the target is appended. Empty proxy = no proxy.
+ */
+export function proxiedUrl(url: string, proxy: string = settings.proxyUrl): string {
+    if (!proxy) {
+        return url;
+    }
+    if (!proxy.includes(PROXY_URL_PLACEHOLDER)) {
+        return proxy + url;
+    }
+    return proxy.replace(PROXY_URL_PLACEHOLDER, encodeURIComponent(url));
+}
+
+/**
+ * `fetch` aborted after `settings.fetchTimeoutMs`, so a stalled server can't
+ * hang the app. Goes through the proxy unless it carries an Authorization
+ * header: a token must only ever reach its own API host.
+ */
 export function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
-    return fetch(url, { ...init, signal: AbortSignal.timeout(config.fetchTimeoutMs) });
+    const isAuthorized = new Headers(init.headers).has("Authorization");
+    return fetch(isAuthorized ? url : proxiedUrl(url), {
+        ...init,
+        signal: AbortSignal.timeout(settings.fetchTimeoutMs),
+    });
 }
 
 /**

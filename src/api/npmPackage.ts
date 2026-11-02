@@ -1,5 +1,4 @@
 import type { DependencyRow, PackageInfo, PackageInput, SourceTreeRef } from "../types";
-import { config } from "../config";
 import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_HOST,
@@ -20,6 +19,7 @@ import { settle } from "../utils/settle";
 import { isHttpUrl } from "../utils/url";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
+import { settings } from "../settings";
 import { fetchJson } from "./http";
 import type { HttpHeaders } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
@@ -255,7 +255,7 @@ export async function fetchPackagesInfo(
     packages: PackageInput[],
     options: FetchPackagesOptions = {},
 ): Promise<DependencyRow[]> {
-    const { concurrency = config.fetchConcurrency, ...fetchOptions } = options;
+    const { concurrency = settings.fetchConcurrency, ...fetchOptions } = options;
     const results = Array.from<DependencyRow>({ length: packages.length });
     let nextIndex = 0;
 
