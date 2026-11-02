@@ -56,8 +56,13 @@ export default defineComponent({
         }
 
         async function verifyToken() {
+            const token = githubToken.value;
             tokenMessage.value = t("settings.token.verifying");
-            const result = await settle(() => fetchGithubRateLimit(githubToken.value));
+            const result = await settle(() => fetchGithubRateLimit(token));
+            // Saved or purged meanwhile: this answer is about another token.
+            if (githubToken.value !== token) {
+                return;
+            }
             if (!result.ok) {
                 tokenMessage.value = t("settings.token.verifyFailed", {
                     error: result.error.message,

@@ -121,6 +121,30 @@ describe("SettingsMenu token", () => {
         expect(wrapper.text()).toContain("4999 / 5000");
     });
 
+    it("drops verify result arriving after purge", async () => {
+        let answerVerify = () => {};
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        answerVerify = () =>
+                            resolve(jsonResponse({ rate: { limit: 5000, remaining: 4999 } }));
+                    }),
+            ),
+        );
+        const wrapper = mountMenu();
+        await saveToken(wrapper, TOKEN);
+
+        await button(wrapper, "Verify").trigger("click");
+        await button(wrapper, "Purge").trigger("click");
+        await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
+        answerVerify();
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("Token purged.");
+    });
+
     it("shows invalid on verify 401", async () => {
         vi.stubGlobal(
             "fetch",
