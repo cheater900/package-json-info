@@ -2,12 +2,7 @@ import { ref, computed, watch, defineComponent } from "vue";
 import type { PropType } from "vue";
 import { t } from "../i18n";
 import draggable from "vuedraggable";
-import {
-    DEFAULT_COLUMN_ORDER,
-    NAME_COLUMN_KEY,
-    abbreviateLabel,
-    toggleableColumnsFor,
-} from "../utils/tableColumns";
+import { DEFAULT_COLUMN_ORDER, NAME_COLUMN_KEY, toggleableColumnsFor } from "../utils/tableColumns";
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyRow, SortDirection } from "../types";
 import { filterRowsByName, fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
@@ -74,7 +69,7 @@ export default defineComponent({
         );
 
         function labelFor(col: ColumnDef) {
-            return props.shrinkLabels ? abbreviateLabel(col.label) : col.label;
+            return props.shrinkLabels ? col.abbreviation : col.label;
         }
 
         function titleFor(col: ColumnDef) {

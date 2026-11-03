@@ -13,6 +13,11 @@
     --heading: var(--mono);
     --modal-content-padding: calc(16px * var(--space-scale));
     --mono: "Courier New", ui-monospace, Consolas, monospace;
+    /* Monospace for <pre>, distinct from Courier New of --mono body text.
+       No Liberation Mono: Linux aliases Courier New to it. */
+    --mono-code:
+        ui-monospace, Menlo, "Cascadia Mono", Consolas, "DejaVu Sans Mono", "Noto Sans Mono",
+        monospace;
     --sans: var(--mono);
     --scanline: rgba(0, 0, 0, 0.15);
     --shadow: rgba(51, 255, 102, 0.15) 0 0 12px 0;

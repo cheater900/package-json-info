@@ -1008,8 +1008,9 @@ test("shrink columns shows initials with full-name tooltip, persists across relo
     await versionDateLabel.hover();
     await expect(page.getByRole("tooltip", { name: "Version Date" })).toBeVisible();
 
-    // ...but a single-word label like "Outdated" is left untouched.
-    await expect(depsTable.getByRole("columnheader", { name: "Outdated" })).toBeVisible();
+    // ...single-word labels use set abbreviations.
+    await expect(depsTable.locator(".deps-table__col-label", { hasText: "DPT" })).toBeVisible();
+    await expect(depsTable.getByRole("columnheader", { name: "Deprecated" })).toHaveCount(0);
 
     await page.reload();
     await expandAllSections(page);

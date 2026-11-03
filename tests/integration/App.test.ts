@@ -71,7 +71,12 @@ describe("App", () => {
         const wrapper = await mountApp();
 
         const summaries = wrapper.findAll("details.accordion summary").map((s) => s.text());
-        expect(summaries).toEqual(["Columns", "Deps", "Dev Deps", "File package.json"]);
+        expect(summaries).toEqual([
+            "Columns",
+            "Deps",
+            "Dev Deps",
+            "package.json of package-json-info",
+        ]);
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
     });
 
@@ -198,7 +203,7 @@ describe("App", () => {
         expect(tables[0].props("isLoading")).toBe(false);
     });
 
-    it("names export after package.json for package without name", async () => {
+    it("names export + package.json accordion plain package.json for package without name", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (url: string) =>
@@ -215,6 +220,7 @@ describe("App", () => {
         await wrapper.find("button.table-actions__export").trigger("click");
 
         expect(wrapper.findComponent(ExportDialog).props("title")).toBe("package.json");
+        expect(wrapper.findAll("details.accordion summary").at(-1)!.text()).toBe("package.json");
     });
 
     describe("retry", () => {

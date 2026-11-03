@@ -20,6 +20,11 @@ function lookup(key: string): string | undefined {
     return typeof node === "string" ? node : undefined;
 }
 
+/** Whether a message exists for `key`, for optional messages with a fallback. */
+export function hasMessage(key: string): boolean {
+    return lookup(key) !== undefined;
+}
+
 /**
  * Translates a dotted message key (e.g. "errors.fileRead"), filling
  * `{name}` placeholders from `params`. Unknown keys return the key itself,

@@ -165,6 +165,7 @@ textarea {
 
 .inline-pre {
     display: inline;
+    font-family: var(--mono-code);
     margin: 0;
     white-space: pre-wrap;
 }

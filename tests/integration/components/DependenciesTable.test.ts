@@ -430,19 +430,20 @@ describe("DependenciesTable column labels", () => {
         const labels = headerLabels(wrapper);
         expect(labels).toContain("VD"); // Version Date
         expect(labels).toContain("LRD"); // Latest release date
+        expect(labels).toContain("OTD"); // Outdated, from columnAbbreviations
         expect(labels).not.toContain("Version Date");
         expect(labels).not.toContain("Latest release date");
     });
 
-    it("leaves single-word label unabbreviated with shrinkLabels true", () => {
+    it("keeps Name label with shrinkLabels true", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
 
-        expect(headerLabels(wrapper)).toContain("Deprecated");
+        expect(headerLabels(wrapper)[0]).toBe("Name");
     });
 
-    it("sets tooltip only for abbreviated labels", () => {
+    it("sets full label tooltip for abbreviated labels", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
@@ -457,7 +458,7 @@ describe("DependenciesTable column labels", () => {
                 )!;
 
         expect(tooltipFor("VD").props("text")).toBe("Version Date");
-        expect(tooltipFor("Deprecated").props("text")).toBe("");
+        expect(tooltipFor("DPT").props("text")).toBe("Deprecated");
     });
 });
 

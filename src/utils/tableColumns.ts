@@ -1,8 +1,10 @@
-import { t } from "../i18n";
+import { hasMessage, t } from "../i18n";
 
 export type ColumnDef = {
     key: string;
     label: string;
+    // Short header label for the "shrink columns by abbreviation" preference.
+    abbreviation: string;
     sortable: boolean;
     // How this column's cell content renders. Omitted means plain formatted
     // text (see formatCell). DependenciesTable dispatches on this instead of
@@ -18,7 +20,7 @@ export type ColumnDef = {
 /** The row's identity column: always shown, left-aligned, not draggable. */
 export const NAME_COLUMN_KEY = "name";
 
-const COLUMN_SPECS: Omit<ColumnDef, "label">[] = [
+const COLUMN_SPECS: Omit<ColumnDef, "label" | "abbreviation">[] = [
     { key: NAME_COLUMN_KEY, sortable: true },
     { key: "version", sortable: false },
     { key: "versionDate", sortable: true },
@@ -43,10 +45,16 @@ const COLUMN_SPECS: Omit<ColumnDef, "label">[] = [
     { key: "maintainers", sortable: false, truncatable: true },
 ];
 
-export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = COLUMN_SPECS.map((spec) => ({
-    ...spec,
-    label: t(`columns.${spec.key}`),
-}));
+/** Abbreviation from `columnAbbreviations` messages, else label initials. */
+function abbreviationFor(key: string, label: string): string {
+    const abbreviationKey = `columnAbbreviations.${key}`;
+    return hasMessage(abbreviationKey) ? t(abbreviationKey) : abbreviateLabel(label);
+}
+
+export const DEPENDENCY_TABLE_COLUMNS: ColumnDef[] = COLUMN_SPECS.map((spec) => {
+    const label = t(`columns.${spec.key}`);
+    return { ...spec, label, abbreviation: abbreviationFor(spec.key, label) };
+});
 
 /** Never tracked in a visibleColumns set; isColumnVisible treats them as visible. */
 const ALWAYS_VISIBLE_COLUMNS = new Set([NAME_COLUMN_KEY]);

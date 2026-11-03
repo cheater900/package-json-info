@@ -91,7 +91,8 @@
         "columns": "Columns",
         "deps": "Deps",
         "devDeps": "Dev Deps",
-        "file": "File",
+        "packageJson": "package.json",
+        "packageJsonOf": "package.json of",
         "showingDependenciesFor": "Showing dependencies for",
         "loading": "(loading…)",
         "expandTable": "Expand table",
@@ -121,6 +122,21 @@
         "vulnerabilityCount": "Vulnerabilities",
         "bundleSizeGzip": "Bundle size (gzip)",
         "maintainers": "Maintainers"
+    },
+    "columnAbbreviations": {
+        "version": "V",
+        "isOutdated": "OTD",
+        "healthScore": "HP",
+        "weeklyDownloads": "WDL",
+        "openPRs": "OPR",
+        "closedPRs": "CPR",
+        "openIssues": "OIS",
+        "closedIssues": "CIS",
+        "dependencies": "DEPS",
+        "license": "LS",
+        "deprecated": "DPT",
+        "vulnerabilityCount": "VNL",
+        "maintainers": "MNT"
     },
     "table": {
         "loading": "Loading…",

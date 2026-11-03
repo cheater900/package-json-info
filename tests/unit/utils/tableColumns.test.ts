@@ -236,6 +236,52 @@ describe("abbreviateLabel", () => {
     });
 });
 
+describe("DEPENDENCY_TABLE_COLUMNS abbreviation", () => {
+    const abbreviationOf = (key: string) =>
+        DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === key)?.abbreviation;
+
+    it("uses columnAbbreviations message where set", () => {
+        expect(
+            Object.fromEntries(
+                [
+                    "maintainers",
+                    "vulnerabilityCount",
+                    "dependencies",
+                    "license",
+                    "deprecated",
+                    "healthScore",
+                    "weeklyDownloads",
+                    "isOutdated",
+                    "version",
+                    "openPRs",
+                    "closedPRs",
+                    "openIssues",
+                    "closedIssues",
+                ].map((key) => [key, abbreviationOf(key)]),
+            ),
+        ).toEqual({
+            maintainers: "MNT",
+            vulnerabilityCount: "VNL",
+            dependencies: "DEPS",
+            license: "LS",
+            deprecated: "DPT",
+            healthScore: "HP",
+            weeklyDownloads: "WDL",
+            isOutdated: "OTD",
+            version: "V",
+            openPRs: "OPR",
+            closedPRs: "CPR",
+            openIssues: "OIS",
+            closedIssues: "CIS",
+        });
+    });
+
+    it("falls back to label initials", () => {
+        expect(abbreviationOf("versionDate")).toBe("VD");
+        expect(abbreviationOf("sourceCodeTree")).toBe("SCT");
+    });
+});
+
 describe("toggleableColumnsFor", () => {
     it("returns column defs in key order, drops unknown and Name keys", () => {
         const keys = toggleableColumnsFor(["license", "nope", "name", "version"]).map((c) => c.key);

@@ -174,8 +174,11 @@
         </details>
         <details class="accordion accordion--boxed" open>
             <summary>
-                {{ t("sections.file") }}
-                <pre class="inline-pre">package.json</pre>
+                <template v-if="pkg?.name">
+                    {{ t("sections.packageJsonOf") }}
+                    <pre class="inline-pre">{{ pkg.name }}</pre>
+                </template>
+                <template v-else>{{ t("sections.packageJson") }}</template>
             </summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
