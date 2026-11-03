@@ -241,44 +241,33 @@ describe("DEPENDENCY_TABLE_COLUMNS abbreviation", () => {
         DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === key)?.abbreviation;
 
     it("uses columnAbbreviations message where set", () => {
-        expect(
-            Object.fromEntries(
-                [
-                    "maintainers",
-                    "vulnerabilityCount",
-                    "dependencies",
-                    "license",
-                    "deprecated",
-                    "healthScore",
-                    "weeklyDownloads",
-                    "isOutdated",
-                    "version",
-                    "openPRs",
-                    "closedPRs",
-                    "openIssues",
-                    "closedIssues",
-                ].map((key) => [key, abbreviationOf(key)]),
-            ),
-        ).toEqual({
-            maintainers: "MNT",
-            vulnerabilityCount: "VNL",
-            dependencies: "DEPS",
-            license: "LS",
-            deprecated: "DPT",
-            healthScore: "HP",
+        const expected = {
+            version: "VER",
+            isOutdated: "OOD",
+            healthScore: "HS",
             weeklyDownloads: "WDL",
-            isOutdated: "OTD",
-            version: "V",
+            sourceCode: "SRC",
+            sourceCodeTree: "TREE",
+            gitStars: "STAR",
             openPRs: "OPR",
             closedPRs: "CPR",
             openIssues: "OIS",
             closedIssues: "CIS",
-        });
+            dependencies: "DEPS",
+            license: "LIC",
+            deprecated: "DEPR",
+            vulnerabilityCount: "VULN",
+            bundleSizeGzip: "GZIP",
+            maintainers: "MAINT",
+        };
+        expect(
+            Object.fromEntries(Object.keys(expected).map((key) => [key, abbreviationOf(key)])),
+        ).toEqual(expected);
     });
 
     it("falls back to label initials", () => {
         expect(abbreviationOf("versionDate")).toBe("VD");
-        expect(abbreviationOf("sourceCodeTree")).toBe("SCT");
+        expect(abbreviationOf("latestReleaseDate")).toBe("LRD");
     });
 });
 

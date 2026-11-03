@@ -124,19 +124,23 @@
         "maintainers": "Maintainers"
     },
     "columnAbbreviations": {
-        "version": "V",
-        "isOutdated": "OTD",
-        "healthScore": "HP",
+        "version": "VER",
+        "isOutdated": "OOD",
+        "healthScore": "HS",
         "weeklyDownloads": "WDL",
+        "sourceCode": "SRC",
+        "sourceCodeTree": "TREE",
+        "gitStars": "STAR",
         "openPRs": "OPR",
         "closedPRs": "CPR",
         "openIssues": "OIS",
         "closedIssues": "CIS",
         "dependencies": "DEPS",
-        "license": "LS",
-        "deprecated": "DPT",
-        "vulnerabilityCount": "VNL",
-        "maintainers": "MNT"
+        "license": "LIC",
+        "deprecated": "DEPR",
+        "vulnerabilityCount": "VULN",
+        "bundleSizeGzip": "GZIP",
+        "maintainers": "MAINT"
     },
     "table": {
         "loading": "Loading…",

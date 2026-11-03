@@ -109,8 +109,9 @@ Condensed from git history. Newest month first.
   grows taller. Settings panel spaces out sections (34 px) and items
   (24 px), View network logs button spans
   full width with centered text. Network log Actions column centered.
-- **Column abbreviations** set per column: V, OTD, HP, WDL, OPR, CPR,
-  OIS, CIS, DEPS, LS, DPT, VNL, MNT. Other labels keep initials fallback.
+- **Column abbreviations** set per column, standard short forms where
+  one exists: VER, OOD, HS, WDL, SRC, TREE, STAR, OPR, CPR, OIS, CIS, DEPS,
+  LIC, DEPR, VULN, GZIP, MAINT. Other labels keep initials fallback.
 - **package.json accordion** reads "package.json of `name`", plain
   "package.json" for package without name. `<pre>` text uses own
   monospace font, distinct from Courier New body text.

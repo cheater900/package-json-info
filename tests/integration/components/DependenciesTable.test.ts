@@ -430,7 +430,7 @@ describe("DependenciesTable column labels", () => {
         const labels = headerLabels(wrapper);
         expect(labels).toContain("VD"); // Version Date
         expect(labels).toContain("LRD"); // Latest release date
-        expect(labels).toContain("OTD"); // Outdated, from columnAbbreviations
+        expect(labels).toContain("OOD"); // Outdated, from columnAbbreviations
         expect(labels).not.toContain("Version Date");
         expect(labels).not.toContain("Latest release date");
     });
@@ -458,7 +458,7 @@ describe("DependenciesTable column labels", () => {
                 )!;
 
         expect(tooltipFor("VD").props("text")).toBe("Version Date");
-        expect(tooltipFor("DPT").props("text")).toBe("Deprecated");
+        expect(tooltipFor("DEPR").props("text")).toBe("Deprecated");
     });
 });
 

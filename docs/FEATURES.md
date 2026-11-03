@@ -122,11 +122,12 @@ Each step stops table fetch of step before.
   "stale" badge next to name gives its date. Return to table through history
   retries lookup. No IndexedDB -> no fallback.
 - **Column preferences**: visibility, drag-and-drop order and abbreviated
-  labels, stored in `localStorage`. Abbreviations: V (Version), OTD
-  (Outdated), HP (Health), WDL (Weekly downloads), OPR/CPR (Open/Closed
-  PRs), OIS/CIS (Open/Closed issues), DEPS (Dependencies), LS (License),
-  DPT (Deprecated), VNL (Vulnerabilities), MNT (Maintainers). Other labels
-  shrink to initials. Hiding column is instant, fetches
+  labels, stored in `localStorage`. Abbreviations: VER (Version), OOD
+  (Outdated), HS (Health), WDL (Weekly downloads), SRC (Source Code link),
+  TREE (Source Code Tree), STAR (Git stars), OPR/CPR (Open/Closed PRs),
+  OIS/CIS (Open/Closed issues), DEPS (Dependencies), LIC (License), DEPR
+  (Deprecated), VULN (Vulnerabilities), GZIP (Bundle size), MAINT
+  (Maintainers). Other labels shrink to initials. Hiding column is instant, fetches
   nothing. Showing column keeps rows on screen; its cells show loading icon
   until data arrives.
 - **Responsive layout**: page never scrolls sideways down to 360 px. Only
