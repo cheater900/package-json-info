@@ -65,12 +65,11 @@
                 :column-order="columnOrder"
                 @toggle-column="toggleColumn"
             />
+            <label class="shrink-toggle">
+                <input type="checkbox" v-model="shrinkColumnLabels" />
+                {{ t("sections.shrinkColumnLabels") }}
+            </label>
         </details>
-
-        <label class="shrink-toggle">
-            <input type="checkbox" v-model="shrinkColumnLabels" />
-            {{ t("sections.shrinkColumnLabels") }}
-        </label>
 
         <section v-if="history.length > 1" class="history-controls">
             <button type="button" @click="goBack" :disabled="!canGoBack">
@@ -88,7 +87,7 @@
 
         <!-- prettier-ignore -->
         <div v-if="pkg?.name" class="package-name">
-            {{ t("sections.showingDependenciesFor") }} <pre class="package-name__name">{{ pkg.name }}</pre>:
+            {{ t("sections.showingDependenciesFor") }} <pre class="inline-pre">{{ pkg.name }}</pre>:
         </div>
 
         <div v-if="workspace?.paths.length" class="workspace-picker">
@@ -174,7 +173,10 @@
             </div>
         </details>
         <details class="accordion accordion--boxed" open>
-            <summary>{{ t("sections.packageJson") }}</summary>
+            <summary>
+                {{ t("sections.file") }}
+                <pre class="inline-pre">package.json</pre>
+            </summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
 

@@ -71,7 +71,7 @@ describe("App", () => {
         const wrapper = await mountApp();
 
         const summaries = wrapper.findAll("details.accordion summary").map((s) => s.text());
-        expect(summaries).toEqual(["Columns", "Deps", "Dev Deps", "package.json"]);
+        expect(summaries).toEqual(["Columns", "Deps", "Dev Deps", "File package.json"]);
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
     });
 

@@ -96,6 +96,25 @@ describe("DependenciesTable", () => {
         expect(wrapper.find(".deps-table__status-row").text()).toBe("No dependencies");
     });
 
+    it("keeps 'No dependencies' for empty list with searchQuery", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [], searchQuery: "react" },
+        });
+
+        expect(wrapper.find(".deps-table__status-row").text()).toBe("No dependencies");
+    });
+
+    it("renders full-width 'No dependencies matched search' row for unmatched searchQuery", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], searchQuery: "no-such-package" },
+        });
+
+        const statusCell = wrapper.find(".deps-table__status-row td");
+        expect(wrapper.findAll("tbody tr")).toHaveLength(1);
+        expect(statusCell.text()).toBe("No dependencies matched search");
+        expect(Number(statusCell.attributes("colspan"))).toBe(wrapper.findAll("thead th").length);
+    });
+
     it("renders 'Loading…' status row while isLoading true", () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [], isLoading: true },
@@ -604,14 +623,6 @@ describe("DependenciesTable search", () => {
         });
 
         expect(rowNames(wrapper)).toEqual(["react-dom"]);
-    });
-
-    it("shows no rows without match", () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [react, reactDom, vue], searchQuery: "no-such-package" },
-        });
-
-        expect(wrapper.findAll("tbody tr")).toHaveLength(0);
     });
 
     it("treats whitespace-only query as empty", () => {

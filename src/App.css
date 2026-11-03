@@ -127,6 +127,7 @@ textarea {
 
 .search-row input {
     max-width: 100%;
+    padding: calc(10px * var(--space-scale)) calc(12px * var(--space-scale));
     width: 480px;
 }
 
@@ -134,7 +135,6 @@ textarea {
     align-items: center;
     display: flex;
     gap: 4px;
-    margin-bottom: 16px;
     width: fit-content;
 }
 
@@ -163,7 +163,7 @@ textarea {
     overflow-wrap: anywhere;
 }
 
-.package-name__name {
+.inline-pre {
     display: inline;
     margin: 0;
     white-space: pre-wrap;

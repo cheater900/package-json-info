@@ -53,7 +53,7 @@
     display: flex;
     flex-direction: column;
     gap: calc(24px * var(--space-scale));
-    margin: 0 0 calc(48px * var(--space-scale));
+    margin: 0 0 calc(34px * var(--space-scale));
     padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale))
         calc(12px * var(--space-scale));
 }

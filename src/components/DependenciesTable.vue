@@ -50,7 +50,7 @@
                 </template>
             </draggable>
         </thead>
-        <tbody v-if="!isLoading && dependencies.length > 0">
+        <tbody v-if="!isLoading && sortedDependencies.length > 0">
             <tr v-for="dependency in sortedDependencies" :key="dependency.name">
                 <td class="deps-table__name-cell">
                     <span class="deps-table__name-inner">
@@ -126,7 +126,10 @@
             <tr class="deps-table__status-row">
                 <td :colspan="orderedVisibleColumns.length + 2">
                     <template v-if="isLoading">{{ t("table.loading") }}</template>
-                    <template v-else>{{ t("table.empty") }}</template>
+                    <template v-else-if="dependencies.length === 0">
+                        {{ t("table.empty") }}
+                    </template>
+                    <template v-else>{{ t("table.noSearchMatch") }}</template>
                 </td>
             </tr>
         </tbody>

@@ -680,8 +680,9 @@ test("one search box filters Deps and Dev Deps tables", async ({ page }) => {
     );
 
     await searchInput.fill("no-such-package");
-    await expect(depsTable.locator("tbody tr")).toHaveCount(0);
-    await expect(devDepsTable.locator("tbody tr")).toHaveCount(0);
+    for (const table of [depsTable, devDepsTable]) {
+        await expect(table.locator("tbody tr")).toHaveText(["No dependencies matched search"]);
+    }
 
     await searchInput.fill("");
     await expect(depsTable.locator("tbody tr")).toHaveCount(3);

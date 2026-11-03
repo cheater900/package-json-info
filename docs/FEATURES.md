@@ -96,7 +96,8 @@ Each step stops table fetch of step before.
 
 - **Sorting and filtering** on any column (e.g. sort by weekly downloads,
   filter to packages not updated in over a year).
-- **Search box** jumps to package by name in large table.
+- **Search box** jumps to package by name in large table. No match shows
+  "No dependencies matched search" row.
 - **Validation of malformed/invalid input** - broken `package.json` (bad
   JSON, missing `dependencies`/`devDependencies`) shows inline error, not
   crash or blank table.

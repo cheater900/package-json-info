@@ -104,10 +104,14 @@ Condensed from git history. Newest month first.
   Terminal titlebar sits flush with page top and sides. Main title gets
   bigger top and bottom margin. Columns accordion starts open. Bold
   package name heading -> plain "Showing dependencies for `name`:" line,
-  name in `<pre>`. Shrink columns checkbox moves below Columns
-  accordion. Search box widens 260 px -> 480 px. Settings panel spaces
-  out sections (48 px) and items (24 px), View network logs button spans
+  name in `<pre>`. Shrink columns checkbox moves inside Columns
+  accordion, below column list. Search box widens 260 px -> 480 px and
+  grows taller. Settings panel spaces out sections (34 px) and items
+  (24 px), View network logs button spans
   full width with centered text. Network log Actions column centered.
+  package.json accordion reads "File `package.json`".
+- **Search without match** shows full-width "No dependencies matched
+  search" row. Table empty before search keeps "No dependencies".
 - **SVG icons** replace text glyphs: Fetch, Paste from clipboard, Expand
   table, Back, Forward, modal close, sort arrows, file tree folders and
   license warning in table cells. Exports keep `⚠` text.
