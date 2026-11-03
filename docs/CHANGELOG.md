@@ -106,7 +106,8 @@ Condensed from git history. Newest month first.
   package name heading -> plain "Showing dependencies for `name`:" line,
   name in `<pre>`. Shrink columns checkbox moves below Columns
   accordion. Search box widens 260 px -> 480 px. Settings panel spaces
-  out sections and items, View network logs button spans full width.
+  out sections (48 px) and items (24 px), View network logs button spans
+  full width with centered text. Network log Actions column centered.
 - **SVG icons** replace text glyphs: Fetch, Paste from clipboard, Expand
   table, Back, Forward, modal close, sort arrows, file tree folders and
   license warning in table cells. Exports keep `⚠` text.

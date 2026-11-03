@@ -4,7 +4,12 @@
             <table class="network-log__table">
                 <thead>
                     <tr>
-                        <th v-for="header in headers" :key="header" scope="col">
+                        <th
+                            v-for="header in headers"
+                            :key="header"
+                            scope="col"
+                            :class="{ 'network-log__actions': header === 'actions' }"
+                        >
                             {{ t(`networkLog.headers.${header}`) }}
                         </th>
                     </tr>
@@ -50,7 +55,7 @@
                             <span v-else class="network-log__badge">{{ entry.status }}</span>
                         </td>
                         <td>{{ formatSize(entry) }}</td>
-                        <td>
+                        <td class="network-log__actions">
                             <button
                                 v-if="entry.state === 'failure'"
                                 type="button"

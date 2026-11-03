@@ -55,6 +55,10 @@
     white-space: nowrap;
 }
 
+.network-log__actions {
+    text-align: center;
+}
+
 .network-log__retry {
     padding: calc(2px * var(--space-scale)) calc(6px * var(--space-scale));
 }
