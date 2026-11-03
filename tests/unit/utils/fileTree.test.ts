@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { MAX_FILE_TREE_DEPTH } from "../../../src/constants";
 import { buildFileTree } from "../../../src/utils/fileTree";
 
 describe("buildFileTree", () => {
@@ -118,4 +119,21 @@ describe("buildFileTree duplicates", () => {
 
         expect(tree).toHaveLength(1);
     });
+});
+
+describe("buildFileTree depth", () => {
+    it("builds path at MAX_FILE_TREE_DEPTH", () => {
+        const path = "d/".repeat(MAX_FILE_TREE_DEPTH - 1) + "f.js";
+
+        expect(buildFileTree([{ path, type: "file" }])).toHaveLength(1);
+    });
+
+    it.each(["file", "directory"] as const)(
+        "throws translated error for %s path deeper than MAX_FILE_TREE_DEPTH",
+        (type) => {
+            const path = "d/".repeat(100_000) + "leaf";
+
+            expect(() => buildFileTree([{ path, type }])).toThrow(/too deep to browse/);
+        },
+    );
 });

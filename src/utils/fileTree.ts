@@ -1,3 +1,6 @@
+import { MAX_FILE_TREE_DEPTH } from "../constants";
+import { t } from "../i18n";
+
 export type FileTreeEntry = {
     path: string;
     type: "file" | "directory";
@@ -56,7 +59,8 @@ function compareDirectoriesFirst<T extends HasEntryType>(
  * archive or GitHub's recursive git-trees API). Intermediate directories
  * implied by a file's path but not present as their own entry are
  * synthesized on demand, since archives commonly only list directory
- * entries for genuinely empty directories.
+ * entries for genuinely empty directories. Throws when a path nests deeper
+ * than MAX_FILE_TREE_DEPTH.
  */
 export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[] {
     const root: FileTreeNode = { name: "", path: "", type: "directory", size: 0, children: [] };
@@ -84,6 +88,11 @@ export function buildFileTree(entries: readonly FileTreeEntry[]): FileTreeNode[]
         const path = normalizePath(entry.path);
         if (!path) {
             continue;
+        }
+        // ensureDir and sortTree recurse once per level; a crafted path with
+        // tens of thousands of segments would overflow the call stack.
+        if (path.split("/").length > MAX_FILE_TREE_DEPTH) {
+            throw new Error(t("errors.treeTooDeep", { max: MAX_FILE_TREE_DEPTH }));
         }
         if (entry.type === "directory") {
             ensureDir(path);

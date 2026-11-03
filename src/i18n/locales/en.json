@@ -142,6 +142,7 @@
         "tarballCorrupt": "The package tarball is corrupt or incomplete.",
         "tarballTooLarge": "The package tarball unpacks to more than {megabytes} MB, too large to browse.",
         "tarballFileMissing": "File not found in the downloaded tarball: {path}",
+        "treeTooDeep": "The file tree nests deeper than {max} folders, too deep to browse.",
         "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
         "fileContentFetch": "Could not fetch file contents (status {status})."
     },

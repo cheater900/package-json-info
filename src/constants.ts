@@ -67,5 +67,7 @@ export const BYTES_PER_KB = 1024;
 export const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
 /** Unpacked size cap for browsing a tarball; real npm packages stay far below it. */
 export const MAX_UNPACKED_TARBALL_BYTES = 256 * BYTES_PER_MB;
+/** Deepest path the file tree accepts; no real file system nests this far. */
+export const MAX_FILE_TREE_DEPTH = 1000;
 
 export const TOOLTIP_OFFSET_PX = 6;
