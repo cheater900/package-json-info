@@ -42,6 +42,12 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
   `AbortSignal.any`.
 - **No size cap on the user-URL `package.json` fetch** (`fetchText`). The
   user picks that URL.
+- **Only the registry document is type-checked.** A wrong type from the
+  downloads, stars, issue-count, bundle-size or OSV services shows as odd
+  cell text. A malformed GitHub tree answer shows a raw engine error in the
+  source-tree modal.
+- **Source-tree viewer renders a file whole.** A file of tens of MB can
+  stall the tab until the modal closes. A size cap would fix it.
 - **Malformed tarball with both file `a` and directory `a/…`** gives
   duplicate Vue keys in the file tree. Cosmetic.
 - **`URL.canParse`** needs Safari 17+.
