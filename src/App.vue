@@ -67,6 +67,11 @@
             />
         </details>
 
+        <label class="shrink-toggle">
+            <input type="checkbox" v-model="shrinkColumnLabels" />
+            {{ t("sections.shrinkColumnLabels") }}
+        </label>
+
         <section v-if="history.length > 1" class="history-controls">
             <button type="button" @click="goBack" :disabled="!canGoBack">
                 {{ t("history.back") }}
@@ -108,25 +113,16 @@
             {{ t("workspaces.hint") }}
         </p>
 
-        <div class="search-shrink-row">
-            <div class="search-shrink-row__search">
-                <label :for="searchInputId" class="visually-hidden">
-                    {{ t("search.label") }}
-                </label>
-                <input
-                    :id="searchInputId"
-                    v-model="searchQuery"
-                    type="text"
-                    :placeholder="t('search.placeholder')"
-                />
-            </div>
-
-            <div class="search-shrink-row__shrink">
-                <label>
-                    <input type="checkbox" v-model="shrinkColumnLabels" />
-                    {{ t("sections.shrinkColumnLabels") }}
-                </label>
-            </div>
+        <div class="search-row">
+            <label :for="searchInputId" class="visually-hidden">
+                {{ t("search.label") }}
+            </label>
+            <input
+                :id="searchInputId"
+                v-model="searchQuery"
+                type="text"
+                :placeholder="t('search.placeholder')"
+            />
         </div>
 
         <details

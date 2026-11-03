@@ -52,14 +52,21 @@
     border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin: 0 0 calc(24px * var(--space-scale));
+    gap: calc(16px * var(--space-scale));
+    margin: 0 0 calc(36px * var(--space-scale));
     padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale))
         calc(12px * var(--space-scale));
 }
 
 .settings-menu__section:last-child {
     margin-bottom: 0;
+}
+
+/* Label, control and hint of one setting stay close together. */
+.settings-menu__item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .settings-menu__section input,
@@ -100,5 +107,5 @@
 }
 
 .settings-menu__logs {
-    align-self: flex-start;
+    width: 100%;
 }

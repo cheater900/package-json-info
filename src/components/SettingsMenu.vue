@@ -22,60 +22,72 @@
         >
             <fieldset class="settings-menu__section">
                 <legend>{{ t("settings.display.legend") }}</legend>
-                <label :for="`${panelId}-theme`">{{ t("settings.display.theme") }}</label>
-                <select :id="`${panelId}-theme`" v-model="settings.theme">
-                    <option v-for="theme in themes" :key="theme" :value="theme">
-                        {{ t(`settings.display.themes.${theme}`) }}
-                    </option>
-                </select>
-                <label :for="`${panelId}-font`">{{ t("settings.display.fontSize") }}</label>
-                <select :id="`${panelId}-font`" v-model="settings.fontScale">
-                    <option v-for="scale in fontScales" :key="scale" :value="scale">
-                        {{ formatPercent(scale) }}
-                    </option>
-                </select>
-                <label :for="`${panelId}-space`">{{ t("settings.display.padding") }}</label>
-                <select :id="`${panelId}-space`" v-model="settings.spaceScale">
-                    <option v-for="scale in spaceScales" :key="scale" :value="scale">
-                        {{ formatPercent(scale) }}
-                    </option>
-                </select>
+                <div class="settings-menu__item">
+                    <label :for="`${panelId}-theme`">{{ t("settings.display.theme") }}</label>
+                    <select :id="`${panelId}-theme`" v-model="settings.theme">
+                        <option v-for="theme in themes" :key="theme" :value="theme">
+                            {{ t(`settings.display.themes.${theme}`) }}
+                        </option>
+                    </select>
+                </div>
+                <div class="settings-menu__item">
+                    <label :for="`${panelId}-font`">{{ t("settings.display.fontSize") }}</label>
+                    <select :id="`${panelId}-font`" v-model="settings.fontScale">
+                        <option v-for="scale in fontScales" :key="scale" :value="scale">
+                            {{ formatPercent(scale) }}
+                        </option>
+                    </select>
+                </div>
+                <div class="settings-menu__item">
+                    <label :for="`${panelId}-space`">{{ t("settings.display.padding") }}</label>
+                    <select :id="`${panelId}-space`" v-model="settings.spaceScale">
+                        <option v-for="scale in spaceScales" :key="scale" :value="scale">
+                            {{ formatPercent(scale) }}
+                        </option>
+                    </select>
+                </div>
             </fieldset>
 
             <fieldset class="settings-menu__section">
                 <legend>{{ t("settings.network.legend") }}</legend>
-                <label :for="`${panelId}-proxy`">{{ t("settings.network.proxy") }}</label>
-                <input
-                    :id="`${panelId}-proxy`"
-                    type="url"
-                    :value="settings.proxyUrl"
-                    :placeholder="t('settings.network.proxyPlaceholder')"
-                    :aria-invalid="!!networkErrors.proxyUrl"
-                    @change="commitProxy"
-                />
-                <p class="settings-menu__hint">{{ t("settings.network.proxyHint") }}</p>
-                <label :for="`${panelId}-timeout`">{{ t("settings.network.timeout") }}</label>
-                <input
-                    :id="`${panelId}-timeout`"
-                    type="number"
-                    min="1"
-                    step="1"
-                    :value="settings.fetchTimeoutMs"
-                    :aria-invalid="!!networkErrors.fetchTimeoutMs"
-                    @change="commitInt('fetchTimeoutMs', $event)"
-                />
-                <label :for="`${panelId}-concurrency`">
-                    {{ t("settings.network.concurrency") }}
-                </label>
-                <input
-                    :id="`${panelId}-concurrency`"
-                    type="number"
-                    min="1"
-                    step="1"
-                    :value="settings.fetchConcurrency"
-                    :aria-invalid="!!networkErrors.fetchConcurrency"
-                    @change="commitInt('fetchConcurrency', $event)"
-                />
+                <div class="settings-menu__item">
+                    <label :for="`${panelId}-proxy`">{{ t("settings.network.proxy") }}</label>
+                    <input
+                        :id="`${panelId}-proxy`"
+                        type="url"
+                        :value="settings.proxyUrl"
+                        :placeholder="t('settings.network.proxyPlaceholder')"
+                        :aria-invalid="!!networkErrors.proxyUrl"
+                        @change="commitProxy"
+                    />
+                    <p class="settings-menu__hint">{{ t("settings.network.proxyHint") }}</p>
+                </div>
+                <div class="settings-menu__item">
+                    <label :for="`${panelId}-timeout`">{{ t("settings.network.timeout") }}</label>
+                    <input
+                        :id="`${panelId}-timeout`"
+                        type="number"
+                        min="1"
+                        step="1"
+                        :value="settings.fetchTimeoutMs"
+                        :aria-invalid="!!networkErrors.fetchTimeoutMs"
+                        @change="commitInt('fetchTimeoutMs', $event)"
+                    />
+                </div>
+                <div class="settings-menu__item">
+                    <label :for="`${panelId}-concurrency`">
+                        {{ t("settings.network.concurrency") }}
+                    </label>
+                    <input
+                        :id="`${panelId}-concurrency`"
+                        type="number"
+                        min="1"
+                        step="1"
+                        :value="settings.fetchConcurrency"
+                        :aria-invalid="!!networkErrors.fetchConcurrency"
+                        @change="commitInt('fetchConcurrency', $event)"
+                    />
+                </div>
                 <p
                     v-for="(error, key) in networkErrors"
                     v-show="error"

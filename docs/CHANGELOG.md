@@ -104,7 +104,9 @@ Condensed from git history. Newest month first.
   Terminal titlebar sits flush with page top and sides. Main title gets
   bigger top and bottom margin. Columns accordion starts open. Bold
   package name heading -> plain "Showing dependencies for `name`:" line,
-  name in `<pre>`.
+  name in `<pre>`. Shrink columns checkbox moves below Columns
+  accordion. Search box widens 260 px -> 480 px. Settings panel spaces
+  out sections and items, View network logs button spans full width.
 - **Page width** follows screen with 10% margin each side, full width at
   1024 px and below. Expanded table and source tree modals grow with it.
 

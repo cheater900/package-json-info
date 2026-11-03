@@ -116,13 +116,8 @@ textarea {
     margin-bottom: 16px;
 }
 
-.search-shrink-row {
-    align-items: center;
+.search-row {
     background: var(--bg);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: space-between;
     margin-bottom: 16px;
     padding: calc(8px * var(--space-scale)) 0;
     position: sticky;
@@ -130,21 +125,17 @@ textarea {
     z-index: 2;
 }
 
-.search-shrink-row__search {
-    align-items: center;
-    display: flex;
-    gap: 8px;
-}
-
-.search-shrink-row__search input {
+.search-row input {
     max-width: 100%;
-    width: 260px;
+    width: 480px;
 }
 
-.search-shrink-row__shrink label {
+.shrink-toggle {
     align-items: center;
     display: flex;
     gap: 4px;
+    margin-bottom: 16px;
+    width: fit-content;
 }
 
 .accordion {
