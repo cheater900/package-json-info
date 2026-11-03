@@ -1105,3 +1105,111 @@ describe("fetchPackageInfo input edge cases", () => {
         });
     });
 });
+
+describe("fetchPackageInfo malformed registry data", () => {
+    const validPart = {
+        "dist-tags": { latest: "1.0.0" },
+        time: { "1.0.0": "2022-01-01T00:00:00.000Z" },
+        versions: { "1.0.0": { dependencies: { dep: "1.0.0" } } },
+    };
+
+    it.each([
+        ["repository.url number", { repository: { url: 5 } }],
+        ["repository array", { repository: [] }],
+        ["maintainers string", { maintainers: "alice" }],
+        ["maintainers null item", { maintainers: [null] }],
+        ["homepage object", { homepage: {} }],
+        ["license number type", { license: { type: 3 } }],
+    ])("keeps row, reads %s as missing", async (_label, malformedPart) => {
+        stubFetchByUrl({ "registry.npmjs.org/odd": { ...validPart, ...malformedPart } });
+
+        const info = await fetchPackageInfo("odd", "1.0.0");
+
+        expect(info.latestVersion).toBe("1.0.0");
+        expect(info.versionDate).toBe("2022-01-01T00:00:00.000Z");
+        expect(info.dependencies).toEqual(["dep"]);
+        expect(info.sourceCode).toBeNull();
+        expect(info.maintainers).toBeNull();
+        expect(info.license).toBeNull();
+    });
+
+    it("keeps valid maintainers beside malformed ones", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/odd": { ...validPart, maintainers: [null, { name: "bob" }, 7] },
+        });
+
+        const info = await fetchPackageInfo("odd", "1.0.0");
+
+        expect(info.maintainers).toEqual(["bob"]);
+    });
+
+    it("reads non-string dist-tags.latest, time value as missing", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/odd": {
+                ...validPart,
+                "dist-tags": { latest: 5 },
+                time: { "1.0.0": 1640995200000, modified: "2022-02-02T00:00:00.000Z" },
+            },
+        });
+
+        const info = await fetchPackageInfo("odd", "1.0.0");
+
+        expect(info.latestVersion).toBeNull();
+        expect(info.isOutdated).toBeNull();
+        expect(info.versionDate).toBeNull();
+        expect(info.latestUpdateDate).toBe("2022-02-02T00:00:00.000Z");
+    });
+
+    it("reads malformed version fields as missing", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/odd": {
+                ...validPart,
+                versions: {
+                    "1.0.0": {
+                        dependencies: "abc",
+                        deprecated: false,
+                        license: { type: 3 },
+                        dist: { tarball: 9 },
+                    },
+                },
+            },
+        });
+
+        const info = await fetchPackageInfo("odd", "1.0.0");
+
+        expect(info.dependencies).toBeNull();
+        expect(info.deprecated).toBeNull();
+        expect(info.license).toBeNull();
+        expect(info.sourceTree).toBeNull();
+    });
+
+    it.each([
+        ["array", []],
+        ["string", "oops"],
+        ["null version entry", { ...validPart, versions: { "1.0.0": null } }],
+    ])("resolves row for %s document", async (_label, doc) => {
+        stubFetchByUrl({ "registry.npmjs.org/odd": doc });
+
+        const info = await fetchPackageInfo("odd", "1.0.0");
+
+        expect(info.name).toBe("odd");
+        expect(info.dependencies).toBeNull();
+    });
+
+    it("drill-down keeps whole raw manifest", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/odd": {
+                ...validPart,
+                versions: { "1.0.0": { name: "odd", scripts: { test: "x" }, deprecated: false } },
+            },
+        });
+
+        const text = await fetchPackageJsonForVersion("odd", "1.0.0");
+
+        expect(JSON.parse(text!)).toEqual({
+            name: "odd",
+            scripts: { test: "x" },
+            deprecated: false,
+        });
+    });
+});

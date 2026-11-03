@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { DependencyRow, PackageInfo, PackageInput, SourceTreeRef } from "../types";
 import {
     BUNDLEPHOBIA_SIZE_URL,
@@ -12,7 +13,6 @@ import {
 import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense } from "../utils/license";
-import type { NpmLicenseField } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
@@ -26,6 +26,39 @@ import { findGithubReleaseTag, githubHeaders } from "./github";
 import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repoMetadata";
 import type { RepoIssueCounts } from "./repoMetadata";
 
+const NpmLicenseEntrySchema = z.union([z.string(), z.object({ type: z.string().optional() })]);
+const NpmLicenseSchema = z.union([NpmLicenseEntrySchema, z.array(NpmLicenseEntrySchema)]);
+
+/**
+ * Registry documents hold whatever each package published. A field of the
+ * wrong type reads as missing, so one bad value can't fail the whole row.
+ */
+function lenient<T extends z.ZodType>(schema: T) {
+    return schema.optional().catch(undefined);
+}
+
+const NpmVersionSchema = z
+    .object({
+        dependencies: lenient(z.record(z.string(), z.unknown())),
+        license: lenient(NpmLicenseSchema),
+        deprecated: lenient(z.string()),
+        dist: lenient(z.object({ tarball: lenient(z.string()) })),
+    })
+    .catch({});
+
+/** `versions` values stay raw: the drill-down shows a version's whole manifest. */
+const NpmRegistrySchema = z
+    .object({
+        "dist-tags": lenient(z.object({ latest: lenient(z.string()) })),
+        time: lenient(z.record(z.string(), lenient(z.string()))),
+        repository: lenient(z.union([z.string(), z.object({ url: lenient(z.string()) })])),
+        homepage: lenient(z.string()),
+        versions: lenient(z.record(z.string(), z.unknown())),
+        license: lenient(NpmLicenseSchema),
+        maintainers: lenient(z.array(z.object({ name: lenient(z.string()) }).catch({}))),
+    })
+    .catch({});
+
 export type FetchPackageOptions = {
     /**
      * Columns currently visible in the UI. Network calls backing only
@@ -37,23 +70,6 @@ export type FetchPackageOptions = {
 export type FetchPackagesOptions = FetchPackageOptions & {
     /** Maximum number of packages fetched in parallel. */
     concurrency?: number;
-};
-
-type NpmVersionData = {
-    dependencies?: Record<string, string>;
-    license?: NpmLicenseField;
-    deprecated?: string;
-    dist?: { tarball?: string };
-};
-
-type NpmRegistryData = {
-    "dist-tags"?: Record<string, string>;
-    time?: Record<string, string>;
-    repository?: { type?: string; url?: string } | string;
-    homepage?: string;
-    versions?: Record<string, NpmVersionData>;
-    license?: NpmLicenseField;
-    maintainers?: Array<{ name?: string }>;
 };
 
 type NpmDownloadsData = {
@@ -140,10 +156,8 @@ function resolveVersionKey(npmData: NpmRegistryData | null, range: string): stri
     );
 }
 
-function resolveVersionData(
-    npmData: NpmRegistryData | null,
-    range: string,
-): NpmVersionData | undefined {
+/** Raw manifest of the version `range` refers to; undefined when unpublished. */
+function resolveVersionData(npmData: NpmRegistryData | null, range: string): unknown {
     const key = resolveVersionKey(npmData, range);
     return key ? npmData?.versions?.[key] : undefined;
 }
@@ -189,7 +203,7 @@ export async function fetchPackageInfo(
     ]);
     const times = npmData?.time ?? {};
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
-    const versionData = resolveVersionData(npmData, range);
+    const versionData = NpmVersionSchema.parse(resolveVersionData(npmData, range));
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
     const [gitStars, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
@@ -217,10 +231,10 @@ export async function fetchPackageInfo(
         sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
         gitStars,
         ...issueCounts,
-        dependencies: versionData?.dependencies ? Object.keys(versionData.dependencies) : null,
-        license: extractLicense(versionData?.license) ?? extractLicense(npmData?.license),
+        dependencies: versionData.dependencies ? Object.keys(versionData.dependencies) : null,
+        license: extractLicense(versionData.license) ?? extractLicense(npmData?.license),
         isOutdated: isVersionOutdated(range, latestVersion),
-        deprecated: versionData?.deprecated ?? null,
+        deprecated: versionData.deprecated ?? null,
         vulnerabilityCount,
         bundleSizeGzip,
         maintainers: maintainerNames(npmData),
@@ -273,9 +287,10 @@ export async function fetchPackagesInfo(
 }
 
 function fetchRegistryData(name: string): Promise<NpmRegistryData | null> {
-    return memoizeAsync(registryDataCache, name, () =>
-        fetchJson<NpmRegistryData>(`${NPM_REGISTRY_URL}/${encodeURIComponent(name)}`),
-    );
+    return memoizeAsync(registryDataCache, name, async () => {
+        const data = await fetchJson(`${NPM_REGISTRY_URL}/${encodeURIComponent(name)}`);
+        return data == null ? null : NpmRegistrySchema.parse(data);
+    });
 }
 
 function fetchWeeklyDownloads(name: string): Promise<number | null> {
@@ -348,13 +363,13 @@ function fetchCachedIssueCounts(slug: RepoSlug, headers: HttpHeaders): Promise<R
  * fallback; their tree/tag APIs differ and npm rarely lacks a tarball.
  */
 async function resolveSourceTree(
-    versionData: NpmVersionData | undefined,
+    versionData: NpmVersionData,
     slug: RepoSlug | null,
     range: string,
     headers: HttpHeaders,
 ): Promise<SourceTreeRef | null> {
     // Registry data picks the URL; only http(s) may be fetched, never data: or blob:.
-    const tarballUrl = versionData?.dist?.tarball;
+    const tarballUrl = versionData.dist?.tarball;
     if (isHttpUrl(tarballUrl)) {
         return { provider: "npm", tarballUrl };
     }
@@ -372,3 +387,7 @@ async function resolveSourceTree(
     }
     return { provider: "github", owner: slug.owner, repo: slug.repo, tag };
 }
+
+type NpmVersionData = z.infer<typeof NpmVersionSchema>;
+
+type NpmRegistryData = z.infer<typeof NpmRegistrySchema>;

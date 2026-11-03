@@ -42,8 +42,6 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
   `AbortSignal.any`.
 - **No size cap on the user-URL `package.json` fetch** (`fetchText`). The
   user picks that URL.
-- **One malformed registry field fails the whole row**, e.g. a
-  `maintainers` value that is not an array.
 - **Malformed tarball with both file `a` and directory `a/…`** gives
   duplicate Vue keys in the file tree. Cosmetic.
 - **`URL.canParse`** needs Safari 17+.

@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-10
 
+- Validate npm registry documents with zod so a field of wrong type reads as missing instead of failing whole row
 - Refuse `Authorization` requests to any origin but `api.github.com` in `fetchWithTimeout` so GitHub token cannot reach another host
 
 ## 2026-11-04
