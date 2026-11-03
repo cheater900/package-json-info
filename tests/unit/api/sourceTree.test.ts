@@ -71,6 +71,15 @@ describe("fetchSourceTree - npm provider", () => {
         ).rejects.toThrow(/404/);
     });
 
+    it("throws corrupt-tarball error for 2xx response without body", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(null, { status: 204 })),
+        );
+
+        await expect(fetchSourceTree(NPM_TREE_REF)).rejects.toThrow(/corrupt or incomplete/);
+    });
+
     it("readFile rejects for path missing from tarball", async () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
         vi.stubGlobal(

@@ -42,6 +42,10 @@ async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
     if (!response.ok) {
         throw new Error(t("errors.tarballDownload", { status: response.status }));
     }
+    // 204/205 answers and some proxies succeed without a body.
+    if (!response.body) {
+        throw new Error(t("errors.tarballCorrupt"));
+    }
     const rawTar = await gunzip(response.body);
     const entries = parseTar(rawTar)
         .map((entry) => ({
