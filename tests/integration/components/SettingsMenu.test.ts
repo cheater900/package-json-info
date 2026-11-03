@@ -36,6 +36,57 @@ afterEach(() => {
     document.body.innerHTML = "";
 });
 
+describe("SettingsMenu dropdown", () => {
+    it("gear toggles panel and aria-expanded", async () => {
+        const wrapper = mountMenu();
+        const gear = wrapper.find(".settings-menu__gear");
+        const panel = wrapper.find('[role="dialog"]');
+        expect(panel.isVisible()).toBe(false);
+
+        await gear.trigger("click");
+
+        expect(panel.isVisible()).toBe(true);
+        expect(gear.attributes("aria-expanded")).toBe("true");
+        await gear.trigger("click");
+        expect(panel.isVisible()).toBe(false);
+    });
+
+    it("closes on Escape, refocuses gear", async () => {
+        const wrapper = mountMenu();
+        const gear = wrapper.find(".settings-menu__gear");
+        await gear.trigger("click");
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        await flushPromises();
+
+        expect(wrapper.find('[role="dialog"]').isVisible()).toBe(false);
+        expect(document.activeElement).toBe(gear.element);
+    });
+
+    it("closes on pointerdown outside, stays open on inside", async () => {
+        const wrapper = mountMenu();
+        await wrapper.find(".settings-menu__gear").trigger("click");
+        const panel = wrapper.find('[role="dialog"]');
+
+        panel.element.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        await flushPromises();
+        expect(panel.isVisible()).toBe(true);
+
+        document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        await flushPromises();
+        expect(panel.isVisible()).toBe(false);
+    });
+
+    it("removes window listeners on unmount", async () => {
+        const removeListener = vi.spyOn(window, "removeEventListener");
+
+        mountMenu().unmount();
+
+        expect(removeListener).toHaveBeenCalledWith("keydown", expect.any(Function));
+        expect(removeListener).toHaveBeenCalledWith("pointerdown", expect.any(Function));
+    });
+});
+
 describe("SettingsMenu token", () => {
     it("shows badge and set indicator only with token", async () => {
         const wrapper = mountMenu();

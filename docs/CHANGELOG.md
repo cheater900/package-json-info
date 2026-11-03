@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Open settings dropdown with Vue state and absolute CSS instead of Popover API so older Safari/Firefox can close it
 - Rewrap settings docs, split main.js display paragraph, list all shared types in DEVELOPMENT
 - Unexport SettingsSchema and IndexedDB request helpers used only in their own module
 - Share IndexedDB stub, settings reset, GitHub token and rate limit fixtures, fetchCallsTo across tests

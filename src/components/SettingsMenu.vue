@@ -1,11 +1,13 @@
 <template>
-    <div class="settings-menu">
+    <div ref="rootRef" class="settings-menu">
         <button
+            ref="gearRef"
             type="button"
             class="settings-menu__gear"
-            :popovertarget="panelId"
+            :aria-controls="panelId"
             :aria-label="githubToken ? t('settings.openTokenSet') : t('settings.open')"
             :aria-expanded="isOpen"
+            @click="isOpen = !isOpen"
         >
             <svg
                 aria-hidden="true"
@@ -27,12 +29,11 @@
         </button>
 
         <div
+            v-show="isOpen"
             :id="panelId"
             class="settings-menu__panel"
-            popover="auto"
             role="dialog"
             :aria-label="t('settings.title')"
-            @toggle="onToggle"
         >
             <fieldset class="settings-menu__section">
                 <legend>{{ t("settings.token.legend") }}</legend>

@@ -1,9 +1,9 @@
 .settings-menu {
     margin-left: auto;
+    position: relative;
 }
 
 .settings-menu__gear {
-    anchor-name: --settings-gear;
     padding: calc(4px * var(--space-scale)) calc(8px * var(--space-scale));
     position: relative;
 }
@@ -24,23 +24,18 @@
     box-shadow: var(--shadow);
     box-sizing: border-box;
     color: var(--text);
-    inset: auto;
-    margin: 4px 0 0;
+    margin-top: 4px;
     max-height: calc(100vh - 96px);
     max-width: calc(100vw - 24px);
+    overflow-y: auto;
     padding: calc(12px * var(--space-scale));
-    position-anchor: --settings-gear;
-    right: anchor(right);
+    position: absolute;
+    right: 0;
     text-align: left;
-    top: anchor(bottom);
+    top: 100%;
     width: 360px;
-}
-
-@supports not (anchor-name: --settings-gear) {
-    .settings-menu__panel {
-        right: 12px;
-        top: 40px;
-    }
+    /* Above body::before scanlines. */
+    z-index: 1000;
 }
 
 .settings-menu__section {

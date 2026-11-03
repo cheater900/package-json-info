@@ -1,4 +1,4 @@
-import { defineComponent, reactive, ref, useId } from "vue";
+import { defineComponent, onMounted, onUnmounted, reactive, ref, useId } from "vue";
 import { fetchGithubRateLimit } from "../api/github";
 import { isConfigInt } from "../config";
 import {
@@ -21,22 +21,45 @@ import { settle } from "../utils/settle";
 type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
 
 /**
- * Gear button opening a native popover with the GitHub token, network and
- * display settings. Network inputs commit on change, only when valid;
+ * Gear button opening a dropdown with the GitHub token, network and
+ * display settings. Escape closes it and refocuses the gear; a click
+ * outside closes it. Network inputs commit on change, only when valid;
  * display selects write straight to `settings`.
  */
 export default defineComponent({
     setup() {
         const panelId = useId();
         const isOpen = ref(false);
+        const rootRef = ref<HTMLElement | null>(null);
+        const gearRef = ref<HTMLButtonElement | null>(null);
         const tokenInputRef = ref<HTMLInputElement | null>(null);
         const tokenDraft = ref("");
         const tokenMessage = ref("");
         const networkErrors = reactive({ proxyUrl: "", fetchTimeoutMs: "", fetchConcurrency: "" });
 
-        function onToggle(event: ToggleEvent) {
-            isOpen.value = event.newState === "open";
+        function onKeydown(event: KeyboardEvent) {
+            if (!isOpen.value || event.key !== "Escape") {
+                return;
+            }
+            isOpen.value = false;
+            gearRef.value?.focus();
         }
+
+        function onPointerdown(event: PointerEvent) {
+            if (rootRef.value?.contains(event.target as Node)) {
+                return;
+            }
+            isOpen.value = false;
+        }
+
+        onMounted(() => {
+            window.addEventListener("keydown", onKeydown);
+            window.addEventListener("pointerdown", onPointerdown);
+        });
+        onUnmounted(() => {
+            window.removeEventListener("keydown", onKeydown);
+            window.removeEventListener("pointerdown", onPointerdown);
+        });
 
         /**
          * Purges the stored token and its in-memory copy. After a half-done
@@ -114,6 +137,8 @@ export default defineComponent({
             t,
             panelId,
             isOpen,
+            rootRef,
+            gearRef,
             githubToken,
             settings,
             isTokenStorageAvailable: isTokenStorageAvailable(),
@@ -125,7 +150,6 @@ export default defineComponent({
             fontScales: SETTINGS_FONT_SCALES,
             spaceScales: SETTINGS_SPACE_SCALES,
             formatPercent,
-            onToggle,
             saveToken,
             verifyToken,
             purgeToken,
