@@ -23,8 +23,11 @@
 }
 
 .package-summary__list dt {
+    align-items: center;
     color: var(--text-h);
+    display: flex;
     font-weight: 600;
+    gap: 6px;
     white-space: nowrap;
 }
 

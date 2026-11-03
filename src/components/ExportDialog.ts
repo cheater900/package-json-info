@@ -1,12 +1,14 @@
 import { ref, shallowRef, computed, watch, defineComponent } from "vue";
 import type { PropType } from "vue";
 import { t } from "../i18n";
+import { COLUMN_ICONS } from "./columnIcons";
 import { EXPORTERS } from "../utils/export";
 import { buildExportDocument, exportFileBaseName } from "../utils/export/buildExportDocument";
 import type { ExportTableInput } from "../utils/export/buildExportDocument";
 import { downloadBlob } from "../utils/export/download";
 import { TOGGLEABLE_COLUMNS, orderColumns } from "../utils/tableColumns";
 import type { DependencyListId, DependencyRow } from "../types";
+import IconDownload from "./IconDownload.vue";
 
 export type ExportDialogTable = {
     id: DependencyListId;
@@ -25,6 +27,7 @@ type LoadRows = (
  * whatever the table search shows.
  */
 export default defineComponent({
+    components: { IconDownload },
     props: {
         tables: {
             type: Array as PropType<ExportDialogTable[]>,
@@ -160,6 +163,7 @@ export default defineComponent({
         }
 
         return {
+            COLUMN_ICONS,
             t,
             EXPORTERS,
             columnOptions,

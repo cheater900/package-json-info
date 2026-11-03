@@ -19,7 +19,13 @@ import {
 import { clearLookups } from "../utils/lookupStore";
 import { formatPercent } from "../utils/percent";
 import { settle } from "../utils/settle";
+import IconCheck from "./IconCheck.vue";
 import IconGear from "./IconGear.vue";
+import IconGlobe from "./IconGlobe.vue";
+import IconKey from "./IconKey.vue";
+import IconMonitor from "./IconMonitor.vue";
+import IconScrollText from "./IconScrollText.vue";
+import IconTrash from "./IconTrash.vue";
 
 type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
 
@@ -31,7 +37,7 @@ type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
  * the panel and emits `open-network-log`.
  */
 export default defineComponent({
-    components: { IconGear },
+    components: { IconCheck, IconGear, IconGlobe, IconKey, IconMonitor, IconScrollText, IconTrash },
     emits: ["open-network-log"],
     setup(_props, { emit }) {
         const panelId = useId();

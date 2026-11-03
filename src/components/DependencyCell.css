@@ -41,6 +41,11 @@
     color: var(--error);
 }
 
+.dependency-cell__source-link {
+    display: inline-flex;
+    vertical-align: -0.125em;
+}
+
 .dependency-cell__warning {
     color: var(--warning);
     vertical-align: -0.125em;

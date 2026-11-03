@@ -1,6 +1,7 @@
 import { computed, defineComponent } from "vue";
 import type { PropType } from "vue";
 import { t } from "../i18n";
+import { COLUMN_ICONS } from "./columnIcons";
 import {
     TOGGLEABLE_COLUMNS,
     DEFAULT_COLUMN_ORDER,
@@ -26,6 +27,7 @@ export default defineComponent({
         );
 
         return {
+            COLUMN_ICONS,
             t,
             toggleableColumns,
             wouldViolateMinVisible,

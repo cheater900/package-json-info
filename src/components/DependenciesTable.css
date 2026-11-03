@@ -96,6 +96,12 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
     white-space: nowrap;
 }
 
+/* Inline with label text (template whitespace spaces them), so icon sits on
+   text baseline, not line-box center. */
+.deps-table__col-icon {
+    vertical-align: -0.125em;
+}
+
 .deps-table__drag-handle {
     align-items: center;
     cursor: grab;

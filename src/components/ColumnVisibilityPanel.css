@@ -18,6 +18,15 @@
     }
 }
 
+.column-visibility-panel__icon {
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.column-visibility-panel__name {
+    margin-right: 8px;
+}
+
 .column-visibility-panel label {
     align-items: center;
     break-inside: avoid;

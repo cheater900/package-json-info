@@ -4,6 +4,8 @@ import { fmtList, formatCell } from "../utils/dependencyRowFormatting";
 import { healthBand } from "../utils/healthScore";
 import { hasLicenseWarning } from "../utils/license";
 import { FAILED_VALUE, MISSING_VALUE } from "../constants";
+import IconExternalLink from "./IconExternalLink.vue";
+import IconFolderTree from "./IconFolderTree.vue";
 import IconWarning from "./IconWarning.vue";
 import Tooltip from "./Tooltip.vue";
 
@@ -14,7 +16,7 @@ import Tooltip from "./Tooltip.vue";
  * loading icon while its column's data loads.
  */
 export default defineComponent({
-    components: { IconWarning, Tooltip },
+    components: { IconExternalLink, IconFolderTree, IconWarning, Tooltip },
     props: {
         column: {
             type: Object,

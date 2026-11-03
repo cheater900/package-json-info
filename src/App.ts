@@ -17,6 +17,13 @@ import IconDownload from "./components/IconDownload.vue";
 import IconExpand from "./components/IconExpand.vue";
 import IconUpload from "./components/IconUpload.vue";
 import IconReload from "./components/IconReload.vue";
+import IconBoxes from "./components/IconBoxes.vue";
+import IconColumns from "./components/IconColumns.vue";
+import IconFileJson from "./components/IconFileJson.vue";
+import IconLayers from "./components/IconLayers.vue";
+import IconMagnifier from "./components/IconMagnifier.vue";
+import IconWarning from "./components/IconWarning.vue";
+import IconWrench from "./components/IconWrench.vue";
 import ExportDialog from "./components/ExportDialog.vue";
 import NetworkLogDialog from "./components/NetworkLogDialog.vue";
 import VueJsonPretty from "vue-json-pretty";
@@ -53,6 +60,13 @@ export default defineComponent({
         IconExpand,
         IconUpload,
         IconReload,
+        IconBoxes,
+        IconColumns,
+        IconFileJson,
+        IconLayers,
+        IconMagnifier,
+        IconWarning,
+        IconWrench,
         ExportDialog,
         NetworkLogDialog,
         VueJsonPretty,
@@ -127,6 +141,7 @@ export default defineComponent({
             {
                 id: "deps" as DependencyListId,
                 title: t("sections.deps"),
+                icon: IconBoxes,
                 dependencies: deps.value,
                 isLoading: isLoadingDeps.value,
                 hasRetryableRows: deps.value.some(isRowRetryable),
@@ -134,6 +149,7 @@ export default defineComponent({
             {
                 id: "devDeps" as DependencyListId,
                 title: t("sections.devDeps"),
+                icon: IconWrench,
                 dependencies: devDeps.value,
                 isLoading: isLoadingDevDeps.value,
                 hasRetryableRows: devDeps.value.some(isRowRetryable),

@@ -147,6 +147,12 @@ code {
     white-space: pre-wrap;
 }
 
+/* Icon flowing inside a line of text, aligned with its baseline. */
+.inline-icon {
+    flex-shrink: 0;
+    vertical-align: -0.125em;
+}
+
 #app {
     border-inline: 1px solid var(--border);
     box-shadow: var(--shadow);

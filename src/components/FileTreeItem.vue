@@ -6,6 +6,7 @@
                     class="file-tree-item__icon"
                     :class="{ 'file-tree-item__icon--expanded': expanded }"
                 />
+                <component :is="expanded ? 'icon-folder-open' : 'icon-folder'" class="btn-icon" />
                 {{ node.name }}
             </button>
             <ul v-if="expanded && node.children" class="file-tree-item__children">
@@ -25,6 +26,7 @@
             :class="{ 'file-tree-item__file--selected': node.path === selectedPath }"
             @click="$emit('select-file', node.path)"
         >
+            <icon-file class="btn-icon" />
             {{ node.name }}
         </button>
     </li>

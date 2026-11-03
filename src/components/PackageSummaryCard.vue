@@ -8,7 +8,10 @@
         </p>
         <dl class="package-summary__list">
             <template v-for="col in summaryColumns" :key="col.key">
-                <dt>{{ col.label }}</dt>
+                <dt>
+                    <component :is="COLUMN_ICONS[col.key]" />
+                    {{ col.label }}
+                </dt>
                 <dd>
                     <dependency-cell
                         :column="col"

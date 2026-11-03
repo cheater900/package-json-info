@@ -20,10 +20,12 @@ describe("PackageSummaryCard", () => {
         expect(text).toContain("alice, bob"); // maintainers
     });
 
-    it("renders source-code column as link", () => {
+    it("renders source-code column as labeled icon link", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: dependencyWithTree } });
+        const link = wrapper.find('a[href="https://github.com/left-pad/left-pad"]');
 
-        expect(wrapper.find('a[href="https://github.com/left-pad/left-pad"]').text()).toBe("link");
+        expect(link.attributes("aria-label")).toBe("Open source code");
+        expect(link.find("svg").exists()).toBe(true);
     });
 
     it("renders dash instead of link without sourceCode", () => {

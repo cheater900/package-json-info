@@ -8,7 +8,8 @@
                 :disabled="wouldViolateMinVisible(visibleColumns, col.key)"
                 @change="$emit('toggle-column', col.key)"
             />
-            {{ col.label }}
+            <component :is="COLUMN_ICONS[col.key]" class="column-visibility-panel__icon" />
+            <span class="column-visibility-panel__name">{{ col.label }}</span>
         </label>
     </fieldset>
 </template>

@@ -10,9 +10,10 @@ import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
+import { COLUMN_ICONS } from "./columnIcons";
+import IconArrowDown from "./IconArrowDown.vue";
 import IconEye from "./IconEye.vue";
 import IconGrip from "./IconGrip.vue";
-import IconMagnifier from "./IconMagnifier.vue";
 import IconReload from "./IconReload.vue";
 import TextWrapped from "./TextWrapped.vue";
 
@@ -22,9 +23,9 @@ export default defineComponent({
         Tooltip,
         SortIndicator,
         DependencyCell,
+        IconArrowDown,
         IconEye,
         IconGrip,
-        IconMagnifier,
         IconReload,
         TextWrapped,
     },
@@ -140,6 +141,7 @@ export default defineComponent({
 
         return {
             t,
+            COLUMN_ICONS,
             NAME_COLUMN_KEY,
             staleNoteFor,
             isRowRetryable,

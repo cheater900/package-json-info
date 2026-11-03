@@ -148,7 +148,7 @@
         "empty": "No dependencies",
         "noSearchMatch": "No dependencies matched search",
         "rowError": "Could not load package data: {error}",
-        "sourceLink": "link",
+        "sourceLink": "Open source code",
         "viewTree": "View tree",
         "stale": "stale",
         "staleNote": "Cached data from {date}; live lookup failed.",

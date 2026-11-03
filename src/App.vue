@@ -14,6 +14,7 @@
         </h1>
 
         <div v-if="loadError" class="banner banner--error" role="alert">
+            <icon-warning class="inline-icon" />
             {{ loadError }}
         </div>
         <div v-if="isLoadingInput" class="banner banner--loading">
@@ -59,7 +60,10 @@
         </section>
 
         <details class="accordion" open>
-            <summary>{{ t("sections.columns") }}</summary>
+            <summary>
+                <icon-columns class="inline-icon" />
+                {{ t("sections.columns") }}
+            </summary>
             <column-visibility-panel
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
@@ -91,7 +95,10 @@
         </div>
 
         <div v-if="workspace?.paths.length" class="workspace-picker">
-            <label :for="workspaceSelectId">{{ t("workspaces.label") }}</label>
+            <label :for="workspaceSelectId">
+                <icon-layers class="inline-icon" />
+                {{ t("workspaces.label") }}
+            </label>
             <select
                 :id="workspaceSelectId"
                 :value="workspace.current"
@@ -118,12 +125,15 @@
             <label :for="searchInputId" class="visually-hidden">
                 {{ t("search.label") }}
             </label>
-            <input
-                :id="searchInputId"
-                v-model="searchQuery"
-                type="text"
-                :placeholder="t('search.placeholder')"
-            />
+            <span class="search-row__field">
+                <icon-magnifier class="search-row__icon" />
+                <input
+                    :id="searchInputId"
+                    v-model="searchQuery"
+                    type="text"
+                    :placeholder="t('search.placeholder')"
+                />
+            </span>
         </div>
 
         <details
@@ -133,6 +143,7 @@
             open
         >
             <summary>
+                <component :is="section.icon" class="inline-icon" />
                 {{ section.title }}
                 <span v-if="section.isLoading">{{ t("sections.loading") }}</span>
             </summary>
@@ -174,11 +185,9 @@
         </details>
         <details class="accordion accordion--boxed" open>
             <summary>
-                <template v-if="pkg?.name">
-                    {{ t("sections.packageJsonOf") }}
-                    <pre class="inline-pre">{{ pkg.name }}</pre>
-                </template>
-                <template v-else>{{ t("sections.packageJson") }}</template>
+                <icon-file-json class="inline-icon" />
+                {{ pkg?.name ? t("sections.packageJsonOf") : t("sections.packageJson") }}
+                <pre v-if="pkg?.name" class="inline-pre">{{ pkg.name }}</pre>
             </summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>

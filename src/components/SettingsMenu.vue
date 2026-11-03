@@ -21,7 +21,10 @@
             :aria-label="t('settings.title')"
         >
             <fieldset class="settings-menu__section">
-                <legend>{{ t("settings.display.legend") }}</legend>
+                <legend>
+                    <icon-monitor class="inline-icon" />
+                    {{ t("settings.display.legend") }}
+                </legend>
                 <div class="settings-menu__item">
                     <label :for="`${panelId}-theme`">{{ t("settings.display.theme") }}</label>
                     <select :id="`${panelId}-theme`" v-model="settings.theme">
@@ -49,7 +52,10 @@
             </fieldset>
 
             <fieldset class="settings-menu__section">
-                <legend>{{ t("settings.network.legend") }}</legend>
+                <legend>
+                    <icon-globe class="inline-icon" />
+                    {{ t("settings.network.legend") }}
+                </legend>
                 <div class="settings-menu__item">
                     <label :for="`${panelId}-proxy`">{{ t("settings.network.proxy") }}</label>
                     <input
@@ -98,12 +104,16 @@
                     {{ error }}
                 </p>
                 <button type="button" class="settings-menu__logs" @click="openNetworkLog">
+                    <icon-scroll-text class="btn-icon" />
                     {{ t("settings.network.viewLogs") }}
                 </button>
             </fieldset>
 
             <fieldset class="settings-menu__section">
-                <legend>{{ t("settings.token.legend") }}</legend>
+                <legend>
+                    <icon-key class="inline-icon" />
+                    {{ t("settings.token.legend") }}
+                </legend>
                 <p v-if="!isTokenStorageAvailable" class="settings-menu__hint">
                     {{ t("settings.token.unavailable") }}
                 </p>
@@ -128,9 +138,11 @@
                     </form>
                     <div class="settings-menu__row">
                         <button type="button" :disabled="!githubToken" @click="verifyToken">
+                            <icon-check class="btn-icon" />
                             {{ t("settings.token.verify") }}
                         </button>
                         <button type="button" :disabled="!githubToken" @click="purgeToken">
+                            <icon-trash class="btn-icon" />
                             {{ t("settings.token.purge") }}
                         </button>
                     </div>

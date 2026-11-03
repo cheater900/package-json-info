@@ -16,7 +16,13 @@
                                 class="deps-table__sort-trigger"
                                 @click="toggleSort(NAME_COLUMN_KEY)"
                             >
-                                <span class="deps-table__col-label">{{ t("columns.name") }}</span>
+                                <span class="deps-table__col-label">
+                                    <component
+                                        :is="COLUMN_ICONS[NAME_COLUMN_KEY]"
+                                        class="deps-table__col-icon"
+                                    />
+                                    {{ t("columns.name") }}
+                                </span>
                                 <sort-indicator :direction="sortDirectionFor(NAME_COLUMN_KEY)" />
                             </button>
                         </span>
@@ -38,12 +44,24 @@
                                 @click="toggleSort(col.key)"
                             >
                                 <tooltip :text="titleFor(col)" position="bottom">
-                                    <span class="deps-table__col-label">{{ labelFor(col) }}</span>
+                                    <span class="deps-table__col-label">
+                                        <component
+                                            :is="COLUMN_ICONS[col.key]"
+                                            class="deps-table__col-icon"
+                                        />
+                                        {{ labelFor(col) }}
+                                    </span>
                                 </tooltip>
                                 <sort-indicator :direction="sortDirectionFor(col.key)" />
                             </button>
                             <tooltip v-else :text="titleFor(col)" position="bottom">
-                                <span class="deps-table__col-label">{{ labelFor(col) }}</span>
+                                <span class="deps-table__col-label">
+                                    <component
+                                        :is="COLUMN_ICONS[col.key]"
+                                        class="deps-table__col-icon"
+                                    />
+                                    {{ labelFor(col) }}
+                                </span>
                             </tooltip>
                         </span>
                     </th>
@@ -83,7 +101,7 @@
                                 })
                             "
                         >
-                            <icon-magnifier />
+                            <icon-arrow-down />
                         </button>
                         <button
                             type="button"

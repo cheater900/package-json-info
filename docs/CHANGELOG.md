@@ -75,6 +75,18 @@ Condensed from git history. Newest month first.
 
 ### Changes
 
+#### Icons
+
+- **Column icons** (Lucide, ISC) in table headers, column picker, export
+  form and summary card. Each column gets own icon; date columns share
+  calendar base. Shrunk headers show icon plus abbreviation.
+- **Source Code link** cell shows external-link icon, not "link" text.
+  **Load** action uses down arrow, same as Fetch; magnifier moves into
+  **search box**.
+- Icons on **accordions** (Columns, Deps, Dev Deps, package.json),
+  **settings** sections and buttons, **source tree** folders and files,
+  error banner, workspace picker and export Download button.
+
 #### Modals
 
 - Every **modal** has centered **title** on top, close button on right.

@@ -19,6 +19,7 @@
                     class="export-dialog__option"
                 >
                     <input v-model="selectedColumnKeys" type="checkbox" :value="column.key" />
+                    <component :is="COLUMN_ICONS[column.key]" />
                     {{ column.label }}
                     <!-- Same spinner as a table cell waiting for its column. -->
                     <span
@@ -43,6 +44,7 @@
                 {{ t("export.failed") }}
             </span>
             <button type="submit" :disabled="!canDownload">
+                <icon-download class="btn-icon" />
                 {{ t("export.download") }}
             </button>
         </div>

@@ -125,9 +125,24 @@ textarea {
     z-index: 2;
 }
 
+.search-row__field {
+    display: inline-block;
+    max-width: 100%;
+    position: relative;
+}
+
+.search-row__icon {
+    left: calc(12px * var(--space-scale));
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .search-row input {
     max-width: 100%;
     padding: calc(10px * var(--space-scale)) calc(12px * var(--space-scale));
+    padding-left: calc(12px * var(--space-scale) + 1.5em);
     width: 480px;
 }
 

@@ -67,7 +67,7 @@ Every row has Actions column, right after Name, with three buttons:
 
 - View (eye icon) opens package summary card.
 - Reload (circular arrow) refetches row's failed lookups.
-- Load (magnifier) loads that package's own `package.json` as new table
+- Load (down arrow) loads that package's own `package.json` as new table
   input.
 
 Clicking cells does nothing. Load:
@@ -121,6 +121,8 @@ Each step stops table fetch of step before.
   lookup fails (offline, rate limit, outage), row shows stored value, and
   "stale" badge next to name gives its date. Return to table through history
   retries lookup. No IndexedDB -> no fallback.
+- **Column icons**: each column has own icon in header, column picker,
+  export form and summary card. Abbreviated labels keep icon.
 - **Column preferences**: visibility, drag-and-drop order and abbreviated
   labels, stored in `localStorage`. Abbreviations: VER (Version), OOD
   (Outdated), HS (Health), WDL (Weekly downloads), SRC (Source Code link),

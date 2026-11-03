@@ -14,8 +14,15 @@
         </span>
     </tooltip>
     <template v-else-if="column.render === 'link'">
-        <a v-if="dependency.sourceCode" :href="dependency.sourceCode" @click.stop>
-            {{ t("table.sourceLink") }}
+        <a
+            v-if="dependency.sourceCode"
+            class="dependency-cell__source-link"
+            :href="dependency.sourceCode"
+            :aria-label="t('table.sourceLink')"
+            :title="t('table.sourceLink')"
+            @click.stop
+        >
+            <icon-external-link />
         </a>
         <template v-else>{{ MISSING_VALUE }}</template>
     </template>
@@ -25,6 +32,7 @@
             type="button"
             @click.stop="$emit('open-source-tree', dependency)"
         >
+            <icon-folder-tree class="btn-icon" />
             {{ t("table.viewTree") }}
         </button>
         <template v-else>{{ MISSING_VALUE }}</template>
