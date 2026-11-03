@@ -24,3 +24,14 @@ export function withInputUrlParam(search: string, value: string): string {
     const query = params.toString();
     return query ? `?${query}` : "";
 }
+
+/**
+ * `href` with `inputUrl` set to `value`, as an absolute URL for
+ * `history.replaceState`. A relative "path?query" would not do: under a
+ * path starting with "//" it names another host, and replaceState throws.
+ */
+export function hrefWithInputUrlParam(href: string, value: string): string {
+    const url = new URL(href);
+    url.search = withInputUrlParam(url.search, value);
+    return url.href;
+}

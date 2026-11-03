@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-10
 
+- Pass absolute URL to `history.replaceState` so URL input sync works when app is served under path starting with `//`
 - Reject file tree paths deeper than `MAX_FILE_TREE_DEPTH` with translated error so crafted tarball cannot overflow call stack
 - Validate npm registry documents with zod so a field of wrong type reads as missing instead of failing whole row
 - Refuse `Authorization` requests to any origin but `api.github.com` in `fetchWithTimeout` so GitHub token cannot reach another host

@@ -5,7 +5,7 @@ import { fetchPackageJsonForVersion } from "../api/npmPackage";
 import { fetchPackageJsonFromRepo } from "../api/repoPackageJson";
 import { fetchText } from "../api/http";
 import { t } from "../i18n";
-import { readInputUrlParam, withInputUrlParam } from "../utils/urlInputSync";
+import { hrefWithInputUrlParam, readInputUrlParam } from "../utils/urlInputSync";
 import { isHttpUrl } from "../utils/url";
 import { isRepoHostUrl } from "../utils/repoUrl";
 import { settle } from "../utils/settle";
@@ -31,11 +31,10 @@ export function usePackageJsonSources(
     watch(urlInput, (value) => {
         clearTimeout(urlSyncTimer);
         urlSyncTimer = setTimeout(() => {
-            const search = withInputUrlParam(window.location.search, value);
             window.history.replaceState(
                 null,
                 "",
-                `${window.location.pathname}${search}${window.location.hash}`,
+                hrefWithInputUrlParam(window.location.href, value),
             );
         }, URL_SYNC_DEBOUNCE_MS);
     });
