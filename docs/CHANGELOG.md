@@ -2,6 +2,10 @@
 
 Changes derived from git history, newest first, grouped by date.
 
+## 2026-11-10
+
+- Refuse `Authorization` requests to any origin but `api.github.com` in `fetchWithTimeout` so GitHub token cannot reach another host
+
 ## 2026-11-04
 
 - Record open audit gaps in NOTES, settings ideas in IDEA, link NOTES from README

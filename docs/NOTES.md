@@ -20,9 +20,10 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
 - **Proxy prefix without trailing `/`** (`https://p.example` + target)
   builds a broken host such as `p.examplehttps`. The requests fail; no real
   TLD matches.
-- **No host check for `Authorization`** in `fetchWithTimeout`. Only
-  callers keep the token on `api.github.com`; one origin check there would
-  harden it.
+- **Malicious tarball can freeze the tab.** The 256 MB unpacked cap still
+  allows hundreds of thousands of entries in one directory, all rendered
+  at once. Only the user's own tab, only after "View tree"; closing the
+  modal or tab recovers. An entry-count cap would fix it.
 - **Dev-only `npm audit` findings**: moderate advisories in the
   `@vue/test-utils` → js-beautify → editorconfig/minimatch/glob chain. Not
   in the bundle. `npm audit fix --force` downgrades `@vue/test-utils`;

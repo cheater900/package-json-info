@@ -135,6 +135,7 @@
         "invalidJson": "That's not valid JSON: {message}",
         "invalidPackageJson": "Invalid package.json: {details}.",
         "requestFailed": "Request failed with status {status}",
+        "tokenHostBlocked": "Blocked a request that would send the GitHub token to another host.",
         "invalidRepoUrl": "Invalid repository URL. Must be in format: https://<host>/<owner>/<repo>",
         "unsupportedRepoHost": "Unsupported git host \"{host}\". Supported hosts: {hosts}",
         "tarballDownload": "Could not download the package tarball (status {status}).",

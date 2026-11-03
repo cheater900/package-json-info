@@ -1,4 +1,4 @@
-import { HTTP_NOT_FOUND, PROXY_URL_PLACEHOLDER } from "../constants";
+import { GITHUB_API_URL, HTTP_NOT_FOUND, PROXY_URL_PLACEHOLDER } from "../constants";
 import { t } from "../i18n";
 import { settings } from "../settings";
 
@@ -35,10 +35,14 @@ export function proxiedUrl(url: string, proxy: string = settings.proxyUrl): stri
 /**
  * `fetch` aborted after `settings.fetchTimeoutMs`, so a stalled server can't
  * hang the app. Goes through the proxy unless it carries an Authorization
- * header: a token must only ever reach its own API host.
+ * header: a token must only ever reach its own API host. Throws when such
+ * a request targets any origin but the GitHub API.
  */
 export function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
     const isAuthorized = new Headers(init.headers).has("Authorization");
+    if (isAuthorized && new URL(url).origin !== GITHUB_API_URL) {
+        throw new Error(t("errors.tokenHostBlocked"));
+    }
     return fetch(isAuthorized ? url : proxiedUrl(url), {
         ...init,
         signal: AbortSignal.timeout(settings.fetchTimeoutMs),

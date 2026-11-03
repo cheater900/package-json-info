@@ -65,8 +65,23 @@ describe("fetchWithTimeout", () => {
         vi.stubGlobal("fetch", fetchMock);
         settings.proxyUrl = "https://p.test/";
 
-        await fetchWithTimeout("https://a.test/x", { headers: { Authorization: "Bearer t" } });
+        await fetchWithTimeout("https://api.github.com/x", {
+            headers: { Authorization: "Bearer t" },
+        });
 
-        expect(fetchMock).toHaveBeenCalledWith("https://a.test/x", expect.anything());
+        expect(fetchMock).toHaveBeenCalledWith("https://api.github.com/x", expect.anything());
     });
+
+    it.each(["https://a.test/x", "https://api.github.com.a.test/x", "http://api.github.com/x"])(
+        "throws for authorized request to %s",
+        (url) => {
+            const fetchMock = vi.fn(async () => jsonResponse({}));
+            vi.stubGlobal("fetch", fetchMock);
+
+            expect(() => fetchWithTimeout(url, { headers: { authorization: "Bearer t" } })).toThrow(
+                "GitHub token",
+            );
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 });
