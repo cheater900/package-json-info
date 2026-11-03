@@ -118,3 +118,8 @@ export async function fetchFromUrlInput(page: Page, url: string) {
         .fill(url);
     await page.getByRole("button", { name: "FETCH" }).click();
 }
+
+/** Package name in the "Showing dependencies for" line. */
+export function shownPackageName(page: Page) {
+    return page.locator(".package-name .inline-pre");
+}

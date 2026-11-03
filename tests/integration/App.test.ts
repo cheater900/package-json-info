@@ -62,6 +62,11 @@ async function openNetworkLog(wrapper: Awaited<ReturnType<typeof mountApp>>) {
     await wrapper.find(".settings-menu__logs").trigger("click");
 }
 
+/** Package name in the "Showing dependencies for" line. */
+function shownPackageName(wrapper: Awaited<ReturnType<typeof mountApp>>) {
+    return wrapper.find(".package-name .inline-pre").text();
+}
+
 function modalTitle(): string | null | undefined {
     return document.body.querySelector(".modal__title")?.textContent;
 }
@@ -78,6 +83,9 @@ describe("App", () => {
             "package.json of package-json-info",
         ]);
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
+        expect(wrapper.find(".package-name").text()).toBe(
+            "Showing dependencies for package-json-info:",
+        );
     });
 
     it("expand button opens table modal, close removes modal", async () => {
@@ -356,7 +364,7 @@ describe("App", () => {
 
     it("shows error banner for URL without scheme, keeps loaded package", async () => {
         const wrapper = await mountApp();
-        const loadedName = wrapper.find(".package-name").text();
+        const loadedName = shownPackageName(wrapper);
 
         await wrapper.find("#url-input").setValue("example.com/package.json");
         await wrapper.find("form.input-methods__url-form").trigger("submit");
@@ -364,7 +372,7 @@ describe("App", () => {
         expect(wrapper.find(".banner--error").text()).toBe(
             "Enter a full URL starting with http:// or https://.",
         );
-        expect(wrapper.find(".package-name").text()).toBe(loadedName);
+        expect(shownPackageName(wrapper)).toBe(loadedName);
         expect(wrapper.find(".history-controls").exists()).toBe(false);
     });
 
@@ -412,7 +420,7 @@ describe("App", () => {
             ]);
             await select.setValue("packages/a");
             await flushPromises();
-            expect(wrapper.find(".package-name").text()).toBe("Showing dependencies for pkg-a:");
+            expect(shownPackageName(wrapper)).toBe("pkg-a");
             const reloaded = wrapper.find(".workspace-picker select");
             expect((reloaded.element as HTMLSelectElement).value).toBe("packages/a");
         });
@@ -423,9 +431,7 @@ describe("App", () => {
 
             await loadMonorepo(wrapper);
 
-            expect(wrapper.find(".package-name").text()).toBe(
-                "Showing dependencies for mono-root:",
-            );
+            expect(shownPackageName(wrapper)).toBe("mono-root");
             expect(wrapper.find(".workspace-picker select").exists()).toBe(false);
             expect(wrapper.find(".workspace-picker__note").text()).toContain(
                 "Could not check this repository for workspaces",
@@ -443,9 +449,7 @@ describe("App", () => {
             await flushPromises();
 
             expect(wrapper.find(".banner--error").text()).toContain("packages/gone");
-            expect(wrapper.find(".package-name").text()).toBe(
-                "Showing dependencies for mono-root:",
-            );
+            expect(shownPackageName(wrapper)).toBe("mono-root");
             expect((select.element as HTMLSelectElement).value).toBe("");
             expect((select.element as HTMLSelectElement).disabled).toBe(false);
         });
@@ -472,7 +476,7 @@ describe("App", () => {
             expect((select.element as HTMLSelectElement).disabled).toBe(true);
             answer!(textResponse('{"name":"pkg-slow"}'));
             await flushPromises();
-            expect(wrapper.find(".package-name").text()).toBe("Showing dependencies for pkg-slow:");
+            expect(shownPackageName(wrapper)).toBe("pkg-slow");
             const reloaded = wrapper.find(".workspace-picker select");
             expect((reloaded.element as HTMLSelectElement).disabled).toBe(false);
         });
@@ -545,9 +549,7 @@ describe("App", () => {
 
                 const wrapper = await mountApp();
 
-                expect(wrapper.find(".package-name").text()).toBe(
-                    "Showing dependencies for left-pad:",
-                );
+                expect(shownPackageName(wrapper)).toBe("left-pad");
                 expect(wrapper.find(".history-controls span").text()).toBe("4 / 4");
                 expect(wrapper.find(".banner--error").exists()).toBe(false);
                 expect((wrapper.find("#url-input").element as HTMLInputElement).value).toBe("");
@@ -562,9 +564,7 @@ describe("App", () => {
                 const wrapper = await mountApp();
 
                 expect(wrapper.find(".banner--error").text()).toContain("packages/gone");
-                expect(wrapper.find(".package-name").text()).toBe(
-                    "Showing dependencies for mono-root:",
-                );
+                expect(shownPackageName(wrapper)).toBe("mono-root");
                 expect(wrapper.find(".history-controls span").text()).toBe("2 / 2");
                 expect(shareSteps()).toEqual([STEP_URL]);
             });
@@ -575,9 +575,7 @@ describe("App", () => {
 
                 const wrapper = await mountApp();
 
-                expect(wrapper.find(".package-name").text()).toBe(
-                    "Showing dependencies for mono-root:",
-                );
+                expect(shownPackageName(wrapper)).toBe("mono-root");
                 expect(wrapper.find(".history-controls span").text()).toBe("2 / 2");
             });
 
@@ -590,9 +588,7 @@ describe("App", () => {
                     .vm.$emit("load-package", { name: "left-pad", version: "^1.0.0" });
                 await flushPromises();
 
-                expect(wrapper.find(".package-name").text()).toBe(
-                    "Showing dependencies for left-pad:",
-                );
+                expect(shownPackageName(wrapper)).toBe("left-pad");
                 expect(shareSteps()).toEqual([STEP_DEPENDENCY]);
                 await wrapper.find(".history-controls button").trigger("click");
                 expect(shareSteps()).toEqual([]);
