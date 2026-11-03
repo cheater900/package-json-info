@@ -50,6 +50,7 @@
         }
     },
     "input": {
+        "description": "Load a package.json by URL, file or clipboard to see a browsable summary of its dependencies and devDependencies.",
         "loading": "Loading package.json…",
         "urlLabel": "Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL",
         "urlPlaceholder": "Enter url...",
@@ -91,6 +92,7 @@
         "deps": "Deps",
         "devDeps": "Dev Deps",
         "packageJson": "package.json",
+        "showingDependenciesFor": "Showing dependencies for",
         "loading": "(loading…)",
         "expandTable": "Expand table",
         "retryFailed": "Retry failed fetches",

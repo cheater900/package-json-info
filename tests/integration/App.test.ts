@@ -397,7 +397,7 @@ describe("App", () => {
             ]);
             await select.setValue("packages/a");
             await flushPromises();
-            expect(wrapper.find(".package-name").text()).toBe("pkg-a");
+            expect(wrapper.find(".package-name").text()).toBe("Showing dependencies for pkg-a:");
             const reloaded = wrapper.find(".workspace-picker select");
             expect((reloaded.element as HTMLSelectElement).value).toBe("packages/a");
         });
@@ -408,7 +408,9 @@ describe("App", () => {
 
             await loadMonorepo(wrapper);
 
-            expect(wrapper.find(".package-name").text()).toBe("mono-root");
+            expect(wrapper.find(".package-name").text()).toBe(
+                "Showing dependencies for mono-root:",
+            );
             expect(wrapper.find(".workspace-picker select").exists()).toBe(false);
             expect(wrapper.find(".workspace-picker__note").text()).toContain(
                 "Could not check this repository for workspaces",
@@ -426,7 +428,9 @@ describe("App", () => {
             await flushPromises();
 
             expect(wrapper.find(".banner--error").text()).toContain("packages/gone");
-            expect(wrapper.find(".package-name").text()).toBe("mono-root");
+            expect(wrapper.find(".package-name").text()).toBe(
+                "Showing dependencies for mono-root:",
+            );
             expect((select.element as HTMLSelectElement).value).toBe("");
             expect((select.element as HTMLSelectElement).disabled).toBe(false);
         });
@@ -453,7 +457,7 @@ describe("App", () => {
             expect((select.element as HTMLSelectElement).disabled).toBe(true);
             answer!(textResponse('{"name":"pkg-slow"}'));
             await flushPromises();
-            expect(wrapper.find(".package-name").text()).toBe("pkg-slow");
+            expect(wrapper.find(".package-name").text()).toBe("Showing dependencies for pkg-slow:");
             const reloaded = wrapper.find(".workspace-picker select");
             expect((reloaded.element as HTMLSelectElement).disabled).toBe(false);
         });
@@ -526,7 +530,9 @@ describe("App", () => {
 
                 const wrapper = await mountApp();
 
-                expect(wrapper.find(".package-name").text()).toBe("left-pad");
+                expect(wrapper.find(".package-name").text()).toBe(
+                    "Showing dependencies for left-pad:",
+                );
                 expect(wrapper.find(".history-controls span").text()).toBe("4 / 4");
                 expect(wrapper.find(".banner--error").exists()).toBe(false);
                 expect((wrapper.find("#url-input").element as HTMLInputElement).value).toBe("");
@@ -541,7 +547,9 @@ describe("App", () => {
                 const wrapper = await mountApp();
 
                 expect(wrapper.find(".banner--error").text()).toContain("packages/gone");
-                expect(wrapper.find(".package-name").text()).toBe("mono-root");
+                expect(wrapper.find(".package-name").text()).toBe(
+                    "Showing dependencies for mono-root:",
+                );
                 expect(wrapper.find(".history-controls span").text()).toBe("2 / 2");
                 expect(shareSteps()).toEqual([STEP_URL]);
             });
@@ -552,7 +560,9 @@ describe("App", () => {
 
                 const wrapper = await mountApp();
 
-                expect(wrapper.find(".package-name").text()).toBe("mono-root");
+                expect(wrapper.find(".package-name").text()).toBe(
+                    "Showing dependencies for mono-root:",
+                );
                 expect(wrapper.find(".history-controls span").text()).toBe("2 / 2");
             });
 
@@ -565,7 +575,9 @@ describe("App", () => {
                     .vm.$emit("load-package", { name: "left-pad", version: "^1.0.0" });
                 await flushPromises();
 
-                expect(wrapper.find(".package-name").text()).toBe("left-pad");
+                expect(wrapper.find(".package-name").text()).toBe(
+                    "Showing dependencies for left-pad:",
+                );
                 expect(shareSteps()).toEqual([STEP_DEPENDENCY]);
                 await wrapper.find(".history-controls button").trigger("click");
                 expect(shareSteps()).toEqual([]);

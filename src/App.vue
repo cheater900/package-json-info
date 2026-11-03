@@ -20,6 +20,8 @@
             {{ t("input.loading") }}
         </div>
 
+        <p class="intro">{{ t("input.description") }}</p>
+
         <section class="input-methods">
             <form class="input-methods__url-form" @submit.prevent="loadFromUrlInput">
                 <label for="url-input" class="visually-hidden">
@@ -56,7 +58,7 @@
             </div>
         </section>
 
-        <details class="accordion">
+        <details class="accordion" open>
             <summary>{{ t("sections.columns") }}</summary>
             <column-visibility-panel
                 :visible-columns="visibleColumns"
@@ -77,7 +79,10 @@
             </button>
         </section>
 
-        <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
+        <!-- prettier-ignore -->
+        <div v-if="pkg?.name" class="package-name">
+            {{ t("sections.showingDependenciesFor") }} <pre class="package-name__name">{{ pkg.name }}</pre>:
+        </div>
 
         <div v-if="workspace?.paths.length" class="workspace-picker">
             <label :for="workspaceSelectId">{{ t("workspaces.label") }}</label>

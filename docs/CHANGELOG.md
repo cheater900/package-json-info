@@ -100,6 +100,11 @@ Condensed from git history. Newest month first.
 
 #### Input and loading
 
+- **Layout tweaks**: one-sentence app description above URL input.
+  Terminal titlebar sits flush with page top and sides. Main title gets
+  bigger top and bottom margin. Columns accordion starts open. Bold
+  package name heading -> plain "Showing dependencies for `name`:" line,
+  name in `<pre>`.
 - **Page width** follows screen with 10% margin each side, full width at
   1024 px and below. Expanded table and source tree modals grow with it.
 

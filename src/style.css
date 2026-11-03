@@ -89,11 +89,11 @@ h2 {
 h1 {
     font-size: calc(40px * var(--font-scale));
     letter-spacing: 0;
-    margin: 32px 0;
+    margin: 56px 0;
 
     @media (max-width: 1024px) {
         font-size: calc(28px * var(--font-scale));
-        margin: 20px 0;
+        margin: 36px 0;
     }
 }
 

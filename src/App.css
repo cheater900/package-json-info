@@ -1,10 +1,20 @@
 #app {
-    padding: calc(32px * var(--space-scale));
+    --app-padding: calc(32px * var(--space-scale));
+    padding: var(--app-padding);
     text-align: left;
 
     @media (max-width: 700px) {
-        padding: calc(12px * var(--space-scale));
+        --app-padding: calc(12px * var(--space-scale));
     }
+}
+
+/* Flush with #app top and side edges, like a real terminal window. */
+.terminal-titlebar {
+    margin: calc(-1 * var(--app-padding)) calc(-1 * var(--app-padding)) 0;
+}
+
+.intro {
+    margin: 0 0 12px;
 }
 
 h1 {
@@ -158,11 +168,14 @@ textarea {
 }
 
 .package-name {
-    border-bottom: 1px solid var(--border);
-    font-weight: 700;
     margin: 24px 0 12px;
     overflow-wrap: anywhere;
-    padding-bottom: calc(8px * var(--space-scale));
+}
+
+.package-name__name {
+    display: inline;
+    margin: 0;
+    white-space: pre-wrap;
 }
 
 .workspace-picker {

@@ -155,27 +155,25 @@ test("hides Vulnerabilities, Bundle size, Maintainers by default, skips third-pa
     await expect(depsTable.getByRole("columnheader", { name: "Git stars" })).toBeVisible();
 });
 
-test("Columns, Deps, Dev Deps collapse as accordions; Deps and Dev Deps start open", async ({
-    page,
-}) => {
+test("Columns, Deps, Dev Deps collapse as accordions; all start open", async ({ page }) => {
     await page.goto("/");
 
     const columnsSection = page.locator("details.accordion").nth(0);
     const depsSection = page.locator("details.accordion").nth(1);
     const devDepsSection = page.locator("details.accordion").nth(2);
 
-    await expect(columnsSection).toHaveJSProperty("open", false);
+    await expect(columnsSection).toHaveJSProperty("open", true);
     await expect(depsSection).toHaveJSProperty("open", true);
     await expect(devDepsSection).toHaveJSProperty("open", true);
     await expect(depsSection.locator("table.deps-table")).toBeVisible();
-    await expect(columnsSection.locator(".column-visibility-panel")).not.toBeVisible();
+    await expect(columnsSection.locator(".column-visibility-panel")).toBeVisible();
 
     // Collapsing Deps hides its table but leaves Dev Deps and Columns as-is.
     await depsSection.locator("summary").click();
     await expect(depsSection).toHaveJSProperty("open", false);
     await expect(depsSection.locator("table.deps-table")).not.toBeVisible();
     await expect(devDepsSection).toHaveJSProperty("open", true);
-    await expect(columnsSection).toHaveJSProperty("open", false);
+    await expect(columnsSection).toHaveJSProperty("open", true);
 
     // Expanding it again reveals the table.
     await depsSection.locator("summary").click();
@@ -184,8 +182,8 @@ test("Columns, Deps, Dev Deps collapse as accordions; Deps and Dev Deps start op
 
     // Same collapse/expand behaviour for the Columns panel.
     await columnsSection.locator("summary").click();
-    await expect(columnsSection).toHaveJSProperty("open", true);
-    await expect(columnsSection.locator(".column-visibility-panel")).toBeVisible();
+    await expect(columnsSection).toHaveJSProperty("open", false);
+    await expect(columnsSection.locator(".column-visibility-panel")).not.toBeVisible();
 });
 
 test("expand button below table opens table modal, keeps section open", async ({ page }) => {
@@ -280,12 +278,12 @@ test("GitHub monorepo URL lists pnpm workspaces, picked workspace loads, Back re
     await expect(page.getByRole("cell", { name: "root-dep", exact: true })).toBeVisible();
 
     await workspaceSelect.selectOption("packages/core");
-    await expect(page.getByRole("heading", { name: "mono-core" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for mono-core:");
     await expect(page.getByRole("cell", { name: "core-dep", exact: true })).toBeVisible();
     await expect(workspaceSelect).toHaveValue("packages/core");
 
     await page.getByRole("button", { name: "← Back" }).click();
-    await expect(page.getByRole("heading", { name: "mono-root" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for mono-root:");
     await expect(workspaceSelect).toHaveValue("");
 });
 
@@ -310,7 +308,7 @@ test("missing workspace package.json shows error, keeps root loaded, select back
     await workspaceSelect.selectOption("packages/gone");
 
     await expect(page.locator(".banner--error")).toContainText("packages/gone");
-    await expect(page.getByRole("heading", { name: "mono-root" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for mono-root:");
     await expect(page.getByRole("cell", { name: "root-dep", exact: true })).toBeVisible();
     await expect(workspaceSelect).toHaveValue("");
     await expect(workspaceSelect).toBeEnabled();
@@ -330,7 +328,7 @@ test("rate-limited workspace listing shows notice, root package.json still loads
 
     await fetchFromUrlInput(page, MONOREPO_URL);
 
-    await expect(page.getByRole("heading", { name: "mono-root" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for mono-root:");
     await expect(page.getByRole("cell", { name: "root-dep", exact: true })).toBeVisible();
     await expect(page.getByText("Could not check this repository for workspaces")).toBeVisible();
     await expect(page.getByLabel("Workspace")).toHaveCount(0);
@@ -490,18 +488,18 @@ test("share link replays steps, Back and drill-down rewrite link", async ({ page
 
     // Built-in package.json, then one entry per step.
     const depsTable = page.locator("table.deps-table").first();
-    await expect(page.getByRole("heading", { name: "left-pad" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for left-pad:");
     await expect(depsTable.getByRole("cell", { name: "nested-dep", exact: true })).toBeVisible();
     await expect(page.getByText("3 / 3", { exact: true })).toBeVisible();
     await expect.poll(linkSteps).toEqual([urlStep, dependencyStep]);
 
     await page.getByRole("button", { name: "← Back" }).click();
-    await expect(page.getByRole("heading", { name: "some-repo" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for some-repo:");
     await expect(page.getByText("2 / 3", { exact: true })).toBeVisible();
     await expect.poll(linkSteps).toEqual([urlStep]);
 
     await depsTable.getByRole("button", { name: "Load table of left-pad" }).click();
-    await expect(page.getByRole("heading", { name: "left-pad" })).toBeVisible();
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for left-pad:");
     await expect.poll(linkSteps).toEqual([urlStep, dependencyStep]);
 });
 
@@ -1039,6 +1037,7 @@ async function loadPackageWithTarball(page: Page, tarball: Buffer) {
     await expandAllSections(page);
     await page.getByLabel("Source Code Tree", { exact: true }).check();
     await loadJson(page, { name: "demo", dependencies: { "tree-pkg": "1.0.0" } });
+    await expect(page.locator(".package-name")).toHaveText("Showing dependencies for demo:");
 }
 
 test("View tree downloads npm tarball, browses folder, shows file content", async ({ page }) => {
