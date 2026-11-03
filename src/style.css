@@ -139,6 +139,14 @@ code {
     padding: calc(4px * var(--space-scale)) calc(8px * var(--space-scale));
 }
 
+/* <pre> flowing inside a line of text. */
+.inline-pre {
+    display: inline;
+    font-family: var(--mono-code);
+    margin: 0;
+    white-space: pre-wrap;
+}
+
 #app {
     border-inline: 1px solid var(--border);
     box-shadow: var(--shadow);

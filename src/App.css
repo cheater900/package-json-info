@@ -163,13 +163,6 @@ textarea {
     overflow-wrap: anywhere;
 }
 
-.inline-pre {
-    display: inline;
-    font-family: var(--mono-code);
-    margin: 0;
-    white-space: pre-wrap;
-}
-
 .workspace-picker {
     align-items: center;
     display: flex;

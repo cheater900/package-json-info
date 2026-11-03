@@ -230,6 +230,9 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **`.inline-pre`** lives in global `style.css` beside `code`. App
+  integration and e2e tests share `shownPackageName` helper instead of
+  repeating "Showing dependencies for" sentence.
 - **`TextWrapped`** component holds click-to-expand for long text:
   ellipsis, zoom-in cursor when clipped, zoom-out when expanded.
   `maxLength` prop sets clip width in characters. Dependency tables and
