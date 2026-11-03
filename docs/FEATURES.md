@@ -44,7 +44,8 @@ data exists:
 - Closed issues count
 - List of package's own dependencies
 - "Load this package's table" button (see below)
-- License, with warning badge for copyleft or missing licenses
+- License, with warning icon for copyleft or missing licenses (exports
+  write `⚠` instead)
 - Outdated version indicator: declared version or range against latest
   published version
 - Health score from 0 to 100, labelled good (70 and up), fair (40 and up)
@@ -132,10 +133,11 @@ Each step stops table fetch of step before.
 
 ## Export
 
-**Export** button, right-aligned below both tables, opens form:
+**Export** button below each table, right of Expand table, opens form:
 
-- **Tables**: Deps and Dev Deps checkboxes, both checked. Download stays
-  disabled with none checked.
+- **Tables**: Deps and Dev Deps checkboxes. Only table of clicked button
+  starts checked; checking other one exports both. Download stays disabled
+  with none checked.
 - **Columns**: every data column in current column order, visible ones
   checked. Name always exports. Checking column tables never loaded fetches
   its data, with spinner beside it; Download waits for fetch. Tables do not

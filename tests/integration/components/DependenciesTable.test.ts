@@ -12,12 +12,9 @@ import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/
 
 /** Labels of Name and the data columns; the Actions header is left out. */
 function headerLabels(wrapper: VueWrapper) {
-    return wrapper.findAll("thead th:not(.deps-table__actions-header)").map((th) =>
-        th
-            .text()
-            .replace(/[\s▲▼]+$/, "")
-            .trim(),
-    );
+    return wrapper
+        .findAll("thead th:not(.deps-table__actions-header)")
+        .map((th) => th.text().trim());
 }
 
 function rowNames(wrapper: VueWrapper) {
@@ -55,7 +52,7 @@ describe("DependenciesTable", () => {
         expect(text).toContain("alice, bob");
         expect(wrapper.find('a[href="https://github.com/left-pad/left-pad"]').exists()).toBe(true);
         // MIT is permissive: no license warning marker
-        expect(text).not.toContain("MIT ⚠");
+        expect(wrapper.find(".dependency-cell__warning").exists()).toBe(false);
     });
 
     it("renders '-' for missing fields, no blank cells", () => {
@@ -73,7 +70,8 @@ describe("DependenciesTable", () => {
                 return;
             }
             if (index === licenseIndex) {
-                expect(cell.text()).toBe("- ⚠");
+                expect(cell.text()).toBe("-");
+                expect(cell.find(".dependency-cell__warning").exists()).toBe(true);
                 return;
             }
             expect(cell.text()).toBe("-");
@@ -463,7 +461,7 @@ describe("DependenciesTable sorting", () => {
         if (!active.exists()) {
             return null;
         }
-        return active.text().trim() === "▲" ? "asc" : "desc";
+        return active.classes("sort-indicator__arrow--down") ? "desc" : "asc";
     }
 
     it("keeps prop order until header click", () => {

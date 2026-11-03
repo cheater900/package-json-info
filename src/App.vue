@@ -34,7 +34,7 @@
                     :placeholder="t('input.urlPlaceholder')"
                 />
                 <button type="submit" :disabled="isLoadingInput">
-                    <span class="btn-icon" aria-hidden="true">↓</span>
+                    <icon-arrow-down class="btn-icon" />
                     {{ t("input.fetch") }}
                 </button>
             </form>
@@ -52,7 +52,7 @@
                     {{ t("input.uploadFile") }}
                 </button>
                 <button type="button" @click="loadFromClipboard" :disabled="isLoadingInput">
-                    <span class="btn-icon" aria-hidden="true">⧉</span>
+                    <icon-clipboard class="btn-icon" />
                     {{ t("input.pasteFromClipboard") }}
                 </button>
             </div>
@@ -74,6 +74,7 @@
 
         <section v-if="history.length > 1" class="history-controls">
             <button type="button" @click="goBack" :disabled="!canGoBack">
+                <icon-arrow-left class="btn-icon" />
                 {{ t("history.back") }}
             </button>
             <span>
@@ -81,6 +82,7 @@
             </span>
             <button type="button" @click="goForward" :disabled="!canGoForward">
                 {{ t("history.forward") }}
+                <icon-arrow-right class="btn-icon" />
             </button>
         </section>
 
@@ -157,14 +159,20 @@
                     class="table-actions__expand"
                     @click="expandTable(section.id)"
                 >
-                    <span class="btn-icon" aria-hidden="true">⤢</span>
+                    <icon-expand class="btn-icon" />
                     {{ t("sections.expandTable") }}
+                </button>
+                <button
+                    type="button"
+                    class="table-actions__export"
+                    :disabled="isLoadingTables"
+                    @click="openExport(section.id)"
+                >
+                    <icon-download class="btn-icon" />
+                    {{ t("export.open") }}
                 </button>
             </div>
         </details>
-        <button type="button" class="table-export" :disabled="isLoadingTables" @click="openExport">
-            {{ t("export.open") }}
-        </button>
         <details class="accordion accordion--boxed" open>
             <summary>{{ t("sections.packageJson") }}</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
@@ -192,6 +200,7 @@
             <export-dialog
                 v-else-if="modalContent.kind === 'export'"
                 :tables="tableSections"
+                :initial-table-ids="[modalContent.sectionId]"
                 :column-order="columnOrder"
                 :initial-columns="visibleColumnKeys"
                 :fetched-columns="fetchedColumns"

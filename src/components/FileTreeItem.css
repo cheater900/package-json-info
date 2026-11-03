@@ -37,7 +37,12 @@
 }
 
 .file-tree-item__icon {
-    display: inline-block;
-    text-align: center;
+    flex-shrink: 0;
+    height: 12px;
+    transition: transform 0.1s;
     width: 12px;
+}
+
+.file-tree-item__icon--expanded {
+    transform: rotate(90deg);
 }

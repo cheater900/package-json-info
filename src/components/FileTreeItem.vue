@@ -2,9 +2,10 @@
     <li class="file-tree-item">
         <template v-if="node.type === 'directory'">
             <button type="button" class="file-tree-item__toggle" @click="expanded = !expanded">
-                <span class="file-tree-item__icon" aria-hidden="true">
-                    {{ expanded ? "▾" : "▸" }}
-                </span>
+                <icon-chevron-right
+                    class="file-tree-item__icon"
+                    :class="{ 'file-tree-item__icon--expanded': expanded }"
+                />
                 {{ node.name }}
             </button>
             <ul v-if="expanded && node.children" class="file-tree-item__children">

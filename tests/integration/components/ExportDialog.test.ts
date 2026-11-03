@@ -50,10 +50,14 @@ function deferredLoadRows() {
     return { loadRows, calls };
 }
 
-function mountDialog(loadRows: LoadRows = instantLoadRows()) {
+function mountDialog(
+    loadRows: LoadRows = instantLoadRows(),
+    initialTableIds: DependencyListId[] = ["deps", "devDeps"],
+) {
     return mount(ExportDialog, {
         props: {
             tables: TABLES,
+            initialTableIds,
             columnOrder: DEFAULT_COLUMN_ORDER,
             initialColumns: INITIAL_COLUMNS,
             fetchedColumns: new Set(INITIAL_COLUMNS),
@@ -105,6 +109,20 @@ describe("ExportDialog", () => {
         expect((wrapper.find("select").element as HTMLSelectElement).value).toBe("csv");
         expect(loadRows).toHaveBeenCalledWith("deps", new Set(["version", "license"]));
         expect(loadRows).toHaveBeenCalledWith("devDeps", new Set(["version", "license"]));
+        expect(downloadButton(wrapper).attributes("disabled")).toBeUndefined();
+    });
+
+    it("checks only initial table, loads its rows, keeps other table checkable", async () => {
+        const loadRows = instantLoadRows();
+        const wrapper = mountDialog(loadRows, ["devDeps"]);
+        await flushPromises();
+
+        expect((checkbox(wrapper, "deps").element as HTMLInputElement).checked).toBe(false);
+        expect((checkbox(wrapper, "devDeps").element as HTMLInputElement).checked).toBe(true);
+        expect(loadRows).not.toHaveBeenCalledWith("deps", expect.anything());
+        await checkbox(wrapper, "deps").setValue(true);
+        await flushPromises();
+        expect(loadRows).toHaveBeenCalledWith("deps", new Set(["version", "license"]));
         expect(downloadButton(wrapper).attributes("disabled")).toBeUndefined();
     });
 

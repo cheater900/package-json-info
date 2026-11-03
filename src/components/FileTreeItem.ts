@@ -1,4 +1,5 @@
 import { ref, defineComponent } from "vue";
+import IconChevronRight from "./IconChevronRight.vue";
 
 export default defineComponent({
     // Required for the template's self-reference (<file-tree-item> nested
@@ -6,6 +7,7 @@ export default defineComponent({
     // component resolver falls back to a component's own `name` when a tag
     // isn't otherwise registered.
     name: "FileTreeItem",
+    components: { IconChevronRight },
     props: {
         node: {
             type: Object,

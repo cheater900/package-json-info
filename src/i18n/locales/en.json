@@ -59,8 +59,8 @@
         "pasteFromClipboard": "Paste from clipboard"
     },
     "history": {
-        "back": "← Back",
-        "forward": "Forward →",
+        "back": "Back",
+        "forward": "Forward",
         "position": "{current} / {total}"
     },
     "search": {
@@ -132,6 +132,7 @@
         "stale": "stale",
         "staleNote": "Cached data from {date}; live lookup failed.",
         "lookupFailed": "Lookup failed: {error}",
+        "licenseWarning": "copyleft or missing license",
         "actions": {
             "header": "Actions",
             "view": "View {name}",

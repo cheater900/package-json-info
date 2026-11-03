@@ -10,7 +10,7 @@
                         :aria-label="t('modal.close')"
                         @click="close"
                     >
-                        ✕
+                        <icon-cross />
                     </button>
                 </header>
                 <slot />

@@ -9,6 +9,12 @@ import Modal from "./components/Modal.vue";
 import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
+import IconArrowDown from "./components/IconArrowDown.vue";
+import IconArrowLeft from "./components/IconArrowLeft.vue";
+import IconArrowRight from "./components/IconArrowRight.vue";
+import IconClipboard from "./components/IconClipboard.vue";
+import IconDownload from "./components/IconDownload.vue";
+import IconExpand from "./components/IconExpand.vue";
 import IconUpload from "./components/IconUpload.vue";
 import IconReload from "./components/IconReload.vue";
 import ExportDialog from "./components/ExportDialog.vue";
@@ -28,7 +34,7 @@ type ModalContent =
     | { kind: "table"; sectionId: string }
     | { kind: "sourceTree"; dependency: PackageInfo }
     | { kind: "summary"; dependency: DependencyRow }
-    | { kind: "export" }
+    | { kind: "export"; sectionId: DependencyListId }
     | { kind: "networkLog" };
 
 export default defineComponent({
@@ -39,6 +45,12 @@ export default defineComponent({
         SourceTreeBrowser,
         PackageSummaryCard,
         SettingsMenu,
+        IconArrowDown,
+        IconArrowLeft,
+        IconArrowRight,
+        IconClipboard,
+        IconDownload,
+        IconExpand,
         IconUpload,
         IconReload,
         ExportDialog,
@@ -177,8 +189,8 @@ export default defineComponent({
             modalContent.value = { kind: "summary", dependency };
         }
 
-        function openExport() {
-            modalContent.value = { kind: "export" };
+        function openExport(sectionId: DependencyListId) {
+            modalContent.value = { kind: "export", sectionId };
         }
 
         function openNetworkLog() {

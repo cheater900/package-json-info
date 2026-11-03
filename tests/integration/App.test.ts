@@ -128,10 +128,10 @@ describe("App", () => {
         expect(document.body.querySelectorAll(".modal")).toHaveLength(1);
     });
 
-    it("Export button opens dialog with package name, tables and visible columns", async () => {
+    it("Export button opens dialog with package name, its table checked and visible columns", async () => {
         const wrapper = await mountApp();
 
-        await wrapper.find("button.table-export").trigger("click");
+        await wrapper.find("button.table-actions__export").trigger("click");
 
         const dialog = wrapper.findComponent(ExportDialog);
         expect(dialog.props("title")).toBe("package-json-info");
@@ -140,6 +140,7 @@ describe("App", () => {
             "deps",
             "devDeps",
         ]);
+        expect(dialog.props("initialTableIds")).toEqual(["deps"]);
         expect(dialog.props("initialColumns")).toContain("version");
         expect(dialog.props("initialColumns")).not.toContain("vulnerabilityCount");
         dialog.vm.$emit("close");
@@ -147,9 +148,17 @@ describe("App", () => {
         expect(document.body.querySelector(".modal")).toBeNull();
     });
 
+    it("Dev Deps Export button opens dialog with only Dev Deps checked", async () => {
+        const wrapper = await mountApp();
+
+        await wrapper.findAll("button.table-actions__export")[1].trigger("click");
+
+        expect(wrapper.findComponent(ExportDialog).props("initialTableIds")).toEqual(["devDeps"]);
+    });
+
     it("disables Export while shown column loads", async () => {
         const wrapper = await mountApp();
-        const button = wrapper.find("button.table-export");
+        const button = wrapper.find("button.table-actions__export");
         expect(button.attributes("disabled")).toBeUndefined();
         stubFetchPending();
 
@@ -166,14 +175,14 @@ describe("App", () => {
 
         const wrapper = await mountApp();
 
-        expect(wrapper.find("button.table-export").attributes("disabled")).toBeDefined();
+        expect(wrapper.find("button.table-actions__export").attributes("disabled")).toBeDefined();
     });
 
     it("dialog column fetch leaves tables unchanged", async () => {
         const wrapper = await mountApp();
         const tables = wrapper.findAllComponents(DependenciesTable);
         const rowsBefore = tables.map((table) => table.props("dependencies"));
-        await wrapper.find("button.table-export").trigger("click");
+        await wrapper.find("button.table-actions__export").trigger("click");
         stubFetchPending();
 
         await wrapper
@@ -203,7 +212,7 @@ describe("App", () => {
         await wrapper.find("#url-input").setValue("https://example.test/package.json");
         await wrapper.find("form.input-methods__url-form").trigger("submit");
         await flushPromises();
-        await wrapper.find("button.table-export").trigger("click");
+        await wrapper.find("button.table-actions__export").trigger("click");
 
         expect(wrapper.findComponent(ExportDialog).props("title")).toBe("package.json");
     });

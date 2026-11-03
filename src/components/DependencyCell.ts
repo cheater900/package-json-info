@@ -2,7 +2,9 @@ import { computed, defineComponent } from "vue";
 import { t } from "../i18n";
 import { fmtList, formatCell } from "../utils/dependencyRowFormatting";
 import { healthBand } from "../utils/healthScore";
+import { hasLicenseWarning } from "../utils/license";
 import { FAILED_VALUE, MISSING_VALUE } from "../constants";
+import IconWarning from "./IconWarning.vue";
 import Tooltip from "./Tooltip.vue";
 
 /**
@@ -12,7 +14,7 @@ import Tooltip from "./Tooltip.vue";
  * loading icon while its column's data loads.
  */
 export default defineComponent({
-    components: { Tooltip },
+    components: { IconWarning, Tooltip },
     props: {
         column: {
             type: Object,
@@ -40,6 +42,7 @@ export default defineComponent({
         return {
             t,
             formatCell,
+            hasLicenseWarning,
             healthBand,
             healthTooltip,
             failedLookupError,

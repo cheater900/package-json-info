@@ -282,7 +282,7 @@ test("GitHub monorepo URL lists pnpm workspaces, picked workspace loads, Back re
     await expect(page.getByRole("cell", { name: "core-dep", exact: true })).toBeVisible();
     await expect(workspaceSelect).toHaveValue("packages/core");
 
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(page.locator(".package-name")).toHaveText("Showing dependencies for mono-root:");
     await expect(workspaceSelect).toHaveValue("");
 });
@@ -493,7 +493,7 @@ test("share link replays steps, Back and drill-down rewrite link", async ({ page
     await expect(page.getByText("3 / 3", { exact: true })).toBeVisible();
     await expect.poll(linkSteps).toEqual([urlStep, dependencyStep]);
 
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(page.locator(".package-name")).toHaveText("Showing dependencies for some-repo:");
     await expect(page.getByText("2 / 3", { exact: true })).toBeVisible();
     await expect.poll(linkSteps).toEqual([urlStep]);
@@ -508,8 +508,8 @@ test("back/forward buttons navigate loaded package.json states", async ({ page }
     await expandAllSections(page);
 
     // Only one history entry so far, so the history controls don't render at all.
-    await expect(page.getByRole("button", { name: "← Back" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Forward →" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Forward", exact: true })).toHaveCount(0);
 
     await loadJson(page, {
         name: "demo",
@@ -520,19 +520,19 @@ test("back/forward buttons navigate loaded package.json states", async ({ page }
     const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "history-pkg", exact: true })).toBeVisible();
     await expect(page.getByText("2 / 2", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "← Back" })).toBeEnabled();
-    await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Forward", exact: true })).toBeDisabled();
 
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
     await expect(page.getByText("1 / 2", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Forward →" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Forward", exact: true })).toBeEnabled();
 
-    await page.getByRole("button", { name: "Forward →" }).click();
+    await page.getByRole("button", { name: "Forward", exact: true }).click();
     await expect(depsTable.getByRole("cell", { name: "history-pkg", exact: true })).toBeVisible();
     await expect(page.getByText("2 / 2", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Forward", exact: true })).toBeDisabled();
 });
 
 test("history back/forward reuses cached data, no refetch", async ({ page }) => {
@@ -563,11 +563,11 @@ test("history back/forward reuses cached data, no refetch", async ({ page }) => 
     ).toBeVisible();
     expect(cachedPkgRequests).toBe(1);
 
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
     expect(vueRequests).toBe(1);
 
-    await page.getByRole("button", { name: "Forward →" }).click();
+    await page.getByRole("button", { name: "Forward", exact: true }).click();
     await expect(
         depsTable.getByRole("cell", { name: "cached-history-pkg", exact: true }),
     ).toBeVisible();
@@ -585,7 +585,7 @@ test("loading content after back discards forward history", async ({ page }) => 
     });
     await expect(page.getByText("2 / 2", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(page.getByText("1 / 2", { exact: true })).toBeVisible();
 
     await loadJson(page, {
@@ -597,11 +597,11 @@ test("loading content after back discards forward history", async ({ page }) => 
     const depsTable = page.locator("table.deps-table").first();
     await expect(depsTable.getByRole("cell", { name: "state-b-pkg", exact: true })).toBeVisible();
     await expect(page.getByText("2 / 2", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Forward →" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Forward", exact: true })).toBeDisabled();
 
-    await page.getByRole("button", { name: "← Back" }).click();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await expect(depsTable.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "← Back" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toBeDisabled();
 });
 
 test("invalid JSON paste shows inline error, no crash", async ({ page, context }) => {
@@ -731,7 +731,9 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, maintai
     const depsTable = page.locator("table.deps-table").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "enriched-pkg" });
 
-    await expect(row.getByRole("cell", { name: "GPL-3.0 ⚠", exact: true })).toBeVisible();
+    await expect(
+        row.getByRole("cell", { name: "GPL-3.0 copyleft or missing license", exact: true }),
+    ).toBeVisible();
     await expect(row.getByRole("cell", { name: "Yes", exact: true })).toBeVisible();
     await expect(row.getByRole("cell", { name: "please upgrade", exact: true })).toBeVisible();
     await expect(row.getByRole("cell", { name: "1", exact: true })).toBeVisible();
@@ -1075,7 +1077,9 @@ test("View tree shows error for corrupt tarball", async ({ page }) => {
     );
 });
 
-test("CSV export from dialog downloads both tables with header row", async ({ page }) => {
+test("CSV export from Deps dialog with Dev Deps checked downloads both tables with header row", async ({
+    page,
+}) => {
     await page.goto("/");
     await loadJson(page, {
         name: "@demo/app",
@@ -1083,9 +1087,12 @@ test("CSV export from dialog downloads both tables with header row", async ({ pa
         devDependencies: { "right-pad": "^1.0.0" },
     });
     await expect(page.getByRole("cell", { name: "right-pad", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await page.getByRole("button", { name: "Export", exact: true }).first().click();
     const dialog = page.locator(".export-dialog");
     const downloadButton = dialog.getByRole("button", { name: "Download" });
+    await expect(dialog.getByLabel("Deps", { exact: true })).toBeChecked();
+    await expect(dialog.getByLabel("Dev Deps", { exact: true })).not.toBeChecked();
+    await dialog.getByLabel("Dev Deps", { exact: true }).check();
     await expect(downloadButton).toBeEnabled();
 
     const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
@@ -1111,11 +1118,10 @@ test("export dialog fetches hidden column, blocks Download until it loads", asyn
     await page.goto("/");
     await loadJson(page, { name: "demo", dependencies: { "left-pad": "^1.0.0" } });
     await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await page.getByRole("button", { name: "Export", exact: true }).first().click();
     const dialog = page.locator(".export-dialog");
     const downloadButton = dialog.getByRole("button", { name: "Download" });
 
-    await dialog.getByLabel("Dev Deps", { exact: true }).uncheck();
     await dialog.getByLabel("Vulnerabilities", { exact: true }).check();
 
     await expect(dialog.getByRole("status", { name: "Loading column data" })).toBeVisible();

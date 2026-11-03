@@ -40,3 +40,8 @@
 .health-score--poor {
     color: var(--error);
 }
+
+.dependency-cell__warning {
+    color: var(--warning);
+    vertical-align: -0.125em;
+}

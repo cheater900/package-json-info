@@ -1,17 +1,13 @@
 <template>
     <span class="sort-indicator" aria-hidden="true">
-        <span
+        <icon-caret-up
             class="sort-indicator__arrow"
             :class="{ 'sort-indicator__arrow--active': direction === 'asc' }"
-        >
-            ▲
-        </span>
-        <span
-            class="sort-indicator__arrow"
+        />
+        <icon-caret-up
+            class="sort-indicator__arrow sort-indicator__arrow--down"
             :class="{ 'sort-indicator__arrow--active': direction === 'desc' }"
-        >
-            ▼
-        </span>
+        />
     </span>
 </template>
 

@@ -1,6 +1,7 @@
 import { onMounted, onUnmounted, defineComponent, useId } from "vue";
 import { t } from "../i18n";
 import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
+import IconCross from "./IconCross.vue";
 
 /**
  * Open while mounted: callers toggle it with v-if. Owns Escape, backdrop
@@ -8,6 +9,7 @@ import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
  * right, and its slot below.
  */
 export default defineComponent({
+    components: { IconCross },
     props: {
         title: {
             type: String,

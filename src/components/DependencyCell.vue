@@ -37,6 +37,17 @@
             {{ formatCell(column.key, dependency) }}
         </span>
     </tooltip>
+    <template v-else-if="column.render === 'license'">
+        {{ dependency.license ?? MISSING_VALUE }}
+        <span
+            v-if="hasLicenseWarning(dependency.license)"
+            class="dependency-cell__warning"
+            role="img"
+            :aria-label="t('table.licenseWarning')"
+        >
+            <icon-warning />
+        </span>
+    </template>
     <template v-else>{{ formatCell(column.key, dependency) }}</template>
 </template>
 

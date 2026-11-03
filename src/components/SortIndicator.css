@@ -3,7 +3,6 @@
     flex-direction: column;
     font-size: 0.7em;
     justify-content: center;
-    line-height: 0.6;
 }
 
 .sort-indicator__arrow {
@@ -11,6 +10,9 @@
 }
 
 .sort-indicator__arrow--active {
-    font-weight: bold;
     opacity: 1;
+}
+
+.sort-indicator__arrow--down {
+    transform: rotate(180deg);
 }

@@ -30,6 +30,11 @@ export default defineComponent({
             type: Array as PropType<ExportDialogTable[]>,
             required: true,
         },
+        /** Tables checked when the dialog opens. */
+        initialTableIds: {
+            type: Array as PropType<readonly DependencyListId[]>,
+            required: true,
+        },
         /** Full persisted column order, hidden columns included. */
         columnOrder: {
             type: Array as PropType<readonly string[]>,
@@ -63,7 +68,7 @@ export default defineComponent({
                 (c) => c.render !== "button",
             ),
         );
-        const selectedTableIds = ref<DependencyListId[]>(props.tables.map((table) => table.id));
+        const selectedTableIds = ref<DependencyListId[]>([...props.initialTableIds]);
         const selectedColumnKeys = ref<string[]>(
             columnOptions.value
                 .filter((c) => props.initialColumns.includes(c.key))

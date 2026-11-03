@@ -107,6 +107,11 @@ Condensed from git history. Newest month first.
   name in `<pre>`. Shrink columns checkbox moves below Columns
   accordion. Search box widens 260 px -> 480 px. Settings panel spaces
   out sections and items, View network logs button spans full width.
+- **SVG icons** replace text glyphs: Fetch, Paste from clipboard, Expand
+  table, Back, Forward, modal close, sort arrows, file tree folders and
+  license warning in table cells. Exports keep `⚠` text.
+- **Export button** per table, right of Expand table. Dialog opens with
+  only that table checked; other table stays checkable.
 - **Page width** follows screen with 10% margin each side, full width at
   1024 px and below. Expanded table and source tree modals grow with it.
 
