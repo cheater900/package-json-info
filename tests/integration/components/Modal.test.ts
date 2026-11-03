@@ -70,6 +70,35 @@ describe("Modal", () => {
         expect(w.emitted("close")).toBeFalsy();
     });
 
+    it("keeps body scroll locked until last of two modals unmounts", () => {
+        const first = mount(Modal, { attachTo: document.body });
+        const second = mount(Modal, { attachTo: document.body });
+
+        second.unmount();
+        expect(document.body.style.overflow).toBe("hidden");
+
+        first.unmount();
+        expect(document.body.style.overflow).toBe("");
+    });
+
+    it("ignores keys other than Escape", async () => {
+        const w = mountModal();
+
+        await new DOMWrapper(document.body).trigger("keydown", { key: "Enter" });
+
+        expect(w.emitted("close")).toBeFalsy();
+    });
+
+    it("stops listening for Escape after unmount", async () => {
+        const w = mountModal();
+        w.unmount();
+        wrapper = null;
+
+        await new DOMWrapper(document.body).trigger("keydown", { key: "Escape" });
+
+        expect(w.emitted("close")).toBeFalsy();
+    });
+
     it("emits close on Escape", async () => {
         const w = mountModal();
 

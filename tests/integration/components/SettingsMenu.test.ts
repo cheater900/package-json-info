@@ -211,6 +211,23 @@ describe("SettingsMenu token", () => {
 
         expect(wrapper.text()).toContain("GitHub rejected this token");
     });
+
+    it("shows failure reason on verify server error", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
+        );
+        const wrapper = mountMenu();
+        githubToken.value = TOKEN;
+        await flushPromises();
+
+        await button(wrapper, "Verify").trigger("click");
+        await flushPromises();
+
+        expect(wrapper.text()).toContain(
+            "Could not verify the token: Request failed with status 500",
+        );
+    });
 });
 
 describe("SettingsMenu display", () => {

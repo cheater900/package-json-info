@@ -71,6 +71,45 @@ describe("githubTokenStorage", () => {
         expect(await loadGithubToken()).toBeUndefined();
     });
 
+    it("purge clears ciphertext without IndexedDB", async () => {
+        await saveGithubToken(TOKEN);
+        vi.stubGlobal("indexedDB", undefined);
+
+        await purgeGithubToken();
+
+        expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
+    });
+
+    it("purge resolves when localStorage and IndexedDB throw", async () => {
+        vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+            throw new DOMException("denied", "SecurityError");
+        });
+        vi.spyOn(indexedDB, "open").mockImplementation(() => {
+            throw new DOMException("lost", "UnknownError");
+        });
+
+        await expect(purgeGithubToken()).resolves.toBeUndefined();
+    });
+
+    it("load keeps ciphertext, returns undefined without IndexedDB", async () => {
+        await saveGithubToken(TOKEN);
+        const stored = localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN);
+        vi.stubGlobal("indexedDB", undefined);
+
+        expect(await loadGithubToken()).toBeUndefined();
+        expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBe(stored);
+    });
+
+    it("purges, returns undefined for wrong IV", async () => {
+        await saveGithubToken(TOKEN);
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)!);
+        stored.iv[0] ^= 1;
+        localStorage.setItem(STORAGE_KEY_GITHUB_TOKEN, JSON.stringify(stored));
+
+        expect(await loadGithubToken()).toBeUndefined();
+        expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
+    });
+
     it("purges, returns undefined for corrupt data", async () => {
         localStorage.setItem(STORAGE_KEY_GITHUB_TOKEN, '{"iv":"x"}');
 
