@@ -26,3 +26,12 @@ to [ROADMAP.md](ROADMAP.md) once planned.
   a manual refresh.
 - **Offline-tolerant mode**: show cached data when live lookups fail,
   marked as stale.
+
+## Settings
+
+- **Live settings sync across tabs** through the `storage` event, so two
+  open tabs stop overwriting each other.
+- **Default CORS proxy from `.env`** (`VITE_CORS_PROXY_URL`) for a public
+  deploy that ships its own proxy.
+- **Columns in the settings menu**: move the Columns panel and the shrink
+  toggle into the Display section.

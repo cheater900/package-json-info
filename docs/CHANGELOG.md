@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-04
 
+- Record open audit gaps in NOTES, settings ideas in IDEA, link NOTES from README
 - Resolve theme to data-color-scheme in main.js, drop light-dark() so themes render on browsers without it
 - Open settings dropdown with Vue state and absolute CSS instead of Popover API so older Safari/Firefox can close it
 - Rewrap settings docs, split main.js display paragraph, list all shared types in DEVELOPMENT
