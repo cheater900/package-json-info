@@ -96,10 +96,12 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
     white-space: nowrap;
 }
 
-/* Inline with label text (template whitespace spaces them), so icon sits on
-   text baseline, not line-box center. */
-.deps-table__col-icon {
-    vertical-align: -0.125em;
+/* Flex-centers icon + label text on same axis as drag handle + sort
+   indicator, so header icons line up across the row. */
+.deps-table__col-label {
+    align-items: center;
+    display: inline-flex;
+    gap: 4px;
 }
 
 .deps-table__drag-handle {

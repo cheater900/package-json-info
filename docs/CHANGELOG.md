@@ -159,6 +159,8 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Table header icons**: column icon, column name and drag handle share
+  one vertical center.
 - **Stored lookups** with wrong shape or malformed save time ignored, so
   corrupt record shows live error, not odd cell text.
 - **npm registry documents** validated with zod: field of wrong type reads
