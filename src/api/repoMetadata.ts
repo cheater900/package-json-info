@@ -9,10 +9,11 @@ import {
     GITLAB_API_URL,
     GITLAB_HOST,
     HTTP_CONFLICT,
+    HTTP_NOT_FOUND,
 } from "../constants";
 import type { RepoSlug } from "../utils/repoUrl";
 import { githubRepoApiUrl } from "./github";
-import { fetchJson, HttpError } from "./http";
+import { fetchJson, fetchWithTimeout, HttpError } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 
 const GithubCommitsSchema = z.array(
@@ -151,19 +152,17 @@ export async function fetchRepoCommitActivity(
     }
     const since = new Date(Date.now() - COMMIT_ACTIVITY_WINDOW_DAYS * MS_PER_DAY).toISOString();
     const url = `${githubRepoApiUrl(slug.owner, slug.repo)}/commits?since=${since}&per_page=${COMMIT_ACTIVITY_SAMPLE_SIZE}`;
-    let data: unknown;
-    try {
-        data = await fetchJson<unknown>(url, { headers: githubHeaders }, subject);
-    } catch (error) {
-        if (!(error instanceof HttpError) || error.status !== HTTP_CONFLICT) {
-            throw error;
-        }
-        data = [];
-    }
-    if (data == null) {
+    const response = await fetchWithTimeout(url, { headers: githubHeaders }, subject);
+    if (response.status === HTTP_NOT_FOUND) {
         return EMPTY_COMMIT_ACTIVITY;
     }
-    const commits = GithubCommitsSchema.parse(data);
+    if (response.status === HTTP_CONFLICT) {
+        return { lastCommitDate: null, commitsLastYear: 0 };
+    }
+    if (!response.ok) {
+        throw new HttpError(response.status);
+    }
+    const commits = GithubCommitsSchema.parse(await response.json());
     return {
         lastCommitDate: commits[0]?.commit.committer.date ?? null,
         commitsLastYear: commits.length,
