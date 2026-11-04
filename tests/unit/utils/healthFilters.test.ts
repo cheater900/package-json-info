@@ -446,3 +446,14 @@ describe("HEALTH_FILTER_SECTIONS", () => {
         }
     });
 });
+
+describe("month-end age threshold", () => {
+    const monthEnd = new Date(Date.UTC(2026, 2, 31, 12));
+    const filters: HealthFilters = { lastPublished: "within1Month" };
+    it("clamps to last day of shorter month", () => {
+        const lastDay = fullRow({ latestReleaseDate: "2026-02-28T12:00:00.000Z" });
+        const dayBefore = fullRow({ latestReleaseDate: "2026-02-28T11:59:59.999Z" });
+        expect(rowMatchesHealthFilters(lastDay, filters, monthEnd, "deps")).toBe(true);
+        expect(rowMatchesHealthFilters(dayBefore, filters, monthEnd, "deps")).toBe(false);
+    });
+});

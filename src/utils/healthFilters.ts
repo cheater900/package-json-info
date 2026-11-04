@@ -23,10 +23,16 @@ type NumberField =
 
 const MONTHS_PER_YEAR = 12;
 
-/** Date `months` calendar months before `date` (UTC). */
+/** Date `months` calendar months before `date` (UTC), clamped to the target month's last day. */
 function subtractMonths(date: Date, months: number): Date {
     const result = new Date(date.getTime());
+    const day = result.getUTCDate();
+    result.setUTCDate(1);
     result.setUTCMonth(result.getUTCMonth() - months);
+    const lastDay = new Date(
+        Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    result.setUTCDate(Math.min(day, lastDay));
     return result;
 }
 
