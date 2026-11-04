@@ -16,8 +16,13 @@ import { githubRepoApiUrl } from "./github";
 import { fetchJson, fetchWithTimeout, HttpError } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 
+/** GitHub documents `committer` and its `date` as optional. */
 const GithubCommitsSchema = z.array(
-    z.object({ commit: z.object({ committer: z.object({ date: z.string() }) }) }),
+    z.object({
+        commit: z.object({
+            committer: z.object({ date: z.string().optional() }).nullable(),
+        }),
+    }),
 );
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -163,8 +168,10 @@ export async function fetchRepoCommitActivity(
         throw new HttpError(response.status);
     }
     const commits = GithubCommitsSchema.parse(await response.json());
+    // Newest first; a commit without committer date still counts.
+    const dates = commits.flatMap(({ commit }) => commit.committer?.date ?? []);
     return {
-        lastCommitDate: commits[0]?.commit.committer.date ?? null,
+        lastCommitDate: dates[0] ?? null,
         commitsLastYear: commits.length,
     };
 }

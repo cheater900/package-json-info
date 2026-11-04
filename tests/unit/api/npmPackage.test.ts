@@ -226,6 +226,28 @@ describe("fetchPackageInfo", () => {
         expect(info.commitsLastYear).toBe(0);
     });
 
+    it("counts commits lacking committer, dates from first commit with one", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/odd-pkg": {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                repository: "git+https://github.com/o/r.git",
+            },
+            "/commits": [
+                { commit: { committer: null } },
+                { commit: { committer: { name: "x" } } },
+                { commit: { committer: { date: "2024-03-01T00:00:00Z" } } },
+            ],
+        });
+
+        const info = await fetchPackageInfo("odd-pkg", "1.0.0", {
+            visibleColumns: new Set(["lastCommitDate"]),
+        });
+
+        expect(info.lastCommitDate).toBe("2024-03-01T00:00:00Z");
+        expect(info.commitsLastYear).toBe(3);
+    });
+
     it("resolves stars from Codeberg for Codeberg repository", async () => {
         stubFetchByUrl({
             "registry.npmjs.org/cb-pkg": {
