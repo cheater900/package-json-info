@@ -2,7 +2,6 @@
 
 ## Code layout
 
-
 | Path                          | Purpose                                                                                                  |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `src/main.js`                 | App entry point. Decrypts GitHub token, then mounts `App.vue`.                                           |
@@ -25,7 +24,6 @@
 | `tests/helpers/`              | Helpers: fetch stubs, columns, IndexedDB, settings, share links, request recorder.                       |
 | `tests/fixtures/`             | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
 | `docs/`                       | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
-
 
 ## Stack
 

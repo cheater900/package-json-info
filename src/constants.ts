@@ -33,6 +33,12 @@ export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 export const MAX_CONFIG_INT = 2 ** 31 - 1;
 export const HTTP_HEADER_AUTHORIZATION = "Authorization";
 export const HTTP_NOT_FOUND = 404;
+export const HTTP_CONFLICT = 409;
+
+/** Look-back window of the commit-activity lookup. */
+export const COMMIT_ACTIVITY_WINDOW_DAYS = 365;
+/** Commits requested per activity lookup; commitsLastYear tops out here. */
+export const COMMIT_ACTIVITY_SAMPLE_SIZE = 12;
 export const HTTP_UNAUTHORIZED = 401;
 /** Marks where a CORS proxy template puts the encoded target URL; without it the proxy is a prefix. */
 export const PROXY_URL_PLACEHOLDER = "{url}";

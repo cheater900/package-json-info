@@ -1,15 +1,25 @@
+import { z } from "zod";
 import {
     CODEBERG_API_URL,
     CODEBERG_HOST,
+    COMMIT_ACTIVITY_SAMPLE_SIZE,
+    COMMIT_ACTIVITY_WINDOW_DAYS,
     GITHUB_API_URL,
     GITHUB_HOST,
     GITLAB_API_URL,
     GITLAB_HOST,
+    HTTP_CONFLICT,
 } from "../constants";
 import type { RepoSlug } from "../utils/repoUrl";
 import { githubRepoApiUrl } from "./github";
-import { fetchJson } from "./http";
+import { fetchJson, HttpError } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
+
+const GithubCommitsSchema = z.array(
+    z.object({ commit: z.object({ committer: z.object({ date: z.string() }) }) }),
+);
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type GithubRepoData = {
     stargazers_count?: number;
@@ -34,6 +44,11 @@ export type RepoIssueCounts = {
     closedIssues: number | null;
 };
 
+export type RepoCommitActivity = {
+    lastCommitDate: string | null;
+    commitsLastYear: number | null;
+};
+
 type StarsFetcher = (
     slug: RepoSlug,
     githubHeaders: HttpHeaders,
@@ -45,6 +60,11 @@ export const EMPTY_ISSUE_COUNTS: RepoIssueCounts = {
     closedPRs: null,
     openIssues: null,
     closedIssues: null,
+};
+
+export const EMPTY_COMMIT_ACTIVITY: RepoCommitActivity = {
+    lastCommitDate: null,
+    commitsLastYear: null,
 };
 
 const STARS_FETCHERS_BY_HOST: Record<string, StarsFetcher> = {
@@ -114,4 +134,38 @@ export async function fetchRepoIssueCounts(
         countMatching("is:issue+is:closed"),
     ]);
     return { openPRs, closedPRs, openIssues, closedIssues };
+}
+
+/**
+ * Latest commit date and commit count (capped at COMMIT_ACTIVITY_SAMPLE_SIZE)
+ * within COMMIT_ACTIVITY_WINDOW_DAYS via GitHub; other hosts have none.
+ * An empty repo (HTTP 409) counts as zero commits. Throws on other failures.
+ */
+export async function fetchRepoCommitActivity(
+    slug: RepoSlug,
+    githubHeaders: HttpHeaders,
+    subject: RequestSubject | null = null,
+): Promise<RepoCommitActivity> {
+    if (slug.host !== GITHUB_HOST) {
+        return EMPTY_COMMIT_ACTIVITY;
+    }
+    const since = new Date(Date.now() - COMMIT_ACTIVITY_WINDOW_DAYS * MS_PER_DAY).toISOString();
+    const url = `${githubRepoApiUrl(slug.owner, slug.repo)}/commits?since=${since}&per_page=${COMMIT_ACTIVITY_SAMPLE_SIZE}`;
+    let data: unknown;
+    try {
+        data = await fetchJson<unknown>(url, { headers: githubHeaders }, subject);
+    } catch (error) {
+        if (!(error instanceof HttpError) || error.status !== HTTP_CONFLICT) {
+            throw error;
+        }
+        data = [];
+    }
+    if (data == null) {
+        return EMPTY_COMMIT_ACTIVITY;
+    }
+    const commits = GithubCommitsSchema.parse(data);
+    return {
+        lastCommitDate: commits[0]?.commit.committer.date ?? null,
+        commitsLastYear: commits.length,
+    };
 }
