@@ -130,3 +130,5 @@ export const MAX_WORKSPACE_DIRS = 5_000;
 export const COMMIT_ACTIVITY_WINDOW_DAYS = 365;
 /** Commits requested per activity lookup; commitsLastYear tops out here. */
 export const COMMIT_ACTIVITY_SAMPLE_SIZE = 12;
+/** Open + closed count below which a PR or issue ratio filter treats the ratio as unknown. */
+export const FILTER_RATIO_MIN_SAMPLE = 10;
