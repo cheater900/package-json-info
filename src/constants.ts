@@ -96,8 +96,9 @@ export const NETWORK_LOG_MAX_ENTRIES = 1000;
 
 export const TOOLTIP_OFFSET_PX = 6;
 
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /** Average month length (365.25 days / 12). */
-export const MS_PER_MONTH = 30.4375 * 24 * 60 * 60 * 1000;
+export const MS_PER_MONTH = 30.4375 * MS_PER_DAY;
 export const HEALTH_SCORE_MAX = 100;
 /** Relative weight of each health signal; only available signals count. */
 export const HEALTH_WEIGHT_RELEASE_AGE = 3;

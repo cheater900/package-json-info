@@ -10,6 +10,7 @@ import {
     GITLAB_HOST,
     HTTP_CONFLICT,
     HTTP_NOT_FOUND,
+    MS_PER_DAY,
 } from "../constants";
 import type { RepoSlug } from "../utils/repoUrl";
 import { githubRepoApiUrl } from "./github";
@@ -24,8 +25,6 @@ const GithubCommitsSchema = z.array(
         }),
     }),
 );
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type GithubRepoData = {
     stargazers_count?: number;
