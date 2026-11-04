@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isCopyleftLicense, hasLicenseWarning, extractLicense } from "../../../src/utils/license";
+import {
+    isCopyleftLicense,
+    isCustomLicense,
+    hasLicenseWarning,
+    extractLicense,
+} from "../../../src/utils/license";
 
 describe("isCopyleftLicense", () => {
     it("flags GPL-family SPDX identifiers", () => {
@@ -67,5 +72,34 @@ describe("extractLicense", () => {
 
     it("returns null for array without resolvable entries", () => {
         expect(extractLicense([{}, {}])).toBeNull();
+    });
+});
+
+describe("isCustomLicense", () => {
+    it("flags SEE LICENSE IN and UNLICENSED", () => {
+        expect(isCustomLicense("SEE LICENSE IN LICENSE.md")).toBe(true);
+        expect(isCustomLicense("UNLICENSED")).toBe(true);
+    });
+
+    it("flags strings not shaped like SPDX", () => {
+        expect(isCustomLicense("Custom proprietary license")).toBe(true);
+        expect(isCustomLicense("MIT/Apache")).toBe(true);
+    });
+
+    it("skips SPDX ids and expressions", () => {
+        expect(isCustomLicense("MIT")).toBe(false);
+        expect(isCustomLicense("Apache-2.0")).toBe(false);
+        expect(isCustomLicense("(MIT OR Apache-2.0)")).toBe(false);
+        expect(isCustomLicense("GPL-2.0 WITH Classpath-exception-2.0")).toBe(false);
+        expect(isCustomLicense("MIT AND (ISC OR BSD-3-Clause)")).toBe(false);
+    });
+
+    it("skips joined license arrays", () => {
+        expect(isCustomLicense(extractLicense(["MIT", { type: "ISC" }]))).toBe(false);
+    });
+
+    it("skips missing license", () => {
+        expect(isCustomLicense(null)).toBe(false);
+        expect(isCustomLicense("")).toBe(false);
     });
 });

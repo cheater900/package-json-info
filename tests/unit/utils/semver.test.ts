@@ -4,6 +4,7 @@ import {
     parseLeadingSemver,
     compareSemver,
     pinnedVersionOf,
+    majorVersionsBehind,
 } from "../../../src/utils/semver";
 
 describe("isVersionOutdated", () => {
@@ -82,5 +83,25 @@ describe("pinnedVersionOf", () => {
         ["latest", undefined],
     ])("maps %s to %s", (range, expected) => {
         expect(pinnedVersionOf(range)).toBe(expected);
+    });
+});
+
+describe("majorVersionsBehind", () => {
+    it("counts major gap for caret range", () => {
+        expect(majorVersionsBehind("^1.2.3", "3.0.0")).toBe(2);
+    });
+
+    it("returns 0 for same major", () => {
+        expect(majorVersionsBehind("~2.0.0", "2.9.9")).toBe(0);
+    });
+
+    it("returns 0 for range ahead of latest", () => {
+        expect(majorVersionsBehind("5.0.0", "4.0.0")).toBe(0);
+    });
+
+    it("returns null for unparseable side", () => {
+        expect(majorVersionsBehind("workspace:*", "1.0.0")).toBeNull();
+        expect(majorVersionsBehind("1.0.0", null)).toBeNull();
+        expect(majorVersionsBehind("1.0.0", "next")).toBeNull();
     });
 });

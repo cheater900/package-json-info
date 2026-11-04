@@ -52,3 +52,17 @@ export function isVersionOutdated(
     }
     return compareSemver(declaredSemver, latestSemver) < 0;
 }
+
+/**
+ * How many major versions a declared range trails the latest version.
+ *
+ * @returns 0 when level or ahead, or null when either side has no leading semver.
+ */
+export function majorVersionsBehind(range: string, latest: string | null): number | null {
+    const declaredSemver = parseLeadingSemver(pinnedVersionOf(range) ?? "");
+    const latestSemver = latest ? parseLeadingSemver(latest) : null;
+    if (!declaredSemver || !latestSemver) {
+        return null;
+    }
+    return Math.max(0, latestSemver[0] - declaredSemver[0]);
+}

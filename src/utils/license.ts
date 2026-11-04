@@ -14,11 +14,29 @@ const COPYLEFT_LICENSE_PATTERN = /(^|-)(gpl|agpl|lgpl|mpl|epl|cddl|osl|eupl|sspl
 
 const LICENSE_ALTERNATIVES_SEPARATOR = " OR ";
 
+/** Heuristic SPDX shape: ids joined by OR / AND / WITH, parentheses ignored. */
+const SPDX_EXPRESSION_PATTERN = /^[A-Za-z0-9.+-]+(?: (?:OR|AND|WITH) [A-Za-z0-9.+-]+)*$/;
+
+const LICENSE_UNLICENSED = "UNLICENSED";
+
 export function isCopyleftLicense(license: string | null | undefined): boolean {
     if (!license) {
         return false;
     }
     return COPYLEFT_LICENSE_PATTERN.test(license);
+}
+
+/** True for "SEE LICENSE IN ...", "UNLICENSED", or any string not shaped like an SPDX id or expression. */
+export function isCustomLicense(license: string | null): boolean {
+    if (!license) {
+        return false;
+    }
+    const trimmed = license.trim();
+    if (trimmed.startsWith("SEE LICENSE IN") || trimmed === LICENSE_UNLICENSED) {
+        return true;
+    }
+    const withoutParens = trimmed.replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
+    return !SPDX_EXPRESSION_PATTERN.test(withoutParens);
 }
 
 /** True when a license is missing, or is a copyleft license worth flagging. */
