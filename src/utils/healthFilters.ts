@@ -320,3 +320,24 @@ export function columnsForHealthFilters(filters: HealthFilters): string[] {
 export function activeHealthFilterCount(filters: HealthFilters): number {
     return activeFilters(filters).length;
 }
+
+/**
+ * Filters minus active sections reading a column `isExcluded` flags (rows
+ * lack that column's data). Nothing dropped keeps the same reference.
+ */
+export function healthFiltersWithoutColumns(
+    filters: HealthFilters,
+    isExcluded: (columnKey: string) => boolean,
+): HealthFilters {
+    const dropped = activeFilters(filters).filter(({ section }) =>
+        section.columnKeys.some(isExcluded),
+    );
+    if (dropped.length === 0) {
+        return filters;
+    }
+    const kept: Partial<Record<string, string>> = { ...filters };
+    for (const { section } of dropped) {
+        delete kept[section.id];
+    }
+    return kept as HealthFilters;
+}

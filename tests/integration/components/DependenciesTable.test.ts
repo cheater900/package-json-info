@@ -721,6 +721,18 @@ describe("DependenciesTable health filters", () => {
         expect(statusText(wrapper)).toBe("No dependencies match the active filters.");
     });
 
+    it("skips filter reading pending column", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [licensed],
+                healthFilters: { license: "missing" },
+                pendingColumns: new Set(["license"]),
+            },
+        });
+
+        expect(rowNames(wrapper)).toEqual(["licensed"]);
+    });
+
     it("shows no-search-match message when search alone empties table", () => {
         const wrapper = mount(DependenciesTable, {
             props: {

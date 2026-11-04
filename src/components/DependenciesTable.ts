@@ -6,7 +6,7 @@ import { DEFAULT_COLUMN_ORDER, NAME_COLUMN_KEY, toggleableColumnsFor } from "../
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyListId, DependencyRow, SortDirection } from "../types";
 import { filterRowsByName, fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
-import { filterRowsByHealth } from "../utils/healthFilters";
+import { filterRowsByHealth, healthFiltersWithoutColumns } from "../utils/healthFilters";
 import type { HealthFilters } from "../utils/healthFilters";
 import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
@@ -79,10 +79,16 @@ export default defineComponent({
         const nameMatchedDependencies = computed(() =>
             filterRowsByName(props.dependencies, props.searchQuery),
         );
+        // Rows still lack a pending column's data, so filters reading it wait for the fetch.
+        const appliedHealthFilters = computed(() =>
+            healthFiltersWithoutColumns(props.healthFilters, (key) =>
+                props.pendingColumns.has(key),
+            ),
+        );
         const filteredDependencies = computed(() =>
             filterRowsByHealth(
                 nameMatchedDependencies.value,
-                props.healthFilters,
+                appliedHealthFilters.value,
                 new Date(),
                 props.listId,
             ),
