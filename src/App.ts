@@ -1,4 +1,4 @@
-import { ref, computed, useId, defineComponent } from "vue";
+import { ref, computed, useId, defineComponent, watch } from "vue";
 import { useColumnPreferences } from "./composables/useColumnPreferences";
 import { usePackageJsonHistory } from "./composables/usePackageJsonHistory";
 import { usePackageJsonSources } from "./composables/usePackageJsonSources";
@@ -9,6 +9,7 @@ import Modal from "./components/Modal.vue";
 import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
+import FiltersMenu from "./components/FiltersMenu.vue";
 import IconArrowDown from "./components/IconArrowDown.vue";
 import IconArrowLeft from "./components/IconArrowLeft.vue";
 import IconArrowRight from "./components/IconArrowRight.vue";
@@ -33,6 +34,8 @@ import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
 import { isRowRetryable } from "./utils/packageJsonHistory";
+import { columnsForHealthFilters } from "./utils/healthFilters";
+import type { HealthFilters } from "./utils/healthFilters";
 import { replayRequest } from "./utils/networkLog";
 import type { NetworkLogEntry } from "./utils/networkLog";
 import type { DependencyListId, DependencyRow, PackageInfo } from "./types";
@@ -52,6 +55,7 @@ export default defineComponent({
         SourceTreeBrowser,
         PackageSummaryCard,
         SettingsMenu,
+        FiltersMenu,
         IconArrowDown,
         IconArrowLeft,
         IconArrowRight,
@@ -82,8 +86,13 @@ export default defineComponent({
             shrinkColumnLabels,
             visibleColumnKeys,
             toggleColumn,
+            showColumns,
             reorderColumns,
         } = useColumnPreferences();
+        // Session only: neither persisted nor in the share link.
+        const healthFilters = ref<HealthFilters>({});
+        // A filter on a hidden column shows that column, which fetches its missing data.
+        watch(healthFilters, (filters) => showColumns(columnsForHealthFilters(filters)));
         const {
             pkg,
             workspace,
@@ -232,6 +241,7 @@ export default defineComponent({
         const tableProps = computed(() => ({
             columns: visibleColumnKeys.value,
             searchQuery: searchQuery.value,
+            healthFilters: healthFilters.value,
             shrinkLabels: shrinkColumnLabels.value,
             pendingColumns: pendingColumns.value,
             isRetrying: isRetrying.value,
@@ -251,6 +261,7 @@ export default defineComponent({
             fileInputRef,
             searchInputId,
             searchQuery,
+            healthFilters,
             visibleColumns,
             columnOrder,
             shrinkColumnLabels,

@@ -117,7 +117,10 @@ textarea {
 }
 
 .search-row {
+    align-items: center;
     background: var(--bg);
+    display: flex;
+    gap: 8px;
     margin-bottom: 16px;
     padding: calc(8px * var(--space-scale)) 0;
     position: sticky;
@@ -125,9 +128,11 @@ textarea {
     z-index: 2;
 }
 
+/* Shrinks on phones so the Filters button stays on the same line. */
 .search-row__field {
     display: inline-block;
     max-width: 100%;
+    min-width: 0;
     position: relative;
 }
 
@@ -139,7 +144,7 @@ textarea {
     transform: translateY(-50%);
 }
 
-.search-row input {
+.search-row__field input {
     max-width: 100%;
     padding: calc(10px * var(--space-scale)) calc(12px * var(--space-scale));
     padding-left: calc(12px * var(--space-scale) + 1.5em);

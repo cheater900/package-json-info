@@ -33,6 +33,15 @@ export function useColumnPreferences() {
         visibleColumns.value = toggleColumnVisibility(visibleColumns.value, key);
     }
 
+    /** Makes `keys` visible; never hides a column. Unchanged visibility keeps the same set. */
+    function showColumns(keys: readonly string[]) {
+        const hidden = keys.filter((key) => !isColumnVisible(visibleColumns.value, key));
+        if (hidden.length === 0) {
+            return;
+        }
+        visibleColumns.value = new Set([...visibleColumns.value, ...hidden]);
+    }
+
     function reorderColumns(newVisibleOrder: string[]) {
         columnOrder.value = mergeColumnOrder(columnOrder.value, newVisibleOrder);
     }
@@ -49,6 +58,7 @@ export function useColumnPreferences() {
         shrinkColumnLabels,
         visibleColumnKeys,
         toggleColumn,
+        showColumns,
         reorderColumns,
     };
 }

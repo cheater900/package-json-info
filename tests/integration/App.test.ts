@@ -4,6 +4,7 @@ import App from "../../src/App.vue";
 import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
 import DependenciesTable from "../../src/components/DependenciesTable.vue";
 import ExportDialog from "../../src/components/ExportDialog.vue";
+import FiltersMenu from "../../src/components/FiltersMenu.vue";
 import NetworkLogDialog from "../../src/components/NetworkLogDialog.vue";
 import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
 import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
@@ -181,6 +182,34 @@ describe("App", () => {
         await flushPromises();
 
         expect(button.attributes("disabled")).toBeDefined();
+    });
+
+    it("filter preset on hidden column shows + fetches column", async () => {
+        const wrapper = await mountApp();
+        stubFetchPending();
+
+        wrapper
+            .findComponent(FiltersMenu)
+            .vm.$emit("update:modelValue", { vulnerabilities: "any" });
+        await flushPromises();
+
+        const tables = wrapper.findAllComponents(DependenciesTable);
+        expect(tables[0].props("columns")).toContain("vulnerabilityCount");
+        expect(tables[0].props("pendingColumns")).toEqual(new Set(["vulnerabilityCount"]));
+    });
+
+    it("passes filters + own list id to each table", async () => {
+        const wrapper = await mountApp();
+
+        wrapper.findComponent(FiltersMenu).vm.$emit("update:modelValue", { license: "missing" });
+        await flushPromises();
+
+        const tables = wrapper.findAllComponents(DependenciesTable);
+        expect(tables.map((table) => table.props("healthFilters"))).toEqual([
+            { license: "missing" },
+            { license: "missing" },
+        ]);
+        expect(tables.map((table) => table.props("listId"))).toEqual(["deps", "devDeps"]);
     });
 
     it("disables Export while tables load", async () => {

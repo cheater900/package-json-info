@@ -97,6 +97,29 @@ test("phone viewport keeps page width, scrolls table only, Name column sticks, s
     expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE.height);
 });
 
+test("phone viewport fits Filters panel on screen, panel scrolls", async ({ page }) => {
+    await page.setViewportSize(VIEWPORT_PHONE);
+    await page.goto("/");
+    await expandAllSections(page);
+    // Scrolled to the tables, the search row sticks to the top.
+    await page
+        .locator("table.deps-table")
+        .first()
+        .evaluate((el) => el.scrollIntoView());
+
+    await page.getByRole("button", { name: "Filters" }).click();
+
+    const panel = page.getByRole("dialog", { name: "Filters" });
+    await expect(panel).toBeVisible();
+    const panelBox = (await panel.boundingBox())!;
+    expect(panelBox.x).toBeGreaterThanOrEqual(0);
+    expect(panelBox.y).toBeGreaterThanOrEqual(0);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE.width);
+    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE.height);
+    const isScrollable = await panel.evaluate((el) => el.scrollHeight > el.clientHeight);
+    expect(isScrollable).toBe(true);
+});
+
 test("fetches package in both dependencies and devDependencies once", async ({ page }) => {
     let registryRequests = 0;
     await page.route(`${NPM_REGISTRY_URL}/shared-pkg`, async (route) => {
@@ -690,6 +713,50 @@ test("one search box filters Deps and Dev Deps tables", async ({ page }) => {
     await expect(devDepsTable.locator("tbody tr")).toHaveCount(2);
 });
 
+test("Filters preset hides non-matching rows in both tables, Clear all restores", async ({
+    page,
+}) => {
+    await page.route(`${NPM_REGISTRY_URL}/**`, async (route) => {
+        const name = decodeURIComponent(new URL(route.request().url()).pathname.slice(1));
+        await route.fulfill({
+            json: {
+                "dist-tags": { latest: "1.0.0" },
+                time: { "1.0.0": "2024-01-01T00:00:00.000Z" },
+                versions: { "1.0.0": name.endsWith("-mit") ? { license: "MIT" } : {} },
+            },
+        });
+    });
+    await page.goto("/");
+    await expandAllSections(page);
+    await loadJson(page, {
+        name: "demo",
+        dependencies: { "dep-mit": "1.0.0", "dep-bare": "1.0.0" },
+        devDependencies: { "dev-mit": "1.0.0", "dev-bare": "1.0.0" },
+    });
+    const names = (index: number) =>
+        page
+            .locator("table.deps-table")
+            .nth(index)
+            .locator("tbody tr td:first-child .deps-table__name-text");
+    await expect(names(0)).toHaveText(["dep-mit", "dep-bare"]);
+
+    const trigger = page.getByRole("button", { name: "Filters" });
+    await trigger.click();
+    const panel = page.getByRole("dialog", { name: "Filters" });
+    await panel
+        .getByRole("group", { name: "License" })
+        .getByLabel("Missing", { exact: true })
+        .check();
+
+    await expect(names(0)).toHaveText(["dep-bare"]);
+    await expect(names(1)).toHaveText(["dev-bare"]);
+    await expect(trigger).toContainText("1 active");
+
+    await panel.getByRole("button", { name: "Clear all" }).click();
+    await expect(names(0)).toHaveText(["dep-mit", "dep-bare"]);
+    await expect(names(1)).toHaveText(["dev-mit", "dev-bare"]);
+});
+
 test("renders license, outdated, deprecated, vulnerability, bundle size, maintainer data", async ({
     page,
 }) => {
@@ -879,7 +946,7 @@ test("column visibility panel hides/shows columns, never below floor", async ({ 
         if (label === "Version") {
             continue;
         }
-        await page.getByLabel(label, { exact: true }).uncheck();
+        await page.locator(".column-visibility-panel").getByLabel(label, { exact: true }).uncheck();
     }
 
     await expect(page.getByLabel("Version", { exact: true })).toBeDisabled();

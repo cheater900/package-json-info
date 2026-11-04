@@ -134,6 +134,7 @@
                     :placeholder="t('search.placeholder')"
                 />
             </span>
+            <filters-menu v-model="healthFilters" />
         </div>
 
         <details
@@ -151,6 +152,7 @@
                 v-bind="tableProps"
                 :dependencies="section.dependencies"
                 :is-loading="section.isLoading"
+                :list-id="section.id"
                 v-on="tableListeners"
             />
             <div class="table-actions">
@@ -198,6 +200,7 @@
                     v-bind="tableProps"
                     :dependencies="expandedSection.dependencies"
                     :is-loading="expandedSection.isLoading"
+                    :list-id="expandedSection.id"
                     v-on="tableListeners"
                 />
             </div>

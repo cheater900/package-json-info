@@ -48,6 +48,27 @@ describe("preferences saved before healthScore column", () => {
     });
 });
 
+describe("showColumns", () => {
+    it("adds hidden columns, keeps visible ones", () => {
+        const { visibleColumns, showColumns } = useColumnPreferences();
+        const before = new Set(visibleColumns.value);
+
+        showColumns(["maintainers", "bundleSizeGzip", ...before]);
+
+        expect(visibleColumns.value).toEqual(new Set([...before, "maintainers", "bundleSizeGzip"]));
+    });
+
+    it("keeps same set when every key visible", () => {
+        const { visibleColumns, showColumns } = useColumnPreferences();
+        const before = visibleColumns.value;
+
+        showColumns(["name", ...before]);
+
+        expect(visibleColumns.value).toBe(before);
+        expect(visibleColumns.value.has("name")).toBe(false);
+    });
+});
+
 describe("toggleColumn", () => {
     it("shows hidden column", () => {
         const { visibleColumns, toggleColumn } = useColumnPreferences();
