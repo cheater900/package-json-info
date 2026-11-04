@@ -6,6 +6,15 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### Filters
+
+- **Filters menu** beside search box filters both tables by **health
+  presets**: last published, last updated, installed version age, commit
+  activity, open PR and issue ratios, vulnerabilities, bundle size, health
+  score, status, maintainers, adoption, license, source. One preset per
+  section, sections combined. Picking preset shows its hidden columns and
+  fetches their data. Session only; export stays unfiltered.
+
 #### Network
 
 - **Network log**: **View network logs** in settings menu opens modal

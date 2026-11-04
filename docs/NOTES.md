@@ -50,6 +50,9 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 
 ## Display
 
+- **Filters panel runs past screen bottom** until search row sticks to
+  top. Panel `max-height` is `100vh - 96px`, same as settings menu, so it
+  fits only once search row is stuck. Page scroll still reaches it.
 - **Light theme contrast**: vue-json-pretty string values keep library's
   bright green. Name-cell cursor SVG (data URL, so no CSS variable) stays
   green.

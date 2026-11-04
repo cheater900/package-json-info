@@ -96,8 +96,18 @@ Each step stops table fetch of step before.
 
 ### Table / input data
 
-- **Sorting and filtering** on any column (e.g. sort by weekly downloads,
-  filter to packages not updated in over a year).
+- **Sorting** on any sortable column (e.g. sort by weekly downloads).
+- **Filters menu** beside search box: fixed health presets, one choice per
+  section, sections combined. Sections: last published, last updated,
+  installed version age, commit activity, open PR ratio, open issue ratio,
+  vulnerabilities, bundle size, health score, status (deprecated, outdated,
+  major version behind), maintainers, adoption, license, source. Ratio
+  presets need 10 or more PRs or issues; fewer counts as unknown. Filter on
+  hidden column shows that column and fetches its data. While any filter
+  is on, rows that failed to load stay hidden. Dev dependencies ignore
+  bundle size filter. Filters last for session only: not saved, not in
+  share link, not applied to export. Button badge counts active filters;
+  "Clear all" resets them.
 - **Search box** jumps to package by name in large table. No match shows
   "No dependencies matched search" row.
 - **Validation of malformed/invalid input** - broken `package.json` (bad
