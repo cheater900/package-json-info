@@ -181,6 +181,13 @@ describe.each([
         ).toBe(false);
         expect(matchesPreset(sectionId, lowPreset, sparseRow())).toBe(false);
     });
+    it("counts ratio with one count missing as unknown", () => {
+        const openOnly = fullRow({ [openField]: 50, [closedField]: null });
+        const closedOnly = fullRow({ [openField]: null, [closedField]: 50 });
+        expect(matchesPreset(sectionId, "unknown", openOnly)).toBe(true);
+        expect(matchesPreset(sectionId, "unknown", closedOnly)).toBe(true);
+        expect(matchesPreset(sectionId, lowPreset, closedOnly)).toBe(false);
+    });
     it("counts sample below 10 as unknown", () => {
         const small = fullRow({ [openField]: 0, [closedField]: 9 });
         expect(matchesPreset(sectionId, "unknown", small)).toBe(true);
@@ -419,6 +426,9 @@ describe("columnsForHealthFilters", () => {
             "license",
         ]);
     });
+    it("includes bundleSize column regardless of list", () => {
+        expect(columnsForHealthFilters({ bundleSize: "over25Kb" })).toEqual(["bundleSizeGzip"]);
+    });
     it("skips unknown preset id", () => {
         expect(columnsForHealthFilters({ license: "nope" } as unknown as HealthFilters)).toEqual(
             [],
@@ -430,6 +440,9 @@ describe("activeHealthFilterCount", () => {
     it("counts active sections", () => {
         expect(activeHealthFilterCount({})).toBe(0);
         expect(activeHealthFilterCount({ license: "missing", source: "noRepository" })).toBe(2);
+    });
+    it("counts bundleSize section", () => {
+        expect(activeHealthFilterCount({ bundleSize: "unknown" })).toBe(1);
     });
     it("skips unknown preset id", () => {
         expect(activeHealthFilterCount({ license: "nope" } as unknown as HealthFilters)).toBe(0);
@@ -465,6 +478,19 @@ describe("healthFiltersWithoutColumns", () => {
     it("drops section reading any excluded column", () => {
         const kept = healthFiltersWithoutColumns(filters, (key) => key === "latestVersion");
         expect(kept).toEqual({ license: "missing" });
+    });
+
+    it("drops every section reading excluded column, leaves input untouched", () => {
+        const input: HealthFilters = {
+            status: "outdated",
+            license: "missing",
+            source: "noRepository",
+        };
+        const kept = healthFiltersWithoutColumns(input, (key) =>
+            ["isOutdated", "license"].includes(key),
+        );
+        expect(kept).toEqual({ source: "noRepository" });
+        expect(input).toEqual({ status: "outdated", license: "missing", source: "noRepository" });
     });
 
     it("keeps same reference when nothing excluded", () => {

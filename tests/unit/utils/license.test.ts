@@ -94,6 +94,12 @@ describe("isCustomLicense", () => {
         expect(isCustomLicense("MIT AND (ISC OR BSD-3-Clause)")).toBe(false);
     });
 
+    it("trims surrounding whitespace", () => {
+        expect(isCustomLicense("  MIT  ")).toBe(false);
+        expect(isCustomLicense(" UNLICENSED ")).toBe(true);
+        expect(isCustomLicense(" SEE LICENSE IN LICENSE.md")).toBe(true);
+    });
+
     it("skips joined license arrays", () => {
         expect(isCustomLicense(extractLicense(["MIT", { type: "ISC" }]))).toBe(false);
     });
