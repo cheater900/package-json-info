@@ -198,6 +198,20 @@ describe("App", () => {
         expect(tables[0].props("pendingColumns")).toEqual(new Set(["vulnerabilityCount"]));
     });
 
+    it("hiding filtered column drops its filter", async () => {
+        const wrapper = await mountApp();
+        const filtersMenu = wrapper.findComponent(FiltersMenu);
+        filtersMenu.vm.$emit("update:modelValue", { vulnerabilities: "any", license: "missing" });
+        await flushPromises();
+
+        wrapper
+            .findComponent(ColumnVisibilityPanel)
+            .vm.$emit("toggle-column", "vulnerabilityCount");
+        await flushPromises();
+
+        expect(filtersMenu.props("modelValue")).toEqual({ license: "missing" });
+    });
+
     it("passes filters + own list id to each table", async () => {
         const wrapper = await mountApp();
 

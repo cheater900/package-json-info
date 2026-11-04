@@ -34,7 +34,8 @@ import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
 import { isRowRetryable } from "./utils/packageJsonHistory";
-import { columnsForHealthFilters } from "./utils/healthFilters";
+import { isColumnVisible } from "./utils/tableColumns";
+import { columnsForHealthFilters, healthFiltersWithoutColumns } from "./utils/healthFilters";
 import type { HealthFilters } from "./utils/healthFilters";
 import { replayRequest } from "./utils/networkLog";
 import type { NetworkLogEntry } from "./utils/networkLog";
@@ -93,6 +94,13 @@ export default defineComponent({
         const healthFilters = ref<HealthFilters>({});
         // A filter on a hidden column shows that column, which fetches its missing data.
         watch(healthFilters, (filters) => showColumns(columnsForHealthFilters(filters)));
+        // Hiding a column a filter reads drops that filter: later fetches skip the column's data.
+        watch(visibleColumns, (visible) => {
+            healthFilters.value = healthFiltersWithoutColumns(
+                healthFilters.value,
+                (key) => !isColumnVisible(visible, key),
+            );
+        });
         const {
             pkg,
             workspace,

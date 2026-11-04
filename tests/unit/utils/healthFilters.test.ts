@@ -4,6 +4,7 @@ import {
     activeHealthFilterCount,
     columnsForHealthFilters,
     filterRowsByHealth,
+    healthFiltersWithoutColumns,
     rowMatchesHealthFilters,
     type HealthFilters,
 } from "../../../src/utils/healthFilters";
@@ -455,5 +456,18 @@ describe("month-end age threshold", () => {
         const dayBefore = fullRow({ latestReleaseDate: "2026-02-28T11:59:59.999Z" });
         expect(rowMatchesHealthFilters(lastDay, filters, monthEnd, "deps")).toBe(true);
         expect(rowMatchesHealthFilters(dayBefore, filters, monthEnd, "deps")).toBe(false);
+    });
+});
+
+describe("healthFiltersWithoutColumns", () => {
+    const filters: HealthFilters = { status: "deprecated", license: "missing" };
+
+    it("drops section reading any excluded column", () => {
+        const kept = healthFiltersWithoutColumns(filters, (key) => key === "latestVersion");
+        expect(kept).toEqual({ license: "missing" });
+    });
+
+    it("keeps same reference when nothing excluded", () => {
+        expect(healthFiltersWithoutColumns(filters, (key) => key === "gitStars")).toBe(filters);
     });
 });
