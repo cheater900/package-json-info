@@ -80,6 +80,7 @@ const CELL_FORMATTERS: Partial<Record<string, CellFormatter>> = {
     healthScore: (d) => fmtHealth(d.healthScore),
     weeklyDownloads: (d) => fmtNumber(d.weeklyDownloads),
     gitStars: (d) => fmtNumber(d.gitStars),
+    lastCommitDate: (d) => fmtDate(d.lastCommitDate),
     openPRs: (d) => fmtNumber(d.openPRs),
     closedPRs: (d) => fmtNumber(d.closedPRs),
     openIssues: (d) => fmtNumber(d.openIssues),

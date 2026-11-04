@@ -33,6 +33,7 @@ const COLUMN_SPECS: Omit<ColumnDef, "label" | "abbreviation">[] = [
     { key: "sourceCode", sortable: false, render: "link" },
     { key: "sourceCodeTree", sortable: false, render: "button" },
     { key: "gitStars", sortable: true },
+    { key: "lastCommitDate", sortable: true },
     { key: "openPRs", sortable: true },
     { key: "closedPRs", sortable: true },
     { key: "openIssues", sortable: true },
@@ -85,6 +86,7 @@ const INITIALLY_HIDDEN_COLUMN_KEYS = new Set([
     "bundleSizeGzip",
     "maintainers",
     "sourceCodeTree",
+    "lastCommitDate",
 ]);
 
 /** Toggleable columns visible by default - every other toggleable column. */

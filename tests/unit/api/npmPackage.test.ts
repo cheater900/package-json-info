@@ -55,6 +55,10 @@ describe("fetchPackageInfo", () => {
                 },
             },
             "api.npmjs.org/downloads": { downloads: 4242 },
+            "/commits": [
+                { commit: { committer: { date: "2021-05-01T00:00:00Z" } } },
+                { commit: { committer: { date: "2021-04-01T00:00:00Z" } } },
+            ],
             "api.github.com/repos/left-pad/left-pad": { stargazers_count: 99 },
             "is:pr+is:open": { total_count: 2 },
             "is:pr+is:closed": { total_count: 10 },
@@ -74,8 +78,8 @@ describe("fetchPackageInfo", () => {
             weeklyDownloads: 4242,
             sourceCode: "https://github.com/left-pad/left-pad",
             gitStars: 99,
-            lastCommitDate: null,
-            commitsLastYear: null,
+            lastCommitDate: "2021-05-01T00:00:00Z",
+            commitsLastYear: 2,
             openPRs: 2,
             closedPRs: 10,
             openIssues: 3,
@@ -163,6 +167,63 @@ describe("fetchPackageInfo", () => {
         expect(info.closedPRs).toBeNull();
         expect(info.openIssues).toBeNull();
         expect(info.closedIssues).toBeNull();
+        expect(info.lastCommitDate).toBeNull();
+        expect(info.commitsLastYear).toBeNull();
+    });
+
+    it("skips commit request for non-GitHub repository", async () => {
+        const fetchMock = stubFetchByUrl({
+            "registry.npmjs.org/gl-pkg": {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                repository: "git+https://gitlab.com/some-group/gl-pkg.git",
+            },
+        });
+
+        const info = await fetchPackageInfo("gl-pkg", "1.0.0", {
+            visibleColumns: new Set(["lastCommitDate"]),
+        });
+
+        expect(info.lastCommitDate).toBeNull();
+        expect(countFetchCalls(fetchMock, "gitlab.com")).toBe(0);
+        expect(countFetchCalls(fetchMock, "api.github.com")).toBe(0);
+    });
+
+    it("skips commit request with lastCommitDate hidden", async () => {
+        const fetchMock = stubFetchByUrl({
+            "registry.npmjs.org/hidden-pkg": {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                repository: "git+https://github.com/o/r.git",
+            },
+            "api.github.com/repos/o/r": { stargazers_count: 1 },
+        });
+
+        const info = await fetchPackageInfo("hidden-pkg", "1.0.0", {
+            visibleColumns: new Set(["gitStars"]),
+        });
+
+        expect(info.gitStars).toBe(1);
+        expect(info.commitsLastYear).toBeNull();
+        expect(countFetchCalls(fetchMock, "/commits")).toBe(0);
+    });
+
+    it("returns 0 commits + null date for empty window", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/quiet-pkg": {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                repository: "git+https://github.com/o/r.git",
+            },
+            "/commits": [],
+        });
+
+        const info = await fetchPackageInfo("quiet-pkg", "1.0.0", {
+            visibleColumns: new Set(["lastCommitDate"]),
+        });
+
+        expect(info.lastCommitDate).toBeNull();
+        expect(info.commitsLastYear).toBe(0);
     });
 
     it("resolves stars from Codeberg for Codeberg repository", async () => {
@@ -643,6 +704,9 @@ describe("fetchPackageInfo caching", () => {
             if (url.includes("api.npmjs.org/downloads")) {
                 return jsonResponse({ downloads: 1 });
             }
+            if (url.includes("/commits")) {
+                return jsonResponse([]);
+            }
             if (url.includes("api.github.com/repos/shared-org/shared-repo")) {
                 return jsonResponse({ stargazers_count: 777 });
             }
@@ -662,7 +726,8 @@ describe("fetchPackageInfo caching", () => {
 
         expect(a.gitStars).toBe(777);
         expect(b.gitStars).toBe(777);
-        expect(countFetchCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
+        expect(countFetchCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(2);
+        expect(countFetchCalls(fetchMock, "/commits")).toBe(1);
     });
 
     it("skips caching failed lookup, next same-key call retries", async () => {
@@ -941,6 +1006,7 @@ describe("fetchPackageInfo column gating", () => {
         const info = await fetchPackageInfo("license-only", "1.0.0", {
             visibleColumns: visibleColumnsExcept(
                 "gitStars",
+                "lastCommitDate",
                 "openPRs",
                 "closedPRs",
                 "openIssues",
@@ -979,6 +1045,7 @@ describe("fetchPackageInfo column gating", () => {
                 "sourceCode",
                 "sourceCodeTree",
                 "gitStars",
+                "lastCommitDate",
                 "openPRs",
                 "closedPRs",
                 "openIssues",
@@ -1252,6 +1319,9 @@ describe("fetchPackageInfo failures", () => {
             if (url.includes("search/issues")) {
                 return jsonResponse({ total_count: 2 });
             }
+            if (url.includes("/commits")) {
+                return jsonResponse([{ commit: { committer: { date: "2024-01-01T00:00:00Z" } } }]);
+            }
             if (url.includes("api.github.com/repos")) {
                 return jsonResponse({ stargazers_count: 9 });
             }
@@ -1394,6 +1464,17 @@ describe("fetchPackageInfo failures", () => {
             expect(info.weeklyDownloads).toBe(42);
             expect(info.gitStars).toBe(9);
             expect(info.staleSince).toBe(SAVED_OLD);
+            expect(info.failedLookups).toBeNull();
+        });
+
+        it("returns stored commit activity marked stale on rejected lookup", async () => {
+            const stored = { lastCommitDate: "2023-05-05T00:00:00Z", commitsLastYear: 5 };
+            await seedLookup("repoCommits", "github.com/o/r", stored, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("/commits", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info).toMatchObject({ ...stored, staleSince: SAVED_OLD });
             expect(info.failedLookups).toBeNull();
         });
 

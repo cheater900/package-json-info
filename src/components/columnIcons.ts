@@ -11,6 +11,7 @@ import IconClockAlert from "./IconClockAlert.vue";
 import IconCode from "./IconCode.vue";
 import IconFileArchive from "./IconFileArchive.vue";
 import IconFolderTree from "./IconFolderTree.vue";
+import IconGitCommit from "./IconGitCommit.vue";
 import IconGitPullRequest from "./IconGitPullRequest.vue";
 import IconGitPullRequestClosed from "./IconGitPullRequestClosed.vue";
 import IconHeartPulse from "./IconHeartPulse.vue";
@@ -40,6 +41,7 @@ export const COLUMN_ICONS: Record<string, Component> = {
     sourceCode: IconCode,
     sourceCodeTree: IconFolderTree,
     gitStars: IconStar,
+    lastCommitDate: IconGitCommit,
     openPRs: IconGitPullRequest,
     closedPRs: IconGitPullRequestClosed,
     openIssues: IconCircleDot,

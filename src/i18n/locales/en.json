@@ -112,6 +112,7 @@
         "sourceCode": "Source Code link",
         "sourceCodeTree": "Source Code Tree",
         "gitStars": "Git stars",
+        "lastCommitDate": "Last commit",
         "openPRs": "Open PRs",
         "closedPRs": "Closed PRs",
         "openIssues": "Open issues",

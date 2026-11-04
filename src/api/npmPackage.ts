@@ -34,8 +34,14 @@ import { settings } from "../settings";
 import { fetchJson } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
-import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repoMetadata";
-import type { RepoIssueCounts } from "./repoMetadata";
+import {
+    EMPTY_COMMIT_ACTIVITY,
+    EMPTY_ISSUE_COUNTS,
+    fetchRepoCommitActivity,
+    fetchRepoIssueCounts,
+    fetchRepoStars,
+} from "./repoMetadata";
+import type { RepoCommitActivity, RepoIssueCounts } from "./repoMetadata";
 
 /**
  * Registry documents hold whatever each package published. A field of the
@@ -69,6 +75,11 @@ const NpmRegistrySchema = z
 
 /** Shape checks of values read back from the offline store (see memoizeLookup). */
 const StoredCountSchema = z.number().nullable();
+
+const StoredCommitActivitySchema = z.object({
+    lastCommitDate: z.string().nullable(),
+    commitsLastYear: StoredCountSchema,
+});
 
 const StoredIssueCountsSchema = z.object({
     openPRs: StoredCountSchema,
@@ -139,6 +150,7 @@ const COLUMNS_FROM_REGISTRY = [
     "sourceCode",
     "sourceCodeTree",
     "gitStars",
+    "lastCommitDate",
     "openPRs",
     "closedPRs",
     "openIssues",
@@ -161,6 +173,7 @@ const weeklyDownloadsCache = new Map<string, Promise<Lookup<number | null>>>();
 const vulnerabilityCountCache = new Map<string, Promise<Lookup<number | null>>>();
 const bundleSizeCache = new Map<string, Promise<Lookup<number | null>>>();
 const repoStarsCache = new Map<string, Promise<Lookup<number | null>>>();
+const repoCommitsCache = new Map<string, Promise<Lookup<RepoCommitActivity>>>();
 const repoIssueCountsCache = new Map<string, Promise<Lookup<RepoIssueCounts>>>();
 const githubReleaseTagCache = new Map<string, Promise<Lookup<string | null>>>();
 /** Request subject per lookupKey; callers sharing a request share its subject. */
@@ -173,6 +186,7 @@ export function clearPackageInfoCache(): void {
     vulnerabilityCountCache.clear();
     bundleSizeCache.clear();
     repoStarsCache.clear();
+    repoCommitsCache.clear();
     repoIssueCountsCache.clear();
     githubReleaseTagCache.clear();
     subjectsByLookup.clear();
@@ -295,10 +309,16 @@ export async function fetchPackageInfo(
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
     const versionData = NpmVersionSchema.parse(resolveVersionData(npmData, range));
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
-    const [gitStars, issueCounts, sourceTree] = await Promise.all([
+    const [gitStars, commitActivity, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
             ? withFallback(() => fetchCachedRepoStars(slug, headers, requester), null)
             : noData,
+        slug != null && isVisible("lastCommitDate")
+            ? withFallback(
+                  () => fetchCachedRepoCommits(slug, headers, requester),
+                  EMPTY_COMMIT_ACTIVITY,
+              )
+            : fresh(EMPTY_COMMIT_ACTIVITY),
         slug != null && anyColumnVisible(visibleColumns, COLUMNS_FROM_ISSUE_SEARCH)
             ? withFallback(
                   () => fetchCachedIssueCounts(slug, headers, requester),
@@ -343,8 +363,7 @@ export async function fetchPackageInfo(
         weeklyDownloads: weeklyDownloads.value,
         sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
         gitStars: gitStars.value,
-        lastCommitDate: null,
-        commitsLastYear: null,
+        ...commitActivity.value,
         ...issueCounts.value,
         dependencies: versionData.dependencies ? Object.keys(versionData.dependencies) : null,
         license: extractLicense(versionData.license) ?? extractLicense(npmData?.license),
@@ -362,6 +381,7 @@ export async function fetchPackageInfo(
             vulnerabilityCount,
             bundleSizeGzip,
             gitStars,
+            commitActivity,
             issueCounts,
             sourceTree,
         ]),
@@ -370,6 +390,7 @@ export async function fetchPackageInfo(
             [vulnerabilityCount, ["vulnerabilityCount"]],
             [bundleSizeGzip, ["bundleSizeGzip"]],
             [gitStars, ["gitStars"]],
+            [commitActivity, ["lastCommitDate"]],
             [issueCounts, COLUMNS_FROM_ISSUE_SEARCH],
             [sourceTree, ["sourceCodeTree"]],
         ]),
@@ -539,6 +560,18 @@ function fetchCachedRepoStars(
     const subject = subjectFor("repoStars", key, requester, ["gitStars"]);
     return memoizeLookup(repoStarsCache, "repoStars", key, StoredCountSchema, () =>
         fetchRepoStars(slug, headers, subject),
+    );
+}
+
+function fetchCachedRepoCommits(
+    slug: RepoSlug,
+    headers: HttpHeaders,
+    requester: Requester,
+): Promise<Lookup<RepoCommitActivity>> {
+    const key = repoSlugKey(slug);
+    const subject = subjectFor("repoCommits", key, requester, ["lastCommitDate"]);
+    return memoizeLookup(repoCommitsCache, "repoCommits", key, StoredCommitActivitySchema, () =>
+        fetchRepoCommitActivity(slug, headers, subject),
     );
 }
 

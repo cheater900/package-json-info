@@ -17,6 +17,7 @@ export type LookupKind =
     | "vulnerabilityCount"
     | "bundleSize"
     | "repoStars"
+    | "repoCommits"
     | "repoIssueCounts"
     | "githubReleaseTag";
 
