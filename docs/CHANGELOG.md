@@ -13,7 +13,8 @@ Condensed from git history. Newest month first.
   activity, open PR and issue ratios, vulnerabilities, bundle size, health
   score, status, maintainers, adoption, license, source. One preset per
   section, sections combined. Picking preset shows its hidden columns and
-  fetches their data. Session only; export stays unfiltered.
+  fetches their data; filter waits for it. Hiding column clears its
+  filters. Session only; export stays unfiltered.
 
 #### Network
 

@@ -103,7 +103,8 @@ Each step stops table fetch of step before.
   vulnerabilities, bundle size, health score, status (deprecated, outdated,
   major version behind), maintainers, adoption, license, source. Ratio
   presets need 10 or more PRs or issues; fewer counts as unknown. Filter on
-  hidden column shows that column and fetches its data. While any filter
+  hidden column shows that column and fetches its data; filter waits
+  until data arrives. Hiding column clears filters reading it. While any filter
   is on, rows that failed to load stay hidden. Dev dependencies ignore
   bundle size filter. Filters last for session only: not saved, not in
   share link, not applied to export. Button badge counts active filters;
