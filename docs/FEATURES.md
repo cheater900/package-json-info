@@ -40,6 +40,8 @@ data exists:
 - Closed PR count
 - npm weekly downloads
 - Stars (GitHub / GitLab / Codeberg, whichever hosts source)
+- Last commit date on default branch within past year (GitHub only,
+  hidden by default). One request per repo, shared by its packages.
 - Open issues count
 - Closed issues count
 - List of package's own dependencies

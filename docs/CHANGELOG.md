@@ -35,6 +35,9 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Last commit** column: newest default-branch commit date within past
+  year, GitHub repos only, hidden by default. One request per repo, shared
+  across its packages; last good value kept for offline use.
 - **Failed lookups** show `?` with error as tooltip; `-` now means only
   "no data". **Retry failed fetches** button below each table refetches
   rows that failed, are stale or have failed lookup.
