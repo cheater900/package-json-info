@@ -343,6 +343,8 @@ export async function fetchPackageInfo(
         weeklyDownloads: weeklyDownloads.value,
         sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
         gitStars: gitStars.value,
+        lastCommitDate: null,
+        commitsLastYear: null,
         ...issueCounts.value,
         dependencies: versionData.dependencies ? Object.keys(versionData.dependencies) : null,
         license: extractLicense(versionData.license) ?? extractLicense(npmData?.license),

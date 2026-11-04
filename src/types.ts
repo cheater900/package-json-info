@@ -20,6 +20,10 @@ export type PackageInfo = {
     weeklyDownloads: number | null;
     sourceCode: string | null;
     gitStars: number | null;
+    /** ISO time of the newest default-branch commit within the commit window; null when unknown or none in window. */
+    lastCommitDate: string | null;
+    /** Commits within the commit window, capped at the sample size; null when unknown. */
+    commitsLastYear: number | null;
     openPRs: number | null;
     closedPRs: number | null;
     openIssues: number | null;

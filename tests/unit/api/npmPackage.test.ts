@@ -74,6 +74,8 @@ describe("fetchPackageInfo", () => {
             weeklyDownloads: 4242,
             sourceCode: "https://github.com/left-pad/left-pad",
             gitStars: 99,
+            lastCommitDate: null,
+            commitsLastYear: null,
             openPRs: 2,
             closedPRs: 10,
             openIssues: 3,
