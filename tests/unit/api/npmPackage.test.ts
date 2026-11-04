@@ -1409,6 +1409,17 @@ describe("fetchPackageInfo failures", () => {
         expect(info.staleSince).toBeNull();
     });
 
+    it("marks lastCommitDate on failed commit lookup", async () => {
+        vi.stubGlobal("fetch", failingFetch("/commits", "status"));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.failedLookups).toEqual({
+            lastCommitDate: "Request failed with status 503",
+        });
+        expect(info.commitsLastYear).toBeNull();
+    });
+
     it("marks every issue count column on failed search", async () => {
         vi.stubGlobal("fetch", failingFetch("search/issues", "network"));
 
