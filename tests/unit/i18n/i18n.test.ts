@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { t } from "../../../src/i18n";
+import { hasMessage, t } from "../../../src/i18n";
+import { HEALTH_FILTER_SECTIONS } from "../../../src/utils/healthFilters";
 import { DEPENDENCY_TABLE_COLUMNS } from "../../../src/utils/tableColumns";
 
 const SRC_DIR = join(__dirname, "../../../src");
@@ -53,5 +54,14 @@ describe("message catalog", () => {
         const unlabeled = DEPENDENCY_TABLE_COLUMNS.filter((c) => c.label === `columns.${c.key}`);
 
         expect(unlabeled).toEqual([]);
+    });
+
+    it("labels every health filter section + preset", () => {
+        const keys = HEALTH_FILTER_SECTIONS.flatMap((section) => [
+            `filters.sections.${section.id}`,
+            ...section.presets.map((preset) => `filters.presets.${section.id}.${preset.id}`),
+        ]);
+
+        expect(keys.filter((key) => !hasMessage(key))).toEqual([]);
     });
 });

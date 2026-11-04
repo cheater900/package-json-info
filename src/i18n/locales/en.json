@@ -143,11 +143,122 @@
         "bundleSizeGzip": "GZIP",
         "maintainers": "MAINT"
     },
+    "filters": {
+        "open": "Filters",
+        "clear": "Clear all",
+        "any": "Any",
+        "activeCount": "{count} active",
+        "sections": {
+            "lastPublished": "Last published",
+            "lastUpdated": "Last updated",
+            "installedVersionAge": "Installed version age",
+            "commitActivity": "Commit activity",
+            "openPrRatio": "Open PR ratio",
+            "openIssueRatio": "Open issue ratio",
+            "vulnerabilities": "Vulnerabilities",
+            "bundleSize": "Bundle size (gzip, dependencies only)",
+            "healthScore": "Health score",
+            "status": "Status",
+            "maintainers": "Maintainers",
+            "adoption": "Adoption",
+            "license": "License",
+            "source": "Source"
+        },
+        "presets": {
+            "lastPublished": {
+                "within1Month": "Within 1 month",
+                "within6Months": "Within 6 months",
+                "over1Year": "Over 1 year",
+                "over2Years": "Over 2 years",
+                "over3Years": "Over 3 years",
+                "unknown": "Unknown"
+            },
+            "lastUpdated": {
+                "over1Year": "Over 1 year",
+                "over2Years": "Over 2 years",
+                "unknown": "Unknown"
+            },
+            "installedVersionAge": {
+                "within1Month": "Within 1 month",
+                "within6Months": "Within 6 months",
+                "over1Year": "Over 1 year",
+                "over2Years": "Over 2 years",
+                "over3Years": "Over 3 years",
+                "unknown": "Unknown"
+            },
+            "commitActivity": {
+                "commitsLastMonth": "Commits in last month",
+                "noCommits3Months": "No commits in 3 months",
+                "noCommits6Months": "No commits in 6 months",
+                "noCommits1Year": "No commits in 1 year",
+                "underOnePerMonth": "Under 1 commit/month",
+                "unknown": "Unknown"
+            },
+            "openPrRatio": {
+                "under10": "Under 10%",
+                "over25": "Over 25%",
+                "over50": "Over 50%",
+                "over75": "Over 75%",
+                "unknown": "Unknown / under 10 PRs"
+            },
+            "openIssueRatio": {
+                "under20": "Under 20%",
+                "over40": "Over 40%",
+                "over60": "Over 60%",
+                "over80": "Over 80%",
+                "unknown": "Unknown / under 10 issues"
+            },
+            "vulnerabilities": {
+                "none": "None",
+                "any": "Any (1 or more)",
+                "atLeast3": "3 or more",
+                "atLeast10": "10 or more",
+                "unknown": "Unknown"
+            },
+            "bundleSize": {
+                "under5Kb": "Under 5 kB",
+                "over25Kb": "Over 25 kB",
+                "over50Kb": "Over 50 kB",
+                "over100Kb": "Over 100 kB",
+                "over250Kb": "Over 250 kB",
+                "unknown": "Unknown"
+            },
+            "healthScore": {
+                "poor": "Poor",
+                "fair": "Fair",
+                "good": "Good",
+                "unknown": "Unknown"
+            },
+            "status": {
+                "deprecated": "Deprecated",
+                "outdated": "Outdated",
+                "majorBehind": "Major version behind"
+            },
+            "maintainers": {
+                "single": "Single maintainer",
+                "none": "None listed"
+            },
+            "adoption": {
+                "under1k": "Under 1k downloads/week",
+                "under10k": "Under 10k downloads/week",
+                "unknown": "Unknown"
+            },
+            "license": {
+                "missing": "Missing",
+                "copyleft": "Copyleft",
+                "custom": "Custom / non-SPDX"
+            },
+            "source": {
+                "noRepository": "No repository"
+            }
+        }
+    },
     "table": {
         "loading": "Loading…",
         "cellLoading": "Loading",
         "empty": "No dependencies",
         "noSearchMatch": "No dependencies matched search",
+        "noFilterMatch": "No dependencies match the active filters.",
         "rowError": "Could not load package data: {error}",
         "sourceLink": "Open source code",
         "viewTree": "View tree",
