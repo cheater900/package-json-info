@@ -196,6 +196,9 @@ describe("App", () => {
         const tables = wrapper.findAllComponents(DependenciesTable);
         expect(tables[0].props("columns")).toContain("vulnerabilityCount");
         expect(tables[0].props("pendingColumns")).toEqual(new Set(["vulnerabilityCount"]));
+        expect(wrapper.findComponent(FiltersMenu).props("modelValue")).toEqual({
+            vulnerabilities: "any",
+        });
     });
 
     it("hiding filtered column drops its filter", async () => {
@@ -224,6 +227,17 @@ describe("App", () => {
             { license: "missing" },
         ]);
         expect(tables.map((table) => table.props("listId"))).toEqual(["deps", "devDeps"]);
+    });
+
+    it("passes filters + own list id to expanded table", async () => {
+        const wrapper = await mountApp();
+        wrapper.findComponent(FiltersMenu).vm.$emit("update:modelValue", { license: "missing" });
+
+        await wrapper.findAll(".table-actions__expand")[1].trigger("click");
+
+        const expanded = wrapper.findAllComponents(DependenciesTable)[2];
+        expect(expanded.props("healthFilters")).toEqual({ license: "missing" });
+        expect(expanded.props("listId")).toBe("devDeps");
     });
 
     it("disables Export while tables load", async () => {
