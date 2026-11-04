@@ -733,6 +733,20 @@ describe("DependenciesTable health filters", () => {
         expect(rowNames(wrapper)).toEqual(["licensed"]);
     });
 
+    it("applies filter once pending column data arrives", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [licensed, unlicensed],
+                healthFilters: { license: "missing" },
+                pendingColumns: new Set(["license"]),
+            },
+        });
+
+        await wrapper.setProps({ pendingColumns: new Set() });
+
+        expect(rowNames(wrapper)).toEqual(["unlicensed"]);
+    });
+
     it("shows no-search-match message when search alone empties table", () => {
         const wrapper = mount(DependenciesTable, {
             props: {
