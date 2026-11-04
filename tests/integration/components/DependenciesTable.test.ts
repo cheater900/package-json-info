@@ -658,6 +658,82 @@ describe("DependenciesTable search", () => {
     });
 });
 
+describe("DependenciesTable health filters", () => {
+    const licensed = { ...fullDependency, name: "licensed" };
+    const unlicensed = { ...sparseDependency, name: "unlicensed" };
+    const broken = { name: "broken", version: "1.0.0", error: "503" };
+
+    function statusText(wrapper: VueWrapper) {
+        return wrapper.find(".deps-table__status-row").text();
+    }
+
+    it("hides rows not matching active filter", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [licensed, unlicensed], healthFilters: { license: "missing" } },
+        });
+
+        expect(rowNames(wrapper)).toEqual(["unlicensed"]);
+    });
+
+    it("shows every row, error rows included, without active filter", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [licensed, broken], healthFilters: {} },
+        });
+
+        expect(rowNames(wrapper)).toEqual(["licensed", "broken"]);
+    });
+
+    it("hides error rows while filter active", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [unlicensed, broken], healthFilters: { license: "missing" } },
+        });
+
+        expect(rowNames(wrapper)).toEqual(["unlicensed"]);
+    });
+
+    it("re-filters on healthFilters prop change", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [licensed, unlicensed] },
+        });
+
+        await wrapper.setProps({ healthFilters: { source: "noRepository" } });
+
+        expect(rowNames(wrapper)).toEqual(["unlicensed"]);
+    });
+
+    it("devDeps ignores bundleSize filter, deps applies it", () => {
+        const props = {
+            dependencies: [licensed, unlicensed],
+            healthFilters: { bundleSize: "over100Kb" } as const,
+        };
+        const deps = mount(DependenciesTable, { props: { ...props, listId: "deps" } });
+        const devDeps = mount(DependenciesTable, { props: { ...props, listId: "devDeps" } });
+
+        expect(rowNames(deps)).toEqual([]);
+        expect(rowNames(devDeps)).toEqual(["licensed", "unlicensed"]);
+    });
+
+    it("shows no-filter-match message when filters empty table", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [licensed], healthFilters: { license: "missing" } },
+        });
+
+        expect(statusText(wrapper)).toBe("No dependencies match the active filters.");
+    });
+
+    it("shows no-search-match message when search alone empties table", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [unlicensed],
+                searchQuery: "zzz",
+                healthFilters: { license: "missing" },
+            },
+        });
+
+        expect(statusText(wrapper)).toBe("No dependencies matched search");
+    });
+});
+
 describe("DependenciesTable source tree", () => {
     function mountWithSourceTree(dependency: DependencyRow) {
         return mount(DependenciesTable, {

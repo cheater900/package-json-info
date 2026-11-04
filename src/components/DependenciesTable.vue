@@ -147,6 +147,9 @@
                     <template v-else-if="dependencies.length === 0">
                         {{ t("table.empty") }}
                     </template>
+                    <template v-else-if="isEmptiedByHealthFilters">
+                        {{ t("table.noFilterMatch") }}
+                    </template>
                     <template v-else>{{ t("table.noSearchMatch") }}</template>
                 </td>
             </tr>

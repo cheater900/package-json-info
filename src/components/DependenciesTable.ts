@@ -4,8 +4,10 @@ import { t } from "../i18n";
 import draggable from "vuedraggable";
 import { DEFAULT_COLUMN_ORDER, NAME_COLUMN_KEY, toggleableColumnsFor } from "../utils/tableColumns";
 import type { ColumnDef } from "../utils/tableColumns";
-import type { DependencyRow, SortDirection } from "../types";
+import type { DependencyListId, DependencyRow, SortDirection } from "../types";
 import { filterRowsByName, fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
+import { filterRowsByHealth } from "../utils/healthFilters";
+import type { HealthFilters } from "../utils/healthFilters";
 import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
@@ -43,6 +45,15 @@ export default defineComponent({
             type: String,
             default: "",
         },
+        healthFilters: {
+            type: Object as PropType<HealthFilters>,
+            default: () => ({}),
+        },
+        /** Which list the rows come from; dev dependencies skip the bundle size filter. */
+        listId: {
+            type: String as PropType<DependencyListId>,
+            default: "deps",
+        },
         /** Abbreviate multi-word labels ("Version Date" -> "VD"); the full label shows as a tooltip. */
         shrinkLabels: {
             type: Boolean,
@@ -65,8 +76,21 @@ export default defineComponent({
     },
     emits: ["load-package", "reorder-columns", "open-source-tree", "select-package", "retry-row"],
     setup(props, { emit }) {
-        const filteredDependencies = computed(() =>
+        const nameMatchedDependencies = computed(() =>
             filterRowsByName(props.dependencies, props.searchQuery),
+        );
+        const filteredDependencies = computed(() =>
+            filterRowsByHealth(
+                nameMatchedDependencies.value,
+                props.healthFilters,
+                new Date(),
+                props.listId,
+            ),
+        );
+        // Health filters, not the search, emptied the table.
+        const isEmptiedByHealthFilters = computed(
+            () =>
+                nameMatchedDependencies.value.length > 0 && filteredDependencies.value.length === 0,
         );
 
         function labelFor(col: ColumnDef) {
@@ -152,6 +176,7 @@ export default defineComponent({
             toggleSort,
             sortDirectionFor,
             sortedDependencies,
+            isEmptiedByHealthFilters,
         };
     },
 });
