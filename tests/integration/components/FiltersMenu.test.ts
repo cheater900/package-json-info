@@ -55,6 +55,23 @@ describe("FiltersMenu dropdown", () => {
         expect(document.activeElement).toBe(trigger.element);
     });
 
+    it("ignores other keys + Escape while closed", async () => {
+        const wrapper = mountMenu();
+        const outside = document.createElement("button");
+        document.body.append(outside);
+        await wrapper.find(".filters-menu__trigger").trigger("click");
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+        await flushPromises();
+        expect(wrapper.find('[role="dialog"]').isVisible()).toBe(true);
+
+        await wrapper.find(".filters-menu__trigger").trigger("click");
+        outside.focus();
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        await flushPromises();
+        expect(document.activeElement).toBe(outside);
+    });
+
     it("closes on pointerdown outside, stays open on inside", async () => {
         const wrapper = mountMenu();
         await wrapper.find(".filters-menu__trigger").trigger("click");
