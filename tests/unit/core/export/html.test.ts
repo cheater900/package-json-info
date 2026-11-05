@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// DOMParser checks the rendered markup; the exporter itself needs no DOM.
 import { describe, it, expect } from "vitest";
 import { htmlExporter } from "../../../../src/core/export/exporters/html";
 import { exportDocumentFixture, exportDocumentWith } from "../../../fixtures/exportDocument";

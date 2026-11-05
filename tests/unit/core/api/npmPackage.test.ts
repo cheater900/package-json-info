@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { coreSettings } from "../../../helpers/core";
 import {
     fetchPackageInfo,
     fetchPackagesInfo,
@@ -6,7 +7,13 @@ import {
     clearPackageInfoCache,
 } from "../../../../src/core/api/npmPackage";
 import { OSV_MAX_PAGES } from "../../../../src/core/constants";
-import { clearLookups, loadLookup, saveLookup } from "../../../../src/app/utils/lookupStore";
+import {
+    clearLookups,
+    loadLookup,
+    lookupStoreGeneration,
+    saveLookup,
+} from "../../../../src/app/utils/lookupStore";
+import { configureCore } from "../../../../src/core/runtime";
 import type { LookupKind } from "../../../../src/core/utils/memoizeLookup";
 import { columnKeysExcept } from "../../../helpers/columns";
 import {
@@ -17,8 +24,7 @@ import {
     stubFetchByUrl,
 } from "../../../helpers/fetchMock";
 import { IDBObjectStore } from "fake-indexeddb";
-import { githubToken } from "../../../../src/app/settings";
-import { resetSettings, stubIndexedDb } from "../../../helpers/settings";
+import { stubIndexedDb } from "../../../helpers/indexedDb";
 import { minimalRegistryDoc } from "../../../fixtures/dependencies";
 import { recordRequests, subjectOf, subjectsOf } from "../../../helpers/requests";
 import { githubTokenFixture as TOKEN } from "../../../fixtures/github";
@@ -1466,13 +1472,19 @@ describe("fetchPackageInfo failures", () => {
 
         beforeEach(() => {
             stubIndexedDb();
+            configureCore({
+                lookupStore: {
+                    load: loadLookup,
+                    save: saveLookup,
+                    generation: lookupStoreGeneration,
+                },
+            });
             // Date only: fake-indexeddb schedules its work on real timers.
             vi.useFakeTimers({ toFake: ["Date"] });
         });
 
         afterEach(() => {
             vi.useRealTimers();
-            resetSettings();
         });
 
         it("saves live values", async () => {
@@ -1668,7 +1680,7 @@ describe("fetchPackageInfo failures", () => {
 
         it("stores no request headers or token", async () => {
             const put = vi.spyOn(IDBObjectStore.prototype, "put");
-            githubToken.value = TOKEN;
+            coreSettings.githubToken = TOKEN;
             vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
 
             await fetchPackageInfo("pkg", "1.0.0");

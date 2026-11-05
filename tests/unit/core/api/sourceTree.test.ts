@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { coreSettings } from "../../../helpers/core";
 import { fetchSourceTree } from "../../../../src/core/api/sourceTree";
-import { githubToken } from "../../../../src/app/settings";
 import { buildNpmTarball, buildTar, gzipToArrayBuffer } from "../../../fixtures/tarball";
 import {
     HTTP_STATUS,
@@ -10,7 +10,6 @@ import {
     textResponse,
 } from "../../../helpers/fetchMock";
 import { recordRequests, subjectOf, subjectsOf } from "../../../helpers/requests";
-import { resetSettings } from "../../../helpers/settings";
 import { githubTokenFixture } from "../../../fixtures/github";
 import { MAX_FILE_TREE_ENTRIES, MAX_VIEWED_FILE_BYTES } from "../../../../src/core/constants";
 
@@ -29,8 +28,6 @@ function stubGithubFetch(treeBody: unknown, rawResponse: unknown = textResponse(
     vi.stubGlobal("fetch", fetchMock);
     return fetchMock;
 }
-
-afterEach(resetSettings);
 
 describe("fetchSourceTree - npm provider", () => {
     it("downloads and decompresses tarball into browsable tree", async () => {
@@ -301,7 +298,7 @@ describe("fetchSourceTree - github provider", () => {
     });
 
     it("sends token to tree API, never to raw file host", async () => {
-        githubToken.value = githubTokenFixture;
+        coreSettings.githubToken = githubTokenFixture;
         const fetchMock = stubGithubFetch({ tree: [{ path: "a.js", type: "blob" }] });
 
         const { readFile } = await fetchSourceTree(GITHUB_TREE_REF);

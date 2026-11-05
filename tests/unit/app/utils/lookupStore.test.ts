@@ -11,7 +11,7 @@ import {
     lookupStoreGeneration,
     saveLookup,
 } from "../../../../src/app/utils/lookupStore";
-import { stubIndexedDb } from "../../../helpers/settings";
+import { stubIndexedDb } from "../../../helpers/indexedDb";
 
 describe("lookupStore", () => {
     beforeEach(() => {

@@ -7,5 +7,27 @@
     "rules": {},
     "env": {
         "builtin": true
-    }
+    },
+    "overrides": [
+        {
+            "files": ["src/core/**"],
+            "rules": {
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        "patterns": [
+                            {
+                                "group": ["vue", "vue-*", "vuedraggable"],
+                                "message": "src/core must stay framework-free."
+                            },
+                            {
+                                "group": ["**/app/**", "**/app"],
+                                "message": "src/core must not import src/app."
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
 }

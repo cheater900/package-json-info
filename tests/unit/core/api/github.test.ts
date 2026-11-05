@@ -1,17 +1,14 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { coreSettings } from "../../../helpers/core";
 import {
     fetchGithubRateLimit,
     fetchGithubTree,
     findGithubReleaseTag,
     githubHeaders,
 } from "../../../../src/core/api/github";
-import { githubToken } from "../../../../src/app/settings";
 import { GITHUB_RATE_LIMIT_URL } from "../../../../src/core/constants";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../../helpers/fetchMock";
-import { resetSettings } from "../../../helpers/settings";
 import { githubRateLimit, githubRateLimitBody } from "../../../fixtures/github";
-
-afterEach(resetSettings);
 
 describe("findGithubReleaseTag", () => {
     it("returns v-prefixed tag if present", async () => {
@@ -68,7 +65,7 @@ describe("githubHeaders", () => {
     });
 
     it("defaults to in-memory token", () => {
-        githubToken.value = "mem";
+        coreSettings.githubToken = "mem";
 
         expect(githubHeaders().Authorization).toBe("Bearer mem");
     });
@@ -118,7 +115,7 @@ describe("fetchGithubTree", () => {
             jsonResponse({ tree: entries, truncated: true }),
         );
         vi.stubGlobal("fetch", fetchMock);
-        githubToken.value = "mem";
+        coreSettings.githubToken = "mem";
 
         expect(await fetchGithubTree("o", "r", "feat/x")).toEqual({ entries, truncated: true });
         expect(fetchMock).toHaveBeenCalledWith(

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { coreSettings } from "../../../helpers/core";
 import {
     fetchJson,
     fetchWithTimeout,
@@ -8,13 +9,9 @@ import {
     proxiedUrl,
 } from "../../../../src/core/api/http";
 import type { ObservedRequest } from "../../../../src/core/api/http";
-import { githubToken, settings } from "../../../../src/app/settings";
 import { settle } from "../../../../src/core/utils/settle";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../../helpers/fetchMock";
-import { resetSettings } from "../../../helpers/settings";
 import { subjectOf } from "../../../helpers/requests";
-
-afterEach(resetSettings);
 
 describe("findFirstFound", () => {
     it("skips 404 candidates, returns first found", async () => {
@@ -95,7 +92,7 @@ describe("fetchWithTimeout", () => {
     it("routes request through proxy", async () => {
         const fetchMock = vi.fn(async () => jsonResponse({}));
         vi.stubGlobal("fetch", fetchMock);
-        settings.proxyUrl = "https://p.test/";
+        coreSettings.proxyUrl = "https://p.test/";
 
         await fetchWithTimeout("https://a.test/x");
 
@@ -108,7 +105,7 @@ describe("fetchWithTimeout", () => {
     it("bypasses proxy for authorized request", async () => {
         const fetchMock = vi.fn(async () => jsonResponse({}));
         vi.stubGlobal("fetch", fetchMock);
-        settings.proxyUrl = "https://p.test/";
+        coreSettings.proxyUrl = "https://p.test/";
 
         await fetchWithTimeout("https://api.github.com/x", {
             headers: { Authorization: "Bearer t" },
@@ -117,7 +114,7 @@ describe("fetchWithTimeout", () => {
         expect(fetchMock).toHaveBeenCalledWith("https://api.github.com/x", expect.anything());
     });
 
-    it("aborts request after settings.fetchTimeoutMs", async () => {
+    it("aborts request after coreSettings.fetchTimeoutMs", async () => {
         const fetchMock = vi.fn(
             (_url: string, init: RequestInit) =>
                 new Promise((_resolve, reject) => {
@@ -125,7 +122,7 @@ describe("fetchWithTimeout", () => {
                 }),
         );
         vi.stubGlobal("fetch", fetchMock);
-        settings.fetchTimeoutMs = 5;
+        coreSettings.fetchTimeoutMs = 5;
 
         await expect(fetchWithTimeout("https://a.test/x")).rejects.toThrow(
             expect.objectContaining({ name: "TimeoutError" }),
@@ -298,7 +295,7 @@ describe("observeRequests", () => {
             "fetch",
             vi.fn(async () => jsonResponse({})),
         );
-        settings.proxyUrl = "https://p.test/";
+        coreSettings.proxyUrl = "https://p.test/";
 
         await fetchWithTimeout("https://a.test/x");
 
@@ -351,7 +348,7 @@ describe("observeRequests", () => {
 
         async function sendAuthorized(fetchMock: ReturnType<typeof vi.fn>) {
             vi.stubGlobal("fetch", fetchMock);
-            githubToken.value = "old";
+            coreSettings.githubToken = "old";
             await fetchWithTimeout(URL_GITHUB, {
                 headers: { Accept: "json", Authorization: "Bearer old" },
             });
@@ -366,7 +363,7 @@ describe("observeRequests", () => {
         it("sends no Authorization once token purged", async () => {
             const fetchMock = vi.fn(async () => jsonResponse({}));
             await sendAuthorized(fetchMock);
-            githubToken.value = undefined;
+            coreSettings.githubToken = undefined;
 
             await requests[0].replay();
 
@@ -377,7 +374,7 @@ describe("observeRequests", () => {
         it("sends current token", async () => {
             const fetchMock = vi.fn(async () => jsonResponse({}));
             await sendAuthorized(fetchMock);
-            githubToken.value = "new";
+            coreSettings.githubToken = "new";
 
             await requests[0].replay();
 
@@ -388,7 +385,7 @@ describe("observeRequests", () => {
             const fetchMock = vi.fn(async () => jsonResponse({}));
             vi.stubGlobal("fetch", fetchMock);
             await fetchWithTimeout(URL_GITHUB);
-            githubToken.value = "new";
+            coreSettings.githubToken = "new";
             fetchMock.mockClear();
 
             await requests[0].replay();

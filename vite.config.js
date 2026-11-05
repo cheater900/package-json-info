@@ -19,10 +19,28 @@ export default defineConfig({
         exclude: ["vue-json-pretty"],
     },
     test: {
-        environment: "jsdom",
         restoreMocks: true,
         unstubGlobals: true,
-        setupFiles: ["tests/helpers/bindCore.ts"],
-        include: ["tests/unit/**/*.test.{js,ts}", "tests/integration/**/*.test.{js,ts}"],
+        projects: [
+            {
+                // Node, not jsdom: proves core runs outside the browser.
+                extends: true,
+                test: {
+                    name: "core",
+                    environment: "node",
+                    setupFiles: ["tests/helpers/coreSetup.ts"],
+                    include: ["tests/unit/core/**/*.test.ts"],
+                },
+            },
+            {
+                extends: true,
+                test: {
+                    name: "app",
+                    environment: "jsdom",
+                    setupFiles: ["tests/helpers/appSetup.ts"],
+                    include: ["tests/unit/app/**/*.test.ts", "tests/integration/**/*.test.ts"],
+                },
+            },
+        ],
     },
 });

@@ -265,7 +265,9 @@ Condensed from git history. Newest month first.
   types); `src/app` holds Vue app, settings, storage, network log, share
   state and download helper. `constants.ts` split in two; tests mirror
   layout under `tests/unit/core` and `tests/unit/app`. XLSX export uses
-  `write-excel-file/universal`.
+  `write-excel-file/universal`. **Boundary checks**: `src/core/tsconfig.json`
+  type-checks core without DOM types, oxlint bans `vue` and `src/app`
+  imports in core, vitest runs core tests in Node and app tests in jsdom.
 - **Core runtime seam** `configureCore()` in `src/core/runtime.ts`: API
   code reads proxy, timeout, concurrency and GitHub token through it,
   request subjects pass through `trackSubject`, offline lookups through

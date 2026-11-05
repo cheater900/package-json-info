@@ -57,7 +57,7 @@ export async function gunzip(
     const chunks: Uint8Array[] = [];
     let totalBytes = 0;
     for (;;) {
-        let chunk: ReadableStreamReadResult<Uint8Array>;
+        let chunk: Awaited<ReturnType<typeof reader.read>>;
         try {
             chunk = await reader.read();
         } catch {

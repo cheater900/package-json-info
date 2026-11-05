@@ -68,7 +68,7 @@ export async function fetchGithubRateLimit(token: string): Promise<GithubRateLim
     if (!response.ok) {
         throw new HttpError(response.status);
     }
-    const { rate }: GithubRateLimitResponse = await response.json();
+    const { rate } = (await response.json()) as GithubRateLimitResponse;
     return { limit: rate.limit, remaining: rate.remaining };
 }
 

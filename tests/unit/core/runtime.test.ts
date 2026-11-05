@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fetchWithTimeout } from "../../../src/core/api/http";
-import { bindCore } from "../../../src/app/coreBinding";
 import {
     CORE_SETTINGS_DEFAULTS,
     configureCore,
@@ -10,8 +9,6 @@ import {
 import { textResponse } from "../../helpers/fetchMock";
 
 describe("core runtime", () => {
-    afterEach(bindCore);
-
     it("defaults to no proxy + no token + no lookup store", () => {
         resetCore();
 

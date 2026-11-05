@@ -8,7 +8,7 @@ import {
     saveGithubToken,
 } from "../../../../src/app/utils/githubTokenStorage";
 import { settle } from "../../../../src/core/utils/settle";
-import { stubIndexedDb } from "../../../helpers/settings";
+import { stubIndexedDb } from "../../../helpers/indexedDb";
 import { githubTokenFixture as TOKEN } from "../../../fixtures/github";
 
 beforeEach(() => {

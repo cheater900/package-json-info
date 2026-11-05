@@ -12,7 +12,8 @@ import {
     statusResponse,
     stubFetchByUrl,
 } from "../../helpers/fetchMock";
-import { resetSettings, stubIndexedDb } from "../../helpers/settings";
+import { resetSettings } from "../../helpers/settings";
+import { stubIndexedDb } from "../../helpers/indexedDb";
 import {
     githubRateLimitBody,
     githubRateLimitText,
