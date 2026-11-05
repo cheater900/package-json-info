@@ -352,6 +352,9 @@ Condensed from git history. Newest month first.
 
 #### Docs
 
+- `DEVELOPMENT.md` documents **core and app split**: layout,
+  `configureCore()` seam, boundary checks, two Vitest projects.
+  `ROADMAP.md` plans **CLI** in `src/cli`.
 - Docs follow standard layout: **`KNOWN_ISSUES.md`** split from
   `NOTES.md`, changelog grouped by month, scope and area.
 - Planned work moved out of `FEATURES.md` -> **`ROADMAP.md`** and

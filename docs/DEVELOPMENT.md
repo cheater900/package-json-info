@@ -2,28 +2,59 @@
 
 ## Code layout
 
-| Path                          | Purpose                                                                                                  |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `src/main.js`                 | App entry point. Decrypts GitHub token, then mounts `App.vue`.                                           |
-| `src/App.vue`, `src/App.ts`   | Root component: input controls, tables, history controls, shared modal.                                  |
-| `src/constants.ts`            | API base URLs, supported repo hosts, storage keys, display constants.                                    |
-| `src/config.ts`               | Developer settings read from `.env` (see Configuration below).                                           |
-| `src/settings.ts`             | User settings store (Zod-validated, in `localStorage`), in-memory token.                                 |
-| `src/types.ts`                | Shared domain types: package input, info, error, row, source tree ref.                                   |
-| `src/i18n/`                   | `t()` message lookup. UI text lives in `locales/en.json`.                                                |
-| `src/api/`                    | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees.                                 |
-| `src/composables/`            | Vue state: column preferences, package.json history, input sources, popovers.                            |
-| `src/components/`             | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
-| `src/utils/`                  | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.                                     |
-| `src/utils/export/`           | Table export: row-to-text builder, format registry, download helper.                                     |
-| `src/utils/export/exporters/` | One file per export format: CSV, XLSX, Markdown, HTML, PDF.                                              |
-| `public/`                     | Static assets served as-is.                                                                              |
-| `tests/unit/`                 | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.                                  |
-| `tests/integration/`          | Vitest component tests mounted with `@vue/test-utils`.                                                   |
-| `tests/e2e/`                  | Playwright end-to-end tests. `visual/` holds screenshot run.                                             |
-| `tests/helpers/`              | Helpers: fetch stubs, columns, IndexedDB, settings, share links, request recorder.                       |
-| `tests/fixtures/`             | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
-| `docs/`                       | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
+| Path                                | Purpose                                                                                                  |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/core/`                         | Framework-free logic shared by web app and future CLI. No Vue, no DOM, no `src/app` imports.             |
+| `src/core/runtime.ts`               | `configureCore()` seam: settings, request subject wrapper, offline lookup store.                         |
+| `src/core/api/`                     | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees, package.json sources.           |
+| `src/core/utils/`                   | Data helpers: formatting, columns, health score and filters, semver, license, tar, URLs.                 |
+| `src/core/export/`                  | Table export: row-to-text builder, format registry.                                                      |
+| `src/core/export/exporters/`        | One file per export format: CSV, XLSX, Markdown, HTML, PDF.                                              |
+| `src/core/i18n/`                    | `t()` message lookup. All text lives in `locales/en.json`.                                               |
+| `src/core/constants.ts`             | API base URLs, repo hosts, limits, health weights, display constants core uses.                          |
+| `src/core/types.ts`                 | Shared domain types: package input, info, error, row, source tree ref.                                   |
+| `src/app/`                          | Vue web app.                                                                                             |
+| `src/app/main.js`                   | App entry point. Binds core, decrypts GitHub token, then mounts `App.vue`.                               |
+| `src/app/coreBinding.ts`            | `bindCore()`: feeds app settings, Vue `reactive` and IndexedDB store to core.                            |
+| `src/app/App.vue`, `src/app/App.ts` | Root component: input controls, tables, history controls, shared modal.                                  |
+| `src/app/constants.ts`              | Storage keys, IndexedDB names, settings options, share link limits, UI timings.                          |
+| `src/app/config.ts`                 | Developer settings read from `.env` (see Configuration below).                                           |
+| `src/app/settings.ts`               | User settings store (Zod-validated, in `localStorage`), in-memory token.                                 |
+| `src/app/composables/`              | Vue state: column preferences, package.json history, input sources, popovers.                            |
+| `src/app/components/`               | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
+| `src/app/utils/`                    | Browser helpers: storage, IndexedDB, token storage, network log, share state, download.                  |
+| `public/`                           | Static assets served as-is.                                                                              |
+| `tests/unit/core/`                  | Vitest unit tests of `src/core`, run in Node.                                                            |
+| `tests/unit/app/`                   | Vitest unit tests of `src/app`, run in jsdom.                                                            |
+| `tests/integration/`                | Vitest component tests mounted with `@vue/test-utils`, run in jsdom.                                     |
+| `tests/e2e/`                        | Playwright end-to-end tests. `visual/` holds screenshot run.                                             |
+| `tests/helpers/`                    | Helpers: fetch stubs, columns, IndexedDB, settings, core runtime, share links, request recorder.         |
+| `tests/fixtures/`                   | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
+| `docs/`                             | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
+
+
+## Core and app
+
+`src/core` holds every step that fetches or shapes data. `src/app` holds
+Vue state, rendering and browser storage, and calls core. A CLI in
+`src/cli` can later reuse core unchanged.
+
+Core reads host state only through `coreRuntime()` from
+`src/core/runtime.ts`. Host calls `configureCore()` once to plug in:
+
+- `settings`: getter for proxy URL, fetch timeout, concurrency and GitHub
+  token. Core calls it on each request, so changed settings apply at once.
+- `trackSubject`: wraps each request subject before core mutates it. App
+  passes Vue `reactive`, so network log sees subjects grow.
+- `lookupStore`: offline copy of last good lookups. App passes IndexedDB
+  store; without one, failed lookups throw.
+
+`src/app/coreBinding.ts` does this for web app. Three checks keep core
+clean:
+
+- `src/core/tsconfig.json` type-checks core without DOM types.
+- oxlint rejects `vue` and `src/app` imports under `src/core`.
+- Vitest runs core tests in Node environment.
 
 ## Stack
 
@@ -33,10 +64,12 @@
 - Built-in `t()` helper with JSON message catalogs for UI text
 - vue-json-pretty for raw JSON viewer, vuedraggable for column reordering
 - write-excel-file for XLSX export, jsPDF with jspdf-autotable for PDF export
-- Vitest with jsdom for unit and component tests; fake-indexeddb stands in
-  for IndexedDB, which jsdom lacks
+- Vitest in two projects: `core` in Node, `app` with jsdom for unit and
+  component tests; fake-indexeddb stands in for IndexedDB, which neither
+  has
 - Playwright for end-to-end tests
-- TypeScript, checked by vue-tsc (strict mode); Vite only strips types
+- TypeScript, checked by vue-tsc (strict mode) and `tsc -p src/core`; Vite
+  only strips types
 - oxlint and oxfmt for linting and formatting
 
 ## Configuration
@@ -56,19 +89,19 @@ browser timers support. Other values log warning in browser console and
 fall back to default.
 
 Column visibility, column order and "shrink columns" toggle are user
-settings. App stores them in `localStorage`. `src/settings.ts` also stores
+settings. App stores them in `localStorage`. `src/app/settings.ts` also stores
 there: CORS proxy, fetch timeout, concurrency, theme, font size and padding.
 `.env` values only seed defaults for timeout and concurrency.
 
-`src/utils/githubTokenStorage.ts` keeps GitHub token AES-GCM encrypted: IV
+`src/app/utils/githubTokenStorage.ts` keeps GitHub token AES-GCM encrypted: IV
 and ciphertext in `localStorage`, non-extractable key in IndexedDB database
 `package-json-info`. `main.js` decrypts token into memory before mounting
 app. Wait is at most `TOKEN_LOAD_TIMEOUT_MS`, since IndexedDB can hang.
 Late token refetches tables.
 
-`src/utils/lookupStore.ts` keeps last good answer of each metadata lookup
+`src/app/utils/lookupStore.ts` keeps last good answer of each metadata lookup
 in second IndexedDB database, `package-json-info:lookups`.
-`src/api/npmPackage.ts` reads it only after live lookup fails. Token purge
+`src/core/api/npmPackage.ts` reads it only after live lookup fails. Token purge
 clears it.
 
 `main.js` also mirrors display settings onto `<html>`. It resolves theme to
@@ -80,9 +113,9 @@ clears it.
 
 `buildExportDocument` turns rows and column keys into `ExportDocument`:
 title and sections of translated headers and cell strings. Each file in
-`src/utils/export/exporters/` reads only that model, never rows, i18n or
+`src/core/export/exporters/` reads only that model, never rows, i18n or
 Vue. Each returns `Blob` or promise of one. `EXPORTERS` in
-`src/utils/export/index.ts` lists formats in select order, adds their
+`src/core/export/index.ts` lists formats in select order, adds their
 labels. `ExportDialog` offers one option per entry. Add format with one
 exporter file and one registry line.
 
@@ -94,7 +127,7 @@ missing services to network. `fetchRowsWithColumns` never writes `deps`,
 
 ## Translations
 
-All user-facing text lives in `src/i18n/locales/en.json`. Look up message
+All user-facing text lives in `src/core/i18n/locales/en.json`. Look up message
 with `t("group.key")`. Second argument fills placeholders such as `{name}`:
 `t("errors.dependencyNotFound", { name })`. Components return `t` from
 `setup()` so templates can call it. Unit test fails when code uses literal
@@ -132,7 +165,9 @@ npm run build
 
 Vitest restores spies and stubbed globals after each test (`restoreMocks`,
 `unstubGlobals` in `vite.config.js`). Test files need no cleanup hooks for
-them.
+them. `core` project resets core runtime before each test; core tests set
+settings through `coreSettings` from `tests/helpers/core.ts`. `app` project
+binds core to app settings once per file.
 
 Run unit and component tests:
 
@@ -160,7 +195,8 @@ npm run screenshots
 
 ## Lint and format
 
-Type-check sources, tests and config files:
+Type-check sources, tests and config files, then `src/core` alone without
+DOM types:
 
 ```sh
 npm run typecheck
