@@ -17,6 +17,8 @@ const LICENSE_ALTERNATIVES_SEPARATOR = " OR ";
 /** Heuristic SPDX shape: ids joined by OR / AND / WITH, parentheses ignored. */
 const SPDX_EXPRESSION_PATTERN = /^[A-Za-z0-9.+-]+(?: (?:OR|AND|WITH) [A-Za-z0-9.+-]+)*$/;
 
+const LICENSE_FILE_REFERENCE_PREFIX = "SEE LICENSE IN";
+
 const LICENSE_UNLICENSED = "UNLICENSED";
 
 export function isCopyleftLicense(license: string | null | undefined): boolean {
@@ -32,7 +34,7 @@ export function isCustomLicense(license: string | null): boolean {
         return false;
     }
     const trimmed = license.trim();
-    if (trimmed.startsWith("SEE LICENSE IN") || trimmed === LICENSE_UNLICENSED) {
+    if (trimmed.startsWith(LICENSE_FILE_REFERENCE_PREFIX) || trimmed === LICENSE_UNLICENSED) {
         return true;
     }
     const withoutParens = trimmed.replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
