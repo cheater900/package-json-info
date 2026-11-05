@@ -34,6 +34,11 @@ fixing live in [NOTES.md](NOTES.md).
 
 ## Reliability
 
+- **Filter age cut-offs freeze** at last table recompute (`new Date()` in
+  computed). Drift equals session length; negligible.
+- **"Major version behind" filter reads raw `version`**, while
+  `isOutdated` reads resolved alias range. Differs only for odd npm alias
+  names.
 - **Late token load can purge newer token.** Needs all three: IndexedDB
   hangs past `TOKEN_LOAD_TIMEOUT_MS`, token gets saved meanwhile, late
   decrypt then fails. Save waits behind same stuck IndexedDB, so very

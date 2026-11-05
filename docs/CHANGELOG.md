@@ -257,6 +257,8 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **`usePopover`** composable shares Escape and outside-click close
+  between settings and filters menus.
 - **`.inline-pre`** lives in global `style.css` beside `code`. App
   integration and e2e tests share `shownPackageName` helper instead of
   repeating "Showing dependencies for" sentence.

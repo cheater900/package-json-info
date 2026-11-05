@@ -12,7 +12,7 @@
 | `src/types.ts`                | Shared domain types: package input, info, error, row, source tree ref.                                   |
 | `src/i18n/`                   | `t()` message lookup. UI text lives in `locales/en.json`.                                                |
 | `src/api/`                    | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees.                                 |
-| `src/composables/`            | Vue state: column preferences, package.json history, input sources.                                      |
+| `src/composables/`            | Vue state: column preferences, package.json history, input sources, popovers.                            |
 | `src/components/`             | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
 | `src/utils/`                  | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.                                     |
 | `src/utils/export/`           | Table export: row-to-text builder, format registry, download helper.                                     |

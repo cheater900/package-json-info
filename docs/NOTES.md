@@ -62,6 +62,9 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 
 ## Code
 
+- **Popover panel CSS duplicated**: about 13 declarations repeat in
+  `FiltersMenu.css` and `SettingsMenu.css`. Shared panel class needs
+  template and global CSS changes in both menus.
 - **`npmPackage.ts` imports `tableColumns`**: api layer picks lookups by
   UI column keys. Works because keys equal `PackageInfo` fields.
 - **`DependencyCell.vue`**: column key `sourceCodeTree` does not match
