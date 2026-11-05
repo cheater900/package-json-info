@@ -1,7 +1,8 @@
-import { defineComponent, onMounted, onUnmounted, reactive, ref, useId } from "vue";
+import { defineComponent, reactive, ref, useId } from "vue";
 import { fetchGithubRateLimit } from "../api/github";
 import { clearPackageInfoCache } from "../api/npmPackage";
 import { isConfigInt } from "../config";
+import { usePopover } from "../composables/usePopover";
 import {
     GITHUB_TOKEN_PATTERN,
     MAX_CONFIG_INT,
@@ -41,37 +42,11 @@ export default defineComponent({
     emits: ["open-network-log"],
     setup(_props, { emit }) {
         const panelId = useId();
-        const isOpen = ref(false);
-        const rootRef = ref<HTMLElement | null>(null);
-        const gearRef = ref<HTMLButtonElement | null>(null);
+        const { isOpen, rootRef, triggerRef: gearRef } = usePopover();
         const tokenInputRef = ref<HTMLInputElement | null>(null);
         const tokenDraft = ref("");
         const tokenMessage = ref("");
         const networkErrors = reactive({ proxyUrl: "", fetchTimeoutMs: "", fetchConcurrency: "" });
-
-        function onKeydown(event: KeyboardEvent) {
-            if (!isOpen.value || event.key !== "Escape") {
-                return;
-            }
-            isOpen.value = false;
-            gearRef.value?.focus();
-        }
-
-        function onPointerdown(event: PointerEvent) {
-            if (rootRef.value?.contains(event.target as Node)) {
-                return;
-            }
-            isOpen.value = false;
-        }
-
-        onMounted(() => {
-            window.addEventListener("keydown", onKeydown);
-            window.addEventListener("pointerdown", onPointerdown);
-        });
-        onUnmounted(() => {
-            window.removeEventListener("keydown", onKeydown);
-            window.removeEventListener("pointerdown", onPointerdown);
-        });
 
         /**
          * Purges the stored token and its in-memory copy. After a half-done

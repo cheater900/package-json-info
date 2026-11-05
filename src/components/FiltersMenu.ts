@@ -1,5 +1,6 @@
-import { computed, defineComponent, onMounted, onUnmounted, ref, useId } from "vue";
+import { computed, defineComponent, useId } from "vue";
 import type { PropType } from "vue";
+import { usePopover } from "../composables/usePopover";
 import { t } from "../i18n";
 import { HEALTH_FILTER_SECTIONS, activeHealthFilterCount } from "../utils/healthFilters";
 import type { FilterSectionId, HealthFilters } from "../utils/healthFilters";
@@ -22,34 +23,8 @@ export default defineComponent({
     emits: ["update:modelValue"],
     setup(props, { emit }) {
         const panelId = useId();
-        const isOpen = ref(false);
-        const rootRef = ref<HTMLElement | null>(null);
-        const triggerRef = ref<HTMLButtonElement | null>(null);
+        const { isOpen, rootRef, triggerRef } = usePopover();
         const activeCount = computed(() => activeHealthFilterCount(props.modelValue));
-
-        function onKeydown(event: KeyboardEvent) {
-            if (!isOpen.value || event.key !== "Escape") {
-                return;
-            }
-            isOpen.value = false;
-            triggerRef.value?.focus();
-        }
-
-        function onPointerdown(event: PointerEvent) {
-            if (rootRef.value?.contains(event.target as Node)) {
-                return;
-            }
-            isOpen.value = false;
-        }
-
-        onMounted(() => {
-            window.addEventListener("keydown", onKeydown);
-            window.addEventListener("pointerdown", onPointerdown);
-        });
-        onUnmounted(() => {
-            window.removeEventListener("keydown", onKeydown);
-            window.removeEventListener("pointerdown", onPointerdown);
-        });
 
         function selectPreset(sectionId: FilterSectionId, presetId: string | undefined) {
             const next: Partial<Record<string, string>> = { ...props.modelValue };
