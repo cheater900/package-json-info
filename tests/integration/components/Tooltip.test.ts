@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import Tooltip from "../../../src/components/Tooltip.vue";
-import { TOOLTIP_OFFSET_PX } from "../../../src/constants";
+import Tooltip from "../../../src/app/components/Tooltip.vue";
+import { TOOLTIP_OFFSET_PX } from "../../../src/app/constants";
 
 const TRIGGER_RECT = { left: 100, top: 50, bottom: 70, width: 40 };
 

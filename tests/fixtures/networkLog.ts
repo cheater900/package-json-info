@@ -1,5 +1,5 @@
-import { NPM_REGISTRY_URL } from "../../src/constants";
-import type { NetworkLogEntry } from "../../src/utils/networkLog";
+import { NPM_REGISTRY_URL } from "../../src/core/constants";
+import type { NetworkLogEntry } from "../../src/app/utils/networkLog";
 import { subjectOf } from "../helpers/requests";
 
 export const LOG_ENTRY_STARTED_AT = Date.UTC(2026, 10, 11, 9, 30, 0);

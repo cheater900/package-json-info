@@ -1,7 +1,7 @@
 import { test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { mockExternalApis, loadJson, expandAllSections } from "../helpers";
-import { STORAGE_KEY_SETTINGS } from "../../../src/constants";
+import { STORAGE_KEY_SETTINGS } from "../../../src/app/constants";
 
 /**
  * Not part of the regular e2e suite: the chromium project ignores visual/.

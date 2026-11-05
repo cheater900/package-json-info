@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import TextWrapped from "../../../src/components/TextWrapped.vue";
+import TextWrapped from "../../../src/app/components/TextWrapped.vue";
 
 const CLASS_EXPANDED = "text-wrapped--expanded";
 const CLASS_OVERFLOWING = "text-wrapped--overflowing";

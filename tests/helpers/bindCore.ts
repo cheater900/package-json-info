@@ -1,3 +1,3 @@
-import { bindCore } from "../../src/coreBinding";
+import { bindCore } from "../../src/app/coreBinding";
 
 bindCore();

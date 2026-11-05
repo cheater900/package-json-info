@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import { IDBFactory } from "fake-indexeddb";
-import { SETTINGS_DEFAULTS, githubToken, settings } from "../../src/settings";
+import { SETTINGS_DEFAULTS, githubToken, settings } from "../../src/app/settings";
 
 /** Fresh empty fake IndexedDB; jsdom has none. */
 export function stubIndexedDb() {

@@ -1,4 +1,4 @@
-import { SHARE_STEP_QUERY_PARAM } from "../../src/constants";
+import { SHARE_STEP_QUERY_PARAM } from "../../src/app/constants";
 
 /** Puts a share link with `steps` in the address bar, after `otherParams`. */
 export function openShareLink(steps: string[], otherParams: Record<string, string> = {}) {

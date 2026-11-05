@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import DependencyCell from "../../../src/components/DependencyCell.vue";
-import { DEPENDENCY_TABLE_COLUMNS } from "../../../src/utils/tableColumns";
+import DependencyCell from "../../../src/app/components/DependencyCell.vue";
+import { DEPENDENCY_TABLE_COLUMNS } from "../../../src/core/utils/tableColumns";
 import { fullDependency, sparseDependency } from "../../fixtures/dependencies";
 
 const healthColumn = DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === "healthScore")!;

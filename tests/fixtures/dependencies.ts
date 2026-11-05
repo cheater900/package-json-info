@@ -1,4 +1,4 @@
-import type { SourceTreeRef } from "../../src/types";
+import type { SourceTreeRef } from "../../src/core/types";
 
 /** Smallest npm registry document: one published version, no metadata. */
 export const minimalRegistryDoc = { "dist-tags": { latest: "1.0.0" }, time: {} };

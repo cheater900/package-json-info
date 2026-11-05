@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import FileTreeItem from "../../../src/components/FileTreeItem.vue";
+import FileTreeItem from "../../../src/app/components/FileTreeItem.vue";
 
 const directory = {
     name: "src",

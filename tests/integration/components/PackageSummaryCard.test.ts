@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import PackageSummaryCard from "../../../src/components/PackageSummaryCard.vue";
-import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+import PackageSummaryCard from "../../../src/app/components/PackageSummaryCard.vue";
+import { TOGGLEABLE_COLUMNS } from "../../../src/core/utils/tableColumns";
 import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/dependencies";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };

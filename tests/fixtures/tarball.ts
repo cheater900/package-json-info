@@ -1,6 +1,6 @@
 import { gzipSync } from "node:zlib";
-import { concatBytes } from "../../src/utils/bytes";
-import { TAR_BLOCK_SIZE, TAR_HEADER, TAR_TYPEFLAG } from "../../src/utils/tarball";
+import { concatBytes } from "../../src/core/utils/bytes";
+import { TAR_BLOCK_SIZE, TAR_HEADER, TAR_TYPEFLAG } from "../../src/core/utils/tarball";
 
 /** Tar archives end with two zero-filled blocks. */
 const END_OF_ARCHIVE_BLOCKS = 2;

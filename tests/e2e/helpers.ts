@@ -3,13 +3,12 @@ import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_API_URL,
     GITHUB_RAW_URL,
-    LOOKUP_DB_NAME,
-    LOOKUP_DB_STORE,
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
     PNPM_WORKSPACE_FILE,
-} from "../../src/constants";
+} from "../../src/core/constants";
+import { LOOKUP_DB_NAME, LOOKUP_DB_STORE } from "../../src/app/constants";
 
 /**
  * The app talks to the real npm registry, npm downloads API, and GitHub API.

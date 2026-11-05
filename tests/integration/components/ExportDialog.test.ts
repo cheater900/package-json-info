@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { nextTick } from "vue";
 import { flushPromises, mount } from "@vue/test-utils";
-import ExportDialog from "../../../src/components/ExportDialog.vue";
-import type { ExportDialogTable } from "../../../src/components/ExportDialog";
-import { EXPORTERS } from "../../../src/utils/export";
-import { DEFAULT_COLUMN_ORDER } from "../../../src/utils/tableColumns";
-import type { DependencyListId, DependencyRow } from "../../../src/types";
+import ExportDialog from "../../../src/app/components/ExportDialog.vue";
+import type { ExportDialogTable } from "../../../src/app/components/ExportDialog";
+import { EXPORTERS } from "../../../src/core/export";
+import { DEFAULT_COLUMN_ORDER } from "../../../src/core/utils/tableColumns";
+import type { DependencyListId, DependencyRow } from "../../../src/core/types";
 import { fullDependency, sparseDependency } from "../../fixtures/dependencies";
 
 type LoadRows = (

@@ -1,4 +1,4 @@
-import { TOGGLEABLE_COLUMNS } from "../../src/utils/tableColumns";
+import { TOGGLEABLE_COLUMNS } from "../../src/core/utils/tableColumns";
 
 /** Every toggleable column key except the given ones. */
 export function columnKeysExcept(...excluded: string[]): string[] {

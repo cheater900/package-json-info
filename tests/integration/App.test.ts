@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, onTestFinished } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import App from "../../src/App.vue";
-import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
-import DependenciesTable from "../../src/components/DependenciesTable.vue";
-import ExportDialog from "../../src/components/ExportDialog.vue";
-import FiltersPanel from "../../src/components/FiltersPanel.vue";
-import NetworkLogDialog from "../../src/components/NetworkLogDialog.vue";
-import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
-import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
-import { clearPackageInfoCache } from "../../src/api/npmPackage";
+import App from "../../src/app/App.vue";
+import ColumnVisibilityPanel from "../../src/app/components/ColumnVisibilityPanel.vue";
+import DependenciesTable from "../../src/app/components/DependenciesTable.vue";
+import ExportDialog from "../../src/app/components/ExportDialog.vue";
+import FiltersPanel from "../../src/app/components/FiltersPanel.vue";
+import NetworkLogDialog from "../../src/app/components/NetworkLogDialog.vue";
+import PackageSummaryCard from "../../src/app/components/PackageSummaryCard.vue";
+import SourceTreeBrowser from "../../src/app/components/SourceTreeBrowser.vue";
+import { clearPackageInfoCache } from "../../src/core/api/npmPackage";
 import {
     countFetchCalls,
     jsonResponse,
@@ -17,8 +17,8 @@ import {
 } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
-import { NPM_REGISTRY_URL } from "../../src/constants";
-import { networkLogEntries, startNetworkLog } from "../../src/utils/networkLog";
+import { NPM_REGISTRY_URL } from "../../src/core/constants";
+import { networkLogEntries, startNetworkLog } from "../../src/app/utils/networkLog";
 import { openShareLink, shareSteps } from "../helpers/shareLink";
 import { subjectOf } from "../helpers/requests";
 import { networkLogEntry } from "../fixtures/networkLog";

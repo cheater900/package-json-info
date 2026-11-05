@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, onTestFinished } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { clearPackageInfoCache, fetchPackageInfo } from "../../../src/api/npmPackage";
-import NetworkLogDialog from "../../../src/components/NetworkLogDialog.vue";
-import { NPM_REGISTRY_URL, NUMBER_LOCALE } from "../../../src/constants";
-import { networkLogEntries, startNetworkLog } from "../../../src/utils/networkLog";
-import type { NetworkLogEntry } from "../../../src/utils/networkLog";
+import { clearPackageInfoCache, fetchPackageInfo } from "../../../src/core/api/npmPackage";
+import NetworkLogDialog from "../../../src/app/components/NetworkLogDialog.vue";
+import { NPM_REGISTRY_URL, NUMBER_LOCALE } from "../../../src/core/constants";
+import { networkLogEntries, startNetworkLog } from "../../../src/app/utils/networkLog";
+import type { NetworkLogEntry } from "../../../src/app/utils/networkLog";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
 import { LOG_ENTRY_STARTED_AT, networkLogEntry } from "../../fixtures/networkLog";
 import { stubFetchByUrl } from "../../helpers/fetchMock";

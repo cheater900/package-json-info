@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import SourceTreeBrowser from "../../../src/components/SourceTreeBrowser.vue";
-import { fetchSourceTree } from "../../../src/api/sourceTree";
-import type { SourceTree } from "../../../src/api/sourceTree";
-import type { FileTreeNode } from "../../../src/utils/fileTree";
-import type { SourceTreeRef } from "../../../src/types";
+import SourceTreeBrowser from "../../../src/app/components/SourceTreeBrowser.vue";
+import { fetchSourceTree } from "../../../src/core/api/sourceTree";
+import type { SourceTree } from "../../../src/core/api/sourceTree";
+import type { FileTreeNode } from "../../../src/core/utils/fileTree";
+import type { SourceTreeRef } from "../../../src/core/types";
 import { npmSourceTree } from "../../fixtures/dependencies";
 import { subjectOf } from "../../helpers/requests";
 
-vi.mock("../../../src/api/sourceTree", () => ({
+vi.mock("../../../src/core/api/sourceTree", () => ({
     fetchSourceTree: vi.fn(),
 }));
 

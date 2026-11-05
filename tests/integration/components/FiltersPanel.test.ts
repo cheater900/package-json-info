@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import FiltersPanel from "../../../src/components/FiltersPanel.vue";
-import type { HealthFilters } from "../../../src/utils/healthFilters";
+import FiltersPanel from "../../../src/app/components/FiltersPanel.vue";
+import type { HealthFilters } from "../../../src/core/utils/healthFilters";
 
 function mountPanel(modelValue: HealthFilters = {}) {
     return mount(FiltersPanel, { props: { modelValue }, attachTo: document.body });

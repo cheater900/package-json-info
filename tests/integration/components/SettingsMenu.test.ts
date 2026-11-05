@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
-import { fetchPackageInfo } from "../../../src/api/npmPackage";
-import SettingsMenu from "../../../src/components/SettingsMenu.vue";
-import { STORAGE_KEY_GITHUB_TOKEN } from "../../../src/constants";
-import { SETTINGS_DEFAULTS, githubToken, settings } from "../../../src/settings";
-import { loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import { fetchPackageInfo } from "../../../src/core/api/npmPackage";
+import SettingsMenu from "../../../src/app/components/SettingsMenu.vue";
+import { STORAGE_KEY_GITHUB_TOKEN } from "../../../src/app/constants";
+import { SETTINGS_DEFAULTS, githubToken, settings } from "../../../src/app/settings";
+import { loadLookup, saveLookup } from "../../../src/app/utils/lookupStore";
 import {
     HTTP_STATUS,
     countFetchCalls,

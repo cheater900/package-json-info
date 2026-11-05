@@ -1,5 +1,5 @@
-import { observeRequests } from "../../src/api/http";
-import type { ObservedRequest, RequestSubject } from "../../src/api/http";
+import { observeRequests } from "../../src/core/api/http";
+import type { ObservedRequest, RequestSubject } from "../../src/core/api/http";
 
 /** Records every request sent through fetchWithTimeout until `stop` runs. */
 export function recordRequests() {

@@ -1,6 +1,6 @@
-import { PACKAGE_JSON_FILE } from "../../src/constants";
-import { WORKSPACE_ROOT } from "../../src/utils/workspaces";
-import type { RepoRef, WorkspaceContext } from "../../src/utils/workspaces";
+import { PACKAGE_JSON_FILE } from "../../src/core/constants";
+import { WORKSPACE_ROOT } from "../../src/core/utils/workspaces";
+import type { RepoRef, WorkspaceContext } from "../../src/core/utils/workspaces";
 
 export const monorepoRef: RepoRef = { owner: "o", repo: "r", branch: "main" };
 

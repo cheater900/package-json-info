@@ -1,12 +1,8 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { mockExternalApis, loadJson } from "./helpers";
-import {
-    GITHUB_API_URL,
-    GITHUB_RATE_LIMIT_URL,
-    NPM_REGISTRY_URL,
-    STORAGE_KEY_GITHUB_TOKEN,
-} from "../../src/constants";
+import { GITHUB_API_URL, GITHUB_RATE_LIMIT_URL, NPM_REGISTRY_URL } from "../../src/core/constants";
+import { STORAGE_KEY_GITHUB_TOKEN } from "../../src/app/constants";
 import {
     githubRateLimitBody,
     githubRateLimitText,

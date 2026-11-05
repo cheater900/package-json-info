@@ -260,10 +260,16 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
-- **Core runtime seam** `configureCore()` in `src/runtime.ts`: API code
-  reads proxy, timeout, concurrency and GitHub token through it, request
-  subjects pass through `trackSubject`, offline lookups through
-  `lookupStore`. `src/coreBinding.ts` plugs in app settings, Vue
+- **`src/core` + `src/app` split**: `src/core` holds fetch and data
+  logic (api, formatting, health, columns, export renderers, i18n, domain
+  types); `src/app` holds Vue app, settings, storage, network log, share
+  state and download helper. `constants.ts` split in two; tests mirror
+  layout under `tests/unit/core` and `tests/unit/app`. XLSX export uses
+  `write-excel-file/universal`.
+- **Core runtime seam** `configureCore()` in `src/core/runtime.ts`: API
+  code reads proxy, timeout, concurrency and GitHub token through it,
+  request subjects pass through `trackSubject`, offline lookups through
+  `lookupStore`. `src/app/coreBinding.ts` plugs in app settings, Vue
   `reactive` and IndexedDB store. **`api/packageJsonSource.ts`** holds URL,
   dependency and workspace package.json loads moved out of
   `usePackageJsonSources`; `toPackageInputs` joins `utils/packageJson.ts`.

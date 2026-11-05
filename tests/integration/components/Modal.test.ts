@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { mount, DOMWrapper } from "@vue/test-utils";
-import Modal from "../../../src/components/Modal.vue";
+import Modal from "../../../src/app/components/Modal.vue";
 
 // Teleport moves the modal's DOM out to document.body, detached from
 // wrapper.element's own subtree - wrapper.find()/text() can't see it, so

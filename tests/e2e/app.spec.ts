@@ -9,7 +9,7 @@ import {
     hasStoredLookup,
     shownPackageName,
 } from "./helpers";
-import { TOGGLEABLE_COLUMNS } from "../../src/utils/tableColumns";
+import { TOGGLEABLE_COLUMNS } from "../../src/core/utils/tableColumns";
 import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_API_URL,
@@ -17,8 +17,8 @@ import {
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
-    SHARE_STEP_QUERY_PARAM,
-} from "../../src/constants";
+} from "../../src/core/constants";
+import { SHARE_STEP_QUERY_PARAM } from "../../src/app/constants";
 import { minimalRegistryDoc } from "../fixtures/dependencies";
 import { githubTreeBody } from "../fixtures/workspaces";
 import { buildNpmTarball } from "../fixtures/tarball";

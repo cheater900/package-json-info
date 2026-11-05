@@ -1,4 +1,4 @@
-import type { ExportDocument, ExportSection } from "../../src/utils/export/types";
+import type { ExportDocument, ExportSection } from "../../src/core/export/types";
 
 /** Two sections with cells that need escaping in every text format. */
 export const exportDocumentFixture: ExportDocument = {

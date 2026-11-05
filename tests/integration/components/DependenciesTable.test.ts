@@ -3,10 +3,10 @@ import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import type { DOMWrapper, VueWrapper } from "@vue/test-utils";
 import draggable from "vuedraggable";
-import DependenciesTable from "../../../src/components/DependenciesTable.vue";
-import Tooltip from "../../../src/components/Tooltip.vue";
-import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
-import type { DependencyRow } from "../../../src/types";
+import DependenciesTable from "../../../src/app/components/DependenciesTable.vue";
+import Tooltip from "../../../src/app/components/Tooltip.vue";
+import { TOGGLEABLE_COLUMNS } from "../../../src/core/utils/tableColumns";
+import type { DependencyRow } from "../../../src/core/types";
 import { columnKeysExcept } from "../../helpers/columns";
 import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/dependencies";
 
