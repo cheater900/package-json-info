@@ -32,7 +32,6 @@
 | `tests/fixtures/`                   | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
 | `docs/`                             | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
 
-
 ## Core and app
 
 `src/core` holds every step that fetches or shapes data. `src/app` holds
@@ -49,7 +48,11 @@ Core reads host state only through `coreRuntime()` from
 - `lookupStore`: offline copy of last good lookups. App passes IndexedDB
   store; without one, failed lookups throw.
 
-`src/app/coreBinding.ts` does this for web app. Three checks keep core
+Core uses settings as given. Host validates them first: app does so in
+`src/app/settings.ts`. Core API still checks its own inputs, so
+`fetchUrlSource` rejects any URL that is not absolute http(s).
+
+`src/app/coreBinding.ts` plugs these in for web app. Three checks keep core
 clean:
 
 - `src/core/tsconfig.json` type-checks core without DOM types.
