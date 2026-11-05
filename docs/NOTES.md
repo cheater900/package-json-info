@@ -50,9 +50,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 
 ## Display
 
-- **Filters panel runs past screen bottom** until search row sticks to
-  top. Panel `max-height` is `100vh - 96px`, same as settings menu, so it
-  fits only once search row is stuck. Page scroll still reaches it.
 - **Light theme contrast**: vue-json-pretty string values keep library's
   bright green. Name-cell cursor SVG (data URL, so no CSS variable) stays
   green.
@@ -62,9 +59,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 
 ## Code
 
-- **Popover panel CSS duplicated**: about 13 declarations repeat in
-  `FiltersMenu.css` and `SettingsMenu.css`. Shared panel class needs
-  template and global CSS changes in both menus.
 - **`npmPackage.ts` imports `tableColumns`**: api layer picks lookups by
   UI column keys. Works because keys equal `PackageInfo` fields.
 - **`DependencyCell.vue`**: column key `sourceCodeTree` does not match

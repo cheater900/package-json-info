@@ -8,13 +8,16 @@ Condensed from git history. Newest month first.
 
 #### Filters
 
-- **Filters menu** beside search box filters both tables by **health
-  presets**: last published, last updated, installed version age, commit
+- **Filters panel** filters both tables by **health presets**: last
+  published, last updated, installed version age, commit
   activity, open PR and issue ratios, vulnerabilities, bundle size, health
   score, status, maintainers, adoption, license, source. One preset per
   section, sections combined. Picking preset shows its hidden columns and
   fetches their data; filter waits for it. Hiding column clears its
-  filters. Session only; export stays unfiltered.
+  filters. Session only; export stays unfiltered. **Filters** button
+  beside search box opens and closes panel. Panel sits in page between
+  search row and tables; its section boxes widen with screen. Opening it
+  while scrolled past scrolls panel back under sticky search row.
 
 #### Network
 
@@ -257,8 +260,8 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
-- **`usePopover`** composable shares Escape and outside-click close
-  between settings and filters menus.
+- **`usePopover`** composable holds settings menu Escape and
+  outside-click close.
 - **`.inline-pre`** lives in global `style.css` beside `code`. App
   integration and e2e tests share `shownPackageName` helper instead of
   repeating "Showing dependencies for" sentence.

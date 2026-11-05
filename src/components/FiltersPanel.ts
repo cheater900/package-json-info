@@ -1,19 +1,16 @@
-import { computed, defineComponent, useId } from "vue";
+import { defineComponent, useId } from "vue";
 import type { PropType } from "vue";
-import { usePopover } from "../composables/usePopover";
 import { t } from "../i18n";
 import { HEALTH_FILTER_SECTIONS, activeHealthFilterCount } from "../utils/healthFilters";
 import type { FilterSectionId, HealthFilters } from "../utils/healthFilters";
-import IconFilter from "./IconFilter.vue";
 
 /**
- * Filters button opening a dropdown with one radio group per health filter
- * section: "Any" (no filter) first, then the section's presets. Emits a new
+ * In-page panel with one radio group per health filter section: "Any"
+ * (no filter) first, then the section's presets. Emits a new
  * `HealthFilters` object on each change; "Any" drops the section's key.
- * Escape closes it and refocuses the button; a click outside closes it.
+ * The parent owns the toggle button and open state.
  */
 export default defineComponent({
-    components: { IconFilter },
     props: {
         modelValue: {
             type: Object as PropType<HealthFilters>,
@@ -22,9 +19,7 @@ export default defineComponent({
     },
     emits: ["update:modelValue"],
     setup(props, { emit }) {
-        const panelId = useId();
-        const { isOpen, rootRef, triggerRef } = usePopover();
-        const activeCount = computed(() => activeHealthFilterCount(props.modelValue));
+        const radioGroupId = useId();
 
         function selectPreset(sectionId: FilterSectionId, presetId: string | undefined) {
             const next: Partial<Record<string, string>> = { ...props.modelValue };
@@ -38,12 +33,9 @@ export default defineComponent({
 
         return {
             t,
-            panelId,
-            isOpen,
-            rootRef,
-            triggerRef,
-            activeCount,
+            radioGroupId,
             sections: HEALTH_FILTER_SECTIONS,
+            activeHealthFilterCount,
             selectPreset,
         };
     },

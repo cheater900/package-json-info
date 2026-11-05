@@ -1,0 +1,41 @@
+.filters-panel {
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    padding: calc(12px * var(--space-scale));
+}
+
+/* auto-fit collapses empty tracks, so sections widen with the screen. */
+.filters-panel__sections {
+    display: grid;
+    gap: calc(12px * var(--space-scale));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    margin-bottom: calc(12px * var(--space-scale));
+}
+
+.filters-panel__section {
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
+}
+
+.filters-panel__option {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 6px;
+}
+
+/* Undo the app-wide text input look on radios. */
+.filters-panel__option input {
+    accent-color: var(--accent);
+    margin: 0;
+    padding: 0;
+}
+
+.filters-panel__clear {
+    justify-content: center;
+    width: 100%;
+}

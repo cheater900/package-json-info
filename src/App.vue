@@ -121,7 +121,7 @@
             {{ t("workspaces.hint") }}
         </p>
 
-        <div class="search-row">
+        <div ref="searchRowRef" class="search-row">
             <label :for="searchInputId" class="visually-hidden">
                 {{ t("search.label") }}
             </label>
@@ -134,8 +134,28 @@
                     :placeholder="t('search.placeholder')"
                 />
             </span>
-            <filters-menu v-model="healthFilters" />
+            <button
+                type="button"
+                :aria-controls="filtersPanelId"
+                :aria-expanded="isFiltersOpen"
+                @click="toggleFilters"
+            >
+                <icon-filter class="btn-icon" />
+                {{ t("filters.open") }}
+                <span v-if="activeFilterCount > 0" class="search-row__badge">
+                    <span aria-hidden="true">{{ activeFilterCount }}</span>
+                    <span class="visually-hidden">
+                        {{ t("filters.activeCount", { count: activeFilterCount }) }}
+                    </span>
+                </span>
+            </button>
         </div>
+        <filters-panel
+            v-show="isFiltersOpen"
+            :id="filtersPanelId"
+            ref="filtersPanelRef"
+            v-model="healthFilters"
+        />
 
         <details
             v-for="section in tableSections"

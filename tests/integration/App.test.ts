@@ -4,7 +4,7 @@ import App from "../../src/App.vue";
 import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
 import DependenciesTable from "../../src/components/DependenciesTable.vue";
 import ExportDialog from "../../src/components/ExportDialog.vue";
-import FiltersMenu from "../../src/components/FiltersMenu.vue";
+import FiltersPanel from "../../src/components/FiltersPanel.vue";
 import NetworkLogDialog from "../../src/components/NetworkLogDialog.vue";
 import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
 import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
@@ -184,27 +184,88 @@ describe("App", () => {
         expect(button.attributes("disabled")).toBeDefined();
     });
 
+    it("Filters button toggles in-page panel + aria-expanded", async () => {
+        const wrapper = await mountApp();
+        const trigger = wrapper.find(".search-row button[aria-controls]");
+        const panel = wrapper.findComponent(FiltersPanel);
+        expect(panel.isVisible()).toBe(false);
+
+        await trigger.trigger("click");
+
+        expect(panel.isVisible()).toBe(true);
+        expect(trigger.attributes("aria-expanded")).toBe("true");
+        expect(trigger.attributes("aria-controls")).toBe(panel.attributes("id"));
+        document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        expect(panel.isVisible()).toBe(true);
+        await trigger.trigger("click");
+        expect(panel.isVisible()).toBe(false);
+    });
+
+    it("opening Filters scrolls panel above view under search row", async () => {
+        const wrapper = await mountApp();
+        const scrollBy = vi.fn();
+        vi.stubGlobal("scrollBy", scrollBy);
+        const rectWith = (rect: Partial<DOMRect>) => () => rect as DOMRect;
+        wrapper.find(".search-row").element.getBoundingClientRect = rectWith({ bottom: 60 });
+        const panel = wrapper.findComponent(FiltersPanel).element;
+        panel.getBoundingClientRect = rectWith({ top: -500 });
+        const trigger = wrapper.find(".search-row button[aria-controls]");
+
+        await trigger.trigger("click");
+        await flushPromises();
+
+        expect(scrollBy).toHaveBeenCalledWith({ top: -560 });
+    });
+
+    it("opening Filters skips scroll when panel in view", async () => {
+        const wrapper = await mountApp();
+        const scrollBy = vi.fn();
+        vi.stubGlobal("scrollBy", scrollBy);
+        const rectWith = (rect: Partial<DOMRect>) => () => rect as DOMRect;
+        wrapper.find(".search-row").element.getBoundingClientRect = rectWith({ bottom: 300 });
+        wrapper.findComponent(FiltersPanel).element.getBoundingClientRect = rectWith({ top: 316 });
+
+        await wrapper.find(".search-row button[aria-controls]").trigger("click");
+        await flushPromises();
+
+        expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it("Filters badge shows active count only when active", async () => {
+        const wrapper = await mountApp();
+        expect(wrapper.find(".search-row__badge").exists()).toBe(false);
+
+        wrapper
+            .findComponent(FiltersPanel)
+            .vm.$emit("update:modelValue", { license: "missing", source: "noRepository" });
+        await flushPromises();
+
+        const badge = wrapper.find(".search-row__badge");
+        expect(badge.find('[aria-hidden="true"]').text()).toBe("2");
+        expect(badge.find(".visually-hidden").text()).toBe("2 active");
+    });
+
     it("filter preset on hidden column shows + fetches column", async () => {
         const wrapper = await mountApp();
         stubFetchPending();
 
         wrapper
-            .findComponent(FiltersMenu)
+            .findComponent(FiltersPanel)
             .vm.$emit("update:modelValue", { vulnerabilities: "any" });
         await flushPromises();
 
         const tables = wrapper.findAllComponents(DependenciesTable);
         expect(tables[0].props("columns")).toContain("vulnerabilityCount");
         expect(tables[0].props("pendingColumns")).toEqual(new Set(["vulnerabilityCount"]));
-        expect(wrapper.findComponent(FiltersMenu).props("modelValue")).toEqual({
+        expect(wrapper.findComponent(FiltersPanel).props("modelValue")).toEqual({
             vulnerabilities: "any",
         });
     });
 
     it("hiding filtered column drops its filter", async () => {
         const wrapper = await mountApp();
-        const filtersMenu = wrapper.findComponent(FiltersMenu);
-        filtersMenu.vm.$emit("update:modelValue", { vulnerabilities: "any", license: "missing" });
+        const filtersPanel = wrapper.findComponent(FiltersPanel);
+        filtersPanel.vm.$emit("update:modelValue", { vulnerabilities: "any", license: "missing" });
         await flushPromises();
 
         wrapper
@@ -212,13 +273,13 @@ describe("App", () => {
             .vm.$emit("toggle-column", "vulnerabilityCount");
         await flushPromises();
 
-        expect(filtersMenu.props("modelValue")).toEqual({ license: "missing" });
+        expect(filtersPanel.props("modelValue")).toEqual({ license: "missing" });
     });
 
     it("passes filters + own list id to each table", async () => {
         const wrapper = await mountApp();
 
-        wrapper.findComponent(FiltersMenu).vm.$emit("update:modelValue", { license: "missing" });
+        wrapper.findComponent(FiltersPanel).vm.$emit("update:modelValue", { license: "missing" });
         await flushPromises();
 
         const tables = wrapper.findAllComponents(DependenciesTable);
@@ -231,7 +292,7 @@ describe("App", () => {
 
     it("passes filters + own list id to expanded table", async () => {
         const wrapper = await mountApp();
-        wrapper.findComponent(FiltersMenu).vm.$emit("update:modelValue", { license: "missing" });
+        wrapper.findComponent(FiltersPanel).vm.$emit("update:modelValue", { license: "missing" });
 
         await wrapper.findAll(".table-actions__expand")[1].trigger("click");
 

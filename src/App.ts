@@ -1,4 +1,4 @@
-import { ref, computed, useId, defineComponent, watch } from "vue";
+import { ref, computed, useId, defineComponent, nextTick, watch } from "vue";
 import { useColumnPreferences } from "./composables/useColumnPreferences";
 import { usePackageJsonHistory } from "./composables/usePackageJsonHistory";
 import { usePackageJsonSources } from "./composables/usePackageJsonSources";
@@ -9,7 +9,7 @@ import Modal from "./components/Modal.vue";
 import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
-import FiltersMenu from "./components/FiltersMenu.vue";
+import FiltersPanel from "./components/FiltersPanel.vue";
 import IconArrowDown from "./components/IconArrowDown.vue";
 import IconArrowLeft from "./components/IconArrowLeft.vue";
 import IconArrowRight from "./components/IconArrowRight.vue";
@@ -21,6 +21,7 @@ import IconReload from "./components/IconReload.vue";
 import IconBoxes from "./components/IconBoxes.vue";
 import IconColumns from "./components/IconColumns.vue";
 import IconFileJson from "./components/IconFileJson.vue";
+import IconFilter from "./components/IconFilter.vue";
 import IconLayers from "./components/IconLayers.vue";
 import IconMagnifier from "./components/IconMagnifier.vue";
 import IconWarning from "./components/IconWarning.vue";
@@ -35,7 +36,11 @@ import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
 import { isRowRetryable } from "./utils/packageJsonHistory";
 import { isColumnVisible } from "./utils/tableColumns";
-import { columnsForHealthFilters, healthFiltersWithoutColumns } from "./utils/healthFilters";
+import {
+    activeHealthFilterCount,
+    columnsForHealthFilters,
+    healthFiltersWithoutColumns,
+} from "./utils/healthFilters";
 import type { HealthFilters } from "./utils/healthFilters";
 import { replayRequest } from "./utils/networkLog";
 import type { NetworkLogEntry } from "./utils/networkLog";
@@ -56,7 +61,7 @@ export default defineComponent({
         SourceTreeBrowser,
         PackageSummaryCard,
         SettingsMenu,
-        FiltersMenu,
+        FiltersPanel,
         IconArrowDown,
         IconArrowLeft,
         IconArrowRight,
@@ -68,6 +73,7 @@ export default defineComponent({
         IconBoxes,
         IconColumns,
         IconFileJson,
+        IconFilter,
         IconLayers,
         IconMagnifier,
         IconWarning,
@@ -92,6 +98,28 @@ export default defineComponent({
         } = useColumnPreferences();
         // Session only: neither persisted nor in the share link.
         const healthFilters = ref<HealthFilters>({});
+        const activeFilterCount = computed(() => activeHealthFilterCount(healthFilters.value));
+        const isFiltersOpen = ref(false);
+        const searchRowRef = ref<HTMLElement | null>(null);
+        const filtersPanelRef = ref<InstanceType<typeof FiltersPanel> | null>(null);
+
+        // Scrolled past the panel, the sticky search row stays on screen while the
+        // panel opens above view: scroll it back up to just under the row.
+        async function toggleFilters() {
+            isFiltersOpen.value = !isFiltersOpen.value;
+            if (!isFiltersOpen.value) {
+                return;
+            }
+            await nextTick();
+            const panelTop = (filtersPanelRef.value!.$el as HTMLElement).getBoundingClientRect()
+                .top;
+            const rowBottom = searchRowRef.value!.getBoundingClientRect().bottom;
+            if (panelTop >= rowBottom) {
+                return;
+            }
+            window.scrollBy({ top: panelTop - rowBottom });
+        }
+        const filtersPanelId = useId();
         // A filter on a hidden column shows that column, which fetches its missing data.
         watch(healthFilters, (filters) => showColumns(columnsForHealthFilters(filters)));
         // Hiding a column a filter reads drops that filter: later fetches skip the column's data.
@@ -270,6 +298,12 @@ export default defineComponent({
             searchInputId,
             searchQuery,
             healthFilters,
+            activeFilterCount,
+            isFiltersOpen,
+            searchRowRef,
+            filtersPanelRef,
+            toggleFilters,
+            filtersPanelId,
             visibleColumns,
             columnOrder,
             shrinkColumnLabels,

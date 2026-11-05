@@ -97,8 +97,9 @@ Each step stops table fetch of step before.
 ### Table / input data
 
 - **Sorting** on any sortable column (e.g. sort by weekly downloads).
-- **Filters menu** beside search box: fixed health presets, one choice per
-  section, sections combined. Sections: last published, last updated,
+- **Filters panel** between search box and tables, toggled by
+  **Filters** button beside search box: fixed health presets, one choice
+  per section, sections combined. Sections: last published, last updated,
   installed version age, commit activity, open PR ratio, open issue ratio,
   vulnerabilities, bundle size, health score, status (deprecated, outdated,
   major version behind), maintainers, adoption, license, source. Ratio
