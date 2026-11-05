@@ -1,5 +1,7 @@
 import { GITHUB_HOST } from "../constants";
+import { t } from "../i18n";
 import { isRepoHostUrl } from "../utils/repoUrl";
+import { isHttpUrl } from "../utils/url";
 import type { PackageInput } from "../types";
 import type { WorkspaceContext } from "../utils/workspaces";
 import { fetchText } from "./http";
@@ -32,8 +34,15 @@ async function fetchRepoSource(url: string): Promise<LoadedSource | null> {
     return { text: found.text, workspace: await fetchWorkspaceContext(repo, found.text) };
 }
 
-/** Repo host URLs resolve to the repo's package.json; any other http(s) URL is fetched as-is. */
-export function fetchUrlSource(url: string): Promise<LoadedSource | null> {
+/**
+ * Repo host URLs resolve to the repo's package.json; any other http(s) URL
+ * is fetched as-is. Rejects other schemes and scheme-less input: fetch would
+ * resolve it against the page origin or hand it to the proxy unchecked.
+ */
+export async function fetchUrlSource(url: string): Promise<LoadedSource | null> {
+    if (!isHttpUrl(url)) {
+        throw new Error(t("errors.urlInvalid"));
+    }
     return isRepoHostUrl(url) ? fetchRepoSource(url) : asSource(fetchText(url));
 }
 

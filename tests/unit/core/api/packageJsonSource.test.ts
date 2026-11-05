@@ -47,6 +47,17 @@ describe("fetchUrlSource", () => {
         expect(source).toEqual({ text: '{"name":"x"}' });
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it.each(["javascript:alert(1)", "file:///etc/passwd", "example.com/package.json"])(
+        "rejects non-http URL %s without fetch",
+        async (url) => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(fetchUrlSource(url)).rejects.toThrow("http:// or https://");
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 });
 
 describe("fetchDependencySource", () => {
