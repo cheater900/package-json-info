@@ -7,7 +7,7 @@ import {
     HTTP_UNAUTHORIZED,
 } from "../constants";
 import { t } from "../i18n";
-import { githubToken } from "../settings";
+import { coreRuntime } from "../runtime";
 import { bearerAuthorization, fetchWithTimeout, findFirstFound, HttpError } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 
@@ -42,7 +42,9 @@ export const GITHUB_ENTRY_FILE = "blob";
 export const GITHUB_ENTRY_FOLDER = "tree";
 export const GITHUB_ENTRY_SUBMODULE = "commit";
 
-export function githubHeaders(token: string | undefined = githubToken.value): HttpHeaders {
+export function githubHeaders(
+    token: string | undefined = coreRuntime().settings().githubToken,
+): HttpHeaders {
     if (!token) {
         return { Accept: GITHUB_ACCEPT_HEADER };
     }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { t } from "../i18n";
+import type { PackageInput } from "../types";
 
 /** Package name -> declared version or range, as in `dependencies`. */
 const DependencyMapSchema = z.record(z.string(), z.string(), {
@@ -28,6 +29,11 @@ export function formatPackageJsonError(error: z.ZodError): string {
             return path ? `${path}: ${issue.message}` : issue.message;
         })
         .join("; ");
+}
+
+/** Name + version range of each entry of a `dependencies`-style map. */
+export function toPackageInputs(dependencies: DependencyMap | undefined): PackageInput[] {
+    return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
 }
 
 export type DependencyMap = z.infer<typeof DependencyMapSchema>;

@@ -260,6 +260,13 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **Core runtime seam** `configureCore()` in `src/runtime.ts`: API code
+  reads proxy, timeout, concurrency and GitHub token through it, request
+  subjects pass through `trackSubject`, offline lookups through
+  `lookupStore`. `src/coreBinding.ts` plugs in app settings, Vue
+  `reactive` and IndexedDB store. **`api/packageJsonSource.ts`** holds URL,
+  dependency and workspace package.json loads moved out of
+  `usePackageJsonSources`; `toPackageInputs` joins `utils/packageJson.ts`.
 - **`usePopover`** composable holds settings menu Escape and
   outside-click close.
 - **`.inline-pre`** lives in global `style.css` beside `code`. App

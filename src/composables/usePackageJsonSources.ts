@@ -1,24 +1,20 @@
 import { ref, watch, onScopeDispose } from "vue";
 import type { Ref } from "vue";
-import { GITHUB_HOST, URL_SYNC_DEBOUNCE_MS } from "../constants";
-import { fetchPackageJsonForVersion } from "../api/npmPackage";
-import { fetchPackageJsonFromRepo } from "../api/repoPackageJson";
-import { fetchText } from "../api/http";
-import { fetchWorkspaceContext, fetchWorkspacePackageJson } from "../api/workspaces";
+import { URL_SYNC_DEBOUNCE_MS } from "../constants";
+import {
+    asSource,
+    fetchDependencySource,
+    fetchUrlSource,
+    fetchWorkspaceSource,
+} from "../api/packageJsonSource";
+import type { LoadedSource } from "../api/packageJsonSource";
 import { t } from "../i18n";
 import { hrefWithInputUrlParam, readInputUrlParam } from "../utils/urlInputSync";
 import { isHttpUrl } from "../utils/url";
-import { isRepoHostUrl } from "../utils/repoUrl";
 import { settle } from "../utils/settle";
 import type { PackageInput } from "../types";
 import type { EntrySource } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../utils/workspaces";
-
-/** Package.json text, with the monorepo it came from when one is known. */
-type LoadedSource = {
-    text: string;
-    workspace?: WorkspaceContext | null;
-};
 
 /**
  * How one load reports and tags its result. Empty text shows `emptyMessage`;
@@ -30,24 +26,6 @@ type LoadOptions = {
     failureMessage?: string;
     source?: EntrySource | null;
 };
-
-async function asSource(text: Promise<string | null>): Promise<LoadedSource | null> {
-    const resolved = await text;
-    return resolved == null ? null : { text: resolved };
-}
-
-/** A repo's package.json; a GitHub repo-root one also gets its workspaces listed. */
-async function readRepoSource(url: string): Promise<LoadedSource | null> {
-    const found = await fetchPackageJsonFromRepo(url);
-    if (!found) {
-        return null;
-    }
-    if (found.slug.host !== GITHUB_HOST || found.branch === null) {
-        return { text: found.text };
-    }
-    const repo = { owner: found.slug.owner, repo: found.slug.repo, branch: found.branch };
-    return { text: found.text, workspace: await fetchWorkspaceContext(repo, found.text) };
-}
 
 /**
  * Owns every way of bringing in package.json text (URL, repo URL, file,
@@ -145,10 +123,10 @@ export function usePackageJsonSources(
             loadError.value = t("errors.urlInvalid");
             return false;
         }
-        return loadFromSource(
-            () => (isRepoHostUrl(url) ? readRepoSource(url) : asSource(fetchText(url))),
-            { emptyMessage: t("errors.urlNotFound"), source: { kind: "url", url } },
-        );
+        return loadFromSource(() => fetchUrlSource(url), {
+            emptyMessage: t("errors.urlNotFound"),
+            source: { kind: "url", url },
+        });
     }
 
     function loadFromUrlInput() {
@@ -156,7 +134,7 @@ export function usePackageJsonSources(
     }
 
     function loadDependency({ name, version }: PackageInput) {
-        return loadFromSource(() => asSource(fetchPackageJsonForVersion(name, version)), {
+        return loadFromSource(() => fetchDependencySource({ name, version }), {
             emptyMessage: t("errors.dependencyNotFound", { name }),
             source: { kind: "dependency", name, version },
         });
@@ -165,13 +143,11 @@ export function usePackageJsonSources(
     /** Loads another workspace of the same monorepo; the workspace list carries over. */
     function loadWorkspace(context: WorkspaceContext, path: string) {
         const message = t("errors.workspaceNotFound", { path });
-        return loadFromSource(
-            async () => ({
-                text: await fetchWorkspacePackageJson(context.repo, path),
-                workspace: { ...context, current: path },
-            }),
-            { emptyMessage: message, failureMessage: message, source: { kind: "workspace", path } },
-        );
+        return loadFromSource(() => fetchWorkspaceSource(context, path), {
+            emptyMessage: message,
+            failureMessage: message,
+            source: { kind: "workspace", path },
+        });
     }
 
     return {

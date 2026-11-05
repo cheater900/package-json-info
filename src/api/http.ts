@@ -5,7 +5,7 @@ import {
     PROXY_URL_PLACEHOLDER,
 } from "../constants";
 import { t } from "../i18n";
-import { githubToken, settings } from "../settings";
+import { coreRuntime } from "../runtime";
 import { settle } from "../utils/settle";
 
 export type HttpHeaders = Record<string, string>;
@@ -60,7 +60,7 @@ export class HttpError extends Error {
  * Routes `url` through the CORS proxy template: `{url}` is replaced by the
  * encoded target, otherwise the target is appended. Empty proxy = no proxy.
  */
-export function proxiedUrl(url: string, proxy: string = settings.proxyUrl): string {
+export function proxiedUrl(url: string, proxy: string = coreRuntime().settings().proxyUrl): string {
     if (!proxy) {
         return url;
     }
@@ -99,8 +99,9 @@ function replayOf(
     const anonymousInit = { ...init, headers };
     return () => {
         const replayHeaders = new Headers(anonymousInit.headers);
-        if (wasAuthorized && githubToken.value) {
-            replayHeaders.set(HTTP_HEADER_AUTHORIZATION, bearerAuthorization(githubToken.value));
+        const token = coreRuntime().settings().githubToken;
+        if (wasAuthorized && token) {
+            replayHeaders.set(HTTP_HEADER_AUTHORIZATION, bearerAuthorization(token));
         }
         return fetchWithTimeout(url, { ...anonymousInit, headers: replayHeaders }, subject);
     };
@@ -152,7 +153,7 @@ function measuredResponse(response: Response, handles: readonly RequestHandle[])
 }
 
 /**
- * `fetch` aborted after `settings.fetchTimeoutMs`, so a stalled server can't
+ * `fetch` aborted after `fetchTimeoutMs` setting, so a stalled server can't
  * hang the app. Goes through the proxy unless it carries an Authorization
  * header: a token must only ever reach its own API host. Throws when such
  * a request targets any origin but the GitHub API. Observers see `url`,
@@ -177,7 +178,7 @@ export async function fetchWithTimeout(
     const result = await settle(() =>
         fetch(isAuthorized ? url : proxiedUrl(url), {
             ...init,
-            signal: AbortSignal.timeout(settings.fetchTimeoutMs),
+            signal: AbortSignal.timeout(coreRuntime().settings().fetchTimeoutMs),
         }),
     );
     if (!result.ok) {

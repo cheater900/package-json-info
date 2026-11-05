@@ -1,4 +1,3 @@
-import { reactive } from "vue";
 import { z } from "zod";
 import type {
     DependencyRow,
@@ -21,16 +20,14 @@ import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { computeHealthScore } from "../utils/healthScore";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
-import { fresh, memoizeLookup, oldestStaleSince } from "../utils/memoizeLookup";
-import type { Lookup } from "../utils/memoizeLookup";
-import { lookupKey } from "../utils/lookupStore";
-import type { LookupKind } from "../utils/lookupStore";
+import { fresh, lookupKey, memoizeLookup, oldestStaleSince } from "../utils/memoizeLookup";
+import type { Lookup, LookupKind } from "../utils/memoizeLookup";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
 import { isHttpUrl } from "../utils/url";
 import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
-import { settings } from "../settings";
+import { coreRuntime } from "../runtime";
 import { fetchJson } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
@@ -206,7 +203,7 @@ function subjectFor(
     const subjectKey = lookupKey(kind, key);
     let subject = subjectsByLookup.get(subjectKey);
     if (!subject) {
-        subject = reactive({
+        subject = coreRuntime().trackSubject({
             package: null,
             dependencies: new Set<string>(),
             columns: new Set<string>(),
@@ -431,7 +428,7 @@ export async function fetchPackagesInfo(
     options: FetchPackagesOptions = {},
 ): Promise<DependencyRow[] | null> {
     const {
-        concurrency = settings.fetchConcurrency,
+        concurrency = coreRuntime().settings().fetchConcurrency,
         isCancelled = () => false,
         ...fetchOptions
     } = options;

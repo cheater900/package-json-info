@@ -2,6 +2,7 @@ import { createApp, ref, watchEffect } from "vue";
 import "./style.css";
 import App from "./App.vue";
 import { TOKEN_LOAD_TIMEOUT_MS } from "./constants";
+import { bindCore } from "./coreBinding";
 import { githubToken, resolveColorScheme, settings } from "./settings";
 import { delay } from "./utils/delay";
 import { loadGithubToken } from "./utils/githubTokenStorage";
@@ -27,6 +28,7 @@ async function loadStoredTokenUnlessReplaced() {
     githubToken.value ??= storedToken;
 }
 
+bindCore();
 watchEffect(mirrorDisplaySettingsOntoRoot);
 startNetworkLog();
 

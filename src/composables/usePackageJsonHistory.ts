@@ -11,17 +11,13 @@ import {
     isEntryCacheValid,
     isRowRetryable,
 } from "../utils/packageJsonHistory";
-import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
-import type { DependencyMap, PackageJson } from "../utils/packageJson";
+import { PackageJsonSchema, formatPackageJsonError, toPackageInputs } from "../utils/packageJson";
+import type { PackageJson } from "../utils/packageJson";
 import type { EntrySource, HistoryEntry } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../utils/workspaces";
 import type { DependencyListId, DependencyRow, PackageInput } from "../types";
 import { t } from "../i18n";
 import { githubToken, settings } from "../settings";
-
-function toPackageInputs(dependencies: DependencyMap | undefined) {
-    return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
-}
 
 function rowKey(row: PackageInput) {
     return `${row.name}@${row.version}`;

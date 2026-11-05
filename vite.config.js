@@ -22,6 +22,7 @@ export default defineConfig({
         environment: "jsdom",
         restoreMocks: true,
         unstubGlobals: true,
+        setupFiles: ["tests/helpers/bindCore.ts"],
         include: ["tests/unit/**/*.test.{js,ts}", "tests/integration/**/*.test.{js,ts}"],
     },
 });

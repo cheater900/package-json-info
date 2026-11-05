@@ -3,29 +3,14 @@ import { LOOKUP_DB_NAME, LOOKUP_DB_STORE, LOOKUP_READ_TIMEOUT_MS } from "../cons
 import { delay } from "./delay";
 import { withObjectStore } from "./indexedDb";
 import { settle } from "./settle";
+import { lookupKey } from "./memoizeLookup";
+import type { LookupKind, StoredLookup } from "./memoizeLookup";
 
 const StoredLookupSchema = z.object({
     value: z.unknown(),
     // ISO in UTC: staleSince picks the oldest by text order.
     savedAt: z.iso.datetime(),
 });
-
-/** Metadata lookups whose last good value is kept for offline use. */
-export type LookupKind =
-    | "registry"
-    | "weeklyDownloads"
-    | "vulnerabilityCount"
-    | "bundleSize"
-    | "repoStars"
-    | "repoCommits"
-    | "repoIssueCounts"
-    | "githubReleaseTag";
-
-/** Last good value of one lookup; `savedAt` is an ISO timestamp. */
-export type StoredLookup<T> = {
-    value: T;
-    savedAt: string;
-};
 
 // Bumped by clearLookups; a lookup started before a clear must not save after it.
 let storeGeneration = 0;
@@ -37,11 +22,6 @@ export function lookupStoreGeneration(): number {
 
 function isLookupStoreAvailable(): boolean {
     return typeof indexedDB !== "undefined";
-}
-
-/** Identity of lookup `kind` for `key`, shared by the store and in-memory maps. */
-export function lookupKey(kind: LookupKind, key: string): string {
-    return `${kind}:${key}`;
 }
 
 /**

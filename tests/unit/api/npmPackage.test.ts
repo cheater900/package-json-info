@@ -7,7 +7,7 @@ import {
 } from "../../../src/api/npmPackage";
 import { OSV_MAX_PAGES } from "../../../src/constants";
 import { clearLookups, loadLookup, saveLookup } from "../../../src/utils/lookupStore";
-import type { LookupKind } from "../../../src/utils/lookupStore";
+import type { LookupKind } from "../../../src/utils/memoizeLookup";
 import { columnKeysExcept } from "../../helpers/columns";
 import {
     countFetchCalls,

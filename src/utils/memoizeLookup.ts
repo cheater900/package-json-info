@@ -1,7 +1,39 @@
 import type { ZodType } from "zod";
-import { loadLookup, lookupStoreGeneration, saveLookup } from "./lookupStore";
-import type { LookupKind } from "./lookupStore";
+import { coreRuntime } from "../runtime";
 import { memoizeAsync } from "./memoizeAsync";
+
+/** Metadata lookups whose last good value is kept for offline use. */
+export type LookupKind =
+    | "registry"
+    | "weeklyDownloads"
+    | "vulnerabilityCount"
+    | "bundleSize"
+    | "repoStars"
+    | "repoCommits"
+    | "repoIssueCounts"
+    | "githubReleaseTag";
+
+/** Last good value of one lookup; `savedAt` is an ISO timestamp. */
+export type StoredLookup<T> = {
+    value: T;
+    savedAt: string;
+};
+
+/**
+ * Offline copy of last good lookup answers. `generation` is read when a
+ * lookup starts and passed to `save`, so a store cleared meanwhile skips it.
+ * Neither `load` nor `save` rejects.
+ */
+export type LookupStore = {
+    load: <T>(kind: LookupKind, key: string) => Promise<StoredLookup<T> | undefined>;
+    save: (kind: LookupKind, key: string, value: unknown, generation: number) => Promise<void>;
+    generation: () => number;
+};
+
+/** Identity of lookup `kind` for `key`, shared by the store and in-memory maps. */
+export function lookupKey(kind: LookupKind, key: string): string {
+    return `${kind}:${key}`;
+}
 
 /** One lookup's answer. `staleSince` is the save time of a stored value used after the live fetch failed, else null. */
 export type Lookup<T> = {
@@ -24,13 +56,13 @@ export function oldestStaleSince(lookups: Lookup<unknown>[]): string | null {
 }
 
 /**
- * memoizeAsync backed by the offline store. A live answer (`null` included:
- * 404 means "no data") is saved and returned fresh. When the live fetch
+ * memoizeAsync backed by the core runtime's offline store, if any. A live
+ * answer (`null` included: 404 means "no data") is saved and returned fresh. When the live fetch
  * fails, the last saved answer is returned as stale and evicted from
  * `cache`, so the next fetch retries live; callers already waiting share
  * it. `storedSchema` checks the saved answer, since another app version may
  * have saved another shape; without a saved answer passing it the live
- * error is thrown unchanged. Nothing is saved when clearLookups ran meanwhile.
+ * error is thrown unchanged. Nothing is saved when the store was cleared meanwhile.
  */
 export function memoizeLookup<T>(
     cache: Map<string, Promise<Lookup<T>>>,
@@ -40,12 +72,13 @@ export function memoizeLookup<T>(
     fetchLive: () => Promise<T>,
 ): Promise<Lookup<T>> {
     const request: Promise<Lookup<T>> = memoizeAsync(cache, key, async () => {
-        const generation = lookupStoreGeneration();
+        const store = coreRuntime().lookupStore;
+        const generation = store?.generation() ?? 0;
         let value: T;
         try {
             value = await fetchLive();
         } catch (error) {
-            const stored = await loadLookup<unknown>(kind, key);
+            const stored = await store?.load<unknown>(kind, key);
             const parsed = storedSchema.safeParse(stored?.value);
             if (!stored || !parsed.success) {
                 throw error;
@@ -56,8 +89,8 @@ export function memoizeLookup<T>(
             }
             return { value: parsed.data, staleSince: stored.savedAt };
         }
-        // Not awaited: a slow or hanging IndexedDB must not delay the row.
-        void saveLookup(kind, key, value, generation);
+        // Not awaited: a slow or hanging store must not delay the row.
+        void store?.save(kind, key, value, generation);
         return fresh(value);
     });
     return request;

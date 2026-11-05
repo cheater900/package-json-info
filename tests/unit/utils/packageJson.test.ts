@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { PackageJsonSchema, formatPackageJsonError } from "../../../src/utils/packageJson";
+import {
+    PackageJsonSchema,
+    formatPackageJsonError,
+    toPackageInputs,
+} from "../../../src/utils/packageJson";
 
 function errorFor(value: unknown): string {
     const result = PackageJsonSchema.safeParse(value);
@@ -42,5 +46,18 @@ describe("PackageJsonSchema", () => {
         expect(errorFor({ name: 1, version: 2 })).toBe(
             "name: expected a string; version: expected a string",
         );
+    });
+});
+
+describe("toPackageInputs", () => {
+    it("maps entries to name + version", () => {
+        expect(toPackageInputs({ a: "^1.0.0", b: "2.0.0" })).toEqual([
+            { name: "a", version: "^1.0.0" },
+            { name: "b", version: "2.0.0" },
+        ]);
+    });
+
+    it("returns empty list for missing map", () => {
+        expect(toPackageInputs(undefined)).toEqual([]);
     });
 });
