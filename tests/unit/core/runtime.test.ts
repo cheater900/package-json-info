@@ -18,6 +18,16 @@ describe("core runtime", () => {
         expect(coreRuntime().trackSubject(subject)).toBe(subject);
     });
 
+    it("default settings reject writes", () => {
+        resetCore();
+
+        expect(() => {
+            coreRuntime().settings().githubToken = "ghp_leaked";
+        }).toThrow(TypeError);
+        resetCore();
+        expect(coreRuntime().settings().githubToken).toBeUndefined();
+    });
+
     it("keeps parts not overridden", () => {
         resetCore();
         const trackSubject = coreRuntime().trackSubject;

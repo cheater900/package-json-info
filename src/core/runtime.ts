@@ -20,12 +20,13 @@ export type CoreRuntime = {
     lookupStore: LookupStore | null;
 };
 
-export const CORE_SETTINGS_DEFAULTS: CoreSettings = {
+/** Frozen: settings() hands it out, and a write would outlive resetCore (a token included). */
+export const CORE_SETTINGS_DEFAULTS: Readonly<CoreSettings> = Object.freeze({
     proxyUrl: "",
     fetchTimeoutMs: DEFAULT_FETCH_TIMEOUT_MS,
     fetchConcurrency: DEFAULT_FETCH_CONCURRENCY,
     githubToken: undefined,
-};
+});
 
 const RUNTIME_DEFAULTS: CoreRuntime = {
     settings: () => CORE_SETTINGS_DEFAULTS,
