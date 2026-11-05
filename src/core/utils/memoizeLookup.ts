@@ -1,6 +1,7 @@
 import type { ZodType } from "zod";
 import { coreRuntime } from "../runtime";
 import { memoizeAsync } from "./memoizeAsync";
+import { settle } from "./settle";
 
 /** Metadata lookups whose last good value is kept for offline use. */
 export type LookupKind =
@@ -22,7 +23,8 @@ export type StoredLookup<T> = {
 /**
  * Offline copy of last good lookup answers. `generation` is read when a
  * lookup starts and passed to `save`, so a store cleared meanwhile skips it.
- * Neither `load` nor `save` rejects.
+ * The host supplies it, so a rejecting `load` counts as nothing stored and
+ * a rejecting `save` loses only the copy.
  */
 export type LookupStore = {
     load: <T>(kind: LookupKind, key: string) => Promise<StoredLookup<T> | undefined>;
@@ -78,7 +80,8 @@ export function memoizeLookup<T>(
         try {
             value = await fetchLive();
         } catch (error) {
-            const stored = await store?.load<unknown>(kind, key);
+            const loaded = store && (await settle(() => store.load<unknown>(kind, key)));
+            const stored = loaded && loaded.ok ? loaded.value : undefined;
             const parsed = storedSchema.safeParse(stored?.value);
             if (!stored || !parsed.success) {
                 throw error;
@@ -90,7 +93,9 @@ export function memoizeLookup<T>(
             return { value: parsed.data, staleSince: stored.savedAt };
         }
         // Not awaited: a slow or hanging store must not delay the row.
-        void store?.save(kind, key, value, generation);
+        if (store) {
+            void settle(() => store.save(kind, key, value, generation));
+        }
         return fresh(value);
     });
     return request;
