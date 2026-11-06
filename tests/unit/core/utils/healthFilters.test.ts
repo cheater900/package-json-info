@@ -5,6 +5,7 @@ import {
     columnsForHealthFilters,
     filterRowsByHealth,
     healthFiltersWithoutColumns,
+    isHealthFilterSectionApplicable,
     rowMatchesHealthFilters,
     type HealthFilters,
 } from "../../../../src/core/utils/healthFilters";
@@ -458,6 +459,18 @@ describe("HEALTH_FILTER_SECTIONS", () => {
             const presetIds = section.presets.map((preset) => preset.id);
             expect(new Set(presetIds).size).toBe(presetIds.length);
         }
+    });
+});
+
+describe("isHealthFilterSectionApplicable", () => {
+    it("skips bundle size for devDeps only", () => {
+        expect(isHealthFilterSectionApplicable("bundleSize", "devDeps")).toBe(false);
+        expect(isHealthFilterSectionApplicable("bundleSize", "deps")).toBe(true);
+        expect(isHealthFilterSectionApplicable("bundleSize")).toBe(true);
+    });
+
+    it("applies other sections to devDeps", () => {
+        expect(isHealthFilterSectionApplicable("license", "devDeps")).toBe(true);
     });
 });
 
