@@ -802,6 +802,22 @@ describe("fetchPackageInfo request subjects", () => {
         return { ...minimalRegistryDoc, ...fields };
     }
 
+    it("sends requests with subject returned by runtime trackSubject", async () => {
+        const tracked: object[] = [];
+        configureCore({
+            trackSubject: (subject) => {
+                tracked.push(subject);
+                return subject;
+            },
+        });
+        stubFetchByUrl({ "registry.npmjs.org/tracked-pkg": minimalRegistryDoc });
+
+        await fetchPackageInfo("tracked-pkg", "1.0.0");
+
+        const [registrySubject] = subjectsOf(recorder.requests, "registry.npmjs.org");
+        expect(tracked).toContain(registrySubject);
+    });
+
     it("tags registry request with row name and visible registry columns", async () => {
         stubFetchByUrl({ "registry.npmjs.org/real-pkg": minimalRegistryDoc });
 
@@ -1302,6 +1318,30 @@ describe("fetchPackagesInfo", () => {
         expect(countFetchCalls(fetchMock, "/first")).toBe(1);
         expect(countFetchCalls(fetchMock, "/second")).toBe(0);
         expect(results).toBeNull();
+    });
+
+    it("limits parallel packages to runtime fetchConcurrency by default", async () => {
+        coreSettings.fetchConcurrency = 1;
+        let release = () => {};
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const fetchMock = vi.fn(async () => {
+            await gate;
+            return jsonResponse(minimalRegistryDoc);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const request = fetchPackagesInfo([
+            { name: "one", version: "1.0.0" },
+            { name: "two", version: "1.0.0" },
+        ]);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/one")).toBe(1);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/two")).toBe(0);
+        release();
+        await request;
     });
 
     it("returns rows once every package started before cancel", async () => {
