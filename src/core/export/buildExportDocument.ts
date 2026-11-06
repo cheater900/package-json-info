@@ -13,8 +13,12 @@ export type ExportTableInput = {
 
 /** Default suffix of an export file name: `<package slug>-dependencies.<ext>`. */
 const FILE_NAME_SUFFIX = "dependencies";
-const FILE_NAME_UNSAFE_RUNS = /[^a-z0-9-]+/g;
-const FILE_NAME_EDGE_DASHES = /^-+|-+$/g;
+/**
+ * Dashes join the unsafe runs, so one dash remains per edge. `-+$` on long
+ * dash runs backtracks in quadratic time and freezes the tab on a hostile name.
+ */
+const FILE_NAME_UNSAFE_RUNS = /[^a-z0-9]+/g;
+const FILE_NAME_EDGE_DASHES = /^-|-$/g;
 
 function cellText(column: ColumnDef, row: PackageInfo): string {
     if (row.failedLookups?.[column.key]) {

@@ -103,4 +103,9 @@ describe("exportFileBaseName", () => {
     it("falls back to suffix for empty slug", () => {
         expect(exportFileBaseName("@@@")).toBe("dependencies");
     });
+
+    it("collapses dash runs in linear time", () => {
+        const dashes = "-".repeat(200_000);
+        expect(exportFileBaseName(`${dashes}a${dashes}b${dashes}`)).toBe("a-b-dependencies");
+    });
 });
