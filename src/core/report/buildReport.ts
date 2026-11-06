@@ -76,6 +76,11 @@ const REPORT_VALUE_KEYS: Partial<Record<FilterSectionId, readonly string[]>> = {
     commitActivity: ["lastCommitDate", "commitsLastYear"],
 };
 
+/** Listed fields filled by another column's lookup, so they fail with that column. */
+const REPORT_VALUE_LOOKUP_KEYS: Partial<Record<string, string>> = {
+    commitsLastYear: "lastCommitDate",
+};
+
 /** Date fields the report prints as UTC `YYYY-MM-DD`, the same in every time zone. */
 const REPORT_DATE_KEYS = new Set([
     "versionDate",
@@ -147,7 +152,7 @@ function isoDate(value: unknown): string {
  * warning mark on licenses, deprecation notice quoted verbatim.
  */
 function valueText(key: string, row: PackageInfo): string {
-    if (row.failedLookups?.[key]) {
+    if (row.failedLookups?.[REPORT_VALUE_LOOKUP_KEYS[key] ?? key]) {
         return FAILED_VALUE;
     }
     if (REPORT_DATE_KEYS.has(key)) {

@@ -132,6 +132,17 @@ describe("buildReport", () => {
         );
     });
 
+    it('shows "?" for commit count when commit lookup failed', () => {
+        const row = { ...fullDependency, failedLookups: { lastCommitDate: "timeout" } };
+        const report = buildReport(
+            inputWith({ tables: [{ id: "deps", title: "Deps", dependencies: [row] }] }),
+            NOW,
+        );
+        expect(listItems(sectionOf(report, "Commit activity"))).toContain(
+            "left-pad 1.2.0 (Last commit: ?; Commits in window: ?)",
+        );
+    });
+
     it("quotes deprecation message + shows license without warning mark", () => {
         const row = { ...fullDependency, deprecated: "use other-pad", license: "GPL-3.0" };
         const report = buildReport(
