@@ -10,11 +10,11 @@ const MARKDOWN_LINE_BREAKS = /\r\n|\r|\n/g;
 const MARKDOWN_SPECIAL_CHARS = /[\\`*_~[\]<>|&]/g;
 
 /** Keeps a cell on one table line, inside its column, as plain text. */
-function markdownCell(value: string): string {
+export function markdownCell(value: string): string {
     return value.replace(MARKDOWN_LINE_BREAKS, " ").replace(MARKDOWN_SPECIAL_CHARS, "\\$&");
 }
 
-function markdownRow(values: string[]): string {
+export function markdownRow(values: string[]): string {
     return `| ${values.map(markdownCell).join(" | ")} |`;
 }
 

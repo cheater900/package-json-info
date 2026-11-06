@@ -22,7 +22,7 @@ const PDF_HEAD_FILL: [number, number, number] = [60, 60, 60];
 const PDF_UNSUPPORTED_CHARS = /[^\t\n\r -\u00FF€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ]/gu;
 const PDF_UNSUPPORTED_MARK = "?";
 
-function pdfText(value: string): string {
+export function pdfText(value: string): string {
     return value.replace(PDF_UNSUPPORTED_CHARS, PDF_UNSUPPORTED_MARK);
 }
 

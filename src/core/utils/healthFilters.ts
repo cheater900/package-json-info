@@ -265,13 +265,21 @@ type ActiveFilter = { section: HealthFilterSectionDefinition; matches: PresetMat
 
 const SECTION_ID_BUNDLE_SIZE: FilterSectionId = "bundleSize";
 
-/** Sections with a known preset id; bundle size is skipped for dev dependencies. */
+/** Bundle size is not measured for dev dependencies, so its section skips them. */
+export function isHealthFilterSectionApplicable(
+    sectionId: FilterSectionId,
+    listId?: DependencyListId,
+): boolean {
+    return !(listId === "devDeps" && sectionId === SECTION_ID_BUNDLE_SIZE);
+}
+
+/** Sections with a known preset id that apply to `listId`. */
 function activeFilters(filters: HealthFilters, listId?: DependencyListId): ActiveFilter[] {
     const presetIds: Partial<Record<string, string>> = filters;
     const sections: readonly HealthFilterSectionDefinition[] = HEALTH_FILTER_SECTIONS;
     const active: ActiveFilter[] = [];
     for (const section of sections) {
-        if (listId === "devDeps" && section.id === SECTION_ID_BUNDLE_SIZE) {
+        if (!isHealthFilterSectionApplicable(section.id as FilterSectionId, listId)) {
             continue;
         }
         const preset = section.presets.find((candidate) => candidate.id === presetIds[section.id]);

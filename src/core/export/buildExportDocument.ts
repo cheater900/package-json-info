@@ -11,7 +11,7 @@ export type ExportTableInput = {
     dependencies: DependencyRow[];
 };
 
-/** Suffix of every export file name: `<package slug>-dependencies.<ext>`. */
+/** Default suffix of an export file name: `<package slug>-dependencies.<ext>`. */
 const FILE_NAME_SUFFIX = "dependencies";
 const FILE_NAME_UNSAFE_RUNS = /[^a-z0-9-]+/g;
 const FILE_NAME_EDGE_DASHES = /^-+|-+$/g;
@@ -58,10 +58,10 @@ export function buildExportDocument(
 }
 
 /** File name without extension, e.g. "@vue/test-utils" -> "vue-test-utils-dependencies". */
-export function exportFileBaseName(title: string): string {
+export function exportFileBaseName(title: string, suffix = FILE_NAME_SUFFIX): string {
     const slug = title
         .toLowerCase()
         .replace(FILE_NAME_UNSAFE_RUNS, "-")
         .replace(FILE_NAME_EDGE_DASHES, "");
-    return slug ? `${slug}-${FILE_NAME_SUFFIX}` : FILE_NAME_SUFFIX;
+    return slug ? `${slug}-${suffix}` : suffix;
 }

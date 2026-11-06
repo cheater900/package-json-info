@@ -87,6 +87,82 @@
         "untitled": "package.json",
         "failed": "Export failed. Try again or pick another format."
     },
+    "report": {
+        "generate": "Generate report",
+        "loading": "Loading…",
+        "dialogTitle": "Dependency report",
+        "exportMarkdown": "Export Markdown",
+        "exportPdf": "Export PDF",
+        "failed": "Export failed. Try again or pick the other format.",
+        "title": "Dependency report: {name}",
+        "none": "none",
+        "quoted": "\"{text}\"",
+        "preset": "Preset",
+        "packagesIn": "{table}:",
+        "fields": {
+            "commitsLastYear": "Commits in window"
+        },
+        "overview": {
+            "title": "Overview",
+            "generated": "Generated: {date}",
+            "rowCount": "{table}: {count} packages",
+            "search": "Name search: {query}",
+            "filters": "Active filters: {filters}",
+            "scope": "Counts cover the packages listed above with fetched data. Presets of one section can overlap: a date over 2 years old also counts as over 1 year. Percentages are shares of the fetched packages of each table."
+        },
+        "coverage": {
+            "title": "Data coverage",
+            "table": "Table",
+            "rows": "Packages",
+            "fetched": "Fetched",
+            "errors": "Fetch errors",
+            "stale": "Stored values",
+            "staleNote": "Stored values: packages showing values stored from an earlier lookup, because the live lookup failed. \"?\" marks a value whose lookup failed with no stored value. \"-\" marks a value the source does not provide.",
+            "errorsTitle": "Fetch errors",
+            "errorItem": "{table}: {name} {version}: {error}",
+            "failedTitle": "Failed lookups per field",
+            "field": "Field"
+        },
+        "sources": {
+            "title": "Data sources",
+            "item": "{name} ({url}): {fields}",
+            "computed": "Health score, outdated status, major version distance, license classes and ratios are computed by this app from the values above.",
+            "names": {
+                "npmRegistry": "npm registry",
+                "npmDownloads": "npm downloads API",
+                "osv": "OSV vulnerability database",
+                "bundlephobia": "Bundlephobia",
+                "github": "GitHub API",
+                "gitlab": "GitLab API",
+                "codeberg": "Codeberg API"
+            },
+            "fields": {
+                "npmRegistry": "versions, publish dates, deprecation messages, license, maintainers, repository URL",
+                "npmDownloads": "weekly downloads",
+                "osv": "known vulnerabilities",
+                "bundlephobia": "minified + gzipped bundle size",
+                "github": "commits, pull requests, issues",
+                "gitlab": "commits, merge requests, issues",
+                "codeberg": "commits, pull requests, issues"
+            }
+        },
+        "definitions": {
+            "lastPublished": "Publish date of the version the npm \"latest\" dist-tag points to, from the npm registry \"time\" field. Ages count calendar months back from the report generation date.",
+            "lastUpdated": "Last modification time of the package document in the npm registry (\"time.modified\"). Any change to the package document, such as a publish, sets this time.",
+            "installedVersionAge": "Publish date of the installed version, from the npm registry \"time\" field. A version range reads as its lowest version.",
+            "commitActivity": "Default-branch commits within the last {commitWindowDays} days, from the repository host API. The lookup reads at most {commitSampleSize} commits, so counts top out at {commitSampleSize}. \"No commits in N months\": no commit in the window, or the newest commit is older than N months.",
+            "openPrRatio": "Open pull requests divided by open plus closed pull requests, from the repository host search API. A missing count, or fewer than {ratioMinSample} pull requests in total, counts as Unknown.",
+            "openIssueRatio": "Open issues divided by open plus closed issues, from the repository host search API. A missing count, or fewer than {ratioMinSample} issues in total, counts as Unknown.",
+            "vulnerabilities": "Number of advisories the OSV database lists for the package name in the npm ecosystem, across all versions of the package.",
+            "bundleSize": "Minified + gzipped size from Bundlephobia: of the installed version for a pinned version, else of the latest version. Dev dependencies are not measured and show \"-\".",
+            "healthScore": "Score from 0 to {scoreMax}, computed by this app, not by a data source. Weighted average of the available signals: latest release age (weight {weightReleaseAge}; full rating up to {staleFreshMonths} months, zero at {staleWorstMonths} months), deprecation (weight {weightDeprecated}), outdated version (weight {weightOutdated}), maintainer count (weight {weightMaintainers}; zero at 1, full at {maintainersBest}), open issue ratio (weight {weightIssues}; zero at {issueRatioWorst}), known vulnerabilities (weight {weightVulnerabilities}; zero at 1 or more). Unavailable signals are left out. Bands: Poor 0-{poorMax}, Fair {fairMin}-{fairMax}, Good {goodMin}-{scoreMax}.",
+            "status": "Deprecated: the npm registry holds a deprecation message for the installed version, quoted verbatim. Outdated: the installed version is lower than the npm \"latest\" version. Major version behind: the major number of the latest version is higher than the installed one.",
+            "maintainers": "Maintainer accounts listed in the npm registry package document.",
+            "adoption": "Downloads in the last 7 days, from the npm downloads API.",
+            "license": "License field of the installed version in the npm registry, else of the package document. Copyleft: GPL, AGPL, LGPL, MPL, EPL, CDDL, OSL, EUPL or SSPL family. Custom: \"SEE LICENSE IN\", \"UNLICENSED\" or a value not shaped like an SPDX expression.",
+            "source": "Repository URL from the npm registry \"repository\" field. No repository: the field is missing or not an http(s) URL."
+        }
+    },
     "sections": {
         "columns": "Columns",
         "deps": "Deps",

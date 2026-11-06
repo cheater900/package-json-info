@@ -6,6 +6,14 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### Report
+
+- **Dependency report** in `src/core/report`: overview (search, active
+  filters), data coverage, data sources, then one section per **filter
+  section** with definition, preset counts per table and matching packages
+  with their values. Facts only, no advice; a test guards wording.
+  Renders to **Markdown** and **PDF**.
+
 #### Filters
 
 - **Filters panel** filters both tables by **health presets**: last
