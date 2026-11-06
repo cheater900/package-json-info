@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { coreSettings } from "../../../helpers/core";
 import {
     fetchPackageInfo,
     fetchPackagesInfo,
@@ -15,6 +14,7 @@ import {
 } from "../../../../src/app/utils/lookupStore";
 import { configureCore } from "../../../../src/core/runtime";
 import type { LookupKind } from "../../../../src/core/utils/memoizeLookup";
+import { coreSettings } from "../../../helpers/core";
 import { columnKeysExcept } from "../../../helpers/columns";
 import {
     countFetchCalls,

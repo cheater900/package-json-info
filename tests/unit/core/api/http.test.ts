@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
-import { coreSettings } from "../../../helpers/core";
 import {
     fetchJson,
     fetchWithTimeout,
@@ -10,6 +9,7 @@ import {
 } from "../../../../src/core/api/http";
 import type { ObservedRequest } from "../../../../src/core/api/http";
 import { settle } from "../../../../src/core/utils/settle";
+import { coreSettings } from "../../../helpers/core";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../../helpers/fetchMock";
 import { subjectOf } from "../../../helpers/requests";
 

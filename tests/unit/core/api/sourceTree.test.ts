@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { coreSettings } from "../../../helpers/core";
 import { fetchSourceTree } from "../../../../src/core/api/sourceTree";
 import { buildNpmTarball, buildTar, gzipToArrayBuffer } from "../../../fixtures/tarball";
+import { coreSettings } from "../../../helpers/core";
 import {
     HTTP_STATUS,
     binaryResponse,

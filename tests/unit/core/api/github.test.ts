@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from "vitest";
-import { coreSettings } from "../../../helpers/core";
 import {
     fetchGithubRateLimit,
     fetchGithubTree,
@@ -7,6 +6,7 @@ import {
     githubHeaders,
 } from "../../../../src/core/api/github";
 import { GITHUB_RATE_LIMIT_URL } from "../../../../src/core/constants";
+import { coreSettings } from "../../../helpers/core";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../../helpers/fetchMock";
 import { githubRateLimit, githubRateLimitBody } from "../../../fixtures/github";
 
