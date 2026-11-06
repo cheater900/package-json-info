@@ -5,7 +5,7 @@ import {
     fetchWorkspaceSource,
 } from "../../../../src/core/api/packageJsonSource";
 import { HttpError } from "../../../../src/core/api/http";
-import { jsonResponse, textResponse } from "../../../helpers/fetchMock";
+import { jsonResponse, stubFetchByUrl, textResponse } from "../../../helpers/fetchMock";
 
 const WORKSPACE_CONTEXT = {
     repo: { owner: "o", repo: "r", branch: "main" },
@@ -48,6 +48,33 @@ describe("fetchUrlSource", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("lists workspaces for GitHub repo root package.json", async () => {
+        stubFetchByUrl({
+            "raw.githubusercontent.com/o/r/main/package.json": {
+                name: "root",
+                workspaces: ["packages/*"],
+            },
+            "api.github.com/repos/o/r/git/trees/main": {
+                tree: [{ path: "packages/a/package.json", type: "blob" }],
+            },
+        });
+
+        const source = await fetchUrlSource("https://github.com/o/r");
+
+        expect(source?.workspace).toMatchObject({
+            repo: { owner: "o", repo: "r", branch: "main" },
+            paths: ["packages/a"],
+            current: "",
+            failed: false,
+        });
+    });
+
+    it("returns null for repo URL without package.json", async () => {
+        stubFetchByUrl({});
+
+        expect(await fetchUrlSource("https://github.com/o/r")).toBeNull();
+    });
+
     it.each(["javascript:alert(1)", "file:///etc/passwd", "example.com/package.json"])(
         "rejects non-http URL %s without fetch",
         async (url) => {
@@ -61,6 +88,21 @@ describe("fetchUrlSource", () => {
 });
 
 describe("fetchDependencySource", () => {
+    it("returns published package.json text of resolved version", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/found-pkg": {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                versions: { "1.0.0": { name: "found-pkg", version: "1.0.0" } },
+            },
+        });
+
+        const source = await fetchDependencySource({ name: "found-pkg", version: "1.0.0" });
+
+        expect(JSON.parse(source!.text)).toMatchObject({ name: "found-pkg", version: "1.0.0" });
+        expect(source).not.toHaveProperty("workspace");
+    });
+
     it("returns null for unknown package", async () => {
         vi.stubGlobal(
             "fetch",
