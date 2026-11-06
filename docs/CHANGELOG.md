@@ -272,7 +272,9 @@ Condensed from git history. Newest month first.
   code reads proxy, timeout, concurrency and GitHub token through it,
   request subjects pass through `trackSubject`, offline lookups through
   `lookupStore`. `src/app/coreBinding.ts` plugs in app settings, Vue
-  `reactive` and IndexedDB store. **`api/packageJsonSource.ts`** holds URL,
+  `reactive` and IndexedDB store. Rejecting store `load` or `save` never masks
+  live error; `fetchUrlSource` rejects non-http(s) URLs; frozen
+  `CORE_SETTINGS_DEFAULTS`. **`api/packageJsonSource.ts`** holds URL,
   dependency and workspace package.json loads moved out of
   `usePackageJsonSources`; `toPackageInputs` joins `utils/packageJson.ts`.
 - **`usePopover`** composable holds settings menu Escape and

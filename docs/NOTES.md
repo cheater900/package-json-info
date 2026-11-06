@@ -30,6 +30,13 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   `packages/package.json` exists: trailing `**` matches zero folders. npm
   and pnpm likely do same; not checked against their source.
 
+## Tests
+
+- **Core offline-fallback tests use app store.** Offline-store block in
+  `tests/unit/core/api/npmPackage.test.ts` runs in Node `core` project but
+  wires `src/app/utils/lookupStore.ts`. Move it to `tests/unit/app`, or test
+  against fake `LookupStore` in core.
+
 ## Behavior to know
 
 - **Health column starts hidden for existing users.** Saved column

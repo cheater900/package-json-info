@@ -11,7 +11,9 @@ Command-line app in `src/cli`, calling `src/core` like web app does.
   name; print dependency tables; Node run setup (JSON catalog import,
   bin script).
 - **Core binding**: call `configureCore()` with settings from flags or
-  env, GitHub token from env.
+  env, GitHub token from env. Validate settings first, as app
+  `settings.ts` does: core uses them as given (NaN timeout makes
+  `AbortSignal.timeout` throw).
 - **File lookup store** in place of IndexedDB, so offline fallback works.
 - **Export to file**: write exporter `Blob` to disk in place of browser
   download helper.

@@ -118,7 +118,7 @@ export function usePackageJsonSources(
             loadError.value = t("errors.urlEmpty");
             return false;
         }
-        // fetch() resolves a scheme-less input against this app's own origin.
+        // Checked before loadFromSource, so a bad URL leaves a running load alone.
         if (!isHttpUrl(url)) {
             loadError.value = t("errors.urlInvalid");
             return false;
