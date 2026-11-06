@@ -84,6 +84,31 @@ describe("buildReport", () => {
         }
     });
 
+    it("defines every filter section", () => {
+        const report = buildReport(inputWith(), NOW);
+        for (const section of HEALTH_FILTER_SECTIONS) {
+            const [definition] = sectionOf(report, t(`filters.sections.${section.id}`));
+            expect(definition).toEqual({ kind: "paragraph", text: expect.any(String) });
+            expect(definition.kind === "paragraph" && definition.text).not.toMatch(
+                /^report\.definitions|\{\w+\}/,
+            );
+        }
+    });
+
+    it("counts stale rows per table in coverage", () => {
+        const stale = { ...fullDependency, staleSince: "2026-11-01T00:00:00.000Z" };
+        const report = buildReport(
+            inputWith({
+                tables: [
+                    { id: "deps", title: "Deps", dependencies: [stale, fullDependency, errorRow] },
+                ],
+            }),
+            NOW,
+        );
+        const [table] = sectionOf(report, "Data coverage");
+        expect(table).toMatchObject({ kind: "table", rows: [["Deps", "3", "2", "1", "1"]] });
+    });
+
     it("counts preset matches per table with share of fetched rows", () => {
         const report = buildReport(inputWith(), NOW);
         expect(presetRow(report, "lastPublished", "over1Year")).toEqual([
@@ -169,6 +194,24 @@ describe("buildReport", () => {
             kind: "table",
             headers: ["Field", "Deps"],
             rows: [["License", "1"]],
+        });
+    });
+
+    it("counts failed lookups per table in coverage", () => {
+        const failed = { ...fullDependency, failedLookups: { license: "timeout" } };
+        const report = buildReport(
+            inputWith({
+                tables: [
+                    { id: "deps", title: "Deps", dependencies: [failed, failed] },
+                    { id: "devDeps", title: "Dev Deps", dependencies: [fullDependency] },
+                ],
+            }),
+            NOW,
+        );
+        expect(sectionOf(report, "Data coverage")).toContainEqual({
+            kind: "table",
+            headers: ["Field", "Deps", "Dev Deps"],
+            rows: [["License", "2", "0"]],
         });
     });
 
