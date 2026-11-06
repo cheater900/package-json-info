@@ -32,16 +32,16 @@ export type LookupStore = {
     generation: () => number;
 };
 
-/** Identity of lookup `kind` for `key`, shared by the store and in-memory maps. */
-export function lookupKey(kind: LookupKind, key: string): string {
-    return `${kind}:${key}`;
-}
-
 /** One lookup's answer. `staleSince` is the save time of a stored value used after the live fetch failed, else null. */
 export type Lookup<T> = {
     value: T;
     staleSince: string | null;
 };
+
+/** Identity of lookup `kind` for `key`, shared by the store and in-memory maps. */
+export function lookupKey(kind: LookupKind, key: string): string {
+    return `${kind}:${key}`;
+}
 
 export function fresh<T>(value: T): Lookup<T> {
     return { value, staleSince: null };
@@ -59,12 +59,13 @@ export function oldestStaleSince(lookups: Lookup<unknown>[]): string | null {
 
 /**
  * memoizeAsync backed by the core runtime's offline store, if any. A live
- * answer (`null` included: 404 means "no data") is saved and returned fresh. When the live fetch
- * fails, the last saved answer is returned as stale and evicted from
- * `cache`, so the next fetch retries live; callers already waiting share
- * it. `storedSchema` checks the saved answer, since another app version may
- * have saved another shape; without a saved answer passing it the live
- * error is thrown unchanged. Nothing is saved when the store was cleared meanwhile.
+ * answer (`null` included: 404 means "no data") is saved and returned
+ * fresh. When the live fetch fails, the last saved answer is returned as
+ * stale and evicted from `cache`, so the next fetch retries live; callers
+ * already waiting share it. `storedSchema` checks the saved answer, since
+ * another app version may have saved another shape; without a saved answer
+ * passing it the live error is thrown unchanged. Nothing is saved when the
+ * store was cleared meanwhile.
  */
 export function memoizeLookup<T>(
     cache: Map<string, Promise<Lookup<T>>>,
