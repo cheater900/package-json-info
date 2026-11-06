@@ -10,6 +10,7 @@
 | `src/core/utils/`                   | Data helpers: formatting, columns, health score and filters, semver, license, tar, URLs.                 |
 | `src/core/export/`                  | Table export: row-to-text builder, format registry.                                                      |
 | `src/core/export/exporters/`        | One file per export format: CSV, XLSX, Markdown, HTML, PDF.                                              |
+| `src/core/report/`                  | Dependency report: builder over filter sections, Markdown and PDF renderers.                             |
 | `src/core/i18n/`                    | `t()` message lookup. All text lives in `locales/en.json`.                                               |
 | `src/core/constants.ts`             | API base URLs, repo hosts, limits, health weights, display constants core uses.                          |
 | `src/core/types.ts`                 | Shared domain types: package input, info, error, row, source tree ref.                                   |
@@ -128,6 +129,20 @@ exporter file and one registry line.
 cover picked columns, else fetches them; memoized lookups send only
 missing services to network. `fetchRowsWithColumns` never writes `deps`,
 `devDeps` or entry cache, so tables stay unchanged.
+
+## Report
+
+`buildReport` in `src/core/report/buildReport.ts` turns tables, search
+query and health filters into `Report`: title plus heading, paragraph,
+list and table blocks of plain strings. It applies `filterRowsByName` and
+`filterRowsByHealth` itself and walks `HEALTH_FILTER_SECTIONS`, so new
+filter section shows up in report with one `report.definitions.<id>`
+message. Definitions take numbers from `constants.ts` as message params.
+`renderReportMarkdown` returns string, `renderReportPdf` returns `Blob`;
+both read only `Report`. App fetches `REPORT_COLUMN_KEYS` through
+`fetchRowsWithColumns`, then `ReportDialog` renders blocks and saves files.
+Test in `tests/unit/core/report/buildReport.test.ts` rejects advice words
+in report messages and output.
 
 ## Translations
 

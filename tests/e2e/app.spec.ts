@@ -1178,6 +1178,38 @@ test("CSV export from Deps dialog with Dev Deps checked downloads both tables wi
     ]);
 });
 
+test("Generate report opens report of shown rows, exports Markdown + PDF", async ({ page }) => {
+    await page.goto("/");
+    await loadJson(page, {
+        name: "@demo/app",
+        dependencies: { "left-pad": "^1.0.0" },
+        devDependencies: { "right-pad": "^1.0.0" },
+    });
+    await expect(page.getByRole("cell", { name: "right-pad", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Generate report" }).click();
+
+    const dialog = page.locator(".report-dialog");
+    await expect(
+        dialog.getByRole("heading", { name: "Dependency report: @demo/app" }),
+    ).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "Vulnerabilities" })).toBeVisible();
+    const [markdown] = await Promise.all([
+        page.waitForEvent("download"),
+        dialog.getByRole("button", { name: "Export Markdown" }).click(),
+    ]);
+    expect(markdown.suggestedFilename()).toBe("demo-app-report.md");
+    expect(readFileSync(await markdown.path(), "utf8")).toMatch(
+        /^# Dependency report: @demo\/app\n/,
+    );
+    const [pdf] = await Promise.all([
+        page.waitForEvent("download"),
+        dialog.getByRole("button", { name: "Export PDF" }).click(),
+    ]);
+    expect(pdf.suggestedFilename()).toBe("demo-app-report.pdf");
+    expect(readFileSync(await pdf.path(), "latin1")).toMatch(/^%PDF/);
+});
+
 test("export dialog fetches hidden column, blocks Download until it loads", async ({ page }) => {
     let answerOsv: () => void = () => {};
     const isOsvAnswered = new Promise<void>((resolve) => (answerOsv = resolve));

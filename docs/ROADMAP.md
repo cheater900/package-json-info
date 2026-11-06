@@ -17,6 +17,8 @@ Command-line app in `src/cli`, calling `src/core` like web app does.
 - **File lookup store** in place of IndexedDB, so offline fallback works.
 - **Export to file**: write exporter `Blob` to disk in place of browser
   download helper.
+- **Report output**: fetch `REPORT_COLUMN_KEYS`, run `buildReport`, print
+  `renderReportMarkdown` to stdout or write `renderReportPdf` to file.
 
 ## Transitive dependency resolution
 

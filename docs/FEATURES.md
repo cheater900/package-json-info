@@ -188,6 +188,29 @@ while export runs, so double click saves one file. File name:
 Export leaves out Source Code Tree buttons; Source Code link exports its
 URL. Error rows keep message, failed lookups keep `?`.
 
+## Report
+
+**Generate report** button below both tables shows "Loading..." while it
+fetches every column filter sections read, then opens report modal.
+Report covers rows tables show: search box and active filters apply.
+
+- **Overview**: generation time (UTC), package count per table, search
+  query, active filters.
+- **Data coverage**: fetched rows, fetch errors with message, rows using
+  stored values, failed lookups per field.
+- **Data sources**: each service with its URL and fields it provides.
+- **One section per filter section**: definition of value and its source,
+  preset count table per table with share of fetched rows, then matching
+  packages per preset with their values. Dates print as UTC `YYYY-MM-DD`.
+  Deprecation messages print quoted, verbatim.
+
+Report states facts only: no advice, no judgment beyond preset labels.
+Health score section names its signals, weights and band thresholds.
+Modal shows report as headings, lists and tables. **Export Markdown** and
+**Export PDF** buttons stick to modal bottom. File name:
+`<package name>-report.<ext>`. PDF is portrait; long lists and tables flow
+onto next pages.
+
 ## Settings
 
 Gear button at top right opens settings dropdown. Dot on gear shows when

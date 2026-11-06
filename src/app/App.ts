@@ -28,6 +28,8 @@ import IconWarning from "./components/IconWarning.vue";
 import IconWrench from "./components/IconWrench.vue";
 import ExportDialog from "./components/ExportDialog.vue";
 import NetworkLogDialog from "./components/NetworkLogDialog.vue";
+import ReportDialog from "./components/ReportDialog.vue";
+import IconScrollText from "./components/IconScrollText.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import appPackageJson from "../../package.json";
@@ -42,6 +44,8 @@ import {
     healthFiltersWithoutColumns,
 } from "../core/utils/healthFilters";
 import type { HealthFilters } from "../core/utils/healthFilters";
+import { REPORT_COLUMN_KEYS, buildReport, reportFileBaseName } from "../core/report/buildReport";
+import type { Report } from "../core/report/types";
 import { replayRequest } from "./utils/networkLog";
 import type { NetworkLogEntry } from "./utils/networkLog";
 import type { DependencyListId, DependencyRow, PackageInfo } from "../core/types";
@@ -51,7 +55,8 @@ type ModalContent =
     | { kind: "sourceTree"; dependency: PackageInfo }
     | { kind: "summary"; dependency: DependencyRow }
     | { kind: "export"; sectionId: DependencyListId }
-    | { kind: "networkLog" };
+    | { kind: "networkLog" }
+    | { kind: "report"; report: Report };
 
 export default defineComponent({
     components: {
@@ -78,8 +83,10 @@ export default defineComponent({
         IconMagnifier,
         IconWarning,
         IconWrench,
+        IconScrollText,
         ExportDialog,
         NetworkLogDialog,
+        ReportDialog,
         VueJsonPretty,
     },
     setup() {
@@ -233,6 +240,8 @@ export default defineComponent({
                     return t("export.dialogTitle");
                 case "networkLog":
                     return t("networkLog.title");
+                case "report":
+                    return t("report.dialogTitle");
                 default:
                     return "";
             }
@@ -252,6 +261,39 @@ export default defineComponent({
 
         function openExport(sectionId: DependencyListId) {
             modalContent.value = { kind: "export", sectionId };
+        }
+
+        const isGeneratingReport = ref(false);
+        const reportFileName = computed(() => reportFileBaseName(exportTitle.value));
+
+        /** Fetches the columns the report reads, then shows the report of the rows the tables show. */
+        async function generateReport() {
+            isGeneratingReport.value = true;
+            const sections = tableSections.value;
+            const columns = new Set(REPORT_COLUMN_KEYS);
+            const rows = await Promise.all(
+                sections.map((section) => fetchRowsWithColumns(section.id, columns)),
+            );
+            isGeneratingReport.value = false;
+            const lists = rows.filter((list): list is DependencyRow[] => list !== null);
+            // A null list means the shown package.json changed mid-load: nothing valid to report.
+            if (lists.length < rows.length) {
+                return;
+            }
+            const report = buildReport(
+                {
+                    title: exportTitle.value,
+                    tables: sections.map((section, i) => ({
+                        id: section.id,
+                        title: section.title,
+                        dependencies: lists[i],
+                    })),
+                    searchQuery: searchQuery.value,
+                    healthFilters: healthFilters.value,
+                },
+                new Date(),
+            );
+            modalContent.value = { kind: "report", report };
         }
 
         function openNetworkLog() {
@@ -331,6 +373,9 @@ export default defineComponent({
             fetchedColumns,
             fetchRowsWithColumns,
             openExport,
+            isGeneratingReport,
+            reportFileName,
+            generateReport,
             tableProps,
             tableListeners,
             modalContent,

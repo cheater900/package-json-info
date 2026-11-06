@@ -205,6 +205,17 @@
                 </button>
             </div>
         </details>
+        <div class="table-actions">
+            <button
+                type="button"
+                class="table-actions__report"
+                :disabled="isLoadingTables || isGeneratingReport"
+                @click="generateReport"
+            >
+                <icon-scroll-text class="btn-icon" />
+                {{ isGeneratingReport ? t("report.loading") : t("report.generate") }}
+            </button>
+        </div>
         <details class="accordion accordion--boxed" open>
             <summary>
                 <icon-file-json class="inline-icon" />
@@ -248,6 +259,11 @@
             <network-log-dialog
                 v-else-if="modalContent.kind === 'networkLog'"
                 @retry="retryNetworkRequest"
+            />
+            <report-dialog
+                v-else-if="modalContent.kind === 'report'"
+                :report="modalContent.report"
+                :file-base-name="reportFileName"
             />
         </modal>
     </div>

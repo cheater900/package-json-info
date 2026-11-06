@@ -1,0 +1,56 @@
+.report-dialog {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-width: var(--content-width);
+    text-align: left;
+
+    /* Phones: the modal panel already spans the screen. */
+    @media (max-width: 700px) {
+        max-width: none;
+    }
+}
+
+.report-dialog__body {
+    overflow-wrap: anywhere;
+    padding: var(--modal-content-padding);
+}
+
+.report-dialog__heading {
+    margin: 1.2em 0 0.4em;
+}
+
+/* Narrow screens scroll a table sideways instead of the modal. */
+.report-dialog__scroll {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.report-dialog__table {
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.report-dialog__table th,
+.report-dialog__table td {
+    border: 1px solid var(--border);
+    padding: calc(4px * var(--space-scale)) calc(8px * var(--space-scale));
+}
+
+/* Stays at the panel bottom while the report scrolls. */
+.report-dialog__actions {
+    align-items: center;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: calc(12px * var(--space-scale));
+    position: sticky;
+}
+
+.report-dialog__error {
+    color: var(--error);
+}

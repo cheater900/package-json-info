@@ -8,11 +8,14 @@ Condensed from git history. Newest month first.
 
 #### Report
 
-- **Dependency report** in `src/core/report`: overview (search, active
-  filters), data coverage, data sources, then one section per **filter
-  section** with definition, preset counts per table and matching packages
-  with their values. Facts only, no advice; a test guards wording.
-  Renders to **Markdown** and **PDF**.
+- **Dependency report**: **Generate report** button below both tables
+  shows "Loading..." while it fetches columns filter sections read, then
+  opens **report modal** with **Export Markdown** and **Export PDF**
+  buttons. Report covers rows tables show (search + filters): overview,
+  data coverage, data sources, then one section per **filter section**
+  with definition, preset counts per table and matching packages with
+  their values. Facts only, no advice; a test guards wording. Builder and
+  renderers live in `src/core/report` for future CLI.
 
 #### Filters
 

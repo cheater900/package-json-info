@@ -1,6 +1,6 @@
 import type { ExportDocument, ExportFormat } from "../types";
 
-const MARKDOWN_MIME_TYPE = "text/markdown;charset=utf-8";
+export const MARKDOWN_MIME_TYPE = "text/markdown;charset=utf-8";
 const MARKDOWN_LINE_BREAKS = /\r\n|\r|\n/g;
 /**
  * Backslash-escaped so untrusted cell text renders literally: no raw HTML

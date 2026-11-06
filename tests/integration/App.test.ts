@@ -7,6 +7,7 @@ import ExportDialog from "../../src/app/components/ExportDialog.vue";
 import FiltersPanel from "../../src/app/components/FiltersPanel.vue";
 import NetworkLogDialog from "../../src/app/components/NetworkLogDialog.vue";
 import PackageSummaryCard from "../../src/app/components/PackageSummaryCard.vue";
+import ReportDialog from "../../src/app/components/ReportDialog.vue";
 import SourceTreeBrowser from "../../src/app/components/SourceTreeBrowser.vue";
 import { clearPackageInfoCache } from "../../src/core/api/npmPackage";
 import {
@@ -299,6 +300,41 @@ describe("App", () => {
         const expanded = wrapper.findAllComponents(DependenciesTable)[2];
         expect(expanded.props("healthFilters")).toEqual({ license: "missing" });
         expect(expanded.props("listId")).toBe("devDeps");
+    });
+
+    it("Generate report shows loading, then report of shown rows", async () => {
+        const wrapper = await mountApp();
+        const button = wrapper.find("button.table-actions__report");
+        expect(button.text()).toBe("Generate report");
+
+        await button.trigger("click");
+        expect(button.text()).toBe("Loading…");
+        expect(button.attributes("disabled")).toBeDefined();
+        await flushPromises();
+
+        expect(button.text()).toBe("Generate report");
+        expect(modalTitle()).toBe("Dependency report");
+        const report = wrapper.findComponent(ReportDialog);
+        expect(report.props("fileBaseName")).toBe("package-json-info-report");
+        expect(report.find("h2").text()).toBe("Dependency report: package-json-info");
+    });
+
+    it("report states search query", async () => {
+        const wrapper = await mountApp();
+        await wrapper.find(".search-row input").setValue("vue");
+
+        await wrapper.find("button.table-actions__report").trigger("click");
+        await flushPromises();
+
+        expect(wrapper.findComponent(ReportDialog).text()).toContain('Name search: "vue"');
+    });
+
+    it("disables Generate report while tables load", async () => {
+        stubFetchPending();
+
+        const wrapper = await mountApp();
+
+        expect(wrapper.find("button.table-actions__report").attributes("disabled")).toBeDefined();
     });
 
     it("disables Export while tables load", async () => {

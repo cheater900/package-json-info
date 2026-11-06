@@ -54,6 +54,12 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   never gets stored.
 - **Not in share link**: pasted and uploaded files, sort, search and
   column state.
+- **Report fetches hidden columns.** Generate report loads every column
+  filter sections read, as export does for picked columns. Health score in
+  report can differ from table: issue ratio and vulnerabilities count
+  there even while their columns stay hidden.
+- **Report wording stays factual.** No advice words, no judgment beyond
+  preset labels. Unit test enforces word list; new report text keeps it.
 
 ## Display
 
