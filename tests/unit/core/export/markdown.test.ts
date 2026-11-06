@@ -57,4 +57,10 @@ describe("markdownExporter", () => {
     it("escapes backslash so pipe stays inside cell", async () => {
         expect(await renderCells(["a\\|b"])).toBe("| a\\\\\\|b |");
     });
+
+    it("escapes math delimiters", async () => {
+        expect(await renderCells(["$\\color{red}x$ $$y$$"])).toBe(
+            "| \\$\\\\color{red}x\\$ \\$\\$y\\$\\$ |",
+        );
+    });
 });

@@ -4,10 +4,11 @@ export const MARKDOWN_MIME_TYPE = "text/markdown;charset=utf-8";
 const MARKDOWN_LINE_BREAKS = /\r\n|\r|\n/g;
 /**
  * Backslash-escaped so untrusted cell text renders literally: no raw HTML
- * (`<`), link or image (`[`), entity (`&`), emphasis or code span, and no
- * `\\|` that unescapes a pipe and breaks out of the cell.
+ * (`<`), link or image (`[`), entity (`&`), emphasis or code span, math
+ * (`$`, rendered by GitHub), and no `\\|` that unescapes a pipe and breaks
+ * out of the cell.
  */
-const MARKDOWN_SPECIAL_CHARS = /[\\`*_~[\]<>|&]/g;
+const MARKDOWN_SPECIAL_CHARS = /[\\`*_~[\]<>|&$]/g;
 
 /** Keeps a cell on one table line, inside its column, as plain text. */
 export function markdownCell(value: string): string {
