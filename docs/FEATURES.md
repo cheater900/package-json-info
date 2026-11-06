@@ -178,7 +178,8 @@ while export runs, so double click saves one file. File name:
   `-` plus text) get leading `'`.
 - **XLSX**: one sheet per table, bold frozen header row.
 - **Markdown**: heading and GFM table per table. Cell text is
-  backslash-escaped, so registry text cannot inject HTML, links or images.
+  backslash-escaped, so registry text cannot inject HTML, links, images or
+  math (`$`).
 - **HTML**: one standalone page, inline styles, no scripts or external
   files, so it opens offline. Content-Security-Policy meta tag blocks
   scripts and remote loads.
@@ -208,8 +209,9 @@ Report states facts only: no advice, no judgment beyond preset labels.
 Health score section names its signals, weights and band thresholds.
 Modal shows report as headings, lists and tables. **Export Markdown** and
 **Export PDF** buttons stick to modal bottom. File name:
-`<package name>-report.<ext>`. PDF is portrait; long lists and tables flow
-onto next pages.
+`<package name>-report.<ext>`. Markdown escapes leading `#`, `-`, `+` and
+`1.` in lines, so package names cannot turn into headings or lists. PDF is
+portrait; long lists and tables flow onto next pages.
 
 ## Settings
 

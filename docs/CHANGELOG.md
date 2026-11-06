@@ -235,6 +235,13 @@ Condensed from git history. Newest month first.
 
 ### Security
 
+#### Export
+
+- **Markdown** escapes `$` in cells and leading block markers in report
+  lines, so registry text cannot render as math, headings or lists.
+- **File name** slug collapses dash runs: long dash names no longer freeze
+  tab on regex backtracking.
+
 #### Network
 
 - **`Authorization` requests** go only to `api.github.com`.
