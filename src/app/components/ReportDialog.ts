@@ -31,6 +31,7 @@ export default defineComponent({
         const isExporting = ref(false);
 
         function exportMarkdown() {
+            hasFailed.value = false;
             const blob = new Blob([renderReportMarkdown(props.report)], {
                 type: MARKDOWN_MIME_TYPE,
             });

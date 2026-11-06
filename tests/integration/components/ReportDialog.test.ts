@@ -64,4 +64,16 @@ describe("ReportDialog", () => {
             "Export failed. Try again or pick the other format.",
         );
     });
+
+    it("clears PDF error after Markdown save", async () => {
+        const { createObjectURL } = stubDownload();
+        createObjectURL.mockImplementationOnce(() => {
+            throw new Error("boom");
+        });
+        const wrapper = mountDialog();
+        await exportButton(wrapper, "Export PDF").trigger("click");
+        expect(wrapper.find("[role='alert']").exists()).toBe(true);
+        await exportButton(wrapper, "Export Markdown").trigger("click");
+        expect(wrapper.find("[role='alert']").exists()).toBe(false);
+    });
 });
