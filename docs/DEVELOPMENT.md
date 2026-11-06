@@ -46,7 +46,8 @@ Core reads host state only through `coreRuntime()` from
 - `trackSubject`: wraps each request subject before core mutates it. App
   passes Vue `reactive`, so network log sees subjects grow.
 - `lookupStore`: offline copy of last good lookups. App passes IndexedDB
-  store; without one, failed lookups throw.
+  store; without one, failed lookups throw. Rejecting `load` counts as
+  nothing stored, rejecting `save` loses only offline copy.
 
 Core uses settings as given. Host validates them first: app does so in
 `src/app/settings.ts`. Core API still checks its own inputs, so
