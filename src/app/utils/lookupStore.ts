@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { LOOKUP_DB_NAME, LOOKUP_DB_STORE, LOOKUP_READ_TIMEOUT_MS } from "../constants";
 import { delay } from "../../core/utils/delay";
-import { withObjectStore } from "./indexedDb";
-import { settle } from "../../core/utils/settle";
 import { lookupKey } from "../../core/utils/memoizeLookup";
-import type { LookupKind, StoredLookup } from "../../core/utils/memoizeLookup";
+import type { LookupKind, LookupStore, StoredLookup } from "../../core/utils/memoizeLookup";
+import { settle } from "../../core/utils/settle";
+import { withObjectStore } from "./indexedDb";
 
 const StoredLookupSchema = z.object({
     value: z.unknown(),
@@ -85,3 +85,10 @@ export async function loadLookup<T>(
     const parsed = StoredLookupSchema.safeParse(result.ok ? result.value : undefined);
     return parsed.success ? (parsed.data as StoredLookup<T>) : undefined;
 }
+
+/** IndexedDB copy of last good lookups, plugged into core by bindCore. */
+export const indexedDbLookupStore: LookupStore = {
+    load: loadLookup,
+    save: saveLookup,
+    generation: lookupStoreGeneration,
+};

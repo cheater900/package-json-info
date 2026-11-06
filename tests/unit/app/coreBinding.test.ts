@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect } from "vitest";
 import { isReactive } from "vue";
 import { coreRuntime } from "../../../src/core/runtime";
 import { githubToken, settings } from "../../../src/app/settings";
-import { loadLookup, lookupStoreGeneration, saveLookup } from "../../../src/app/utils/lookupStore";
+import { indexedDbLookupStore } from "../../../src/app/utils/lookupStore";
 import { resetSettings } from "../../helpers/settings";
 
 describe("bindCore", () => {
@@ -27,10 +27,6 @@ describe("bindCore", () => {
     });
 
     it("plugs IndexedDB lookup store", () => {
-        expect(coreRuntime().lookupStore).toEqual({
-            load: loadLookup,
-            save: saveLookup,
-            generation: lookupStoreGeneration,
-        });
+        expect(coreRuntime().lookupStore).toBe(indexedDbLookupStore);
     });
 });

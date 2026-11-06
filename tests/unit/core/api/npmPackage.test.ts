@@ -9,8 +9,8 @@ import {
 import { OSV_MAX_PAGES } from "../../../../src/core/constants";
 import {
     clearLookups,
+    indexedDbLookupStore,
     loadLookup,
-    lookupStoreGeneration,
     saveLookup,
 } from "../../../../src/app/utils/lookupStore";
 import { configureCore } from "../../../../src/core/runtime";
@@ -1512,13 +1512,7 @@ describe("fetchPackageInfo failures", () => {
 
         beforeEach(() => {
             stubIndexedDb();
-            configureCore({
-                lookupStore: {
-                    load: loadLookup,
-                    save: saveLookup,
-                    generation: lookupStoreGeneration,
-                },
-            });
+            configureCore({ lookupStore: indexedDbLookupStore });
             // Date only: fake-indexeddb schedules its work on real timers.
             vi.useFakeTimers({ toFake: ["Date"] });
         });
