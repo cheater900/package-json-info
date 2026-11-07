@@ -18,7 +18,7 @@ import {
 } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
-import { NPM_REGISTRY_URL } from "../../src/core/constants";
+import { NPM_REGISTRY_URL, OSV_QUERY_URL } from "../../src/core/constants";
 import { networkLogEntries, startNetworkLog } from "../../src/app/utils/networkLog";
 import { openShareLink, shareSteps } from "../helpers/shareLink";
 import { subjectOf } from "../helpers/requests";
@@ -327,6 +327,59 @@ describe("App", () => {
         await flushPromises();
 
         expect(wrapper.findComponent(ReportDialog).text()).toContain('Name search: "vue"');
+    });
+
+    it("report states active filters", async () => {
+        const wrapper = await mountApp();
+        wrapper.findComponent(FiltersPanel).vm.$emit("update:modelValue", { license: "missing" });
+        await flushPromises();
+
+        await wrapper.find("button.table-actions__report").trigger("click");
+        await flushPromises();
+
+        expect(wrapper.findComponent(ReportDialog).text()).toContain(
+            "Active filters: License: Missing",
+        );
+    });
+
+    it("report fetches columns hidden in tables", async () => {
+        const wrapper = await mountApp();
+        expect(countFetchCalls(vi.mocked(fetch), OSV_QUERY_URL)).toBe(0);
+
+        await wrapper.find("button.table-actions__report").trigger("click");
+        await flushPromises();
+
+        expect(countFetchCalls(vi.mocked(fetch), OSV_QUERY_URL)).toBeGreaterThan(0);
+    });
+
+    it("drops report when package.json changes during load", async () => {
+        const wrapper = await mountApp();
+        const loadedFetch = vi.mocked(fetch).getMockImplementation()!;
+        const osvAnswers: ((response: unknown) => void)[] = [];
+        vi.mocked(fetch).mockImplementation((url, init) => {
+            if (String(url) === OSV_QUERY_URL) {
+                return new Promise((resolve) => {
+                    osvAnswers.push(resolve as (response: unknown) => void);
+                });
+            }
+            if (String(url) === "https://example.test/package.json") {
+                return Promise.resolve(textResponse('{"name":"other"}') as unknown as Response);
+            }
+            return loadedFetch(url, init);
+        });
+        const button = wrapper.find("button.table-actions__report");
+        await button.trigger("click");
+        await flushPromises();
+
+        await wrapper.find("#url-input").setValue("https://example.test/package.json");
+        await wrapper.find("form.input-methods__url-form").trigger("submit");
+        await flushPromises();
+        osvAnswers.forEach((answer) => answer(jsonResponse({})));
+        await flushPromises();
+
+        expect(shownPackageName(wrapper)).toBe("other");
+        expect(wrapper.findComponent(ReportDialog).exists()).toBe(false);
+        expect(button.text()).toBe("Generate report");
     });
 
     it("disables Generate report while tables load", async () => {
