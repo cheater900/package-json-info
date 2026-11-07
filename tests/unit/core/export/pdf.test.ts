@@ -2,11 +2,10 @@ import { describe, it, expect } from "vitest";
 import { pdfExporter } from "../../../../src/core/export/exporters/pdf";
 import { exportDocumentFixture } from "../../../fixtures/exportDocument";
 import type { ExportDocument } from "../../../../src/core/export/types";
+import { pdfBlobText, pdfPageCount } from "../../../helpers/pdf";
 
-/** PDF file text; built-in fonts write Latin-1 bytes. */
 async function pdfSource(exportDocument: ExportDocument) {
-    const blob = await pdfExporter.render(exportDocument);
-    return new TextDecoder("latin1").decode(await blob.arrayBuffer());
+    return pdfBlobText(await pdfExporter.render(exportDocument));
 }
 
 describe("pdfExporter", () => {
@@ -18,7 +17,7 @@ describe("pdfExporter", () => {
 
     it("puts each section on own page", async () => {
         const text = await pdfSource(exportDocumentFixture);
-        expect(text.match(/\/Type \/Page\b(?!s)/g)).toHaveLength(2);
+        expect(pdfPageCount(text)).toBe(2);
     });
 
     it('prints "?" for character outside built-in font', async () => {
