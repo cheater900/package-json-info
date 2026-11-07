@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
+import { concatBytes } from "../../../src/utils/bytes";
 import { gunzip, parseTar, TAR_BLOCK_SIZE, TAR_HEADER } from "../../../src/utils/tarball";
 import { buildTar, gzipToArrayBuffer } from "../../fixtures/tarball";
+
+const TYPEFLAG_LEGACY_FILE = "\0";
+const TYPEFLAG_FILE = "0";
+const TYPEFLAG_SYMLINK = "2";
+const TYPEFLAG_PAX_GLOBAL = "g";
 
 function streamOf(buffer: ArrayBuffer): ReadableStream<Uint8Array> {
     return new Response(buffer).body!;
@@ -62,12 +68,13 @@ describe("parseTar", () => {
         ]);
     });
 
-    it("stops at end-of-archive zero block", () => {
-        const entries = parseTar(
+    it("ignores entries after end-of-archive zero block", () => {
+        const tar = concatBytes([
             new Uint8Array(buildTar([{ name: "package/only.js", content: "x" }])),
-        );
+            new Uint8Array(buildTar([{ name: "package/after-end.js", content: "y" }])),
+        ]);
 
-        expect(entries).toHaveLength(1);
+        expect(parseTar(tar).map((e) => e.path)).toEqual(["package/only.js"]);
     });
 
     it("returns empty list for empty archive", () => {
@@ -113,6 +120,13 @@ describe("gunzip", () => {
         await expect(gunzip(streamOf(oversized), maxBytes)).rejects.toThrow("too large to browse");
     });
 
+    it("accepts output exactly at size cap", async () => {
+        const maxBytes = 1024;
+        const atCap = gzipToArrayBuffer(new Uint8Array(maxBytes));
+
+        expect(await gunzip(streamOf(atCap), maxBytes)).toHaveLength(maxBytes);
+    });
+
     it("stops endless download once output passes cap", async () => {
         const endless = new ReadableStream<Uint8Array>({
             pull(controller) {
@@ -137,6 +151,14 @@ describe("gunzip", () => {
         const notGzip = new TextEncoder().encode("<html>not a tarball</html>");
 
         await expect(gunzip(streamOf(notGzip.buffer))).rejects.toThrow("tarball is corrupt");
+    });
+
+    it("rejects gzip cut mid-stream as corrupt tarball", async () => {
+        const gzipped = gzipToArrayBuffer(crypto.getRandomValues(new Uint8Array(4096)));
+
+        await expect(gunzip(streamOf(gzipped.slice(0, gzipped.byteLength / 2)))).rejects.toThrow(
+            "tarball is corrupt",
+        );
     });
 
     it("decompresses gzip buffer to original bytes", async () => {
@@ -175,6 +197,123 @@ describe("parseTar edge cases", () => {
 
     it("returns empty list for empty input", () => {
         expect(parseTar(new Uint8Array(0))).toEqual([]);
+    });
+
+    it("reads blank size field as empty file", () => {
+        const tar = new Uint8Array(
+            buildTar([
+                { name: "package/empty.js", content: "" },
+                { name: "package/next.js", content: "n" },
+            ]),
+        );
+        tar.fill(0, TAR_HEADER.size.offset, TAR_HEADER.size.offset + TAR_HEADER.size.length);
+
+        const entries = parseTar(tar);
+
+        expect(entries.map((e) => [e.path, e.size])).toEqual([
+            ["package/empty.js", 0],
+            ["package/next.js", 1],
+        ]);
+    });
+
+    it("joins USTAR prefix and name", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    {
+                        type: "raw",
+                        typeflag: TYPEFLAG_FILE,
+                        prefix: "package/deep",
+                        name: "file.js",
+                        content: "a",
+                    },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/deep/file.js"]);
+    });
+
+    it("lists legacy NUL-typeflag entry as file", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    {
+                        type: "raw",
+                        typeflag: TYPEFLAG_LEGACY_FILE,
+                        name: "package/old.js",
+                        content: "old",
+                    },
+                ]),
+            ),
+        );
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0].type).toBe("file");
+        expect(new TextDecoder().decode(entries[0].content)).toBe("old");
+    });
+
+    it("skips symlink entry, keeps following entry", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    { type: "raw", typeflag: TYPEFLAG_SYMLINK, name: "package/link" },
+                    { name: "package/real.js", content: "a" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/real.js"]);
+    });
+
+    it("skips PAX global header, keeps following entry name", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    {
+                        type: "raw",
+                        typeflag: TYPEFLAG_PAX_GLOBAL,
+                        name: "pax_global_header",
+                        content: "18 path=global.js\n",
+                    },
+                    { name: "package/a.js", content: "a" },
+                    { name: "package/b.js", content: "b" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/a.js", "package/b.js"]);
+    });
+
+    it("keeps entry name after PAX header without path record", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    { type: "pax", records: { mtime: "1700000000" } },
+                    { name: "package/a.js", content: "a" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/a.js"]);
+    });
+
+    it.each([
+        ["no length prefix", "path=evil.js\n"],
+        ["length past block end", "999 path=evil.js\n"],
+        ["length shorter than own prefix", "1 path=evil.js\n"],
+        ["non-numeric length", "zz path=evil.js\n"],
+    ])("keeps entry name after malformed PAX record: %s", (_case, text) => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    { type: "paxRaw", text },
+                    { name: "package/a.js", content: "a" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/a.js"]);
     });
 
     it("skips many PAX records lacking = in linear time", () => {

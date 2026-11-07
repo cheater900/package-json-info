@@ -9,9 +9,10 @@ function writeOctal(bytes: Uint8Array, offset: number, length: number, value: nu
     bytes.set(new TextEncoder().encode(value.toString(8).padStart(length - 1, "0")), offset);
 }
 
-function tarHeader(name: string, size: number, typeflag: string): Uint8Array {
+function tarHeader(name: string, size: number, typeflag: string, prefix = ""): Uint8Array {
     const header = new Uint8Array(TAR_BLOCK_SIZE);
     header.set(new TextEncoder().encode(name), TAR_HEADER.name.offset);
+    header.set(new TextEncoder().encode(prefix), TAR_HEADER.prefix.offset);
     writeOctal(header, TAR_HEADER.size.offset, TAR_HEADER.size.length, size);
     header[TAR_HEADER.typeflag.offset] = typeflag.charCodeAt(0);
     return header;
@@ -36,7 +37,9 @@ export type TarInput =
     | { type: "directory"; name: string }
     | { type: "pax"; records: Record<string, string> }
     | { type: "paxRaw"; text: string }
-    | { type: "gnuLongName"; path: string };
+    | { type: "gnuLongName"; path: string }
+    /** Entry with any typeflag and USTAR prefix, for types the parser skips or reads leniently. */
+    | { type: "raw"; typeflag: string; name: string; content?: string; prefix?: string };
 
 export function buildTar(inputs: TarInput[]): ArrayBuffer {
     const chunks: Uint8Array[] = [];
@@ -66,6 +69,12 @@ export function buildTar(inputs: TarInput[]): ArrayBuffer {
                           .join("");
             const bytes = new TextEncoder().encode(text);
             chunks.push(tarHeader("", bytes.length, TAR_TYPEFLAG.paxHeader));
+            chunks.push(pad(bytes));
+            continue;
+        }
+        if (input.type === "raw") {
+            const bytes = new TextEncoder().encode(input.content ?? "");
+            chunks.push(tarHeader(input.name, bytes.length, input.typeflag, input.prefix));
             chunks.push(pad(bytes));
             continue;
         }

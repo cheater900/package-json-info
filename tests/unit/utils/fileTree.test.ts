@@ -96,6 +96,15 @@ describe("buildFileTree", () => {
         expect(tree[0].children![0].path).toBe("a/b");
     });
 
+    it.each(["", "/", "//"])("ignores entry with empty path %j", (path) => {
+        const tree = buildFileTree([
+            { path, type: "file", size: 1 },
+            { path: "a.js", type: "file", size: 1 },
+        ]);
+
+        expect(tree.map((n) => n.path)).toEqual(["a.js"]);
+    });
+
     it("returns empty tree for no entries", () => {
         expect(buildFileTree([])).toEqual([]);
     });
