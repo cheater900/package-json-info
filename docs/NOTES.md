@@ -48,6 +48,10 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   instead of returning to built-in view.
 - **Share link fetches on open.** `step=url:` link fetches that URL without
   click. Capped at 20 steps of 2,000 characters, http(s) only.
+  No cap on dependency count: crafted package.json with thousands of
+  dependencies fetches every row, using GitHub token for stars and 4
+  issue searches per repo, so it burns token rate limit. Options: cap
+  rows per table, or ask before share-link replay above N dependencies.
 - **Fallback store never evicts.** Keeps whole registry documents, several
   MB for popular packages. With GitHub token, star and issue counts of
   private repos stay stored unencrypted until token purge. Token itself

@@ -195,6 +195,9 @@ Condensed from git history. Newest month first.
 - **OSV paging** capped, stops on any repeated page token.
 - **Repo slug** parsed from URL path only, so query or hash cannot swap
   repo.
+- **GitHub blob and tree URLs** with encoded `/` (`%2F`) in a path
+  segment rejected, so `%2F..` cannot load another repo's files under
+  shown repo name.
 
 #### Source tree
 
