@@ -284,7 +284,6 @@ export async function fetchPackageInfo(
     const { visibleColumns = COLUMNS_ALL_TOGGLEABLE, rootPackage = null } = options;
     const { registryName, range } = resolveRegistrySpec(name, version);
     const requester = { dependency: name, rootPackage };
-    const headers = githubHeaders();
     const isVisible = (key: string) => isColumnVisible(visibleColumns, key);
     const noData = fresh(null);
     const [registry, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
@@ -306,6 +305,8 @@ export async function fetchPackageInfo(
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
     const versionData = NpmVersionSchema.parse(resolveVersionData(npmData, range));
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
+    // Read after the registry answer: a token purged or saved meanwhile must apply to repo lookups.
+    const headers = githubHeaders();
     const [gitStars, commitActivity, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
             ? withFallback(() => fetchCachedRepoStars(slug, headers, requester), null)

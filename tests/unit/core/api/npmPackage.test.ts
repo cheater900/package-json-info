@@ -461,6 +461,30 @@ describe("fetchPackageInfo", () => {
 
         expect(info.sourceCode).toBe("https://example.com/homepage-only");
     });
+
+    it("sends no token purged during registry fetch to GitHub", async () => {
+        coreSettings.githubToken = TOKEN;
+        let releaseRegistry: (response: unknown) => void = () => {};
+        const fetchMock = vi.fn(async (url: string, _init?: RequestInit) =>
+            url.includes("registry.npmjs.org")
+                ? new Promise((resolve) => {
+                      releaseRegistry = resolve;
+                  })
+                : jsonResponse({ stargazers_count: 1 }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const request = fetchPackageInfo("pkg", "1.0.0", {
+            visibleColumns: new Set(["gitStars"]),
+        });
+        coreSettings.githubToken = undefined;
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+        releaseRegistry(jsonResponse({ repository: "https://github.com/owner/pkg", versions: {} }));
+        await request;
+
+        const [[, init]] = fetchMock.mock.calls.filter(([url]) => url.includes("api.github.com"));
+        expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+    });
 });
 
 describe("fetchPackageInfo sourceTree", () => {
