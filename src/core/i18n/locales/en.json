@@ -420,6 +420,7 @@
         "dependencyNotFound": "Could not find package.json data for \"{name}\".",
         "invalidJson": "That's not valid JSON: {message}",
         "invalidPackageJson": "Invalid package.json: {details}.",
+        "invalidPackageName": "\"{name}\" is not a valid npm package name.",
         "requestFailed": "Request failed with status {status}",
         "tokenHostBlocked": "Blocked a request that would send the GitHub token to another host.",
         "invalidRepoUrl": "Invalid repository URL. Must be in format: https://<host>/<owner>/<repo>",

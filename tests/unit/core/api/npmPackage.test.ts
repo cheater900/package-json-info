@@ -1750,6 +1750,18 @@ describe("fetchPackageInfo failures", () => {
 });
 
 describe("fetchPackageInfo input edge cases", () => {
+    it("gives error row without requests for empty or dot name", async () => {
+        const fetchMock = stubFetchByUrl({});
+
+        const rows = await fetchPackagesInfo([
+            { name: "", version: "1.0.0" },
+            { name: ".", version: "1.0.0" },
+        ]);
+
+        expect(rows?.every((row) => "error" in row)).toBe(true);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("looks up real package for npm alias spec", async () => {
         const fetchMock = stubFetchByUrl({
             "registry.npmjs.org/real-pkg": {

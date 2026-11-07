@@ -29,4 +29,14 @@ describe("resolveRegistrySpec", () => {
             range: "",
         });
     });
+
+    it.each([
+        ["", "1.0.0"],
+        [".", "1.0.0"],
+        ["..", "1.0.0"],
+        ["a", "npm:"],
+        ["a", "npm:.@1.0.0"],
+    ])("throws for root-path registry name %j %j", (name, spec) => {
+        expect(() => resolveRegistrySpec(name, spec)).toThrow("not a valid npm package name");
+    });
 });
