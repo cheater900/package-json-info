@@ -69,6 +69,13 @@ function shownPackageName(wrapper: Awaited<ReturnType<typeof mountApp>>) {
     return wrapper.find(".package-name .inline-pre").text();
 }
 
+/** Clicks Generate report, waits for its lookups, returns the report dialog. */
+async function generateReport(wrapper: Awaited<ReturnType<typeof mountApp>>) {
+    await wrapper.find("button.table-actions__report").trigger("click");
+    await flushPromises();
+    return wrapper.findComponent(ReportDialog);
+}
+
 function modalTitle(): string | null | undefined {
     return document.body.querySelector(".modal__title")?.textContent;
 }
@@ -323,10 +330,9 @@ describe("App", () => {
         const wrapper = await mountApp();
         await wrapper.find(".search-row input").setValue("vue");
 
-        await wrapper.find("button.table-actions__report").trigger("click");
-        await flushPromises();
+        const report = await generateReport(wrapper);
 
-        expect(wrapper.findComponent(ReportDialog).text()).toContain('Name search: "vue"');
+        expect(report.text()).toContain('Name search: "vue"');
     });
 
     it("report states active filters", async () => {
@@ -334,20 +340,16 @@ describe("App", () => {
         wrapper.findComponent(FiltersPanel).vm.$emit("update:modelValue", { license: "missing" });
         await flushPromises();
 
-        await wrapper.find("button.table-actions__report").trigger("click");
-        await flushPromises();
+        const report = await generateReport(wrapper);
 
-        expect(wrapper.findComponent(ReportDialog).text()).toContain(
-            "Active filters: License: Missing",
-        );
+        expect(report.text()).toContain("Active filters: License: Missing");
     });
 
     it("report fetches columns hidden in tables", async () => {
         const wrapper = await mountApp();
         expect(countFetchCalls(vi.mocked(fetch), OSV_QUERY_URL)).toBe(0);
 
-        await wrapper.find("button.table-actions__report").trigger("click");
-        await flushPromises();
+        await generateReport(wrapper);
 
         expect(countFetchCalls(vi.mocked(fetch), OSV_QUERY_URL)).toBeGreaterThan(0);
     });
