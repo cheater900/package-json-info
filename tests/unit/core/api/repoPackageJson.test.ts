@@ -205,6 +205,8 @@ describe("fetchPackageJsonFromRepo GitHub blob and tree URLs", () => {
     it.each([
         "https://github.com/o/r/blob/main/../package.json",
         "https://github.com/o/r/blob/main/%2e%2e/package.json",
+        "https://github.com/o/r/blob/main/x%2F..%2F..%2F..%2F..%2Fevil%2Fr%2Fmain%2Fpackage.json",
+        "https://github.com/o/r/tree/main%2F..%2F..%2F..%2Fevil%2Fr%2Fmain",
         "https://github.com/o/r/blob/main",
         "https://github.com/o/r/tree/",
         "https://github.com/o/r/blob/main/%E0%A4%A",

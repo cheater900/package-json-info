@@ -41,15 +41,19 @@ const RAW_PACKAGE_JSON_URL_BUILDERS: Record<string, RawPackageJsonUrlBuilder> = 
 };
 
 /**
- * Decoded segments; null on bad percent-encoding. Needs no "." / ".."
- * check: URL parsing already resolved those, %2e forms included.
+ * Decoded segments; null on bad percent-encoding or an encoded "/". URL
+ * parsing already resolved "." / "..", %2e forms included, but "%2F.."
+ * would decode into new ".." segments that climb out of the repo on the
+ * raw host.
  */
 function decodePathSegments(segments: string[]): string[] | null {
+    let decoded: string[];
     try {
-        return segments.map((segment) => decodeURIComponent(segment));
+        decoded = segments.map((segment) => decodeURIComponent(segment));
     } catch {
         return null;
     }
+    return decoded.some((segment) => segment.includes("/")) ? null : decoded;
 }
 
 /**
