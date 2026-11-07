@@ -44,8 +44,3 @@ manager resolves it, to show the real footprint of a `package.json`.
   `toDateString()` are hard-coded.
 - **Browser-originated error text** (network failure, timeout) is not
   translated.
-
-## Tests
-
-- **Invalid-JSON e2e test**: target `.banner--error` instead of
-  `getByRole("alert")`; failed rows also have `role="alert"`.

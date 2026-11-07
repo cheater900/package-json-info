@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { mockExternalApis, loadJson, expandAllSections } from "./helpers";
 import { TOGGLEABLE_COLUMNS } from "../../src/utils/tableColumns";
 import {
@@ -9,6 +10,7 @@ import {
     OSV_QUERY_URL,
 } from "../../src/constants";
 import { minimalRegistryDoc } from "../fixtures/dependencies";
+import { buildNpmTarball } from "../fixtures/tarball";
 
 test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);
@@ -377,7 +379,7 @@ test("invalid JSON paste shows inline error, no crash", async ({ page, context }
     await page.evaluate(() => navigator.clipboard.writeText("{ not valid json"));
     await page.getByRole("button", { name: "Paste from clipboard" }).click();
 
-    await expect(page.getByRole("alert")).toContainText("not valid JSON");
+    await expect(page.locator(".banner--error")).toContainText("not valid JSON");
     await expect(page.getByRole("heading", { name: "Package.json info" })).toBeVisible();
 });
 
@@ -702,4 +704,61 @@ test("shrink columns shows initials with full-name tooltip, persists across relo
     await expect(
         reloadedDepsTable.locator(".deps-table__col-label", { hasText: "VD" }),
     ).toBeVisible();
+});
+
+const TREE_PACKAGE_TARBALL_URL = `${NPM_REGISTRY_URL}/tree-pkg/-/tree-pkg-1.0.0.tgz`;
+
+/** Loads a package.json whose one dependency, tree-pkg, downloads `tarball` as its source. */
+async function loadPackageWithTarball(page: Page, tarball: Buffer) {
+    await page.route(`${NPM_REGISTRY_URL}/tree-pkg`, async (route) => {
+        await route.fulfill({
+            json: {
+                "dist-tags": { latest: "1.0.0" },
+                time: {},
+                versions: { "1.0.0": { dist: { tarball: TREE_PACKAGE_TARBALL_URL } } },
+            },
+        });
+    });
+    await page.route(TREE_PACKAGE_TARBALL_URL, async (route) => {
+        await route.fulfill({ contentType: "application/octet-stream", body: tarball });
+    });
+    await page.goto("/");
+    await expandAllSections(page);
+    await page.getByLabel("Source Code Tree", { exact: true }).check();
+    await loadJson(page, { name: "demo", dependencies: { "tree-pkg": "1.0.0" } });
+}
+
+test("View tree downloads npm tarball, browses folder, shows file content", async ({ page }) => {
+    await loadPackageWithTarball(
+        page,
+        Buffer.from(
+            buildNpmTarball({
+                "index.js": "module.exports = 1;",
+                "src/helper.js": "export const helper = 2;",
+            }),
+        ),
+    );
+
+    await page.getByRole("button", { name: "View tree" }).click();
+    const sourceTree = page.locator(".source-tree");
+    await expect(sourceTree).toContainText("via npm");
+    await sourceTree.getByRole("button", { name: "src" }).click();
+    await sourceTree.getByRole("button", { name: "helper.js" }).click();
+
+    await expect(sourceTree.locator(".source-tree__content")).toHaveText(
+        "export const helper = 2;",
+    );
+
+    await page.keyboard.press("Escape");
+    await expect(sourceTree).toHaveCount(0);
+});
+
+test("View tree shows error for corrupt tarball", async ({ page }) => {
+    await loadPackageWithTarball(page, Buffer.from("<html>not a tarball</html>"));
+
+    await page.getByRole("button", { name: "View tree" }).click();
+
+    await expect(page.locator(".source-tree__status--error")).toHaveText(
+        "The package tarball is corrupt or incomplete.",
+    );
 });
