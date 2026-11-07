@@ -4,7 +4,7 @@ import { healthBand } from "./healthScore";
 import { isCopyleftLicense, isCustomLicense } from "./license";
 import { majorVersionsBehind } from "./semver";
 
-type PresetMatcher = (info: PackageInfo, now: Date) => boolean;
+export type PresetMatcher = (info: PackageInfo, now: Date) => boolean;
 
 type HealthFilterSectionDefinition = {
     id: string;
@@ -254,12 +254,12 @@ export const HEALTH_FILTER_SECTIONS = [
     },
 ] as const satisfies readonly HealthFilterSectionDefinition[];
 
-type Section = (typeof HEALTH_FILTER_SECTIONS)[number];
+export type HealthFilterSection = (typeof HEALTH_FILTER_SECTIONS)[number];
 
-export type FilterSectionId = Section["id"];
+export type FilterSectionId = HealthFilterSection["id"];
 
 /** Chosen preset id per section; a missing section has no filter. */
-export type HealthFilters = { [S in Section as S["id"]]?: S["presets"][number]["id"] };
+export type HealthFilters = { [S in HealthFilterSection as S["id"]]?: S["presets"][number]["id"] };
 
 type ActiveFilter = { section: HealthFilterSectionDefinition; matches: PresetMatcher };
 
@@ -276,10 +276,9 @@ export function isHealthFilterSectionApplicable(
 /** Sections with a known preset id that apply to `listId`. */
 function activeFilters(filters: HealthFilters, listId?: DependencyListId): ActiveFilter[] {
     const presetIds: Partial<Record<string, string>> = filters;
-    const sections: readonly HealthFilterSectionDefinition[] = HEALTH_FILTER_SECTIONS;
     const active: ActiveFilter[] = [];
-    for (const section of sections) {
-        if (!isHealthFilterSectionApplicable(section.id as FilterSectionId, listId)) {
+    for (const section of HEALTH_FILTER_SECTIONS) {
+        if (!isHealthFilterSectionApplicable(section.id, listId)) {
             continue;
         }
         const preset = section.presets.find((candidate) => candidate.id === presetIds[section.id]);

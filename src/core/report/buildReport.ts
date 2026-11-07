@@ -34,7 +34,12 @@ import {
     filterRowsByHealth,
     isHealthFilterSectionApplicable,
 } from "../utils/healthFilters";
-import type { FilterSectionId, HealthFilters } from "../utils/healthFilters";
+import type {
+    FilterSectionId,
+    HealthFilterSection,
+    HealthFilters,
+    PresetMatcher,
+} from "../utils/healthFilters";
 import { formatPercent } from "../utils/percent";
 import type { Report, ReportBlock } from "./types";
 
@@ -52,10 +57,6 @@ export type ReportInput = {
     searchQuery: string;
     healthFilters: HealthFilters;
 };
-
-type HealthFilterSection = (typeof HEALTH_FILTER_SECTIONS)[number];
-
-type PresetMatcher = (info: PackageInfo, now: Date) => boolean;
 
 /** Table rows after search + filters, split into fetched rows and fetch errors. */
 type ReportTable = {
