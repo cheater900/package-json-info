@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
-import { pdfText } from "../export/exporters/pdf";
+import { PDF_HEAD_FILL, pdfText } from "../export/exporters/pdf";
 import type { Report, ReportBlock } from "./types";
 
 /** Page layout in millimeters (jsPDF default unit). */
@@ -13,8 +13,6 @@ const MM_PER_POINT = 25.4 / 72;
 const PDF_HEADING_FONT_SIZES = { 1: 18, 2: 14, 3: 11 };
 const PDF_TEXT_FONT_SIZE = 9;
 const PDF_TABLE_FONT_SIZE = 8;
-/** Header fill, RGB. */
-const PDF_HEAD_FILL: [number, number, number] = [60, 60, 60];
 const PDF_FONT = "helvetica";
 
 /**

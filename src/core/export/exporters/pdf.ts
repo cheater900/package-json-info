@@ -12,7 +12,7 @@ const PDF_TITLE_FONT_SIZE = 16;
 const PDF_HEADING_FONT_SIZE = 12;
 const PDF_TABLE_FONT_SIZE = 7;
 /** Header fill, RGB. */
-const PDF_HEAD_FILL: [number, number, number] = [60, 60, 60];
+export const PDF_HEAD_FILL: [number, number, number] = [60, 60, 60];
 
 /**
  * Built-in PDF fonts encode WinAnsi only: Latin-1 plus these extras. jsPDF
