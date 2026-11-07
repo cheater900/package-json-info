@@ -275,9 +275,8 @@ export default defineComponent({
                 sections.map((section) => fetchRowsWithColumns(section.id, columns)),
             );
             isGeneratingReport.value = false;
-            const lists = rows.filter((list): list is DependencyRow[] => list !== null);
             // A null list means the shown package.json changed mid-load: nothing valid to report.
-            if (lists.length < rows.length) {
+            if (!rows.every((list) => list !== null)) {
                 return;
             }
             const report = buildReport(
@@ -286,7 +285,7 @@ export default defineComponent({
                     tables: sections.map((section, i) => ({
                         id: section.id,
                         title: section.title,
-                        dependencies: lists[i],
+                        dependencies: rows[i],
                     })),
                     searchQuery: searchQuery.value,
                     healthFilters: healthFilters.value,
