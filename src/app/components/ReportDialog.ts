@@ -8,6 +8,13 @@ import type { Report } from "../../core/report/types";
 import { downloadBlob } from "../utils/download";
 import IconDownload from "./IconDownload.vue";
 
+/** Report level 1 renders as h2: the page title holds the only h1. */
+const HEADING_LEVEL_OFFSET = 1;
+
+function headingTag(level: number): string {
+    return `h${level + HEADING_LEVEL_OFFSET}`;
+}
+
 /**
  * Shows a built report: headings, paragraphs, lists and tables as HTML,
  * text only. Footer buttons save it as Markdown or PDF.
@@ -56,6 +63,6 @@ export default defineComponent({
             });
         }
 
-        return { t, hasFailed, isExporting, exportMarkdown, exportPdf };
+        return { t, hasFailed, isExporting, headingTag, exportMarkdown, exportPdf };
     },
 });

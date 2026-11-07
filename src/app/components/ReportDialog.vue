@@ -3,7 +3,7 @@
         <article class="report-dialog__body">
             <template v-for="(block, index) in report.blocks" :key="index">
                 <component
-                    :is="`h${block.level + 1}`"
+                    :is="headingTag(block.level)"
                     v-if="block.kind === 'heading'"
                     class="report-dialog__heading"
                 >
