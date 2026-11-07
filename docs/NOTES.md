@@ -84,6 +84,20 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **`fetchRepoStars` guards unknown host** although `parseRepoSlug`
   yields only `SUPPORTED_REPO_HOSTS`. Kept: covers host added to that list
   before it gets stars fetcher.
+- **Export lock duplicated**: `ReportDialog` `exportPdf` repeats lock and
+  `setTimeout` unlock of `ExportDialog` `unlockAfterQueuedClicks`. Shared
+  composable would remove both copies.
+- **`stubDownload` duplicated** in `ReportDialog.test.ts` and
+  `ExportDialog.test.ts`; belongs in `tests/helpers`.
+- **`isoDate` lives in `buildReport.ts`**; belongs beside `fmtDate` in
+  `dependencyRowFormatting.ts`.
+- **Report replaces open modal**: modal opened while report loads (for
+  example network log) gets replaced when report finishes.
+- **Markdown heading ending in ` #`** loses that `#`: GFM reads it as
+  closing sequence. Report headings come from i18n text, so no current
+  heading hits it.
+- **Two e2e Filters tests fail** (`app.spec.ts` phone viewport and preset
+  tests): they look for Filters `dialog` role, panel now has `region`.
 
 ## Verification
 
