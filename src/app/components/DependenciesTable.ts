@@ -169,8 +169,14 @@ export default defineComponent({
             return sortKey.value === key ? sortDir.value : null;
         }
 
+        // A hidden column must not keep ordering rows: nothing shows that sort.
+        const visibleSortKey = computed(() => {
+            const key = sortKey.value;
+            return key === NAME_COLUMN_KEY || props.columns.includes(key ?? "") ? key : null;
+        });
+
         const sortedDependencies = computed(() =>
-            sortDependencies(filteredDependencies.value, sortKey.value, sortDir.value),
+            sortDependencies(filteredDependencies.value, visibleSortKey.value, sortDir.value),
         );
 
         function staleNoteFor(row: DependencyRow) {

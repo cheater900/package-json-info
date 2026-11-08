@@ -530,6 +530,17 @@ describe("DependenciesTable sorting", () => {
         expect(activeSortDirection(sortButton(wrapper, "Name"))).toBe("asc");
     });
 
+    it("drops sort of hidden column", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [pkgC, pkgA, pkgB] },
+        });
+        await sortButton(wrapper, "Weekly downloads").trigger("click");
+
+        await wrapper.setProps({ columns: columnKeysExcept("weeklyDownloads") });
+
+        expect(rowNames(wrapper)).toEqual(["ccc", "aaa", "bbb"]);
+    });
+
     it("sorts missing values last in both directions", async () => {
         const wrapper = mount(DependenciesTable, {
             props: { dependencies: [pkgC, pkgA, pkgB] },
