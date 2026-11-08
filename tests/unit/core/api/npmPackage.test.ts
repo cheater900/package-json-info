@@ -6,13 +6,8 @@ import {
     clearPackageInfoCache,
 } from "../../../../src/core/api/npmPackage";
 import { OSV_MAX_PAGES } from "../../../../src/core/constants";
-import {
-    clearLookups,
-    indexedDbLookupStore,
-    loadLookup,
-    saveLookup,
-} from "../../../../src/app/utils/lookupStore";
 import { configureCore } from "../../../../src/core/runtime";
+import { lookupKey } from "../../../../src/core/utils/memoizeLookup";
 import type { LookupKind } from "../../../../src/core/utils/memoizeLookup";
 import { coreSettings } from "../../../helpers/core";
 import { columnKeysExcept } from "../../../helpers/columns";
@@ -23,11 +18,15 @@ import {
     statusResponse,
     stubFetchByUrl,
 } from "../../../helpers/fetchMock";
-import { IDBObjectStore } from "fake-indexeddb";
-import { stubIndexedDb } from "../../../helpers/indexedDb";
+import { fakeLookupStore } from "../../../helpers/lookupStore";
+import type { FakeLookupStore } from "../../../helpers/lookupStore";
 import { minimalRegistryDoc } from "../../../fixtures/dependencies";
 import { recordRequests, subjectOf, subjectsOf } from "../../../helpers/requests";
 import { githubTokenFixture as TOKEN } from "../../../fixtures/github";
+
+function storedLookup(store: FakeLookupStore, kind: LookupKind, key: string) {
+    return store.entries.get(lookupKey(kind, key));
+}
 
 function visibleColumnsExcept(...excluded: string[]): Set<string> {
     return new Set(columnKeysExcept(...excluded));
@@ -1528,21 +1527,16 @@ describe("fetchPackageInfo failures", () => {
         const SAVED_OLD = "2024-01-01T00:00:00.000Z";
         const SAVED_NEW = "2024-02-01T00:00:00.000Z";
 
-        /** Saves a lookup value as if fetched live at `savedAt`. */
-        async function seedLookup(kind: LookupKind, key: string, value: unknown, savedAt: string) {
-            vi.setSystemTime(new Date(savedAt));
-            await saveLookup(kind, key, value);
+        let store: FakeLookupStore;
+
+        /** Stores a lookup value as if fetched live at `savedAt`. */
+        function seedLookup(kind: LookupKind, key: string, value: unknown, savedAt: string) {
+            store.seed(kind, key, value, savedAt);
         }
 
         beforeEach(() => {
-            stubIndexedDb();
-            configureCore({ lookupStore: indexedDbLookupStore });
-            // Date only: fake-indexeddb schedules its work on real timers.
-            vi.useFakeTimers({ toFake: ["Date"] });
-        });
-
-        afterEach(() => {
-            vi.useRealTimers();
+            store = fakeLookupStore();
+            configureCore({ lookupStore: store });
         });
 
         it("saves live values", async () => {
@@ -1551,15 +1545,17 @@ describe("fetchPackageInfo failures", () => {
             const info = await fetchPackageInfo("pkg", "1.0.0");
 
             expect(info.staleSince).toBeNull();
-            await vi.waitFor(async () => {
-                expect(await loadLookup("weeklyDownloads", "pkg")).toMatchObject({ value: 7 });
-                expect(await loadLookup("repoStars", "github.com/o/r")).toMatchObject({ value: 9 });
-                expect(await loadLookup("registry", "pkg")).toBeDefined();
+            await vi.waitFor(() => {
+                expect(storedLookup(store, "weeklyDownloads", "pkg")).toMatchObject({ value: 7 });
+                expect(storedLookup(store, "repoStars", "github.com/o/r")).toMatchObject({
+                    value: 9,
+                });
+                expect(storedLookup(store, "registry", "pkg")).toBeDefined();
             });
         });
 
         it("returns stored value marked stale on rejected optional lookup", async () => {
-            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
+            seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0");
@@ -1572,7 +1568,7 @@ describe("fetchPackageInfo failures", () => {
 
         it("returns stored commit activity marked stale on rejected lookup", async () => {
             const stored = { lastCommitDate: "2023-05-05T00:00:00Z", commitsLastYear: 5 };
-            await seedLookup("repoCommits", "github.com/o/r", stored, SAVED_OLD);
+            seedLookup("repoCommits", "github.com/o/r", stored, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("/commits", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0");
@@ -1582,7 +1578,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("builds row from stored registry document on registry outage", async () => {
-            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "status"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0");
@@ -1598,7 +1594,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("keeps live null fresh over stored value", async () => {
-            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
+            seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
             vi.stubGlobal(
                 "fetch",
                 failingFetch("api.npmjs.org/downloads", "status", HTTP_STATUS.notFound),
@@ -1611,7 +1607,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("retries live after stale result instead of memoizing it", async () => {
-            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
             const fetchMock = failingFetch("registry.npmjs.org", "status");
             vi.stubGlobal("fetch", fetchMock);
 
@@ -1622,7 +1618,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("returns fresh row once live lookup recovers", async () => {
-            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
+            seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
             await fetchPackageInfo("pkg", "1.0.0");
             vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
@@ -1634,8 +1630,8 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("sets staleSince to oldest stored lookup used", async () => {
-            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_NEW);
-            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            seedLookup("weeklyDownloads", "pkg", 42, SAVED_NEW);
+            seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("npmjs.org", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0");
@@ -1646,7 +1642,7 @@ describe("fetchPackageInfo failures", () => {
 
         it("fills issue counts from store, scores health with them", async () => {
             const counts = { openPRs: 1, closedPRs: 2, openIssues: 0, closedIssues: 4 };
-            await seedLookup("repoIssueCounts", "github.com/o/r", counts, SAVED_OLD);
+            seedLookup("repoIssueCounts", "github.com/o/r", counts, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("search/issues", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0", {
@@ -1658,7 +1654,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("builds GitHub source tree from stored release tag", async () => {
-            await seedLookup("githubReleaseTag", "github.com/o/r@1.0.0", "v1.0.0", SAVED_OLD);
+            seedLookup("githubReleaseTag", "github.com/o/r@1.0.0", "v1.0.0", SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("git/ref/tags", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0", {
@@ -1686,7 +1682,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("ignores stored value of wrong shape", async () => {
-            await seedLookup("weeklyDownloads", "pkg", "lots", SAVED_OLD);
+            seedLookup("weeklyDownloads", "pkg", "lots", SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0");
@@ -1696,7 +1692,7 @@ describe("fetchPackageInfo failures", () => {
         });
 
         it("reads malformed stored registry field as missing", async () => {
-            await seedLookup("registry", "pkg", { ...registryDoc, maintainers: "x" }, SAVED_OLD);
+            seedLookup("registry", "pkg", { ...registryDoc, maintainers: "x" }, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "network"));
 
             const info = await fetchPackageInfo("pkg", "1.0.0");
@@ -1720,31 +1716,28 @@ describe("fetchPackageInfo failures", () => {
                 visibleColumns: new Set(["weeklyDownloads"]),
             });
 
-            await clearLookups();
+            store.clear();
             releaseDownloads(jsonResponse({ downloads: 7 }));
             expect((await request).weeklyDownloads).toBe(7);
-            // Transactions commit in order: once this save lands, an earlier one would have too.
-            await saveLookup("weeklyDownloads", "later-pkg", 1);
 
-            expect(await loadLookup("weeklyDownloads", "pkg")).toBeUndefined();
+            expect(store.entries.size).toBe(0);
         });
 
         it("serves drill-down manifest from stored registry document", async () => {
-            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "network"));
 
             expect(await fetchPackageJsonForVersion("pkg", "1.0.0")).toBe("{}");
         });
 
         it("stores no request headers or token", async () => {
-            const put = vi.spyOn(IDBObjectStore.prototype, "put");
             coreSettings.githubToken = TOKEN;
             vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
 
             await fetchPackageInfo("pkg", "1.0.0");
 
-            await vi.waitFor(() => expect(put.mock.calls.length).toBeGreaterThan(0));
-            expect(JSON.stringify(put.mock.calls)).not.toContain(TOKEN);
+            await vi.waitFor(() => expect(store.entries.size).toBeGreaterThan(0));
+            expect(JSON.stringify([...store.entries])).not.toContain(TOKEN);
         });
     });
 });
