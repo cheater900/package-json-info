@@ -198,6 +198,9 @@ Condensed from git history. Newest month first.
 - **GitHub blob and tree URLs** with encoded `/` (`%2F`) in a path
   segment rejected, so `%2F..` cannot load another repo's files under
   shown repo name.
+- **Empty or dot package names** (`""`, `.`, `..`, also via `npm:`
+  alias) show error row "is not a valid npm package name", no longer
+  npm's total downloads as package's own.
 
 #### Source tree
 
@@ -212,6 +215,18 @@ Condensed from git history. Newest month first.
 
 - **URL input sync** passes absolute URL to `history.replaceState`, so it
   works when app is served under path starting with `//`.
+- **Workspace raw file URLs** encode branch, so ref holding `#` or `%`
+  lists and loads workspaces.
+
+#### Export
+
+- **XLSX cells** cut to Excel's 32,767-character limit, so long
+  dependency list or deprecation notice no longer makes Excel repair file.
+
+#### Table
+
+- **Sort on hidden column** ignored while column stays hidden, so rows no
+  longer follow order nothing on screen shows.
 
 #### Drill-down and history
 
@@ -235,6 +250,9 @@ Condensed from git history. Newest month first.
   never shows stale quota.
 - **Config integers** above 2^31-1 rejected, so huge timeout cannot
   overflow timer and abort every fetch.
+- **Repo lookups** read GitHub headers after registry answer, so token
+  purged or saved mid-row applies. Purged token no longer reaches stars,
+  commits or issues lookups, nor leaves private repo data in store.
 
 ### Security
 

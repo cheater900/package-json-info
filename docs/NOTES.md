@@ -29,6 +29,13 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **Workspace pattern `packages/**` also lists `packages` itself** when
   `packages/package.json` exists: trailing `**` matches zero folders. npm
   and pnpm likely do same; not checked against their source.
+- **`retryFailedRows` keeps fetching after navigation** to another
+  entry. Only wastes requests.
+- **`times[range]` reads inherited keys**: range like `constructor` makes
+  `versionDate` a Function. Every formatter and filter shows "-".
+- **GitLab subgroup repos** (`group/sub/project`) parse as `group/sub`,
+  so stars and source link point at wrong project. Fix needs slugs with
+  more than two segments.
 
 ## Tests
 
