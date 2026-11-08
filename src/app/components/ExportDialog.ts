@@ -5,6 +5,7 @@ import { COLUMN_ICONS } from "./columnIcons";
 import { EXPORTERS } from "../../core/export";
 import { buildExportDocument, exportFileBaseName } from "../../core/export/buildExportDocument";
 import type { ExportTableInput } from "../../core/export/buildExportDocument";
+import { useExportLock } from "../composables/useExportLock";
 import { downloadBlob } from "../utils/download";
 import { TOGGLEABLE_COLUMNS, orderColumns } from "../../core/utils/tableColumns";
 import type { DependencyListId, DependencyRow } from "../../core/types";
@@ -85,8 +86,7 @@ export default defineComponent({
         const loadedTables = shallowRef<ExportTableInput[] | null>(null);
         const isLoading = ref(false);
         const hasFailed = ref(false);
-        // One export at a time: a double click must not save the file twice.
-        const isExporting = ref(false);
+        const { isExporting, lock, unlockAfterQueuedClicks } = useExportLock();
         // Latest load started. A slower, older load must not overwrite a newer selection.
         let latestLoad = Symbol();
         const canDownload = computed(
@@ -128,22 +128,13 @@ export default defineComponent({
 
         watch([selectedTableIds, selectedColumnKeys], loadSelectedRows, { immediate: true });
 
-        // A sync render (PDF of a big table) blocks the page; clicks made meanwhile
-        // queue up and run after it. Unlock after them, in a later task.
-        function unlockAfterQueuedClicks() {
-            setTimeout(() => {
-                isExporting.value = false;
-            });
-        }
-
         // Format libraries can fail on input or browser limits beyond this app's control.
         async function download() {
             const tables = loadedTables.value;
-            if (!tables || !canDownload.value) {
+            if (!tables || !canDownload.value || !lock()) {
                 return;
             }
             const exporter = EXPORTERS.find((e) => e.id === formatId.value)!;
-            isExporting.value = true;
             hasFailed.value = false;
             const document = buildExportDocument(
                 props.title,

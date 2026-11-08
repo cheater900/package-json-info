@@ -5,6 +5,7 @@ import { t } from "../../core/i18n";
 import { renderReportMarkdown } from "../../core/report/renderMarkdown";
 import { renderReportPdf } from "../../core/report/renderPdf";
 import type { Report } from "../../core/report/types";
+import { useExportLock } from "../composables/useExportLock";
 import { downloadBlob } from "../utils/download";
 import IconDownload from "./IconDownload.vue";
 
@@ -34,8 +35,7 @@ export default defineComponent({
     },
     setup(props) {
         const hasFailed = ref(false);
-        // One export at a time: a double click must not save the file twice.
-        const isExporting = ref(false);
+        const { isExporting, lock, unlockAfterQueuedClicks } = useExportLock();
 
         function exportMarkdown() {
             hasFailed.value = false;
@@ -45,22 +45,18 @@ export default defineComponent({
             downloadBlob(blob, `${props.fileBaseName}.md`);
         }
 
-        // jsPDF can fail on input or browser limits beyond this app's control. A sync
-        // render blocks the page; clicks made meanwhile run after it, so unlock in a later task.
+        // jsPDF can fail on input or browser limits beyond this app's control.
         function exportPdf() {
-            if (isExporting.value) {
+            if (!lock()) {
                 return;
             }
-            isExporting.value = true;
             hasFailed.value = false;
             try {
                 downloadBlob(renderReportPdf(props.report), `${props.fileBaseName}.pdf`);
             } catch {
                 hasFailed.value = true;
             }
-            setTimeout(() => {
-                isExporting.value = false;
-            });
+            unlockAfterQueuedClicks();
         }
 
         return { t, hasFailed, isExporting, headingTag, exportMarkdown, exportPdf };
