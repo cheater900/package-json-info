@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import ReportDialog from "../../../src/app/components/ReportDialog.vue";
 import { reportFixture } from "../../fixtures/report";
@@ -11,10 +11,6 @@ function mountDialog() {
 function exportButton(wrapper: ReturnType<typeof mountDialog>, label: string) {
     return wrapper.findAll("button").find((button) => button.text() === label)!;
 }
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
 
 describe("ReportDialog", () => {
     it("renders blocks as heading, paragraph, list, table text", () => {

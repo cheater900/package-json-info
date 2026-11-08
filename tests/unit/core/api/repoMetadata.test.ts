@@ -11,7 +11,6 @@ const NOW = new Date("2025-06-15T12:00:00Z");
 
 afterEach(() => {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
 });
 
 describe("fetchRepoCommitActivity", () => {

@@ -77,7 +77,6 @@ function downloadButton(wrapper: ReturnType<typeof mountDialog>) {
 }
 
 afterEach(() => {
-    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 
