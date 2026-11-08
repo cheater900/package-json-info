@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
     fmtDate,
+    fmtIsoDate,
     fmtList,
     fmtOutdated,
     fmtHealth,
@@ -27,6 +28,19 @@ describe("fmtDate", () => {
         expect(fmtDate(null)).toBe("-");
         expect(fmtDate(undefined)).toBe("-");
         expect(fmtDate("")).toBe("-");
+    });
+});
+
+describe("fmtIsoDate", () => {
+    it("returns UTC day of date string", () => {
+        expect(fmtIsoDate("2024-01-01T23:30:00.000-02:00")).toBe("2024-01-02");
+    });
+
+    it("returns dash for missing, unparseable or non-string value", () => {
+        expect(fmtIsoDate(null)).toBe("-");
+        expect(fmtIsoDate("")).toBe("-");
+        expect(fmtIsoDate("not a date")).toBe("-");
+        expect(fmtIsoDate(42)).toBe("-");
     });
 });
 

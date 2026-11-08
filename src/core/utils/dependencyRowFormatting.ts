@@ -15,6 +15,8 @@ type CellFormatter = (dependency: CellSource) => string;
 const LICENSE_WARNING_MARK = "⚠";
 /** Drops the weekday from `Date#toDateString` ("Mon Jan 01 2024" -> "Jan 01 2024"). */
 const WEEKDAY_PREFIX_LENGTH = 4;
+/** Length of `YYYY-MM-DD` at the start of `Date#toISOString`. */
+const ISO_DATE_LENGTH = 10;
 
 export function fmtDate(dateStr: string | null | undefined): string {
     const date = new Date(dateStr ?? "");
@@ -22,6 +24,15 @@ export function fmtDate(dateStr: string | null | undefined): string {
         return MISSING_VALUE;
     }
     return date.toDateString().slice(WEEKDAY_PREFIX_LENGTH);
+}
+
+/** UTC `YYYY-MM-DD`, the same in every time zone; `MISSING_VALUE` unless `value` is a valid date string. */
+export function fmtIsoDate(value: unknown): string {
+    const date = new Date(typeof value === "string" ? value : "");
+    if (Number.isNaN(date.getTime())) {
+        return MISSING_VALUE;
+    }
+    return date.toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
 /** Note shown on a row built from stored values; empty when the row is live. */

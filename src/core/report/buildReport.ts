@@ -28,7 +28,7 @@ import {
 import { exportFileBaseName } from "../export/buildExportDocument";
 import { hasMessage, t } from "../i18n";
 import type { DependencyListId, DependencyRow, PackageError, PackageInfo } from "../types";
-import { filterRowsByName, formatCell } from "../utils/dependencyRowFormatting";
+import { filterRowsByName, fmtIsoDate, formatCell } from "../utils/dependencyRowFormatting";
 import {
     HEALTH_FILTER_SECTIONS,
     filterRowsByHealth,
@@ -89,7 +89,6 @@ const REPORT_DATE_KEYS = new Set([
     "latestUpdateDate",
     "lastCommitDate",
 ]);
-const ISO_DATE_LENGTH = 10;
 
 const REPORT_FILE_NAME_SUFFIX = "report";
 
@@ -141,13 +140,6 @@ function fieldLabel(key: string): string {
     return hasMessage(`columns.${key}`) ? t(`columns.${key}`) : t(`report.fields.${key}`);
 }
 
-function isoDate(value: unknown): string {
-    const time = new Date(typeof value === "string" ? value : "").getTime();
-    return Number.isNaN(time)
-        ? MISSING_VALUE
-        : new Date(time).toISOString().slice(0, ISO_DATE_LENGTH);
-}
-
 /**
  * Raw value text: UTC dates, bare health score (presets name the band), no
  * warning mark on licenses, deprecation notice quoted verbatim.
@@ -157,7 +149,7 @@ function valueText(key: string, row: PackageInfo): string {
         return FAILED_VALUE;
     }
     if (REPORT_DATE_KEYS.has(key)) {
-        return isoDate(row[key as keyof PackageInfo]);
+        return fmtIsoDate(row[key as keyof PackageInfo]);
     }
     if (key === "healthScore") {
         return row.healthScore === null ? MISSING_VALUE : String(row.healthScore);
