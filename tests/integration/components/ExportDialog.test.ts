@@ -7,6 +7,7 @@ import { EXPORTERS } from "../../../src/core/export";
 import { DEFAULT_COLUMN_ORDER } from "../../../src/core/utils/tableColumns";
 import type { DependencyListId, DependencyRow } from "../../../src/core/types";
 import { fullDependency, sparseDependency } from "../../fixtures/dependencies";
+import { STUB_OBJECT_URL, stubDownload } from "../../helpers/download";
 
 type LoadRows = (
     list: DependencyListId,
@@ -65,15 +66,6 @@ function mountDialog(
             loadRows,
         },
     });
-}
-
-/** Stubs object URLs and link clicks, so a download saves nothing. */
-function stubDownload() {
-    return {
-        createObjectURL: vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:export"),
-        revokeObjectURL: vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {}),
-        click: vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {}),
-    };
 }
 
 function checkbox(wrapper: ReturnType<typeof mountDialog>, value: string) {
@@ -216,7 +208,7 @@ describe("ExportDialog", () => {
         expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
         const link = click.mock.contexts[0] as HTMLAnchorElement;
         expect(link.download).toBe("demo-app-dependencies.csv");
-        expect(link.href).toBe("blob:export");
+        expect(link.href).toBe(STUB_OBJECT_URL);
         expect(wrapper.emitted("close")).toHaveLength(1);
     });
 

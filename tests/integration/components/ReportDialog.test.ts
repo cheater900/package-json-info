@@ -2,15 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import ReportDialog from "../../../src/app/components/ReportDialog.vue";
 import { reportFixture } from "../../fixtures/report";
-
-/** Stubs object URLs and link clicks, so a download saves nothing. */
-function stubDownload() {
-    return {
-        createObjectURL: vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:report"),
-        revokeObjectURL: vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {}),
-        click: vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {}),
-    };
-}
+import { stubDownload } from "../../helpers/download";
 
 function mountDialog() {
     return mount(ReportDialog, { props: { report: reportFixture, fileBaseName: "my-app-report" } });
