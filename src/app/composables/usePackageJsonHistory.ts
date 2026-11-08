@@ -66,13 +66,17 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     // True while a retry of failed rows is in flight.
     const isRetrying = ref(false);
 
+    function currentEntry(): HistoryEntry | undefined {
+        return history.value[historyIndex.value];
+    }
+
     function isCurrentEntry(entry: HistoryEntry) {
-        return history.value[historyIndex.value] === entry;
+        return currentEntry() === entry;
     }
 
     // Columns the current entry's rows hold data for; empty until its first fetch ends.
     const fetchedColumns = computed<ReadonlySet<string>>(
-        () => history.value[historyIndex.value]?.visibleColumnsSnapshot ?? new Set(),
+        () => currentEntry()?.visibleColumnsSnapshot ?? new Set(),
     );
 
     /**
@@ -137,7 +141,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      * and keeps the shown rows during a fetch for newly visible columns.
      */
     function applyCurrentHistoryEntry(isColumnChange = false) {
-        const entry = history.value[historyIndex.value];
+        const entry = currentEntry();
         if (!entry) {
             return;
         }
@@ -234,7 +238,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      * fetch runs: it refetches the rows anyway.
      */
     async function retryFailedRows(rows: readonly DependencyRow[]): Promise<void> {
-        const entry = history.value[historyIndex.value];
+        const entry = currentEntry();
         const isFetching =
             isLoadingDeps.value || isLoadingDevDeps.value || pendingColumns.value.size > 0;
         if (!entry?.deps || !entry.devDeps || isFetching || isRetrying.value) {
@@ -274,7 +278,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         list: DependencyListId,
         columns: ReadonlySet<string>,
     ): Promise<DependencyRow[] | null> {
-        const entry = history.value[historyIndex.value];
+        const entry = currentEntry();
         if (!entry) {
             return null;
         }
