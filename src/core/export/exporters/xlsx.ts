@@ -5,6 +5,8 @@ import type { ExportDocument, ExportFormat } from "../types";
 /** Excel rejects sheet names over 31 characters or holding any of `\ / ? * [ ] :`. */
 const SHEET_NAME_MAX_LENGTH = 31;
 const SHEET_NAME_FORBIDDEN = /[\\/?*[\]:]/g;
+/** Excel refuses to open a file with a longer cell, offering repair instead. */
+const CELL_MAX_LENGTH = 32_767;
 /** Column width bounds, in characters. */
 const COLUMN_WIDTH_MIN = 8;
 const COLUMN_WIDTH_MAX = 60;
@@ -20,12 +22,12 @@ function columnWidths(headers: string[], rows: string[][]) {
     });
 }
 
-/** One sheet per section, bold frozen header row. */
+/** One sheet per section, bold frozen header row. Cells over Excel's limit are cut. */
 function renderXlsx(exportDocument: ExportDocument): Promise<Blob> {
     const sheets = exportDocument.sections.map((section) => {
         const data: SheetData = [
             section.headers.map((header) => ({ value: header, fontWeight: "bold" as const })),
-            ...section.rows,
+            ...section.rows.map((row) => row.map((cell) => cell.slice(0, CELL_MAX_LENGTH))),
         ];
         return {
             data,
