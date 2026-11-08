@@ -26,7 +26,7 @@ async function fetchWorkspacePatterns(repo: RepoRef, packageJsonText: string): P
         return declared;
     }
     const found = await findFirstFound([PNPM_WORKSPACE_FILE], (file) =>
-        githubRawFileUrl(repo.owner, repo.repo, repo.branch, file),
+        githubRawFileUrl(repo.owner, repo.repo, encodeURIComponent(repo.branch), file),
     );
     return found ? parsePnpmWorkspacePatterns(await found.response.text()) : [];
 }
@@ -72,8 +72,14 @@ export async function fetchWorkspaceContext(
     return result.value;
 }
 
-/** Raw package.json text of one workspace folder, or of the repo root. Throws when missing. */
+/**
+ * Raw package.json text of one workspace folder, or of the repo root.
+ * Throws when missing. The branch is encoded: one from a blob or tree URL
+ * may hold "#" or "%".
+ */
 export function fetchWorkspacePackageJson(repo: RepoRef, path: string): Promise<string> {
     const filePath = path === WORKSPACE_ROOT ? PACKAGE_JSON_FILE : `${path}/${PACKAGE_JSON_FILE}`;
-    return fetchText(githubRawFileUrl(repo.owner, repo.repo, repo.branch, filePath));
+    return fetchText(
+        githubRawFileUrl(repo.owner, repo.repo, encodeURIComponent(repo.branch), filePath),
+    );
 }

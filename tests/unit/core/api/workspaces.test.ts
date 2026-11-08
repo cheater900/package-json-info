@@ -76,6 +76,16 @@ describe("fetchWorkspaceContext", () => {
         expect(countFetchCalls(fetchMock, "/git/trees/")).toBe(0);
     });
 
+    it("encodes branch in pnpm-workspace.yaml URL", async () => {
+        const fetchMock = stubRepo({});
+
+        await fetchWorkspaceContext({ ...monorepoRef, branch: "fix#1" }, "{}");
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://raw.githubusercontent.com/o/r/fix%231/pnpm-workspace.yaml",
+        );
+    });
+
     it("returns null without tree request for empty pnpm packages list", async () => {
         const fetchMock = stubRepo({
             tree: jsonResponse(TREE),
@@ -180,6 +190,17 @@ describe("fetchWorkspacePackageJson", () => {
 
         expect(fetchMock.mock.calls[0][0]).toBe(
             "https://raw.githubusercontent.com/o/r/main/package.json",
+        );
+    });
+
+    it("encodes branch holding # or %", async () => {
+        const fetchMock = vi.fn(async (_url: string) => textResponse("{}"));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await fetchWorkspacePackageJson({ ...monorepoRef, branch: "fix#1%" }, "packages/a");
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://raw.githubusercontent.com/o/r/fix%231%25/packages/a/package.json",
         );
     });
 
