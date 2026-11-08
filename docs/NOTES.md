@@ -37,13 +37,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   so stars and source link point at wrong project. Fix needs slugs with
   more than two segments.
 
-## Tests
-
-- **Core offline-fallback tests use app store.** Offline-store block in
-  `tests/unit/core/api/npmPackage.test.ts` runs in Node `core` project but
-  wires `src/app/utils/lookupStore.ts`. Move it to `tests/unit/app`, or test
-  against fake `LookupStore` in core.
-
 ## Behavior to know
 
 - **Health column starts hidden for existing users.** Saved column
@@ -107,8 +100,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **Markdown heading ending in ` #`** loses that `#`: GFM reads it as
   closing sequence. Report headings come from i18n text, so no current
   heading hits it.
-- **Two e2e Filters tests fail** (`app.spec.ts` phone viewport and preset
-  tests): they look for Filters `dialog` role, panel now has `region`.
 
 ## Verification
 

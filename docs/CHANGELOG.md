@@ -369,12 +369,15 @@ Condensed from git history. Newest month first.
   `//` path, tooltip, file tree item, truncated table cells. Tests only
   restating constant removed.
 - **History tests** stop their watchers after each test.
+- Tests for nested **body scroll lock** count. E2e Filters tests find
+  panel by `region` role; phone test checks width only.
 
 #### Tooling
 
 - **Shared test helpers**: IndexedDB stub, settings reset, token and rate
   limit fixtures, `stubFetchByUrl`, `fetchCallsTo`, minimal registry
-  document.
+  document. In-memory `fakeLookupStore`, so core offline-fallback tests
+  no longer import app IndexedDB store.
 - **Vitest config** restores spies and stubbed globals; e2e mock routes
   built from API constants.
 

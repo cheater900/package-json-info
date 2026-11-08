@@ -29,7 +29,7 @@
 | `tests/unit/app/`                   | Vitest unit tests of `src/app`, run in jsdom.                                                            |
 | `tests/integration/`                | Vitest component tests mounted with `@vue/test-utils`, run in jsdom.                                     |
 | `tests/e2e/`                        | Playwright end-to-end tests. `visual/` holds screenshot run.                                             |
-| `tests/helpers/`                    | Helpers: fetch stubs, columns, IndexedDB, settings, core runtime, share links, requests, PDF text.       |
+| `tests/helpers/`                    | Helpers: fetch stubs, requests, columns, IndexedDB, lookup store, settings, core, share links, PDF.      |
 | `tests/fixtures/`                   | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
 | `docs/`                             | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
 
