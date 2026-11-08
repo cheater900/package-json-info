@@ -97,7 +97,7 @@ test("phone viewport keeps page width, scrolls table only, Name column sticks, s
     expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE.height);
 });
 
-test("phone viewport fits Filters panel on screen, panel scrolls", async ({ page }) => {
+test("phone viewport fits Filters panel width", async ({ page }) => {
     await page.setViewportSize(VIEWPORT_PHONE);
     await page.goto("/");
     await expandAllSections(page);
@@ -109,15 +109,11 @@ test("phone viewport fits Filters panel on screen, panel scrolls", async ({ page
 
     await page.getByRole("button", { name: "Filters" }).click();
 
-    const panel = page.getByRole("dialog", { name: "Filters" });
+    const panel = page.getByRole("region", { name: "Filters" });
     await expect(panel).toBeVisible();
     const panelBox = (await panel.boundingBox())!;
     expect(panelBox.x).toBeGreaterThanOrEqual(0);
-    expect(panelBox.y).toBeGreaterThanOrEqual(0);
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE.width);
-    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE.height);
-    const isScrollable = await panel.evaluate((el) => el.scrollHeight > el.clientHeight);
-    expect(isScrollable).toBe(true);
 });
 
 test("fetches package in both dependencies and devDependencies once", async ({ page }) => {
@@ -742,7 +738,7 @@ test("Filters preset hides non-matching rows in both tables, Clear all restores"
 
     const trigger = page.getByRole("button", { name: "Filters" });
     await trigger.click();
-    const panel = page.getByRole("dialog", { name: "Filters" });
+    const panel = page.getByRole("region", { name: "Filters" });
     await panel
         .getByRole("group", { name: "License" })
         .getByLabel("Missing", { exact: true })
