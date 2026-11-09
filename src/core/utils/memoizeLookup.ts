@@ -1,7 +1,14 @@
+import { z } from "zod";
 import type { ZodType } from "zod";
 import { coreRuntime } from "../runtime";
 import { memoizeAsync } from "./memoizeAsync";
 import { settle } from "./settle";
+
+/** Shape of one stored lookup; `savedAt` is ISO in UTC, since staleSince picks the oldest by text order. */
+export const StoredLookupSchema = z.object({
+    value: z.unknown(),
+    savedAt: z.iso.datetime(),
+});
 
 /** Metadata lookups whose last good value is kept for offline use. */
 export type LookupKind =

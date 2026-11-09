@@ -1,16 +1,9 @@
-import { z } from "zod";
 import { LOOKUP_DB_NAME, LOOKUP_DB_STORE, LOOKUP_READ_TIMEOUT_MS } from "../constants";
 import { delay } from "../../core/utils/delay";
-import { lookupKey } from "../../core/utils/memoizeLookup";
+import { lookupKey, StoredLookupSchema } from "../../core/utils/memoizeLookup";
 import type { LookupKind, LookupStore, StoredLookup } from "../../core/utils/memoizeLookup";
 import { settle } from "../../core/utils/settle";
 import { withObjectStore } from "./indexedDb";
-
-const StoredLookupSchema = z.object({
-    value: z.unknown(),
-    // ISO in UTC: staleSince picks the oldest by text order.
-    savedAt: z.iso.datetime(),
-});
 
 // Bumped by clearLookups; a lookup started before a clear must not save after it.
 let storeGeneration = 0;
