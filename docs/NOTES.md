@@ -79,7 +79,8 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **`npmPackage.ts` imports `tableColumns`**: api layer picks lookups by
   UI column keys. Works because keys equal `PackageInfo` fields.
 - **`DependencyCell.vue`**: column key `sourceCodeTree` does not match
-  field name `sourceTree`.
+  field name `sourceTree`. Rename needs migration: key persists in saved
+  column visibility and order, and doubles as i18n key.
 - **`npmPackage.ts` does several jobs**: registry document, downloads,
   OSV, Bundlephobia, repo lookups and their caches. One
   `clearPackageInfoCache` ties caches together; split needs shared cache
@@ -88,13 +89,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **`fetchRepoStars` guards unknown host** although `parseRepoSlug`
   yields only `SUPPORTED_REPO_HOSTS`. Kept: covers host added to that list
   before it gets stars fetcher.
-- **Export lock duplicated**: `ReportDialog` `exportPdf` repeats lock and
-  `setTimeout` unlock of `ExportDialog` `unlockAfterQueuedClicks`. Shared
-  composable would remove both copies.
-- **`stubDownload` duplicated** in `ReportDialog.test.ts` and
-  `ExportDialog.test.ts`; belongs in `tests/helpers`.
-- **`isoDate` lives in `buildReport.ts`**; belongs beside `fmtDate` in
-  `dependencyRowFormatting.ts`.
 - **Report replaces open modal**: modal opened while report loads (for
   example network log) gets replaced when report finishes.
 - **Markdown heading ending in ` #`** loses that `#`: GFM reads it as

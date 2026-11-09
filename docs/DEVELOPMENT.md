@@ -21,7 +21,7 @@
 | `src/app/constants.ts`              | Storage keys, IndexedDB names, settings options, share link limits, UI timings.                          |
 | `src/app/config.ts`                 | Developer settings read from `.env` (see Configuration below).                                           |
 | `src/app/settings.ts`               | User settings store (Zod-validated, in `localStorage`), in-memory token.                                 |
-| `src/app/composables/`              | Vue state: column preferences, package.json history, input sources, popovers.                            |
+| `src/app/composables/`              | Vue state: column preferences, package.json history, input sources, popovers, export lock.               |
 | `src/app/components/`               | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
 | `src/app/utils/`                    | Browser helpers: storage, IndexedDB, token storage, network log, share state, download.                  |
 | `public/`                           | Static assets served as-is.                                                                              |
@@ -29,7 +29,7 @@
 | `tests/unit/app/`                   | Vitest unit tests of `src/app`, run in jsdom.                                                            |
 | `tests/integration/`                | Vitest component tests mounted with `@vue/test-utils`, run in jsdom.                                     |
 | `tests/e2e/`                        | Playwright end-to-end tests. `visual/` holds screenshot run.                                             |
-| `tests/helpers/`                    | Helpers: fetch stubs, requests, columns, IndexedDB, lookup store, settings, core, share links, PDF.      |
+| `tests/helpers/`                    | Fetch, requests, columns, IndexedDB, lookup store, settings, core, share links, PDF, download, wrapper.  |
 | `tests/fixtures/`                   | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
 | `docs/`                             | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
 

@@ -350,6 +350,14 @@ Condensed from git history. Newest month first.
   types do not import from api layer.
 - **`main.js` startup steps** are named functions; modal content has
   `ModalContent` type.
+- **Export lock** of Report and Export dialogs -> `useExportLock`
+  composable.
+- **Report `isoDate`** -> `fmtIsoDate` beside `fmtDate`;
+  `NetworkLogDialog` reuses `fmtList`.
+- **History**: one `currentEntry` helper; `replaceRows` and `rowKey` ->
+  pure `utils/packageJsonHistory.ts`.
+- **`splitNameAndRange`** in `npmSpec.ts` shared by share-step parse and
+  npm alias resolve.
 
 ### Tests
 
@@ -377,7 +385,9 @@ Condensed from git history. Newest month first.
 - **Shared test helpers**: IndexedDB stub, settings reset, token and rate
   limit fixtures, `stubFetchByUrl`, `fetchCallsTo`, minimal registry
   document. In-memory `fakeLookupStore`, so core offline-fallback tests
-  no longer import app IndexedDB store.
+  no longer import app IndexedDB store. Shared `stubDownload`,
+  `buttonWithText` and `VIEWPORT_PHONE_SMALL` replace local copies; test
+  hooks repeating Vitest restore config dropped.
 - **Vitest config** restores spies and stubbed globals; e2e mock routes
   built from API constants.
 
