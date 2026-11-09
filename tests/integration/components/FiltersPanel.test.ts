@@ -2,13 +2,10 @@ import { describe, it, expect, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import FiltersPanel from "../../../src/app/components/FiltersPanel.vue";
 import type { HealthFilters } from "../../../src/core/utils/healthFilters";
+import { buttonWithText } from "../../helpers/wrapper";
 
 function mountPanel(modelValue: HealthFilters = {}) {
     return mount(FiltersPanel, { props: { modelValue }, attachTo: document.body });
-}
-
-function button(wrapper: ReturnType<typeof mountPanel>, label: string) {
-    return wrapper.findAll("button").find((b) => b.text() === label)!;
 }
 
 function radio(wrapper: ReturnType<typeof mountPanel>, legend: string, label: string) {
@@ -68,10 +65,10 @@ describe("FiltersPanel selection", () => {
 
     it("Clear all emits empty model, disabled when inactive", async () => {
         const wrapper = mountPanel();
-        expect(button(wrapper, "Clear all").attributes("disabled")).toBeDefined();
+        expect(buttonWithText(wrapper, "Clear all").attributes("disabled")).toBeDefined();
 
         await wrapper.setProps({ modelValue: { license: "missing" } });
-        await button(wrapper, "Clear all").trigger("click");
+        await buttonWithText(wrapper, "Clear all").trigger("click");
 
         expect(emittedModels(wrapper)).toEqual([{}]);
     });

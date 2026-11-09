@@ -3,13 +3,10 @@ import { mount } from "@vue/test-utils";
 import ReportDialog from "../../../src/app/components/ReportDialog.vue";
 import { reportFixture } from "../../fixtures/report";
 import { stubDownload } from "../../helpers/download";
+import { buttonWithText } from "../../helpers/wrapper";
 
 function mountDialog() {
     return mount(ReportDialog, { props: { report: reportFixture, fileBaseName: "my-app-report" } });
-}
-
-function exportButton(wrapper: ReturnType<typeof mountDialog>, label: string) {
-    return wrapper.findAll("button").find((button) => button.text() === label)!;
 }
 
 describe("ReportDialog", () => {
@@ -28,7 +25,7 @@ describe("ReportDialog", () => {
 
     it("saves Markdown file", async () => {
         const { createObjectURL, click } = stubDownload();
-        await exportButton(mountDialog(), "Export Markdown").trigger("click");
+        await buttonWithText(mountDialog(), "Export Markdown").trigger("click");
         const blob = createObjectURL.mock.calls[0][0] as Blob;
         expect(blob.type).toBe("text/markdown;charset=utf-8");
         expect(await blob.text()).toContain("### Over 1 year");
@@ -37,7 +34,7 @@ describe("ReportDialog", () => {
 
     it("saves PDF file", async () => {
         const { createObjectURL, click } = stubDownload();
-        await exportButton(mountDialog(), "Export PDF").trigger("click");
+        await buttonWithText(mountDialog(), "Export PDF").trigger("click");
         expect((createObjectURL.mock.calls[0][0] as Blob).type).toBe("application/pdf");
         expect((click.mock.contexts[0] as HTMLAnchorElement).download).toBe("my-app-report.pdf");
     });
@@ -47,7 +44,7 @@ describe("ReportDialog", () => {
             throw new Error("boom");
         });
         const wrapper = mountDialog();
-        await exportButton(wrapper, "Export PDF").trigger("click");
+        await buttonWithText(wrapper, "Export PDF").trigger("click");
         expect(wrapper.find("[role='alert']").text()).toBe(
             "Export failed. Try again or pick the other format.",
         );
@@ -59,9 +56,9 @@ describe("ReportDialog", () => {
             throw new Error("boom");
         });
         const wrapper = mountDialog();
-        await exportButton(wrapper, "Export PDF").trigger("click");
+        await buttonWithText(wrapper, "Export PDF").trigger("click");
         expect(wrapper.find("[role='alert']").exists()).toBe(true);
-        await exportButton(wrapper, "Export Markdown").trigger("click");
+        await buttonWithText(wrapper, "Export Markdown").trigger("click");
         expect(wrapper.find("[role='alert']").exists()).toBe(false);
     });
 });

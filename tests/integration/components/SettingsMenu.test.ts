@@ -19,6 +19,7 @@ import {
     githubRateLimitText,
     githubTokenFixture as TOKEN,
 } from "../../fixtures/github";
+import { buttonWithText } from "../../helpers/wrapper";
 
 function mountMenu() {
     return mount(SettingsMenu, { attachTo: document.body });
@@ -29,10 +30,6 @@ async function saveToken(wrapper: ReturnType<typeof mountMenu>, token: string) {
     await wrapper.find("form").trigger("submit");
     // WebCrypto and IndexedDB settle outside the microtask queue.
     await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(true));
-}
-
-function button(wrapper: ReturnType<typeof mountMenu>, label: string) {
-    return wrapper.findAll("button").find((b) => b.text() === label)!;
 }
 
 beforeEach(() => {
@@ -151,7 +148,7 @@ describe("SettingsMenu token", () => {
         const wrapper = mountMenu();
         await saveToken(wrapper, TOKEN);
 
-        await button(wrapper, "Purge").trigger("click");
+        await buttonWithText(wrapper, "Purge").trigger("click");
         await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
 
         expect(githubToken.value).toBeUndefined();
@@ -163,7 +160,7 @@ describe("SettingsMenu token", () => {
         const wrapper = mountMenu();
         await saveToken(wrapper, TOKEN);
 
-        await button(wrapper, "Purge").trigger("click");
+        await buttonWithText(wrapper, "Purge").trigger("click");
 
         expect(githubToken.value).toBeUndefined();
         await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
@@ -177,7 +174,7 @@ describe("SettingsMenu token", () => {
         await saveLookup("repoStars", "github.com/private/repo", 7);
         await fetchPackageInfo("purge-cache-pkg", "1.0.0", downloadsOnly);
 
-        await button(wrapper, "Purge").trigger("click");
+        await buttonWithText(wrapper, "Purge").trigger("click");
         await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
         await fetchPackageInfo("purge-cache-pkg", "1.0.0", downloadsOnly);
 
@@ -203,7 +200,7 @@ describe("SettingsMenu token", () => {
         githubToken.value = TOKEN;
         await flushPromises();
 
-        await button(wrapper, "Verify").trigger("click");
+        await buttonWithText(wrapper, "Verify").trigger("click");
         await flushPromises();
 
         expect(wrapper.text()).toContain(githubRateLimitText);
@@ -223,8 +220,8 @@ describe("SettingsMenu token", () => {
         const wrapper = mountMenu();
         await saveToken(wrapper, TOKEN);
 
-        await button(wrapper, "Verify").trigger("click");
-        await button(wrapper, "Purge").trigger("click");
+        await buttonWithText(wrapper, "Verify").trigger("click");
+        await buttonWithText(wrapper, "Purge").trigger("click");
         await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
         answerVerify();
         await flushPromises();
@@ -241,7 +238,7 @@ describe("SettingsMenu token", () => {
         githubToken.value = TOKEN;
         await flushPromises();
 
-        await button(wrapper, "Verify").trigger("click");
+        await buttonWithText(wrapper, "Verify").trigger("click");
         await flushPromises();
 
         expect(wrapper.text()).toContain("GitHub rejected this token");
@@ -256,7 +253,7 @@ describe("SettingsMenu token", () => {
         githubToken.value = TOKEN;
         await flushPromises();
 
-        await button(wrapper, "Verify").trigger("click");
+        await buttonWithText(wrapper, "Verify").trigger("click");
         await flushPromises();
 
         expect(wrapper.text()).toContain(
@@ -320,7 +317,7 @@ describe("SettingsMenu network", () => {
         const wrapper = mountMenu();
         await wrapper.find(".settings-menu__gear").trigger("click");
 
-        await button(wrapper, "View network logs").trigger("click");
+        await buttonWithText(wrapper, "View network logs").trigger("click");
 
         expect(wrapper.find('[role="dialog"]').isVisible()).toBe(false);
         expect(wrapper.emitted("open-network-log")).toHaveLength(1);
