@@ -4,7 +4,7 @@
 
 | Path                                | Purpose                                                                                                  |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `src/core/`                         | Framework-free logic shared by web app and future CLI. No Vue, no DOM, no `src/app` imports.             |
+| `src/core/`                         | Framework-free logic shared by web app and CLI. No Vue, no DOM, no `src/app` imports.                    |
 | `src/core/runtime.ts`               | `configureCore()` seam: settings, request subject wrapper, offline lookup store.                         |
 | `src/core/api/`                     | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees, package.json sources.           |
 | `src/core/utils/`                   | Data helpers: formatting, columns, health score and filters, semver, license, tar, URLs.                 |
@@ -24,8 +24,10 @@
 | `src/app/composables/`              | Vue state: column preferences, package.json history, input sources, popovers, export lock.               |
 | `src/app/components/`               | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
 | `src/app/utils/`                    | Browser helpers: storage, IndexedDB, token storage, network log, share state, download.                  |
+| `src/cli/`                          | Node CLI. `main.ts` entry point, `run.ts` argument parsing, source loading and output.                   |
 | `public/`                           | Static assets served as-is.                                                                              |
 | `tests/unit/core/`                  | Vitest unit tests of `src/core`, run in Node.                                                            |
+| `tests/unit/cli/`                   | Vitest unit tests of `src/cli`, run in Node.                                                             |
 | `tests/unit/app/`                   | Vitest unit tests of `src/app`, run in jsdom.                                                            |
 | `tests/integration/`                | Vitest component tests mounted with `@vue/test-utils`, run in jsdom.                                     |
 | `tests/e2e/`                        | Playwright end-to-end tests. `visual/` holds screenshot run.                                             |
@@ -36,8 +38,8 @@
 ## Core and app
 
 `src/core` holds every step that fetches or shapes data. `src/app` holds
-Vue state, rendering and browser storage, and calls core. A CLI in
-`src/cli` can later reuse core unchanged.
+Vue state, rendering and browser storage, and calls core. CLI in
+`src/cli` calls same core unchanged.
 
 Core reads host state only through `coreRuntime()` from
 `src/core/runtime.ts`. Host calls `configureCore()` once to plug in:
@@ -58,7 +60,8 @@ Core uses settings as given. Host validates them first: app does so in
 clean:
 
 - `src/core/tsconfig.json` type-checks core without DOM types.
-- oxlint rejects `vue` and `src/app` imports under `src/core`.
+- oxlint rejects `vue` and `src/app` imports under `src/core` and
+  `src/cli`.
 - Vitest runs core tests in Node environment.
 
 ## Stack
@@ -69,12 +72,14 @@ clean:
 - Built-in `t()` helper with JSON message catalogs for UI text
 - vue-json-pretty for raw JSON viewer, vuedraggable for column reordering
 - write-excel-file for XLSX export, jsPDF with jspdf-autotable for PDF export
-- Vitest in two projects: `core` in Node, `app` with jsdom for unit and
-  component tests; fake-indexeddb stands in for IndexedDB, which neither
-  has
+- Vitest in three projects: `core` and `cli` in Node, `app` with jsdom for
+  unit and component tests; fake-indexeddb stands in for IndexedDB, which
+  none has
 - Playwright for end-to-end tests
-- TypeScript, checked by vue-tsc (strict mode) and `tsc -p src/core`; Vite
-  only strips types
+- TypeScript, checked by vue-tsc (strict mode), `tsc -p src/core` and
+  `tsc -p src/cli`; Vite only strips types
+- Vite SSR build bundles CLI into one Node file; dependencies stay
+  external
 - oxlint and oxfmt for linting and formatting
 
 ## Configuration
@@ -180,6 +185,18 @@ Build into `dist/`:
 npm run build
 ```
 
+Build CLI into `dist-cli/main.js`:
+
+```sh
+npm run build:cli
+```
+
+Run built CLI on package.json:
+
+```sh
+node dist-cli/main.js package.json
+```
+
 ## Test
 
 Vitest restores spies and stubbed globals after each test (`restoreMocks`,
@@ -214,8 +231,8 @@ npm run screenshots
 
 ## Lint and format
 
-Type-check sources, tests and config files, then `src/core` alone without
-DOM types:
+Type-check sources, tests and config files, then `src/core` and `src/cli`
+alone without DOM types:
 
 ```sh
 npm run typecheck

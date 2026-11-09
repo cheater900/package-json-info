@@ -216,6 +216,17 @@ Modal shows report as headings, lists and tables. **Export Markdown** and
 `1.` in lines, so package names cannot turn into headings or lists. PDF is
 portrait; long lists and tables flow onto next pages.
 
+## CLI
+
+`package-json-info <source>` prints dependency tables of package.json as
+Markdown to stdout, with default visible columns.
+
+- **Source**: existing file path, http(s) URL (repo URLs resolve to their
+  package.json, as in web app) or npm spec (`name` or `name@version`).
+- **`--no-dev`** skips devDependencies.
+- **Exit codes**: 0 success, 1 load or parse failure (message on stderr),
+  2 bad arguments.
+
 ## Settings
 
 Gear button at top right opens settings dropdown. Dot on gear shows when

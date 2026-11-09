@@ -6,6 +6,15 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### CLI
+
+- **`package-json-info <source>`** prints Markdown dependency tables
+  (Deps, Dev Deps unless `--no-dev`) to stdout. Source: file path, http(s)
+  URL (repo URLs resolve to their package.json) or npm spec. Exit code 1
+  on load or parse failure, 2 on bad arguments. **`npm run build:cli`**
+  bundles `src/cli/main.ts` with Vite SSR into `dist-cli/main.js`, wired
+  as `bin`.
+
 #### Report
 
 - **Dependency report**: **Generate report** button below both tables

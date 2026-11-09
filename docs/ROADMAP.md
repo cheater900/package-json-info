@@ -7,9 +7,6 @@ Planned work, by area, highest priority first. Finished items move to
 
 Command-line app in `src/cli`, calling `src/core` like web app does.
 
-- **Entry point and runner**: read package.json from path, URL or npm
-  name; print dependency tables; Node run setup (JSON catalog import,
-  bin script).
 - **Core binding**: call `configureCore()` with settings from flags or
   env, GitHub token from env. Validate settings first, as app
   `settings.ts` does: core uses them as given (NaN timeout makes
