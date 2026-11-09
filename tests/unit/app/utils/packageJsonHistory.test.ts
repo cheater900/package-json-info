@@ -7,6 +7,7 @@ import {
     columnsMissingFrom,
     entryCoversColumns,
     isEntryCacheValid,
+    replaceRows,
 } from "../../../../src/app/utils/packageJsonHistory";
 import type { DependencyRow } from "../../../../src/core/types";
 import { fullDependency } from "../../../fixtures/dependencies";
@@ -189,5 +190,19 @@ describe("isEntryCacheValid", () => {
         expect(isEntryCacheValid(fetchedEntry([fullDependency]), new Set(COLUMNS_AT_FETCH))).toBe(
             true,
         );
+    });
+});
+
+describe("replaceRows", () => {
+    it("swaps rows matching replacement name + version, keeps order and others", () => {
+        const kept = { ...fullDependency, name: "kept" };
+        const old = { name: "a", version: "1.0.0", error: "boom" };
+        const otherVersion = { name: "a", version: "2.0.0", error: "boom" };
+        const fixed = { ...fullDependency, name: "a", version: "1.0.0" };
+        expect(replaceRows([old, kept, otherVersion], [fixed])).toEqual([
+            fixed,
+            kept,
+            otherVersion,
+        ]);
     });
 });

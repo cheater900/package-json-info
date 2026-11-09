@@ -1,4 +1,4 @@
-import type { DependencyRow } from "../../core/types";
+import type { DependencyRow, PackageInput } from "../../core/types";
 import type { PackageJson } from "../../core/utils/packageJson";
 import type { WorkspaceContext } from "../../core/utils/workspaces";
 
@@ -105,6 +105,16 @@ export function entryCoversColumns(
 /** Row that failed, holds a failed lookup, or was built from stored values after one. */
 export function isRowRetryable(row: DependencyRow): boolean {
     return "error" in row || row.staleSince != null || row.failedLookups != null;
+}
+
+function rowKey(row: PackageInput) {
+    return `${row.name}@${row.version}`;
+}
+
+/** `rows` with each row of a replacement's name and version swapped for it. */
+export function replaceRows(rows: DependencyRow[], replacements: DependencyRow[]): DependencyRow[] {
+    const byKey = new Map(replacements.map((row) => [rowKey(row), row]));
+    return rows.map((row) => byKey.get(rowKey(row)) ?? row);
 }
 
 function hasRowToRetry(rows: DependencyRow[]): boolean {

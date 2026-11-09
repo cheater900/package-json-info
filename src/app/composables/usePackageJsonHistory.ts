@@ -10,6 +10,7 @@ import {
     entryCoversColumns,
     isEntryCacheValid,
     isRowRetryable,
+    replaceRows,
 } from "../utils/packageJsonHistory";
 import {
     PackageJsonSchema,
@@ -19,19 +20,9 @@ import {
 import type { PackageJson } from "../../core/utils/packageJson";
 import type { EntrySource, HistoryEntry } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../../core/utils/workspaces";
-import type { DependencyListId, DependencyRow, PackageInput } from "../../core/types";
+import type { DependencyListId, DependencyRow } from "../../core/types";
 import { t } from "../../core/i18n";
 import { githubToken, settings } from "../settings";
-
-function rowKey(row: PackageInput) {
-    return `${row.name}@${row.version}`;
-}
-
-/** `rows` with each row of a replacement's name and version swapped for it. */
-function replaceRows(rows: DependencyRow[], replacements: DependencyRow[]): DependencyRow[] {
-    const byKey = new Map(replacements.map((row) => [rowKey(row), row]));
-    return rows.map((row) => byKey.get(rowKey(row)) ?? row);
-}
 
 /**
  * Owns the package.json history stack (back/forward navigation) and keeps
