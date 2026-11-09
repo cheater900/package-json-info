@@ -2,6 +2,7 @@ import { computed, defineComponent } from "vue";
 import { MISSING_VALUE, NUMBER_LOCALE } from "../../core/constants";
 import { t } from "../../core/i18n";
 import { formatByteSize } from "../../core/utils/bytes";
+import { fmtList } from "../../core/utils/dependencyRowFormatting";
 import { networkLogEntries, networkLogSummary } from "../utils/networkLog";
 import type { NetworkLogEntry, NetworkLogState } from "../utils/networkLog";
 import IconCheck from "./IconCheck.vue";
@@ -35,16 +36,12 @@ function formatTime(startedAt: number): string {
     return new Date(startedAt).toLocaleTimeString(NUMBER_LOCALE);
 }
 
-function formatList(items: readonly string[]): string {
-    return items.length > 0 ? items.join(", ") : MISSING_VALUE;
-}
-
 function formatDependencies(entry: NetworkLogEntry): string {
-    return formatList([...(entry.subject?.dependencies ?? [])]);
+    return fmtList([...(entry.subject?.dependencies ?? [])]);
 }
 
 function formatColumns(entry: NetworkLogEntry): string {
-    return formatList([...(entry.subject?.columns ?? [])].map((key) => t(`columns.${key}`)));
+    return fmtList([...(entry.subject?.columns ?? [])].map((key) => t(`columns.${key}`)));
 }
 
 function formatSize(entry: NetworkLogEntry): string {
