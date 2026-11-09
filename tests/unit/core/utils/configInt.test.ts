@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { isConfigInt, readPositiveInt } from "../../../src/app/config";
-import { MAX_CONFIG_INT } from "../../../src/app/constants";
+import { isConfigInt, readPositiveInt } from "../../../../src/core/utils/configInt";
+import { MAX_CONFIG_INT } from "../../../../src/core/constants";
 
 const FALLBACK = 5;
 

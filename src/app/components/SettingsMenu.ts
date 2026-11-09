@@ -1,17 +1,18 @@
 import { defineComponent, reactive, ref, useId } from "vue";
 import { fetchGithubRateLimit } from "../../core/api/github";
 import { clearPackageInfoCache } from "../../core/api/npmPackage";
-import { isConfigInt } from "../config";
 import { usePopover } from "../composables/usePopover";
 import {
     GITHUB_TOKEN_PATTERN,
-    MAX_CONFIG_INT,
     SETTINGS_FONT_SCALES,
     SETTINGS_SPACE_SCALES,
     SETTINGS_THEMES,
 } from "../constants";
+import { MAX_CONFIG_INT } from "../../core/constants";
 import { t } from "../../core/i18n";
-import { githubToken, isProxyUrl, settings } from "../settings";
+import { isConfigInt } from "../../core/utils/configInt";
+import { isProxyUrl } from "../../core/utils/url";
+import { githubToken, settings } from "../settings";
 import {
     isTokenStorageAvailable,
     purgeGithubToken,

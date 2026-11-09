@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isHttpUrl } from "../../../../src/core/utils/url";
+import { isHttpUrl, isProxyUrl } from "../../../../src/core/utils/url";
 
 describe("isHttpUrl", () => {
     it("accepts http and https URLs", () => {
@@ -16,5 +16,20 @@ describe("isHttpUrl", () => {
         expect(isHttpUrl("/relative")).toBe(false);
         expect(isHttpUrl("")).toBe(false);
         expect(isHttpUrl(null)).toBe(false);
+    });
+});
+
+describe("isProxyUrl", () => {
+    it.each(["", "https://p.test/?u={url}"])("accepts %j", (value) => {
+        expect(isProxyUrl(value)).toBe(true);
+    });
+
+    it.each([
+        "javascript:alert(1)",
+        "https://u:p@p.test/",
+        "https://u@p.test/",
+        "https://:p@p.test/",
+    ])("rejects %j", (value) => {
+        expect(isProxyUrl(value)).toBe(false);
     });
 });

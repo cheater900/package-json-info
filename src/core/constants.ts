@@ -27,6 +27,8 @@ export const DEFAULT_BRANCH_CANDIDATES = ["main", "master"];
 
 export const DEFAULT_FETCH_CONCURRENCY = 5;
 export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+/** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
+export const MAX_CONFIG_INT = 2 ** 31 - 1;
 export const HTTP_HEADER_AUTHORIZATION = "Authorization";
 export const HTTP_NOT_FOUND = 404;
 export const HTTP_CONFLICT = 409;

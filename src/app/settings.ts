@@ -1,6 +1,6 @@
 import { reactive, shallowRef, watch } from "vue";
 import { z } from "zod";
-import { config, isConfigInt } from "./config";
+import { config } from "./config";
 import {
     SETTINGS_FONT_SCALES,
     SETTINGS_SPACE_SCALES,
@@ -8,26 +8,12 @@ import {
     STORAGE_KEY_SETTINGS,
 } from "./constants";
 import { readStoredJson, writeStoredJson } from "./utils/storage";
-import { isHttpUrl } from "../core/utils/url";
+import { isConfigInt } from "../core/utils/configInt";
+import { isProxyUrl } from "../core/utils/url";
 
 export type ColorScheme = "light" | "dark";
 
 const SettingsIntSchema = z.number().refine(isConfigInt);
-
-/**
- * True for "" (no proxy) or an http(s) URL without "user:pass@": fetch
- * rejects such URLs and its error message echoes the credentials.
- */
-export function isProxyUrl(value: string): boolean {
-    if (value === "") {
-        return true;
-    }
-    if (!isHttpUrl(value)) {
-        return false;
-    }
-    const { username, password } = new URL(value);
-    return !username && !password;
-}
 
 export const SETTINGS_DEFAULTS = {
     proxyUrl: "",

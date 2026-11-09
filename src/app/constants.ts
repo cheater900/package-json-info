@@ -1,7 +1,5 @@
 /** Classic and fine-grained PATs: letters, digits and underscores only. */
 export const GITHUB_TOKEN_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
-/** Largest delay browser timers honor; a bigger timeout overflows and fires at once. */
-export const MAX_CONFIG_INT = 2 ** 31 - 1;
 /** Delay before mirroring the URL input into the address bar; browsers throttle replaceState. */
 export const URL_SYNC_DEBOUNCE_MS = 300;
 

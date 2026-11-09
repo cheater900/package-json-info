@@ -3,7 +3,6 @@ import { nextTick } from "vue";
 import { STORAGE_KEY_SETTINGS } from "../../../src/app/constants";
 import {
     SETTINGS_DEFAULTS,
-    isProxyUrl,
     loadSettings,
     resolveColorScheme,
     settings,
@@ -49,20 +48,7 @@ describe("loadSettings", () => {
     });
 });
 
-describe("isProxyUrl", () => {
-    it.each(["", "https://p.test/?u={url}"])("accepts %j", (value) => {
-        expect(isProxyUrl(value)).toBe(true);
-    });
-
-    it.each([
-        "javascript:alert(1)",
-        "https://u:p@p.test/",
-        "https://u@p.test/",
-        "https://:p@p.test/",
-    ])("rejects %j", (value) => {
-        expect(isProxyUrl(value)).toBe(false);
-    });
-
+describe("loadSettings proxy", () => {
     it("drops stored proxy with credentials", () => {
         localStorage.setItem(
             STORAGE_KEY_SETTINGS,
