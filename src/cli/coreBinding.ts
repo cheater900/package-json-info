@@ -2,12 +2,15 @@ import { configureCore, CORE_SETTINGS_DEFAULTS } from "../core/runtime";
 import type { CoreSettings } from "../core/runtime";
 import { readPositiveInt } from "../core/utils/configInt";
 import { isProxyUrl } from "../core/utils/url";
+import { createFileLookupStore, defaultLookupCacheDir } from "./fileLookupStore";
 
 /** Raw flag values; undefined = flag not given. */
 export type CoreSettingsInput = {
     proxyUrl?: string;
     timeout?: string;
     concurrency?: string;
+    /** False (`--no-cache`) plugs no offline lookup store. */
+    cache?: boolean;
 };
 
 export const ENV_PROXY_URL = "PJI_PROXY_URL";
@@ -16,8 +19,8 @@ export const ENV_FETCH_CONCURRENCY = "PJI_FETCH_CONCURRENCY";
 export const ENV_GITHUB_TOKEN = "GITHUB_TOKEN";
 
 /**
- * Resolves core settings once (flag > env > default), plugs them into core and
- * returns them, or returns the error message for an invalid proxy URL. The
+ * Resolves core settings once (flag > env > default), plugs them and the file
+ * lookup store into core and returns them, or returns the error message for an invalid proxy URL. The
  * token comes from env only; no message ever contains it.
  */
 export function bindCore(input: CoreSettingsInput, env: NodeJS.ProcessEnv): CoreSettings | string {
@@ -49,6 +52,8 @@ export function bindCore(input: CoreSettingsInput, env: NodeJS.ProcessEnv): Core
                   ),
         githubToken: env[ENV_GITHUB_TOKEN] || undefined,
     };
-    configureCore({ settings: () => settings });
+    const lookupStore =
+        input.cache === false ? null : createFileLookupStore(defaultLookupCacheDir(env));
+    configureCore({ settings: () => settings, lookupStore });
     return settings;
 }

@@ -63,6 +63,18 @@ describe("bindCore", () => {
 
         expect(coreRuntime().settings()).toMatchObject({ fetchTimeoutMs: 5, githubToken: TOKEN });
     });
+
+    it("plugs file lookup store by default", () => {
+        bindCore({}, {});
+
+        expect(coreRuntime().lookupStore).not.toBeNull();
+    });
+
+    it("plugs no lookup store for cache false", () => {
+        bindCore({ cache: false }, {});
+
+        expect(coreRuntime().lookupStore).toBeNull();
+    });
 });
 
 describe("run binding", () => {

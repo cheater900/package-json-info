@@ -55,7 +55,7 @@ export const EXIT_BAD_ARGUMENTS = 2;
 
 export const USAGE = `Usage: package-json-info <source> [--no-dev] [--format <id> | --report <md|pdf>]
                          [--output <file>] [--proxy-url <url>] [--timeout <ms>]
-                         [--concurrency <n>] [-h|--help]
+                         [--concurrency <n>] [--no-cache] [-h|--help]
 
 Print dependency tables of a package.json as Markdown, or export them to a file.
 
@@ -71,6 +71,7 @@ Options:
   --proxy-url <url>    CORS proxy template; {url} marks the target URL
   --timeout <ms>       Request timeout in milliseconds
   --concurrency <n>    Parallel requests
+  --no-cache           Skip offline cache of last good lookups
   -h, --help           Show this help
 
 Environment (a flag wins over its variable):
@@ -78,6 +79,7 @@ Environment (a flag wins over its variable):
   PJI_FETCH_TIMEOUT_MS   Same as --timeout
   PJI_FETCH_CONCURRENCY  Same as --concurrency
   GITHUB_TOKEN           GitHub token for higher API limits (env only)
+  XDG_CACHE_HOME         Cache base dir (default ~/.cache); cache in package-json-info/
 `;
 
 const USAGE_HINT = 'Run "package-json-info --help" for usage.\n';
@@ -99,6 +101,7 @@ function parseOptions(argv: string[]): CliOptions | string | null {
                 "proxy-url": { type: "string" },
                 timeout: { type: "string" },
                 concurrency: { type: "string" },
+                cache: { type: "boolean", default: true },
                 help: { type: "boolean", short: "h", default: false },
             },
         }),
@@ -126,6 +129,7 @@ function parseOptions(argv: string[]): CliOptions | string | null {
         proxyUrl: parsed.values["proxy-url"],
         timeout: parsed.values.timeout,
         concurrency: parsed.values.concurrency,
+        cache: parsed.values.cache,
     };
 }
 

@@ -1,9 +1,10 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EXIT_BAD_ARGUMENTS, EXIT_LOAD_FAILURE, EXIT_OK, USAGE, run } from "../../../src/cli/run";
 import { clearPackageInfoCache } from "../../../src/core/api/npmPackage";
+import { coreRuntime } from "../../../src/core/runtime";
 import "../../helpers/coreSetup";
 import { countFetchCalls, stubFetchByUrl } from "../../helpers/fetchMock";
 
@@ -199,5 +200,52 @@ describe("table output", () => {
         expect(stdout).not.toContain("Bundle size");
         expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(0);
         expect(countFetchCalls(fetchMock, "bundlephobia.com")).toBe(0);
+    });
+});
+
+describe("lookup cache", () => {
+    const cacheDir = () => join(process.env.XDG_CACHE_HOME!, "package-json-info");
+
+    // Core saves lookups without awaiting them, so files land after run resolves.
+    const waitForStoredLookups = () =>
+        vi.waitFor(async () => expect((await readdir(cacheDir())).length).toBeGreaterThan(0));
+
+    it("stores lookups in XDG cache dir", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(
+            JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } }),
+        );
+
+        await runCli(path);
+
+        await waitForStoredLookups();
+    });
+
+    it("plugs no lookup store for --no-cache", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(
+            JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } }),
+        );
+
+        await runCli(path, "--no-cache");
+
+        expect(coreRuntime().lookupStore).toBeNull();
+    });
+
+    it("serves stored lookup when network fails", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(
+            JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } }),
+        );
+        await runCli(path);
+        await waitForStoredLookups();
+        clearPackageInfoCache();
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+
+        const { code, stdout } = await runCli(path);
+
+        expect(code).toBe(EXIT_OK);
+        expect(stdout).toMatch(/^\| left-pad \| \^1\.2\.0 \| .*\| 1\.3\.0 \|/m);
+        expect(stdout).not.toContain("offline");
     });
 });

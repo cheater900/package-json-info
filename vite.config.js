@@ -41,7 +41,7 @@ export default defineConfig({
                 test: {
                     name: "cli",
                     environment: "node",
-                    setupFiles: ["tests/helpers/coreSetup.ts"],
+                    setupFiles: ["tests/helpers/coreSetup.ts", "tests/helpers/cliSetup.ts"],
                     include: ["tests/unit/cli/**/*.test.ts"],
                 },
             },
