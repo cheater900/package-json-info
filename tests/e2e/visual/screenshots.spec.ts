@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { mockExternalApis, loadJson, expandAllSections } from "../helpers";
+import { mockExternalApis, loadJson, expandAllSections, VIEWPORT_PHONE_SMALL } from "../helpers";
 import { STORAGE_KEY_SETTINGS } from "../../../src/app/constants";
 
 /**
@@ -13,7 +13,6 @@ const VIEWPORT_LARGE_DESKTOP = { width: 1400, height: VIEWPORT_HEIGHT };
 const VIEWPORT_MID_DESKTOP = { width: 900, height: VIEWPORT_HEIGHT };
 const VIEWPORT_NARROW = { width: 600, height: VIEWPORT_HEIGHT };
 const VIEWPORT_PHONE = { width: 390, height: 844 };
-const VIEWPORT_PHONE_SMALL = { width: 360, height: 740 };
 
 test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);

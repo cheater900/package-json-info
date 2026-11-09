@@ -10,6 +10,9 @@ import {
 } from "../../src/core/constants";
 import { LOOKUP_DB_NAME, LOOKUP_DB_STORE } from "../../src/app/constants";
 
+/** Narrowest phone viewport the layout supports. */
+export const VIEWPORT_PHONE_SMALL = { width: 360, height: 740 };
+
 /**
  * The app talks to the real npm registry, npm downloads API, and GitHub API.
  * Route every one of those through canned responses so tests run fully

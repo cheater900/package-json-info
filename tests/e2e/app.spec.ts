@@ -8,6 +8,7 @@ import {
     fetchFromUrlInput,
     hasStoredLookup,
     shownPackageName,
+    VIEWPORT_PHONE_SMALL,
 } from "./helpers";
 import { TOGGLEABLE_COLUMNS } from "../../src/core/utils/tableColumns";
 import {
@@ -51,12 +52,10 @@ test("dependency table scrolls horizontally", async ({ page }) => {
     expect(scrolledLeft).toBeGreaterThan(0);
 });
 
-const VIEWPORT_PHONE = { width: 360, height: 740 };
-
 test("phone viewport keeps page width, scrolls table only, Name column sticks, settings fit", async ({
     page,
 }) => {
-    await page.setViewportSize(VIEWPORT_PHONE);
+    await page.setViewportSize(VIEWPORT_PHONE_SMALL);
     await page.goto("/");
     await expandAllSections(page);
     await expect(page.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
@@ -93,12 +92,12 @@ test("phone viewport keeps page width, scrolls table only, Name column sticks, s
     const panelBox = (await settingsPanel.boundingBox())!;
     expect(panelBox.x).toBeGreaterThanOrEqual(0);
     expect(panelBox.y).toBeGreaterThanOrEqual(0);
-    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE.width);
-    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE.height);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE_SMALL.width);
+    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE_SMALL.height);
 });
 
 test("phone viewport fits Filters panel width", async ({ page }) => {
-    await page.setViewportSize(VIEWPORT_PHONE);
+    await page.setViewportSize(VIEWPORT_PHONE_SMALL);
     await page.goto("/");
     await expandAllSections(page);
     // Scrolled to the tables, the search row sticks to the top.
@@ -113,7 +112,7 @@ test("phone viewport fits Filters panel width", async ({ page }) => {
     await expect(panel).toBeVisible();
     const panelBox = (await panel.boundingBox())!;
     expect(panelBox.x).toBeGreaterThanOrEqual(0);
-    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE.width);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE_SMALL.width);
 });
 
 test("fetches package in both dependencies and devDependencies once", async ({ page }) => {
