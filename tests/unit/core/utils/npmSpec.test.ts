@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRegistrySpec } from "../../../../src/core/utils/npmSpec";
+import { resolveRegistrySpec, splitNameAndRange } from "../../../../src/core/utils/npmSpec";
 
 describe("resolveRegistrySpec", () => {
     it("passes plain range through", () => {
@@ -38,5 +38,19 @@ describe("resolveRegistrySpec", () => {
         ["a", "npm:.@1.0.0"],
     ])("throws for root-path registry name %j %j", (name, spec) => {
         expect(() => resolveRegistrySpec(name, spec)).toThrow("not a valid npm package name");
+    });
+});
+
+describe("splitNameAndRange", () => {
+    it("splits at first @ past scope marker", () => {
+        expect(splitNameAndRange("@scope/pkg@npm:other@^1.0.0")).toEqual({
+            name: "@scope/pkg",
+            range: "npm:other@^1.0.0",
+        });
+    });
+
+    it("returns null without range separator", () => {
+        expect(splitNameAndRange("@scope/pkg")).toBeNull();
+        expect(splitNameAndRange("pkg")).toBeNull();
     });
 });

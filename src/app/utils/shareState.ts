@@ -1,12 +1,11 @@
 import { MAX_SHARE_STEP_LENGTH, MAX_SHARE_STEPS, SHARE_STEP_QUERY_PARAM } from "../constants";
 import type { EntrySource, HistoryEntry } from "./packageJsonHistory";
+import { splitNameAndRange } from "../../core/utils/npmSpec";
 import { isHttpUrl } from "../../core/utils/url";
 
 const STEP_PREFIX_DEPENDENCY = "dep:";
 const STEP_PREFIX_URL = "url:";
 const STEP_PREFIX_WORKSPACE = "ws:";
-/** Version "@" search starts past a scope's leading "@" (@scope/pkg@^1.0.0). */
-const SCOPE_MARKER_LENGTH = "@".length;
 
 function encodeStep(source: EntrySource): string {
     if (source.kind === "url") {
@@ -28,20 +27,12 @@ export function encodeSteps(history: HistoryEntry[], index: number): string[] {
         .flatMap((entry) => (entry.source ? [encodeStep(entry.source)] : []));
 }
 
-/**
- * Splits `name@range` at the first "@" past the scope marker: a package
- * name holds no other "@", a range can (`npm:other@^1.0.0`, git URLs).
- */
 function parseDependencyStep(spec: string): EntrySource | null {
-    const separator = spec.indexOf("@", SCOPE_MARKER_LENGTH);
-    if (separator === -1) {
+    const split = splitNameAndRange(spec);
+    if (!split) {
         return null;
     }
-    return {
-        kind: "dependency",
-        name: spec.slice(0, separator),
-        version: spec.slice(separator + 1),
-    };
+    return { kind: "dependency", name: split.name, version: split.range };
 }
 
 function parseStep(step: string): EntrySource | null {
