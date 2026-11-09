@@ -190,6 +190,17 @@ describe("table output", () => {
         expect(countFetchCalls(fetchMock, "dev-tool")).toBe(0);
     });
 
+    it("strips terminal control chars from untrusted text", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(
+            JSON.stringify({ name: "a\u001b]52;c;cHduZWQ=\u0007b\u009bc\rd", dependencies: {} }),
+        );
+
+        const { stdout } = await runCli(path);
+
+        expect(stdout.split("\n")[0]).toBe("# a\\]52;c;cHduZWQ=bc d");
+    });
+
     it("prints default columns only + skips hidden column requests", async () => {
         const fetchMock = stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
         const path = await writePackageJson(PACKAGE_JSON);

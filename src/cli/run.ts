@@ -84,6 +84,14 @@ Environment (a flag wins over its variable):
 
 const USAGE_HINT = 'Run "package-json-info --help" for usage.\n';
 
+/**
+ * C0 + DEL + C1 control chars but tab and newline. Registry and package.json
+ * text is untrusted; raw, its escape sequences could rewrite the terminal
+ * (hide lines, set clipboard via OSC 52, spoof links).
+ */
+// oxlint-disable-next-line no-control-regex
+const TERMINAL_CONTROL_CHARS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g;
+
 const COLUMN_KEYS = DEFAULT_COLUMN_ORDER.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
 
 /** Options, or the message why the arguments are invalid; null for --help. */
@@ -269,12 +277,21 @@ async function execute(options: CliOptions): Promise<{ stdout: string; stderr: s
     return { stdout: "", stderr: `${path}\n` };
 }
 
+/** `io` printing text without terminal control chars. */
+function terminalSafeIo(io: CliIo): CliIo {
+    return {
+        stdout: (text) => io.stdout(text.replace(TERMINAL_CONTROL_CHARS, "")),
+        stderr: (text) => io.stderr(text.replace(TERMINAL_CONTROL_CHARS, "")),
+    };
+}
+
 /** Runs the CLI on `argv` (arguments after the script path); resolves to the exit code. */
 export async function run(
     argv: string[],
-    io: CliIo,
+    rawIo: CliIo,
     env: NodeJS.ProcessEnv = process.env,
 ): Promise<number> {
+    const io = terminalSafeIo(rawIo);
     const options = parseOptions(argv);
     if (options === null) {
         io.stdout(USAGE);
