@@ -11,7 +11,9 @@
     --font-scale: 1;
     --glow: currentColor;
     --heading: var(--mono);
+    --modal-backdrop: rgba(0, 0, 0, 0.5);
     --modal-content-padding: calc(16px * var(--space-scale));
+    --modal-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
     --mono: "Courier New", ui-monospace, Consolas, monospace;
     /* Monospace for <pre>, distinct from Courier New of --mono body text.
        No Liberation Mono: Linux aliases Courier New to it. */
@@ -53,6 +55,8 @@
     --code-bg: #e9f4eb;
     --error: #c62828;
     --glow: transparent;
+    --modal-backdrop: rgba(11, 67, 32, 0.35);
+    --modal-shadow: 0 10px 40px rgba(11, 67, 32, 0.25);
     --scanline: transparent;
     --shadow: rgba(8, 117, 43, 0.15) 0 0 12px 0;
     --text: #14592a;

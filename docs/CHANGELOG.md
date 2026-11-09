@@ -120,6 +120,8 @@ Condensed from git history. Newest month first.
   Titles: package name for View, "Source of" package for its tree, "Deps
   of" or "Dev Deps of" package for expanded table, plus Export and Network
   logs. Dialogs drop own headings.
+- **Modal backdrop and shadow** follow theme via `--modal-backdrop` and
+  `--modal-shadow`: green tint in light theme, dark theme unchanged.
 
 #### Package data
 
