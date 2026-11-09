@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_BAD_ARGUMENTS, EXIT_LOAD_FAILURE, EXIT_OK, USAGE, run } from "../../../src/cli/run";
 import { clearPackageInfoCache } from "../../../src/core/api/npmPackage";
+import "../../helpers/coreSetup";
 import { countFetchCalls, stubFetchByUrl } from "../../helpers/fetchMock";
 
 const REGISTRY_LEFT_PAD = {

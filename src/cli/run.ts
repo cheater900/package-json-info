@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { parseArgs } from "node:util";
+import { bindCore } from "./coreBinding";
+import type { CoreSettingsInput } from "./coreBinding";
 import { fetchPackagesInfo } from "../core/api/npmPackage";
 import { fetchDependencySource, fetchUrlSource } from "../core/api/packageJsonSource";
 import type { LoadedSource } from "../core/api/packageJsonSource";
@@ -32,7 +34,7 @@ export type CliIo = {
 };
 
 /** Parsed command line. */
-export type CliOptions = {
+export type CliOptions = CoreSettingsInput & {
     source: string;
     includeDev: boolean;
     /** Exporter id; export to a file instead of printing. */
@@ -52,7 +54,8 @@ export const EXIT_LOAD_FAILURE = 1;
 export const EXIT_BAD_ARGUMENTS = 2;
 
 export const USAGE = `Usage: package-json-info <source> [--no-dev] [--format <id> | --report <md|pdf>]
-                         [--output <file>] [-h|--help]
+                         [--output <file>] [--proxy-url <url>] [--timeout <ms>]
+                         [--concurrency <n>] [-h|--help]
 
 Print dependency tables of a package.json as Markdown, or export them to a file.
 
@@ -60,12 +63,21 @@ Print dependency tables of a package.json as Markdown, or export them to a file.
           package.json) or npm package spec (name or name@version)
 
 Options:
-  --no-dev         Skip devDependencies
-  --format <id>    Export to a file instead of printing (${EXPORTERS.map((e) => e.id).join(", ")})
-  --report <kind>  Print a Markdown report (md) or write a PDF report (pdf)
-  --output <file>  Target file of --format or --report pdf
-                   (default: <package>-dependencies.<ext> or <package>-report.pdf)
-  -h, --help       Show this help
+  --no-dev             Skip devDependencies
+  --format <id>        Export to a file instead of printing (${EXPORTERS.map((e) => e.id).join(", ")})
+  --report <kind>      Print a Markdown report (md) or write a PDF report (pdf)
+  --output <file>      Target file of --format or --report pdf
+                       (default: <package>-dependencies.<ext> or <package>-report.pdf)
+  --proxy-url <url>    CORS proxy template; {url} marks the target URL
+  --timeout <ms>       Request timeout in milliseconds
+  --concurrency <n>    Parallel requests
+  -h, --help           Show this help
+
+Environment (a flag wins over its variable):
+  PJI_PROXY_URL          Same as --proxy-url
+  PJI_FETCH_TIMEOUT_MS   Same as --timeout
+  PJI_FETCH_CONCURRENCY  Same as --concurrency
+  GITHUB_TOKEN           GitHub token for higher API limits (env only)
 `;
 
 const USAGE_HINT = 'Run "package-json-info --help" for usage.\n';
@@ -84,6 +96,9 @@ function parseOptions(argv: string[]): CliOptions | string | null {
                 format: { type: "string" },
                 report: { type: "string" },
                 output: { type: "string" },
+                "proxy-url": { type: "string" },
+                timeout: { type: "string" },
+                concurrency: { type: "string" },
                 help: { type: "boolean", short: "h", default: false },
             },
         }),
@@ -102,7 +117,16 @@ function parseOptions(argv: string[]): CliOptions | string | null {
     if (problem) {
         return problem;
     }
-    return { source: parsed.positionals[0], includeDev: dev, format, report, output };
+    return {
+        source: parsed.positionals[0],
+        includeDev: dev,
+        format,
+        report,
+        output,
+        proxyUrl: parsed.values["proxy-url"],
+        timeout: parsed.values.timeout,
+        concurrency: parsed.values.concurrency,
+    };
 }
 
 /** Message why the export flags conflict or hold an unknown value; undefined when valid. */
@@ -242,7 +266,11 @@ async function execute(options: CliOptions): Promise<{ stdout: string; stderr: s
 }
 
 /** Runs the CLI on `argv` (arguments after the script path); resolves to the exit code. */
-export async function run(argv: string[], io: CliIo): Promise<number> {
+export async function run(
+    argv: string[],
+    io: CliIo,
+    env: NodeJS.ProcessEnv = process.env,
+): Promise<number> {
     const options = parseOptions(argv);
     if (options === null) {
         io.stdout(USAGE);
@@ -250,6 +278,11 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
     }
     if (typeof options === "string") {
         io.stderr(`${options}\n${USAGE_HINT}`);
+        return EXIT_BAD_ARGUMENTS;
+    }
+    const bound = bindCore(options, env);
+    if (typeof bound === "string") {
+        io.stderr(`${bound}\n${USAGE_HINT}`);
         return EXIT_BAD_ARGUMENTS;
     }
     const output = await settle(() => execute(options));
