@@ -152,6 +152,9 @@ Each step stops table fetch of step before.
   file view.
 - **Modals** show centered title on top, close button on right. Escape or
   click outside also closes them.
+- **Animations**: modals slide in from screen top to center and back up on
+  close. Columns accordion and Filters panel slide open and closed. OS
+  reduced motion setting turns slides off.
 
 ## Export
 

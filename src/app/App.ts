@@ -6,6 +6,8 @@ import { useShareState } from "./composables/useShareState";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import Modal from "./components/Modal.vue";
+import Accordion from "./components/Accordion.vue";
+import CollapseTransition from "./components/CollapseTransition.vue";
 import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
@@ -63,6 +65,8 @@ export default defineComponent({
         DependenciesTable,
         ColumnVisibilityPanel,
         Modal,
+        Accordion,
+        CollapseTransition,
         SourceTreeBrowser,
         PackageSummaryCard,
         SettingsMenu,

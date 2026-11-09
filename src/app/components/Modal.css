@@ -59,3 +59,33 @@
     top: 50%;
     transform: translateY(-50%);
 }
+
+/* Callers wrap Modal in <Transition name="modal">: the backdrop fades while
+   the panel slides from above the screen to center. */
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.modal-enter-active .modal__panel {
+    transition: transform 0.3s ease-out;
+}
+
+.modal-leave-active .modal__panel {
+    transition: transform 0.3s ease-in;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+/* Lifts the panel's bottom edge to the top of the screen. */
+.modal-enter-from .modal__panel,
+.modal-leave-to .modal__panel {
+    transform: translateY(calc(-50vh - 50%));
+
+    @media (prefers-reduced-motion: reduce) {
+        transform: none;
+    }
+}

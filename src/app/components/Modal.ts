@@ -6,7 +6,8 @@ import IconCross from "./IconCross.vue";
 /**
  * Open while mounted: callers toggle it with v-if. Owns Escape, backdrop
  * click and scroll lock. Shows `title` centered on top, close button on the
- * right, and its slot below.
+ * right, and its slot below. Wrap the v-if in `<Transition name="modal">`
+ * to slide it in and out (classes in Modal.css).
  */
 export default defineComponent({
     components: { IconCross },

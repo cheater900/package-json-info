@@ -59,11 +59,11 @@
             </div>
         </section>
 
-        <details class="accordion" open>
-            <summary>
+        <accordion class="accordion">
+            <template #summary>
                 <icon-columns class="inline-icon" />
                 {{ t("sections.columns") }}
-            </summary>
+            </template>
             <column-visibility-panel
                 :visible-columns="visibleColumns"
                 :column-order="columnOrder"
@@ -73,7 +73,7 @@
                 <input type="checkbox" v-model="shrinkColumnLabels" />
                 {{ t("sections.shrinkColumnLabels") }}
             </label>
-        </details>
+        </accordion>
 
         <section v-if="history.length > 1" class="history-controls">
             <button type="button" @click="goBack" :disabled="!canGoBack">
@@ -150,12 +150,11 @@
                 </span>
             </button>
         </div>
-        <filters-panel
-            v-show="isFiltersOpen"
-            :id="filtersPanelId"
-            ref="filtersPanelRef"
-            v-model="healthFilters"
-        />
+        <collapse-transition>
+            <div v-show="isFiltersOpen">
+                <filters-panel :id="filtersPanelId" ref="filtersPanelRef" v-model="healthFilters" />
+            </div>
+        </collapse-transition>
 
         <details
             v-for="section in tableSections"
@@ -225,47 +224,49 @@
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
 
-        <modal v-if="modalContent" :title="modalTitle" @close="closeModal">
-            <div v-if="expandedSection" class="table-modal-content">
-                <dependencies-table
-                    v-bind="tableProps"
-                    :dependencies="expandedSection.dependencies"
-                    :is-loading="expandedSection.isLoading"
-                    :list-id="expandedSection.id"
-                    v-on="tableListeners"
+        <Transition name="modal">
+            <modal v-if="modalContent" :title="modalTitle" @close="closeModal">
+                <div v-if="expandedSection" class="table-modal-content">
+                    <dependencies-table
+                        v-bind="tableProps"
+                        :dependencies="expandedSection.dependencies"
+                        :is-loading="expandedSection.isLoading"
+                        :list-id="expandedSection.id"
+                        v-on="tableListeners"
+                    />
+                </div>
+                <package-summary-card
+                    v-else-if="modalContent.kind === 'summary'"
+                    :dependency="modalContent.dependency"
+                    @open-source-tree="openSourceTree"
                 />
-            </div>
-            <package-summary-card
-                v-else-if="modalContent.kind === 'summary'"
-                :dependency="modalContent.dependency"
-                @open-source-tree="openSourceTree"
-            />
-            <source-tree-browser
-                v-else-if="modalContent.kind === 'sourceTree'"
-                :dependency-name="modalContent.dependency.name"
-                :source-tree="modalContent.dependency.sourceTree"
-            />
-            <export-dialog
-                v-else-if="modalContent.kind === 'export'"
-                :tables="tableSections"
-                :initial-table-ids="[modalContent.sectionId]"
-                :column-order="columnOrder"
-                :initial-columns="visibleColumnKeys"
-                :fetched-columns="fetchedColumns"
-                :title="exportTitle"
-                :load-rows="fetchRowsWithColumns"
-                @close="closeModal"
-            />
-            <network-log-dialog
-                v-else-if="modalContent.kind === 'networkLog'"
-                @retry="retryNetworkRequest"
-            />
-            <report-dialog
-                v-else-if="modalContent.kind === 'report'"
-                :report="modalContent.report"
-                :file-base-name="reportFileName"
-            />
-        </modal>
+                <source-tree-browser
+                    v-else-if="modalContent.kind === 'sourceTree'"
+                    :dependency-name="modalContent.dependency.name"
+                    :source-tree="modalContent.dependency.sourceTree"
+                />
+                <export-dialog
+                    v-else-if="modalContent.kind === 'export'"
+                    :tables="tableSections"
+                    :initial-table-ids="[modalContent.sectionId]"
+                    :column-order="columnOrder"
+                    :initial-columns="visibleColumnKeys"
+                    :fetched-columns="fetchedColumns"
+                    :title="exportTitle"
+                    :load-rows="fetchRowsWithColumns"
+                    @close="closeModal"
+                />
+                <network-log-dialog
+                    v-else-if="modalContent.kind === 'networkLog'"
+                    @retry="retryNetworkRequest"
+                />
+                <report-dialog
+                    v-else-if="modalContent.kind === 'report'"
+                    :report="modalContent.report"
+                    :file-base-name="reportFileName"
+                />
+            </modal>
+        </Transition>
     </div>
 </template>
 <script lang="ts" src="./App.ts"></script>

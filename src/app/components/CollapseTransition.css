@@ -1,0 +1,9 @@
+.collapse-enter-active,
+.collapse-leave-active {
+    overflow: hidden;
+    transition: height 0.2s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}

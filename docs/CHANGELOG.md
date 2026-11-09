@@ -116,6 +116,9 @@ Condensed from git history. Newest month first.
 
 #### Modals
 
+- **Modals** slide in from screen top to center while backdrop fades in,
+  and slide back up on close. **Columns accordion** and **Filters panel**
+  slide open and closed. Reduced motion setting drops slide.
 - Every **modal** has centered **title** on top, close button on right.
   Titles: package name for View, "Source of" package for its tree, "Deps
   of" or "Dev Deps of" package for expanded table, plus Export and Network

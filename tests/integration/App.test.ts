@@ -5,6 +5,7 @@ import ColumnVisibilityPanel from "../../src/app/components/ColumnVisibilityPane
 import DependenciesTable from "../../src/app/components/DependenciesTable.vue";
 import ExportDialog from "../../src/app/components/ExportDialog.vue";
 import FiltersPanel from "../../src/app/components/FiltersPanel.vue";
+import Modal from "../../src/app/components/Modal.vue";
 import NetworkLogDialog from "../../src/app/components/NetworkLogDialog.vue";
 import PackageSummaryCard from "../../src/app/components/PackageSummaryCard.vue";
 import ReportDialog from "../../src/app/components/ReportDialog.vue";
@@ -105,7 +106,7 @@ describe("App", () => {
         expect(document.body.querySelector(".modal .table-modal-content")).not.toBeNull();
         expect(modalTitle()).toBe("Dev Deps of package-json-info");
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(3);
-        await wrapper.findComponent({ name: "Modal" }).vm.$emit("close");
+        await wrapper.findComponent(Modal).vm.$emit("close");
         expect(document.body.querySelector(".modal")).toBeNull();
     });
 
