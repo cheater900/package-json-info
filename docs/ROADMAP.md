@@ -3,20 +3,6 @@
 Planned work, by area, highest priority first. Finished items move to
 [CHANGELOG.md](CHANGELOG.md).
 
-## CLI
-
-Command-line app in `src/cli`, calling `src/core` like web app does.
-
-- **Core binding**: call `configureCore()` with settings from flags or
-  env, GitHub token from env. Validate settings first, as app
-  `settings.ts` does: core uses them as given (NaN timeout makes
-  `AbortSignal.timeout` throw).
-- **File lookup store** in place of IndexedDB, so offline fallback works.
-- **Export to file**: write exporter `Blob` to disk in place of browser
-  download helper.
-- **Report output**: fetch `REPORT_COLUMN_KEYS`, run `buildReport`, print
-  `renderReportMarkdown` to stdout or write `renderReportPdf` to file.
-
 ## Transitive dependency resolution
 
 Walk each package's own dependency tree, as package manager resolves it,

@@ -224,8 +224,21 @@ Markdown to stdout, with default visible columns.
 - **Source**: existing file path, http(s) URL (repo URLs resolve to their
   package.json, as in web app) or npm spec (`name` or `name@version`).
 - **`--no-dev`** skips devDependencies.
-- **Exit codes**: 0 success, 1 load or parse failure (message on stderr),
-  2 bad arguments.
+- **Export**: `--format <csv|xlsx|markdown|html|pdf>` writes export file
+  instead of printing. `--output <file>` names it; default
+  `<package>-dependencies.<ext>` in current dir.
+- **Report**: `--report md` prints dependency report to stdout,
+  `--report pdf` writes `<package>-report.pdf` (or `--output`). Report
+  covers all rows: no search, no filters.
+- **Settings**: `--proxy-url`, `--timeout <ms>`, `--concurrency <n>`. Env
+  fallbacks: `PJI_PROXY_URL`, `PJI_FETCH_TIMEOUT_MS`,
+  `PJI_FETCH_CONCURRENCY`. Flag wins over env. `GITHUB_TOKEN` env raises
+  GitHub rate limit; no flag, so token stays out of shell history.
+- **Offline cache**: last good lookups go to
+  `$XDG_CACHE_HOME/package-json-info` (else `~/.cache/package-json-info`).
+  Failed fetch serves stored value. `--no-cache` skips cache.
+- **Exit codes**: 0 success, 1 load, parse or write failure (message on
+  stderr), 2 bad arguments.
 
 ## Settings
 

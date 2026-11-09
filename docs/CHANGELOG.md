@@ -8,6 +8,18 @@ Condensed from git history. Newest month first.
 
 #### CLI
 
+- **Offline cache**: last good lookups go to
+  `$XDG_CACHE_HOME/package-json-info` (else `~/.cache/package-json-info`),
+  one file per lookup. Failed fetch serves stored value, as web app does
+  with IndexedDB. **`--no-cache`** skips it.
+- **Settings flags** `--proxy-url`, `--timeout`, `--concurrency`, with env
+  fallbacks `PJI_PROXY_URL`, `PJI_FETCH_TIMEOUT_MS`,
+  `PJI_FETCH_CONCURRENCY`. **GitHub token** from `GITHUB_TOKEN` only.
+  Invalid number warns and uses default; proxy URL with credentials exits 2.
+- **`--format <csv|xlsx|markdown|html|pdf>`** writes export file,
+  **`--report md`** prints dependency report, **`--report pdf`** writes
+  it. `--output` names file, else `<package>-dependencies.<ext>` or
+  `<package>-report.pdf` in current dir; written path goes to stderr.
 - **`package-json-info <source>`** prints Markdown dependency tables
   (Deps, Dev Deps unless `--no-dev`) to stdout. Source: file path, http(s)
   URL (repo URLs resolve to their package.json) or npm spec. Exit code 1
@@ -313,6 +325,11 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **Settings validation** shared by app and CLI: `isConfigInt` +
+  `readPositiveInt` in `src/core/utils/configInt.ts`, `isProxyUrl` in
+  `src/core/utils/url.ts`, `StoredLookupSchema` in
+  `src/core/utils/memoizeLookup.ts`. oxlint bans `vue` and `src/app`
+  imports in `src/cli` too.
 - **`src/core` + `src/app` split**: `src/core` holds fetch and data
   logic (api, formatting, health, columns, export renderers, i18n, domain
   types); `src/app` holds Vue app, settings, storage, network log, share

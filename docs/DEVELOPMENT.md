@@ -24,7 +24,7 @@
 | `src/app/composables/`              | Vue state: column preferences, package.json history, input sources, popovers, export lock.               |
 | `src/app/components/`               | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
 | `src/app/utils/`                    | Browser helpers: storage, IndexedDB, token storage, network log, share state, download.                  |
-| `src/cli/`                          | Node CLI. `main.ts` entry point, `run.ts` argument parsing, source loading and output.                   |
+| `src/cli/`                          | Node CLI: `main.ts` entry, `run.ts` args and output, `coreBinding.ts`, file lookup store, file writer.   |
 | `public/`                           | Static assets served as-is.                                                                              |
 | `tests/unit/core/`                  | Vitest unit tests of `src/core`, run in Node.                                                            |
 | `tests/unit/cli/`                   | Vitest unit tests of `src/cli`, run in Node.                                                             |
@@ -52,8 +52,11 @@ Core reads host state only through `coreRuntime()` from
   store; without one, failed lookups throw. Rejecting `load` counts as
   nothing stored, rejecting `save` loses only offline copy.
 
-Core uses settings as given. Host validates them first: app does so in
-`src/app/settings.ts`. Core API still checks its own inputs, so
+Core uses settings as given. Host validates them first: app in
+`src/app/settings.ts`, CLI in `src/cli/coreBinding.ts`, both with
+`isConfigInt` and `isProxyUrl` from core. CLI resolves flag > env >
+default once, then plugs settings plus `src/cli/fileLookupStore.ts`
+(one sha256-named file per lookup, tmp file + rename). Core API still checks its own inputs, so
 `fetchUrlSource` rejects any URL that is not absolute http(s).
 
 `src/app/coreBinding.ts` plugs these in for web app. Three checks keep core
@@ -203,7 +206,10 @@ Vitest restores spies and stubbed globals after each test (`restoreMocks`,
 `unstubGlobals` in `vite.config.js`). Test files need no cleanup hooks for
 them. `core` project resets core runtime before each test; core tests set
 settings through `coreSettings` from `tests/helpers/core.ts`. `app` project
-binds core to app settings once per file.
+binds core to app settings once per file. `cli` project also gives each
+test fresh `HOME` and `XDG_CACHE_HOME` (`tests/helpers/cliSetup.ts`), so
+runs never write real `~/.cache`. Core saves lookups without awaiting;
+tests wait for cache files with `vi.waitFor`.
 
 Run unit and component tests:
 

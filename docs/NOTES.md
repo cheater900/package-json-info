@@ -39,6 +39,10 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 
 ## Behavior to know
 
+- **CLI output marks no stale rows.** Offline, CLI tables show stored
+  values like live ones; export documents carry no stale note.
+  Report data coverage still counts rows using stored values.
+
 - **Health column starts hidden for existing users.** Saved column
   preferences lack new key, so column is hidden and last in order. New
   users see it after Outdated.
