@@ -1,0 +1,202 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { EXIT_BAD_ARGUMENTS, EXIT_LOAD_FAILURE, EXIT_OK, USAGE, run } from "../../../src/cli/run";
+import { clearPackageInfoCache } from "../../../src/core/api/npmPackage";
+import { countFetchCalls, stubFetchByUrl } from "../../helpers/fetchMock";
+
+const REGISTRY_LEFT_PAD = {
+    "dist-tags": { latest: "1.3.0" },
+    time: {},
+    versions: {
+        "1.2.0": { name: "left-pad", version: "1.2.0" },
+        "1.3.0": { name: "left-pad", version: "1.3.0" },
+    },
+};
+
+let tempDir: string;
+
+async function runCli(...argv: string[]) {
+    let stdout = "";
+    let stderr = "";
+    const code = await run(argv, {
+        stdout: (text) => {
+            stdout += text;
+        },
+        stderr: (text) => {
+            stderr += text;
+        },
+    });
+    return { code, stdout, stderr };
+}
+
+async function writePackageJson(content: string) {
+    const path = join(tempDir, "package.json");
+    await writeFile(path, content);
+    return path;
+}
+
+beforeEach(async () => {
+    clearPackageInfoCache();
+    tempDir = await mkdtemp(join(tmpdir(), "package-json-info-cli-"));
+});
+
+afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+});
+
+describe("arguments", () => {
+    it("prints usage for --help", async () => {
+        expect(await runCli("--help")).toEqual({ code: EXIT_OK, stdout: USAGE, stderr: "" });
+    });
+
+    it("prints usage for -h", async () => {
+        expect((await runCli("-h")).stdout).toBe(USAGE);
+    });
+
+    it("exits 2 without source", async () => {
+        const result = await runCli();
+
+        expect(result.code).toBe(EXIT_BAD_ARGUMENTS);
+        expect(result.stderr).toContain("<source>");
+        expect(result.stdout).toBe("");
+    });
+
+    it("exits 2 for two sources", async () => {
+        expect((await runCli("a", "b")).code).toBe(EXIT_BAD_ARGUMENTS);
+    });
+
+    it("exits 2 for unknown flag", async () => {
+        const result = await runCli("package.json", "--bogus");
+
+        expect(result.code).toBe(EXIT_BAD_ARGUMENTS);
+        expect(result.stderr).toContain("--bogus");
+    });
+});
+
+describe("source dispatch", () => {
+    it("reads file path", async () => {
+        const fetchMock = stubFetchByUrl({});
+        const path = await writePackageJson('{"name":"local-app"}');
+
+        const result = await runCli(path);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(result.stdout).toMatch(/^# local-app\n/);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("fetches http URL", async () => {
+        const fetchMock = stubFetchByUrl({
+            "example.com/package.json": { name: "remote-app" },
+        });
+
+        const result = await runCli("https://example.com/package.json");
+
+        expect(result.stdout).toMatch(/^# remote-app\n/);
+        expect(countFetchCalls(fetchMock, "example.com/package.json")).toBe(1);
+    });
+
+    it("fetches npm spec version from registry", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+
+        const result = await runCli("left-pad@1.2.0");
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(result.stdout).toMatch(/^# left-pad\n/);
+    });
+
+    it("fetches latest for npm name without version", async () => {
+        const fetchMock = stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+
+        expect((await runCli("left-pad")).code).toBe(EXIT_OK);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/left-pad")).toBe(1);
+    });
+});
+
+describe("load failures", () => {
+    it("exits 1 for unknown npm package", async () => {
+        stubFetchByUrl({});
+
+        const result = await runCli("no-such-pkg");
+
+        expect(result).toEqual({
+            code: EXIT_LOAD_FAILURE,
+            stdout: "",
+            stderr: 'Could not find package.json data for "no-such-pkg".\n',
+        });
+    });
+
+    it("exits 1 for URL 404", async () => {
+        stubFetchByUrl({});
+
+        const result = await runCli("https://example.com/package.json");
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(result.stderr).not.toBe("");
+    });
+
+    it("exits 1 for invalid JSON", async () => {
+        const path = await writePackageJson("{not json");
+
+        const result = await runCli(path);
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(result.stderr).toMatch(/^That's not valid JSON: /);
+    });
+
+    it("exits 1 for schema failure", async () => {
+        const path = await writePackageJson('{"dependencies":["left-pad"]}');
+
+        const result = await runCli(path);
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(result.stderr).toMatch(/^Invalid package\.json: dependencies: /);
+    });
+});
+
+describe("table output", () => {
+    const PACKAGE_JSON = JSON.stringify({
+        name: "app",
+        dependencies: { "left-pad": "1.2.0" },
+        devDependencies: { "dev-tool": "1.0.0" },
+    });
+
+    it("prints Deps + Dev Deps tables as Markdown", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(PACKAGE_JSON);
+
+        const { code, stdout } = await runCli(path);
+        const lines = stdout.split("\n");
+
+        expect(code).toBe(EXIT_OK);
+        expect(lines.slice(0, 4)).toEqual(["# app", "", "## Deps", ""]);
+        expect(lines[4]).toMatch(/^\| Name \| Version \| /);
+        expect(lines[6]).toMatch(/^\| left-pad \| 1\.2\.0 \| /);
+        expect(stdout).toContain("## Dev Deps");
+        expect(stdout).toMatch(/^\| dev-tool \| /m);
+    });
+
+    it("skips devDependencies for --no-dev", async () => {
+        const fetchMock = stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(PACKAGE_JSON);
+
+        const { stdout } = await runCli(path, "--no-dev");
+
+        expect(stdout).not.toContain("## Dev Deps");
+        expect(countFetchCalls(fetchMock, "dev-tool")).toBe(0);
+    });
+
+    it("prints default columns only + skips hidden column requests", async () => {
+        const fetchMock = stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
+        const path = await writePackageJson(PACKAGE_JSON);
+
+        const { stdout } = await runCli(path);
+
+        expect(stdout).not.toContain("Vulnerabilities");
+        expect(stdout).not.toContain("Bundle size");
+        expect(countFetchCalls(fetchMock, "api.osv.dev")).toBe(0);
+        expect(countFetchCalls(fetchMock, "bundlephobia.com")).toBe(0);
+    });
+});

@@ -2,9 +2,13 @@
     "name": "package-json-info",
     "version": "0.0.0",
     "private": true,
+    "bin": {
+        "package-json-info": "dist-cli/main.js"
+    },
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "build:cli": "vite build --ssr src/cli/main.ts --outDir dist-cli",
         "dev": "vite",
         "format": "oxfmt --write",
         "format:check": "oxfmt --check",
@@ -14,7 +18,7 @@
         "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run",
         "test:e2e": "playwright test --project=chromium",
         "test:watch": "NODE_OPTIONS=--no-experimental-webstorage vitest",
-        "typecheck": "vue-tsc --noEmit && tsc --noEmit -p src/core"
+        "typecheck": "vue-tsc --noEmit && tsc --noEmit -p src/core && tsc --noEmit -p src/cli"
     },
     "dependencies": {
         "jspdf": "^4.2.1",

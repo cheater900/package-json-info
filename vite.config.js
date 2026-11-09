@@ -18,6 +18,10 @@ export default defineConfig({
     optimizeDeps: {
         exclude: ["vue-json-pretty"],
     },
+    // SSR build = CLI bundle (npm run build:cli): web app icons do not belong in it.
+    environments: {
+        ssr: { build: { copyPublicDir: false } },
+    },
     test: {
         restoreMocks: true,
         unstubGlobals: true,
@@ -30,6 +34,15 @@ export default defineConfig({
                     environment: "node",
                     setupFiles: ["tests/helpers/coreSetup.ts"],
                     include: ["tests/unit/core/**/*.test.ts"],
+                },
+            },
+            {
+                extends: true,
+                test: {
+                    name: "cli",
+                    environment: "node",
+                    setupFiles: ["tests/helpers/coreSetup.ts"],
+                    include: ["tests/unit/cli/**/*.test.ts"],
                 },
             },
             {
