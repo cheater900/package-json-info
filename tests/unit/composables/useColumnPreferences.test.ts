@@ -59,7 +59,7 @@ describe("reorderColumns", () => {
         );
     });
 
-    it("persists change to localStorage on toggle", async () => {
+    it("persists new order to localStorage", async () => {
         const { columnOrder, reorderColumns } = useColumnPreferences();
         const visibleOrder = columnOrder.value.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
         const reversedVisible = [...visibleOrder].reverse();

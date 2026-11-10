@@ -166,6 +166,17 @@ describe("history navigation", () => {
         expect(pkg.value.name).toBe("first");
     });
 
+    it("goForward no-op at end", async () => {
+        stubFetchResolvesEmpty();
+        const visibleColumns = ref(new Set<string>());
+        const { goForward, pkg, historyIndex } = await loadTwoEntries(visibleColumns);
+
+        goForward();
+
+        expect(pkg.value.name).toBe("second");
+        expect(historyIndex.value).toBe(1);
+    });
+
     it("revisiting fetched entry reuses cached deps, no refetch", async () => {
         stubFetchResolvesEmpty();
         const visibleColumns = ref(new Set<string>());
@@ -196,6 +207,24 @@ describe("reacting to visibleColumns changes", () => {
         await nextTick();
 
         await vi.waitFor(() => expect(fetchSpy.mock.calls.length).toBeGreaterThan(callsBefore));
+    });
+});
+
+describe("empty history", () => {
+    it("ignores column, token and proxy changes before first load", async () => {
+        stubFetchResolvesEmpty();
+        const visibleColumns = ref(new Set<string>());
+        const { pkg, deps, isLoadingDeps } = useHistory(visibleColumns);
+
+        visibleColumns.value = new Set(["license"]);
+        githubToken.value = "abc";
+        settings.proxyUrl = "https://p.test/";
+        await flushPromises();
+
+        expect(fetch).not.toHaveBeenCalled();
+        expect(pkg.value).toBeNull();
+        expect(deps.value).toEqual([]);
+        expect(isLoadingDeps.value).toBe(false);
     });
 });
 

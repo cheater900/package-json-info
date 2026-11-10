@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref, nextTick, effectScope } from "vue";
 import { usePackageJsonSources } from "../../../src/composables/usePackageJsonSources";
 import { URL_SYNC_DEBOUNCE_MS } from "../../../src/constants";
-import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
+import { clearPackageInfoCache } from "../../../src/api/npmPackage";
+import { jsonResponse, HTTP_STATUS, statusResponse, textResponse } from "../../helpers/fetchMock";
 
 const PACKAGE_JSON = '{"name":"x"}';
 
@@ -16,6 +17,7 @@ function setup() {
 
 beforeEach(() => {
     window.history.replaceState(null, "", "/");
+    clearPackageInfoCache();
 });
 
 afterEach(() => {
@@ -84,6 +86,61 @@ describe("loadFromUrlInput", () => {
         },
     );
 
+    it("resolves repo host URL through raw file host", async () => {
+        const fetchMock = vi.fn(async () => textResponse(PACKAGE_JSON));
+        vi.stubGlobal("fetch", fetchMock);
+        const { urlInput, loadFromUrlInput, loadPackageJsonText } = setup();
+        urlInput.value = "  https://github.com/o/r  ";
+
+        await loadFromUrlInput();
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://raw.githubusercontent.com/o/r/main/package.json",
+        );
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON);
+    });
+
+    it.each([
+        ["repo without package.json", "https://github.com/o/r", statusResponse(404)],
+        ["empty response body", "https://example.com/package.json", textResponse("")],
+    ])("shows not-found error for %s", async (_case, url, response) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+        const { urlInput, loadFromUrlInput, loadError, loadPackageJsonText } = setup();
+        urlInput.value = url;
+
+        await loadFromUrlInput();
+
+        expect(loadError.value).toBe("Could not find a package.json at that URL.");
+        expect(loadPackageJsonText).not.toHaveBeenCalled();
+    });
+
+    it("clears previous error, flags loading until fetch settles", async () => {
+        let answer;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        answer = resolve;
+                    }),
+            ),
+        );
+        const { urlInput, loadFromUrlInput, loadError, isLoadingInput } = setup();
+        loadError.value = "old error";
+        urlInput.value = "https://example.com/package.json";
+
+        const load = loadFromUrlInput();
+
+        expect(loadError.value).toBeNull();
+        expect(isLoadingInput.value).toBe(true);
+        answer(textResponse(PACKAGE_JSON));
+        await load;
+        expect(isLoadingInput.value).toBe(false);
+    });
+
     it("surfaces request failure message", async () => {
         vi.stubGlobal(
             "fetch",
@@ -96,6 +153,21 @@ describe("loadFromUrlInput", () => {
 
         expect(loadError.value).toContain(String(HTTP_STATUS.serverError));
         expect(isLoadingInput.value).toBe(false);
+    });
+});
+
+describe("loadDependency", () => {
+    it("shows not-found error naming unknown package", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
+        );
+        const { loadDependency, loadError, loadPackageJsonText } = setup();
+
+        await loadDependency({ name: "ghost-pkg", version: "1.0.0" });
+
+        expect(loadError.value).toBe('Could not find package.json data for "ghost-pkg".');
+        expect(loadPackageJsonText).not.toHaveBeenCalled();
     });
 });
 
@@ -135,7 +207,71 @@ describe("loadFromFile", () => {
     });
 });
 
+describe("loadFromFile failures", () => {
+    it("does nothing without chosen file", async () => {
+        const { loadFromFile, loadPackageJsonText, loadError, isLoadingInput } = setup();
+        loadError.value = "old error";
+
+        await loadFromFile({ target: { files: [], value: "" } });
+
+        expect(loadPackageJsonText).not.toHaveBeenCalled();
+        expect(loadError.value).toBe("old error");
+        expect(isLoadingInput.value).toBe(false);
+    });
+
+    it("shows empty-file error for empty file", async () => {
+        const { loadFromFile, loadPackageJsonText, loadError } = setup();
+
+        await loadFromFile({ target: { files: [new File([], "package.json")], value: "" } });
+
+        expect(loadError.value).toBe("The selected file is empty.");
+        expect(loadPackageJsonText).not.toHaveBeenCalled();
+    });
+
+    it("shows read error for unreadable file", async () => {
+        const { loadFromFile, loadError } = setup();
+        const file = { text: () => Promise.reject(new Error("NotReadableError")) };
+
+        await loadFromFile({ target: { files: [file], value: "" } });
+
+        expect(loadError.value).toBe("Failed to read the selected file.");
+    });
+});
+
 describe("URL query sync", () => {
+    it("starts with ?inputUrl= value", () => {
+        window.history.replaceState(null, "", "/?inputUrl=https%3A%2F%2Fa.example%2Fp.json");
+
+        expect(setup().urlInput.value).toBe("https://a.example/p.json");
+    });
+
+    it("syncs under path starting with //, keeps origin and path", async () => {
+        vi.useFakeTimers();
+        const { origin } = window.location;
+        window.history.replaceState(null, "", `${origin}//deep/path?keep=1`);
+        const { urlInput } = setup();
+
+        urlInput.value = "https://a.example";
+        await nextTick();
+        vi.advanceTimersByTime(URL_SYNC_DEBOUNCE_MS);
+
+        expect(window.location.href).toBe(
+            `${origin}//deep/path?keep=1&inputUrl=https%3A%2F%2Fa.example`,
+        );
+    });
+
+    it("drops inputUrl param once input is cleared", async () => {
+        vi.useFakeTimers();
+        window.history.replaceState(null, "", "/?inputUrl=https%3A%2F%2Fa.example&keep=1");
+        const { urlInput } = setup();
+
+        urlInput.value = "";
+        await nextTick();
+        vi.advanceTimersByTime(URL_SYNC_DEBOUNCE_MS);
+
+        expect(window.location.search).toBe("?keep=1");
+    });
+
     it("writes address bar once after typing pauses", async () => {
         vi.useFakeTimers();
         const replaceState = vi.spyOn(window.history, "replaceState");
