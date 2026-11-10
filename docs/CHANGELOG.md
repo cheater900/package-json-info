@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-10
 
+- Name tar typeflag `X` Solaris extended header, skip PAX global header `g` explicitly so it no longer drops pending long path
 - Cover tar edge cases, source tree viewer flow, URL sync under `//` path, tooltip, file tree item and truncated table cells with tests; drop constant-only tests
 - Report tarball response without body as corrupt tarball instead of raw `TypeError`
 - Pass absolute URL to `history.replaceState` so URL input sync works when app is served under path starting with `//`

@@ -1,12 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { concatBytes } from "../../../src/utils/bytes";
-import { gunzip, parseTar, TAR_BLOCK_SIZE, TAR_HEADER } from "../../../src/utils/tarball";
+import {
+    gunzip,
+    parseTar,
+    TAR_BLOCK_SIZE,
+    TAR_HEADER,
+    TAR_TYPEFLAG,
+} from "../../../src/utils/tarball";
 import { buildTar, gzipToArrayBuffer } from "../../fixtures/tarball";
 
-const TYPEFLAG_LEGACY_FILE = "\0";
-const TYPEFLAG_FILE = "0";
 const TYPEFLAG_SYMLINK = "2";
-const TYPEFLAG_PAX_GLOBAL = "g";
 
 function streamOf(buffer: ArrayBuffer): ReadableStream<Uint8Array> {
     return new Response(buffer).body!;
@@ -222,7 +225,7 @@ describe("parseTar edge cases", () => {
                 buildTar([
                     {
                         type: "raw",
-                        typeflag: TYPEFLAG_FILE,
+                        typeflag: TAR_TYPEFLAG.file,
                         prefix: "package/deep",
                         name: "file.js",
                         content: "a",
@@ -240,7 +243,7 @@ describe("parseTar edge cases", () => {
                 buildTar([
                     {
                         type: "raw",
-                        typeflag: TYPEFLAG_LEGACY_FILE,
+                        typeflag: TAR_TYPEFLAG.legacyFile,
                         name: "package/old.js",
                         content: "old",
                     },
@@ -272,7 +275,7 @@ describe("parseTar edge cases", () => {
                 buildTar([
                     {
                         type: "raw",
-                        typeflag: TYPEFLAG_PAX_GLOBAL,
+                        typeflag: TAR_TYPEFLAG.paxGlobalHeader,
                         name: "pax_global_header",
                         content: "18 path=global.js\n",
                     },
@@ -283,6 +286,42 @@ describe("parseTar edge cases", () => {
         );
 
         expect(entries.map((e) => e.path)).toEqual(["package/a.js", "package/b.js"]);
+    });
+
+    it("keeps PAX path override across PAX global header", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    { type: "pax", records: { path: "package/long-name.js" } },
+                    {
+                        type: "raw",
+                        typeflag: TAR_TYPEFLAG.paxGlobalHeader,
+                        name: "pax_global_header",
+                    },
+                    { name: "package/short.js", content: "a" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/long-name.js"]);
+    });
+
+    it("reads path from Solaris extended header", () => {
+        const entries = parseTar(
+            new Uint8Array(
+                buildTar([
+                    {
+                        type: "raw",
+                        typeflag: TAR_TYPEFLAG.solarisExtendedHeader,
+                        name: "",
+                        content: "29 path=package/long-name.js\n",
+                    },
+                    { name: "package/short.js", content: "a" },
+                ]),
+            ),
+        );
+
+        expect(entries.map((e) => e.path)).toEqual(["package/long-name.js"]);
     });
 
     it("keeps entry name after PAX header without path record", () => {

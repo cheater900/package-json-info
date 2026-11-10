@@ -24,9 +24,17 @@ export const TAR_TYPEFLAG = {
     legacyFile: "\0",
     directory: "5",
     paxHeader: "x",
-    paxGlobalHeader: "X",
+    /** Applies to every later entry, so it never names the next one. */
+    paxGlobalHeader: "g",
+    /** Pre-POSIX per-file extended header, same record format as "x". */
+    solarisExtendedHeader: "X",
     gnuLongName: "L",
 };
+
+const BYTE_SPACE = 0x20;
+const BYTE_EQUALS = 0x3d;
+/** Every PAX record ends in "\n", which isn't part of its value. */
+const PAX_RECORD_TERMINATOR_LENGTH = 1;
 
 /**
  * Decompresses a gzip stream using the native Compression Streams API.
@@ -84,11 +92,6 @@ function isZeroBlock(bytes: Uint8Array, offset: number): boolean {
     return true;
 }
 
-const BYTE_SPACE = 0x20;
-const BYTE_EQUALS = 0x3d;
-/** Every PAX record ends in "\n", which isn't part of its value. */
-const PAX_RECORD_TERMINATOR_LENGTH = 1;
-
 /**
  * Parses a PAX extended-header data block ("<len> <key>=<value>\n" records)
  * into a key/value map. `<len>` counts bytes, so records are sliced as bytes
@@ -127,8 +130,8 @@ function parsePaxRecords(bytes: Uint8Array): Record<string, string> {
  * directory entries. Supports USTAR-style long names (prefix + name), PAX
  * extended headers (typeflag "x"), which npm tarballs commonly use for
  * paths over the 100-character classic tar limit, and GNU tar's long-name
- * entries (typeflag "L") from tarballs packed with other tools. Symlinks and other
- * exotic entry types are skipped - nothing this app needs to browse.
+ * entries (typeflag "L") from tarballs packed with other tools. PAX global
+ * headers (typeflag "g"), symlinks and other exotic entry types are skipped - nothing this app needs to browse.
  * Throws when a header's size is unreadable or runs past the archive's end.
  */
 export function parseTar(bytes: Uint8Array): TarEntry[] {
@@ -160,8 +163,14 @@ export function parseTar(bytes: Uint8Array): TarEntry[] {
             longPathOverride = readString(data, 0, data.length);
             continue;
         }
-        if (typeflag === TAR_TYPEFLAG.paxHeader || typeflag === TAR_TYPEFLAG.paxGlobalHeader) {
+        if (
+            typeflag === TAR_TYPEFLAG.paxHeader ||
+            typeflag === TAR_TYPEFLAG.solarisExtendedHeader
+        ) {
             longPathOverride = parsePaxRecords(data).path || longPathOverride;
+            continue;
+        }
+        if (typeflag === TAR_TYPEFLAG.paxGlobalHeader) {
             continue;
         }
         longPathOverride = null;
