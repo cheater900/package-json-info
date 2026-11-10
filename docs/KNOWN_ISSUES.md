@@ -91,3 +91,13 @@ fixing live in [NOTES.md](NOTES.md).
 - **Export libraries load with app.** jsPDF, jspdf-autotable and
   write-excel-file sit in main chunk, roughly doubling it (about 160 KB
   more gzip). Code style rules out dynamic `import()`.
+
+- **CLI export write is not atomic.** Crash mid-write can leave truncated
+  file. Tmp file + rename would break `--output /dev/stdout`.
+- **Killed CLI can leave cache tmp file.** Cleanup would need cache sweep;
+  impact low.
+- **CLI cache needs home dir.** `homedir()` throws when `HOME` and
+  `XDG_CACHE_HOME` are unset and user has no passwd entry (rare
+  containers). Run with `--no-cache` there.
+- **CLI exits 0 with failed rows.** Lookup errors show in table cells,
+  as in web app; exit code reports only load, parse or write failure.

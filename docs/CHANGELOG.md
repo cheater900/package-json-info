@@ -339,8 +339,10 @@ Condensed from git history. Newest month first.
 - **Settings validation** shared by app and CLI: `isConfigInt` +
   `readPositiveInt` in `src/core/utils/configInt.ts`, `isProxyUrl` in
   `src/core/utils/url.ts`, `StoredLookupSchema` in
-  `src/core/utils/memoizeLookup.ts`. oxlint bans `vue` and `src/app`
-  imports in `src/cli` too.
+  `src/core/utils/memoizeLookup.ts`, `parsePackageJsonText` (JSON parse +
+  schema + messages) in `src/core/utils/packageJson.ts`. oxlint bans
+  `vue` and `src/app` imports in `src/cli` too. CLI tests share
+  `tests/helpers/cli.ts`.
 - **`src/core` + `src/app` split**: `src/core` holds fetch and data
   logic (api, formatting, health, columns, export renderers, i18n, domain
   types); `src/app` holds Vue app, settings, storage, network log, share

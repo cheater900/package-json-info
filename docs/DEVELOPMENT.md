@@ -24,14 +24,14 @@
 | `src/app/composables/`              | Vue state: column preferences, package.json history, input sources, popovers, export lock.               |
 | `src/app/components/`               | Vue components. Each has own `.vue`, `.ts` and `.css` file.                                              |
 | `src/app/utils/`                    | Browser helpers: storage, IndexedDB, token storage, network log, share state, download.                  |
-| `src/cli/`                          | Node CLI: `main.ts` entry, `run.ts` args and output, `coreBinding.ts`, file lookup store, file writer.   |
+| `src/cli/`                          | Node CLI: `main.ts` entry, `options.ts` args, `run.ts` output, `coreBinding.ts`, file lookup store.      |
 | `public/`                           | Static assets served as-is.                                                                              |
 | `tests/unit/core/`                  | Vitest unit tests of `src/core`, run in Node.                                                            |
 | `tests/unit/cli/`                   | Vitest unit tests of `src/cli`, run in Node.                                                             |
 | `tests/unit/app/`                   | Vitest unit tests of `src/app`, run in jsdom.                                                            |
 | `tests/integration/`                | Vitest component tests mounted with `@vue/test-utils`, run in jsdom.                                     |
 | `tests/e2e/`                        | Playwright end-to-end tests. `visual/` holds screenshot run.                                             |
-| `tests/helpers/`                    | Fetch, requests, columns, IndexedDB, lookup store, settings, core, share links, PDF, download, wrapper.  |
+| `tests/helpers/`                    | Fetch, requests, columns, IndexedDB, lookups, settings, core, CLI, share links, PDF, download, wrapper.  |
 | `tests/fixtures/`                   | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
 | `docs/`                             | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
 
