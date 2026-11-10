@@ -54,6 +54,23 @@ describe("bindCore", () => {
         expect(warn).toHaveBeenCalledOnce();
     });
 
+    it("returns error for env proxy URL with credentials", () => {
+        expect(typeof bindCore({}, { PJI_PROXY_URL: "https://u:p@p.test/" })).toBe("string");
+    });
+
+    it("treats empty GITHUB_TOKEN as unset", () => {
+        expect(bindCore({}, { GITHUB_TOKEN: "" })).toMatchObject({ githubToken: undefined });
+    });
+
+    it("warns naming env var for invalid env int", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        expect(bindCore({}, { PJI_FETCH_CONCURRENCY: "0" })).toMatchObject({
+            fetchConcurrency: CORE_SETTINGS_DEFAULTS.fetchConcurrency,
+        });
+        expect(warn.mock.calls[0][0]).toContain("PJI_FETCH_CONCURRENCY");
+    });
+
     it("returns error for proxy URL with credentials", () => {
         expect(typeof bindCore({ proxyUrl: "https://u:p@p.test/" }, {})).toBe("string");
     });

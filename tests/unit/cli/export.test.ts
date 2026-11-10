@@ -92,6 +92,24 @@ describe("--report", () => {
         expect(result.stderr).toBe("");
     });
 
+    it("skips devDependencies of Markdown report for --no-dev", async () => {
+        await writeFile(
+            sourcePath,
+            JSON.stringify({
+                name: "app",
+                dependencies: { "left-pad": "1.3.0" },
+                devDependencies: { "dev-tool": "1.0.0" },
+            }),
+        );
+
+        const withDev = await runCli(sourcePath, "--report", "md");
+        const withoutDev = await runCli(sourcePath, "--report", "md", "--no-dev");
+
+        expect(withDev.stdout).toContain("dev-tool");
+        expect(withoutDev.stdout).not.toContain("dev-tool");
+        expect(withoutDev.stdout).toContain("left-pad");
+    });
+
     it("writes pdf report to --output", async () => {
         const target = join(tempDir, "report.pdf");
 

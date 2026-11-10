@@ -232,6 +232,26 @@ describe("table output", () => {
         expect(stdout.split("\n")[0]).toBe("# a\\]52;c;cHduZWQ=bc d");
     });
 
+    it("keeps tab + newline, strips DEL + C1 chars", async () => {
+        stubFetchByUrl({});
+        const path = await writePackageJson(
+            JSON.stringify({ name: "a\tb\u007fc\u0085d\u009fe", dependencies: {} }),
+        );
+
+        const { stdout } = await runCli(path);
+
+        expect(stdout.split("\n")[0]).toBe("# a\tbcde");
+    });
+
+    it("strips terminal control chars from error output", async () => {
+        stubFetchByUrl({});
+
+        const { code, stderr } = await runCli("no-such\u001b[2Jpkg");
+
+        expect(code).toBe(EXIT_LOAD_FAILURE);
+        expect(stderr).toBe('Could not find package.json data for "no-such[2Jpkg".\n');
+    });
+
     it("prints default columns only + skips hidden column requests", async () => {
         const fetchMock = stubFetchByUrl({ "registry.npmjs.org/left-pad": REGISTRY_LEFT_PAD });
         const path = await writePackageJson(PACKAGE_JSON);

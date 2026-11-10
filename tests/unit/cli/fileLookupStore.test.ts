@@ -35,6 +35,14 @@ describe("createFileLookupStore", () => {
         expect(await store.load("repoStars", "a/b")).toBeUndefined();
     });
 
+    it("returns undefined for non-ISO savedAt", async () => {
+        const store = createFileLookupStore(tempDir);
+        await store.save("repoStars", "a/b", 5, 0);
+        const [file] = await readdir(tempDir);
+        await writeFile(join(tempDir, file), JSON.stringify({ value: 5, savedAt: "yesterday" }));
+        expect(await store.load("repoStars", "a/b")).toBeUndefined();
+    });
+
     it("keeps hostile key inside dir", async () => {
         const store = createFileLookupStore(tempDir);
         await store.save("registry", "../../evil", 1, 0);
