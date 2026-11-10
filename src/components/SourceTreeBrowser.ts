@@ -70,9 +70,6 @@ export default defineComponent({
             selectedPath.value = path;
             selectedContent.value = null;
             contentError.value = null;
-            if (!readFile) {
-                return;
-            }
             loadingContent.value = true;
             const result = await settle(() => readFile(path));
             const isOtherFileSelected = selectedPath.value !== path;
