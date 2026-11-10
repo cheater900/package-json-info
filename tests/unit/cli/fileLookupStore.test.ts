@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -49,6 +49,16 @@ describe("createFileLookupStore", () => {
         const store = createFileLookupStore(file);
         await expect(store.save("registry", "k", 1, 0)).resolves.toBeUndefined();
         expect(await store.load("registry", "k")).toBeUndefined();
+    });
+
+    it("removes tmp file when rename fails", async () => {
+        const store = createFileLookupStore(tempDir);
+        await store.save("registry", "k", 1, 0);
+        const [file] = await readdir(tempDir);
+        await rm(join(tempDir, file));
+        await mkdir(join(tempDir, file, "blocker"), { recursive: true });
+        await expect(store.save("registry", "k", 2, 0)).resolves.toBeUndefined();
+        expect(await readdir(tempDir)).toEqual([file]);
     });
 
     it("creates owner-only dir + files", async () => {

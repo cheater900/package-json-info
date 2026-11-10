@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { lookupKey, StoredLookupSchema } from "../core/utils/memoizeLookup";
@@ -40,13 +40,18 @@ export function createFileLookupStore(dir: string): LookupStore {
         async save(kind, key, value) {
             const record = { value, savedAt: new Date().toISOString() };
             const file = fileOf(kind, key);
-            await settle(async () => {
+            const tmp = `${file}.${randomUUID()}.tmp`;
+            const written = await settle(async () => {
                 await mkdir(dir, { recursive: true, mode: CACHE_DIR_MODE });
-                const tmp = `${file}.${randomUUID()}.tmp`;
                 // "wx" refuses an existing path, so a planted symlink is never followed.
                 await writeFile(tmp, JSON.stringify(record), { mode: CACHE_FILE_MODE, flag: "wx" });
                 await rename(tmp, file);
             });
+            if (written.ok) {
+                return;
+            }
+            // Disk full or failed rename: drop the partial tmp file so failures never pile up.
+            await settle(() => rm(tmp, { force: true }));
         },
         generation: () => 0,
     };
