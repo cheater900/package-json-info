@@ -26,6 +26,10 @@ describe("readPositiveInt", () => {
         expect(readPositiveInt("X", raw, FALLBACK)).toBe(Number(raw));
     });
 
+    it("parses value padded with whitespace", () => {
+        expect(readPositiveInt("X", " 12 ", FALLBACK)).toBe(12);
+    });
+
     it.each(["0", "-3", "2.5", "abc", String(MAX_CONFIG_INT + 1), "1e20"])(
         "warns, returns fallback for invalid %s",
         (raw) => {
