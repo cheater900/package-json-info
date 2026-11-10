@@ -181,10 +181,15 @@ async function textOf(load: Promise<LoadedSource | null>, notFoundMessage: strin
     return source.text;
 }
 
+/** UTF-8 text of file `path`; drops a leading BOM, as the web app's `File.text()` does. */
+async function readTextFile(path: string): Promise<string> {
+    return new TextDecoder().decode(await readFile(path));
+}
+
 /** Existing file path -> file, http(s) URL -> URL, anything else -> npm spec. */
 function readSource(source: string): Promise<string> {
     if (statSync(source, { throwIfNoEntry: false })?.isFile()) {
-        return readFile(source, "utf8");
+        return readTextFile(source);
     }
     if (isHttpUrl(source)) {
         return textOf(fetchUrlSource(source), t("errors.urlNotFound"));

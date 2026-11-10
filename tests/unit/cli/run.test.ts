@@ -89,6 +89,16 @@ describe("source dispatch", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it("reads file with UTF-8 BOM", async () => {
+        stubFetchByUrl({});
+        const path = await writePackageJson('\uFEFF{"name":"bom-app"}');
+
+        const result = await runCli(path);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(result.stdout).toMatch(/^# bom-app\n/);
+    });
+
     it("fetches http URL", async () => {
         const fetchMock = stubFetchByUrl({
             "example.com/package.json": { name: "remote-app" },
