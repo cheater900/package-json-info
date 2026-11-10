@@ -1,9 +1,9 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { join } from "node:path";
-import { parseArgs } from "node:util";
 import { bindCore } from "./coreBinding";
-import type { CoreSettingsInput } from "./coreBinding";
+import { USAGE, parseOptions } from "./options";
+import type { CliOptions } from "./options";
 import { fetchPackagesInfo } from "../core/api/npmPackage";
 import { fetchDependencySource, fetchUrlSource } from "../core/api/packageJsonSource";
 import type { LoadedSource } from "../core/api/packageJsonSource";
@@ -22,7 +22,6 @@ import type { DependencyMap, PackageJson } from "../core/utils/packageJson";
 import { settle } from "../core/utils/settle";
 import { DEFAULT_COLUMN_ORDER, DEFAULT_VISIBLE_COLUMNS } from "../core/utils/tableColumns";
 import { isHttpUrl } from "../core/utils/url";
-import { writeBlob } from "./writeBlob";
 
 /** Output streams; injectable so tests capture what the CLI prints. */
 export type CliIo = {
@@ -30,54 +29,11 @@ export type CliIo = {
     stderr: (text: string) => void;
 };
 
-/** Parsed command line. */
-export type CliOptions = CoreSettingsInput & {
-    source: string;
-    includeDev: boolean;
-    /** Exporter id; export to a file instead of printing. */
-    format?: string;
-    /** Report kind. */
-    report?: string;
-    /** Target file of `format` or a pdf `report`. */
-    output?: string;
-};
-
 type CliTable = ExportTableInput & { id: DependencyListId };
-
-const REPORT_KINDS = ["md", "pdf"];
 
 export const EXIT_OK = 0;
 export const EXIT_LOAD_FAILURE = 1;
 export const EXIT_BAD_ARGUMENTS = 2;
-
-export const USAGE = `Usage: package-json-info <source> [--no-dev] [--format <id> | --report <md|pdf>]
-                         [--output <file>] [--proxy-url <url>] [--timeout <ms>]
-                         [--concurrency <n>] [--no-cache] [-h|--help]
-
-Print dependency tables of a package.json as Markdown, or export them to a file.
-
-<source>  package.json file or its directory, http(s) URL (repo URLs resolve to their
-          package.json) or npm package spec (name or name@version)
-
-Options:
-  --no-dev             Skip devDependencies
-  --format <id>        Export to a file instead of printing (${EXPORTERS.map((e) => e.id).join(", ")})
-  --report <kind>      Print a Markdown report (md) or write a PDF report (pdf)
-  --output <file>      Target file of --format or --report pdf
-                       (default: <package>-dependencies.<ext> or <package>-report.pdf)
-  --proxy-url <url>    CORS proxy template; {url} marks the target URL
-  --timeout <ms>       Request timeout in milliseconds
-  --concurrency <n>    Parallel requests
-  --no-cache           Skip offline cache of last good lookups
-  -h, --help           Show this help
-
-Environment (a flag wins over its variable):
-  PJI_PROXY_URL          Same as --proxy-url
-  PJI_FETCH_TIMEOUT_MS   Same as --timeout
-  PJI_FETCH_CONCURRENCY  Same as --concurrency
-  GITHUB_TOKEN           GitHub token for higher API limits (env only)
-  XDG_CACHE_HOME         Cache base dir (default ~/.cache); cache in package-json-info/
-`;
 
 const USAGE_HINT = 'Run "package-json-info --help" for usage.\n';
 
@@ -90,84 +46,6 @@ const USAGE_HINT = 'Run "package-json-info --help" for usage.\n';
 const TERMINAL_CONTROL_CHARS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g;
 
 const COLUMN_KEYS = DEFAULT_COLUMN_ORDER.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key));
-
-/** Options, or the message why the arguments are invalid; null for --help. */
-function parseOptions(argv: string[]): CliOptions | string | null {
-    const parsed = settleSync(() =>
-        parseArgs({
-            args: argv,
-            allowPositionals: true,
-            allowNegative: true,
-            options: {
-                dev: { type: "boolean", default: true },
-                format: { type: "string" },
-                report: { type: "string" },
-                output: { type: "string" },
-                "proxy-url": { type: "string" },
-                timeout: { type: "string" },
-                concurrency: { type: "string" },
-                cache: { type: "boolean", default: true },
-                help: { type: "boolean", short: "h", default: false },
-            },
-        }),
-    );
-    if (typeof parsed === "string") {
-        return parsed;
-    }
-    if (parsed.values.help) {
-        return null;
-    }
-    if (parsed.positionals.length !== 1) {
-        return "Expected exactly one <source>.";
-    }
-    const { format, report, output, dev } = parsed.values;
-    const problem = validateOutputOptions(format, report, output);
-    if (problem) {
-        return problem;
-    }
-    return {
-        source: parsed.positionals[0],
-        includeDev: dev,
-        format,
-        report,
-        output,
-        proxyUrl: parsed.values["proxy-url"],
-        timeout: parsed.values.timeout,
-        concurrency: parsed.values.concurrency,
-        cache: parsed.values.cache,
-    };
-}
-
-/** Message why the export flags conflict or hold an unknown value; undefined when valid. */
-function validateOutputOptions(
-    format: string | undefined,
-    report: string | undefined,
-    output: string | undefined,
-): string | undefined {
-    if (format !== undefined && report !== undefined) {
-        return "--format and --report cannot be combined.";
-    }
-    if (format !== undefined && !EXPORTERS.some((exporter) => exporter.id === format)) {
-        const ids = EXPORTERS.map((exporter) => exporter.id).join(", ");
-        return `Unknown format "${format}". Valid formats: ${ids}.`;
-    }
-    if (report !== undefined && !REPORT_KINDS.includes(report)) {
-        return `Unknown report "${report}". Valid reports: ${REPORT_KINDS.join(", ")}.`;
-    }
-    const writesFile = format !== undefined || report === "pdf";
-    if (output !== undefined && !writesFile) {
-        return "--output needs --format or --report pdf.";
-    }
-}
-
-/** parseArgs throws on unknown flags; its message names the flag. */
-function settleSync<T>(task: () => T): T | string {
-    try {
-        return task();
-    } catch (error) {
-        return (error as Error).message;
-    }
-}
 
 /** Reads `text` from `load`; a null source becomes an error naming what was not found. */
 async function textOf(load: Promise<LoadedSource | null>, notFoundMessage: string) {
@@ -233,7 +111,7 @@ async function fetchTables(
 /** Writes `blob` to `output`, or to `defaultName` in the working directory; returns the path. */
 async function writeOutput(blob: Blob, output: string | undefined, defaultName: string) {
     const path = output ?? defaultName;
-    await writeBlob(path, blob);
+    await writeFile(path, Buffer.from(await blob.arrayBuffer()));
     return path;
 }
 
