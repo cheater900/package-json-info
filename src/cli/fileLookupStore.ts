@@ -7,6 +7,9 @@ import type { LookupKind, LookupStore, StoredLookup } from "../core/utils/memoiz
 import { settle } from "../core/utils/settle";
 
 const CACHE_DIR_NAME = "package-json-info";
+/** Owner only: token-backed lookups may hold metadata of private repos. */
+const CACHE_DIR_MODE = 0o700;
+const CACHE_FILE_MODE = 0o600;
 
 /** `$XDG_CACHE_HOME/package-json-info`, else `~/.cache/package-json-info`. */
 export function defaultLookupCacheDir(env: NodeJS.ProcessEnv = process.env): string {
@@ -38,9 +41,10 @@ export function createFileLookupStore(dir: string): LookupStore {
             const record = { value, savedAt: new Date().toISOString() };
             const file = fileOf(kind, key);
             await settle(async () => {
-                await mkdir(dir, { recursive: true });
+                await mkdir(dir, { recursive: true, mode: CACHE_DIR_MODE });
                 const tmp = `${file}.${randomUUID()}.tmp`;
-                await writeFile(tmp, JSON.stringify(record));
+                // "wx" refuses an existing path, so a planted symlink is never followed.
+                await writeFile(tmp, JSON.stringify(record), { mode: CACHE_FILE_MODE, flag: "wx" });
                 await rename(tmp, file);
             });
         },
