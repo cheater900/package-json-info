@@ -20,7 +20,11 @@ import {
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
 import { NPM_REGISTRY_URL, OSV_QUERY_URL } from "../../src/core/constants";
-import { networkLogEntries, startNetworkLog } from "../../src/app/utils/networkLog";
+import {
+    networkLogBatch,
+    networkLogEntries,
+    startNetworkLog,
+} from "../../src/app/utils/networkLog";
 import { openShareLink, shareSteps } from "../helpers/shareLink";
 import { subjectOf } from "../helpers/requests";
 import { networkLogEntry } from "../fixtures/networkLog";
@@ -52,6 +56,7 @@ beforeEach(() => {
     // A loaded source leaves share steps in the address bar; the next mount would replay them.
     window.history.replaceState(null, "", "/");
     networkLogEntries.splice(0);
+    networkLogBatch.splice(0);
 });
 
 async function mountApp() {
@@ -569,6 +574,16 @@ describe("App", () => {
 
         expect(wrapper.findComponent(NetworkLogDialog).exists()).toBe(true);
         expect(document.body.querySelector(".modal .network-log")).not.toBeNull();
+        expect(modalTitle()).toBe("Network logs");
+    });
+
+    it("network badge click opens network log dialog", async () => {
+        networkLogBatch.push(networkLogEntry());
+        const wrapper = await mountApp();
+
+        await wrapper.find(".network-badge__open").trigger("click");
+
+        expect(wrapper.findComponent(NetworkLogDialog).exists()).toBe(true);
         expect(modalTitle()).toBe("Network logs");
     });
 

@@ -224,6 +224,7 @@
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
 
+        <network-activity-badge @open="openNetworkLog" />
         <Transition name="modal">
             <modal v-if="modalContent" :title="modalTitle" @close="closeModal">
                 <div v-if="expandedSection" class="table-modal-content">

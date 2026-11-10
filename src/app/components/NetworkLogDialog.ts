@@ -4,10 +4,8 @@ import { t } from "../../core/i18n";
 import { formatByteSize } from "../../core/utils/bytes";
 import { fmtList } from "../../core/utils/dependencyRowFormatting";
 import { networkLogEntries, networkLogSummary } from "../utils/networkLog";
-import type { NetworkLogEntry, NetworkLogState } from "../utils/networkLog";
-import IconCheck from "./IconCheck.vue";
-import IconCross from "./IconCross.vue";
-import IconQuestion from "./IconQuestion.vue";
+import type { NetworkLogEntry } from "../utils/networkLog";
+import { STATE_ICONS } from "./networkStateIcons";
 import IconReload from "./IconReload.vue";
 import TextWrapped from "./TextWrapped.vue";
 
@@ -25,12 +23,6 @@ const HEADERS = [
 
 /** Characters of method and URL shown before the request cell clips. */
 const URL_MAX_LENGTH = 80;
-
-const STATE_ICONS: Record<NetworkLogState, typeof IconCheck> = {
-    pending: IconQuestion,
-    success: IconCheck,
-    failure: IconCross,
-};
 
 function formatTime(startedAt: number): string {
     return new Date(startedAt).toLocaleTimeString(NUMBER_LOCALE);

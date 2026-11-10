@@ -397,6 +397,10 @@
         },
         "summary": "{total} requests: {failure} failed, {pending} pending, {success} successful"
     },
+    "networkBadge": {
+        "open": "Open network logs ({summary})",
+        "dismiss": "Dismiss network status"
+    },
     "sourceTree": {
         "title": "Source of {name}",
         "via": "via {provider}",

@@ -172,3 +172,19 @@ test("network logs modal lists requests, retry recovers failed one", async ({ pa
     await expect(brokenRows.first().getByRole("img")).toHaveAccessibleName("Succeeded");
     await expect(log.locator(".network-log__summary")).toContainText("1 failed, 0 pending");
 });
+
+test("network badge shows failure, opens logs, dismisses", async ({ page }) => {
+    await page.route(`${NPM_REGISTRY_URL}/broken-pkg`, (route) => route.abort());
+    await page.goto("/");
+    await loadJson(page, { name: "demo", dependencies: { "broken-pkg": "1.0.0" } });
+    const badge = page.locator(".network-badge");
+
+    await expect(badge).toBeVisible();
+    await expect(badge.locator(".network-badge__count--failure")).toHaveText("1");
+    await badge.locator(".network-badge__open").click();
+    await expect(page.getByRole("dialog", { name: "Network logs" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await badge.locator(".network-badge__dismiss").click();
+
+    await expect(badge).toBeHidden();
+});

@@ -1,4 +1,4 @@
-import { computed, reactive, shallowReactive } from "vue";
+import { computed, reactive, ref, shallowReactive } from "vue";
 import { observeRequests } from "../../core/api/http";
 import type { ObservedRequest, RequestHandle, RequestSubject } from "../../core/api/http";
 import { NETWORK_LOG_MAX_ENTRIES } from "../constants";
@@ -36,15 +36,36 @@ export type NetworkLogSummary = {
 /** Every logged request this page load, oldest first, at most NETWORK_LOG_MAX_ENTRIES. */
 export const networkLogEntries = shallowReactive<NetworkLogEntry[]>([]);
 
-export const networkLogSummary = computed<NetworkLogSummary>(() => {
-    const summary = { total: networkLogEntries.length, success: 0, failure: 0, pending: 0 };
-    for (const entry of networkLogEntries) {
+/**
+ * Requests since the last moment none was pending, oldest first, at most
+ * NETWORK_LOG_MAX_ENTRIES. Same entry objects as `networkLogEntries`.
+ */
+export const networkLogBatch = shallowReactive<NetworkLogEntry[]>([]);
+
+/** Batches started this page load; unlike `networkLogBatch[0]`, cap trims leave it alone. */
+export const networkLogBatchCount = ref(0);
+
+function summarizeNetworkLog(entries: NetworkLogEntry[]): NetworkLogSummary {
+    const summary = { total: entries.length, success: 0, failure: 0, pending: 0 };
+    for (const entry of entries) {
         summary[entry.state]++;
     }
     return summary;
-});
+}
+
+export const networkLogSummary = computed(() => summarizeNetworkLog(networkLogEntries));
+
+export const networkLogBatchSummary = computed(() => summarizeNetworkLog(networkLogBatch));
 
 let nextEntryId = 1;
+
+/** Caps the list: one package.json can start more requests than the cap in one batch. */
+function pushCapped(entries: NetworkLogEntry[], entry: NetworkLogEntry): void {
+    entries.push(entry);
+    if (entries.length > NETWORK_LOG_MAX_ENTRIES) {
+        entries.splice(0, entries.length - NETWORK_LOG_MAX_ENTRIES);
+    }
+}
 
 /** Any non-2xx answer, 404 included, counts as failure. */
 function logRequest(request: ObservedRequest): RequestHandle {
@@ -61,10 +82,12 @@ function logRequest(request: ObservedRequest): RequestHandle {
         subject: request.subject,
         replay: request.replay,
     });
-    networkLogEntries.push(entry);
-    if (networkLogEntries.length > NETWORK_LOG_MAX_ENTRIES) {
-        networkLogEntries.splice(0, networkLogEntries.length - NETWORK_LOG_MAX_ENTRIES);
+    pushCapped(networkLogEntries, entry);
+    if (networkLogBatchSummary.value.pending === 0) {
+        networkLogBatch.splice(0);
+        networkLogBatchCount.value++;
     }
+    pushCapped(networkLogBatch, entry);
     return {
         respond(response) {
             entry.state = response.ok ? "success" : "failure";

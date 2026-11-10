@@ -55,6 +55,10 @@ Condensed from git history. Newest month first.
 
 #### Network
 
+- **Network badge** at bottom right: segmented bar plus success, failure
+  and pending counts for current request batch. Shows when batch starts,
+  hides 3 s after it settles without failures. Failures keep it until
+  dismissed. Click opens network logs.
 - **Network log**: **View network logs** in settings menu opens modal
   listing every request, newest first. Columns: state icon, time, method,
   URL, **package** (loaded package.json request served),

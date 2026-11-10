@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { fetchWithTimeout } from "../../../../src/core/api/http";
 import {
+    networkLogBatch,
+    networkLogBatchCount,
+    networkLogBatchSummary,
     networkLogEntries,
     networkLogSummary,
     replayRequest,
     startNetworkLog,
 } from "../../../../src/app/utils/networkLog";
 import { settle } from "../../../../src/core/utils/settle";
-import { HTTP_STATUS } from "../../../helpers/fetchMock";
+import { HTTP_STATUS, stubFetchPending } from "../../../helpers/fetchMock";
 import { resetSettings } from "../../../helpers/settings";
 import { subjectOf } from "../../../helpers/requests";
 
@@ -29,8 +32,19 @@ function stubFetchStatus(status: number, body = "hello") {
     );
 }
 
+/** Keeps one request pending, then fills the batch past its cap with successes. */
+async function overflowPendingBatch() {
+    stubFetchPending();
+    void fetchWithTimeout("https://a.test/pending");
+    stubFetchStatus(HTTP_STATUS.ok);
+    for (let i = 0; i < NETWORK_LOG_MAX_ENTRIES_STUB; i++) {
+        await fetchWithTimeout(`https://a.test/${i}`);
+    }
+}
+
 beforeEach(() => {
     networkLogEntries.splice(0);
+    networkLogBatch.splice(0);
     stopNetworkLog = startNetworkLog();
 });
 
@@ -176,6 +190,54 @@ describe("networkLog", () => {
         void fetchWithTimeout("https://a.test/pending");
 
         expect(networkLogSummary.value).toEqual({ total: 3, success: 1, failure: 1, pending: 1 });
+    });
+
+    it("keeps growing batch while request pending", async () => {
+        stubFetchPending();
+        void fetchWithTimeout("https://a.test/pending");
+        stubFetchStatus(HTTP_STATUS.ok);
+        await fetchWithTimeout("https://a.test/ok");
+        stubFetchStatus(HTTP_STATUS.serverError);
+        await fetchWithTimeout("https://a.test/fail");
+
+        expect(networkLogBatch.map((entry) => entry.url)).toEqual([
+            "https://a.test/pending",
+            "https://a.test/ok",
+            "https://a.test/fail",
+        ]);
+        expect(networkLogBatchSummary.value).toEqual({
+            total: 3,
+            success: 1,
+            failure: 1,
+            pending: 1,
+        });
+    });
+
+    it("drops oldest batch entries past NETWORK_LOG_MAX_ENTRIES", async () => {
+        await overflowPendingBatch();
+
+        expect(networkLogBatch.map((entry) => entry.url)).toEqual([
+            "https://a.test/0",
+            "https://a.test/1",
+            "https://a.test/2",
+        ]);
+    });
+
+    it("starts new batch on request after all settled", async () => {
+        stubFetchStatus(HTTP_STATUS.serverError);
+        await fetchWithTimeout("https://a.test/first");
+        stubFetchStatus(HTTP_STATUS.ok);
+        await fetchWithTimeout("https://a.test/second");
+
+        expect(networkLogBatch.map((entry) => entry.url)).toEqual(["https://a.test/second"]);
+        expect(networkLogEntries).toHaveLength(2);
+    });
+
+    it("counts batch starts, not cap trims", async () => {
+        const countBefore = networkLogBatchCount.value;
+        await overflowPendingBatch();
+
+        expect(networkLogBatchCount.value).toBe(countBefore + 1);
     });
 
     it("logs replayed request as new entry", async () => {

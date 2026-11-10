@@ -1,0 +1,88 @@
+.network-badge {
+    align-items: stretch;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    bottom: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    max-width: calc(100vw - 32px);
+    position: fixed;
+    right: 16px;
+    /* Above body::before scanlines, below Modal. */
+    z-index: 1000;
+}
+
+.network-badge__open {
+    border: none;
+    flex-direction: column;
+    gap: calc(6px * var(--space-scale));
+    padding: calc(8px * var(--space-scale)) calc(10px * var(--space-scale));
+}
+
+.network-badge__bar {
+    background: var(--accent-bg);
+    display: flex;
+    height: 6px;
+    overflow: hidden;
+    width: 160px;
+}
+
+.network-badge__segment {
+    transition: width 0.3s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+}
+
+.network-badge__segment--failure {
+    background: var(--error);
+}
+
+.network-badge__segment--pending {
+    background: var(--warning);
+}
+
+.network-badge__segment--success {
+    background: var(--accent);
+}
+
+.network-badge__counts {
+    display: flex;
+    font-size: 0.85rem;
+    gap: calc(12px * var(--space-scale));
+}
+
+.network-badge__count {
+    align-items: center;
+    display: inline-flex;
+    gap: 4px;
+}
+
+.network-badge__count--failure {
+    color: var(--error);
+}
+
+.network-badge__count--pending {
+    color: var(--warning);
+}
+
+.network-badge__count--success {
+    color: var(--accent);
+}
+
+.network-badge__dismiss {
+    align-self: flex-start;
+    border: none;
+    padding: calc(6px * var(--space-scale));
+}
+
+.network-badge-enter-active,
+.network-badge-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.network-badge-enter-from,
+.network-badge-leave-to {
+    opacity: 0;
+}

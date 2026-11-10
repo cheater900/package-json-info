@@ -29,6 +29,7 @@ import IconMagnifier from "./components/IconMagnifier.vue";
 import IconWarning from "./components/IconWarning.vue";
 import IconWrench from "./components/IconWrench.vue";
 import ExportDialog from "./components/ExportDialog.vue";
+import NetworkActivityBadge from "./components/NetworkActivityBadge.vue";
 import NetworkLogDialog from "./components/NetworkLogDialog.vue";
 import ReportDialog from "./components/ReportDialog.vue";
 import IconScrollText from "./components/IconScrollText.vue";
@@ -89,6 +90,7 @@ export default defineComponent({
         IconWrench,
         IconScrollText,
         ExportDialog,
+        NetworkActivityBadge,
         NetworkLogDialog,
         ReportDialog,
         VueJsonPretty,

@@ -292,6 +292,15 @@ dependencies that failed, are stale or have failed lookup refetch as with
 Retry failed fetches. Without such rows, request resends and outcome shows
 as new entry.
 
+**Network badge** at bottom right tracks current batch of requests. Batch
+starts with first request sent while none pending, so counts reset per
+load. Batch keeps latest 1000 requests, like log. Segmented bar and counts show successful (green), failed (red) and
+pending (yellow) requests, same states as modal. Badge appears when batch
+starts and hides 3 s after batch settles without failures. Failures keep
+it shown until **dismiss** button closes it. Failure after auto-hide,
+such as body breaking off, shows it again. Dismiss holds until next
+batch starts. Click opens network logs modal.
+
 Log lives in memory only, keeps latest 1000 requests. Replay never stores
 GitHub token. Replay adds token current at retry time, so purged token is
 not sent again.

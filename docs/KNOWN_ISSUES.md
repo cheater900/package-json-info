@@ -43,6 +43,11 @@ fixing live in [NOTES.md](NOTES.md).
   hangs past `TOKEN_LOAD_TIMEOUT_MS`, token gets saved meanwhile, late
   decrypt then fails. Save waits behind same stuck IndexedDB, so very
   unlikely.
+- **Network badge batch past 1000 requests** can reset early when cap
+  trims still-pending request. Badge just hides sooner. Fix needs pending
+  counter that survives trims; rare, timeouts settle requests anyway.
+- **Network badge skips late body failure from previous batch.** Download
+  breaking off after new batch started counts only in network logs modal.
 - **No size cap on user-URL `package.json` fetch** (`fetchText`). User
   picks that URL.
 - **Malformed tarball with both file `a` and directory `a/...`** gives

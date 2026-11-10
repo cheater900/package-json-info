@@ -38,5 +38,7 @@ export const MAX_SHARE_STEP_LENGTH = 2000;
 
 /** Most requests the network log keeps; older ones drop first. */
 export const NETWORK_LOG_MAX_ENTRIES = 1000;
+/** Time the network badge stays after its batch settles without failures. */
+export const NETWORK_BADGE_HIDE_DELAY_MS = 3000;
 
 export const TOOLTIP_OFFSET_PX = 6;
