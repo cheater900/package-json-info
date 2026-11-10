@@ -17,11 +17,7 @@ import { renderReportMarkdown } from "../core/report/renderMarkdown";
 import { renderReportPdf } from "../core/report/renderPdf";
 import type { DependencyListId } from "../core/types";
 import { splitNameAndRange } from "../core/utils/npmSpec";
-import {
-    PackageJsonSchema,
-    formatPackageJsonError,
-    toPackageInputs,
-} from "../core/utils/packageJson";
+import { parsePackageJsonText, toPackageInputs } from "../core/utils/packageJson";
 import type { DependencyMap, PackageJson } from "../core/utils/packageJson";
 import { settle } from "../core/utils/settle";
 import { DEFAULT_COLUMN_ORDER, DEFAULT_VISIBLE_COLUMNS } from "../core/utils/tableColumns";
@@ -210,22 +206,6 @@ function readSource(source: string): Promise<string> {
     );
 }
 
-function parsePackageJson(text: string): PackageJson {
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(text);
-    } catch (err) {
-        throw new Error(t("errors.invalidJson", { message: (err as SyntaxError).message }));
-    }
-    const result = PackageJsonSchema.safeParse(parsed);
-    if (!result.success) {
-        throw new Error(
-            t("errors.invalidPackageJson", { details: formatPackageJsonError(result.error) }),
-        );
-    }
-    return result.data;
-}
-
 /** One table per dependency list, fetched one list at a time to honor fetchConcurrency. */
 async function fetchTables(
     pkg: PackageJson,
@@ -259,7 +239,11 @@ async function writeOutput(blob: Blob, output: string | undefined, defaultName: 
 
 /** Performs the requested action; resolves to what to print on stdout and stderr. */
 async function execute(options: CliOptions): Promise<{ stdout: string; stderr: string }> {
-    const pkg = parsePackageJson(await readSource(options.source));
+    const parsed = parsePackageJsonText(await readSource(options.source));
+    if (!parsed.ok) {
+        throw parsed.error;
+    }
+    const pkg = parsed.value;
     const title = pkg.name || t("export.untitled");
     if (options.report !== undefined) {
         const tables = await fetchTables(pkg, options, new Set(REPORT_COLUMN_KEYS));

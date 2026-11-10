@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { t } from "../i18n";
 import type { PackageInput } from "../types";
+import type { Settled } from "./settle";
 
 /** Package name -> declared version or range, as in `dependencies`. */
 const DependencyMapSchema = z.record(z.string(), z.string(), {
@@ -29,6 +30,23 @@ export function formatPackageJsonError(error: z.ZodError): string {
             return path ? `${path}: ${issue.message}` : issue.message;
         })
         .join("; ");
+}
+
+/** Parsed + validated package.json `text`, or the error to show for it. */
+export function parsePackageJsonText(text: string): Settled<PackageJson> {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(text);
+    } catch (err) {
+        const message = t("errors.invalidJson", { message: (err as SyntaxError).message });
+        return { ok: false, error: new Error(message) };
+    }
+    const result = PackageJsonSchema.safeParse(parsed);
+    if (!result.success) {
+        const details = formatPackageJsonError(result.error);
+        return { ok: false, error: new Error(t("errors.invalidPackageJson", { details })) };
+    }
+    return { ok: true, value: result.data };
 }
 
 /** Name + version range of each entry of a `dependencies`-style map. */

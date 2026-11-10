@@ -12,16 +12,11 @@ import {
     isRowRetryable,
     replaceRows,
 } from "../utils/packageJsonHistory";
-import {
-    PackageJsonSchema,
-    formatPackageJsonError,
-    toPackageInputs,
-} from "../../core/utils/packageJson";
+import { parsePackageJsonText, toPackageInputs } from "../../core/utils/packageJson";
 import type { PackageJson } from "../../core/utils/packageJson";
 import type { EntrySource, HistoryEntry } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../../core/utils/workspaces";
 import type { DependencyListId, DependencyRow } from "../../core/types";
-import { t } from "../../core/i18n";
 import { githubToken, settings } from "../settings";
 
 /**
@@ -82,25 +77,16 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         sourceWorkspace: WorkspaceContext | null = null,
         source: EntrySource | null = null,
     ) {
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(text);
-        } catch (err) {
-            loadError.value = t("errors.invalidJson", { message: (err as SyntaxError).message });
-            return false;
-        }
-        const result = PackageJsonSchema.safeParse(parsed);
-        if (!result.success) {
-            loadError.value = t("errors.invalidPackageJson", {
-                details: formatPackageJsonError(result.error),
-            });
+        const result = parsePackageJsonText(text);
+        if (!result.ok) {
+            loadError.value = result.error.message;
             return false;
         }
         loadError.value = null;
         const pushed = pushHistoryEntry(
             history.value,
             historyIndex.value,
-            createHistoryEntry(text, result.data, sourceWorkspace, source),
+            createHistoryEntry(text, result.value, sourceWorkspace, source),
         );
         history.value = pushed.history;
         historyIndex.value = pushed.index;

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
     PackageJsonSchema,
     formatPackageJsonError,
+    parsePackageJsonText,
     toPackageInputs,
 } from "../../../../src/core/utils/packageJson";
 
@@ -45,6 +46,31 @@ describe("PackageJsonSchema", () => {
     it("joins several issues", () => {
         expect(errorFor({ name: 1, version: 2 })).toBe(
             "name: expected a string; version: expected a string",
+        );
+    });
+});
+
+describe("parsePackageJsonText", () => {
+    it("returns validated package.json", () => {
+        expect(parsePackageJsonText('{"name":"app"}')).toEqual({
+            ok: true,
+            value: { name: "app" },
+        });
+    });
+
+    it("returns invalid JSON error", () => {
+        const result = parsePackageJsonText("{not json");
+
+        expect(result.ok).toBe(false);
+        expect(!result.ok && result.error.message).toMatch(/^That's not valid JSON: /);
+    });
+
+    it("returns schema error with field path", () => {
+        const result = parsePackageJsonText('{"dependencies":["left-pad"]}');
+
+        expect(result.ok).toBe(false);
+        expect(!result.ok && result.error.message).toMatch(
+            /^Invalid package\.json: dependencies: /,
         );
     });
 });
