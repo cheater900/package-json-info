@@ -3,6 +3,18 @@ import type { SourceTreeRef } from "../../src/core/types";
 /** Smallest npm registry document: one published version, no metadata. */
 export const minimalRegistryDoc = { "dist-tags": { latest: "1.0.0" }, time: {} };
 
+/** Registry route of left-pad with versions 1.2.0 + 1.3.0 (latest), for `stubFetchByUrl`. */
+export const leftPadRegistryRoute = {
+    "registry.npmjs.org/left-pad": {
+        "dist-tags": { latest: "1.3.0" },
+        time: {},
+        versions: {
+            "1.2.0": { name: "left-pad", version: "1.2.0" },
+            "1.3.0": { name: "left-pad", version: "1.3.0" },
+        },
+    },
+};
+
 export const npmSourceTree: SourceTreeRef = {
     provider: "npm",
     tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",

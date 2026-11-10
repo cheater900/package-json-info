@@ -1,17 +1,14 @@
-import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
+import { mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createFileLookupStore, defaultLookupCacheDir } from "../../../src/cli/fileLookupStore";
+import { createTempDir } from "../../helpers/cli";
 
 let tempDir: string;
 
 beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), "file-lookup-store-"));
-});
-
-afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    tempDir = await createTempDir();
 });
 
 describe("createFileLookupStore", () => {

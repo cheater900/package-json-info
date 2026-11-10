@@ -1,11 +1,10 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { bindCore } from "../../../src/cli/coreBinding";
-import { EXIT_BAD_ARGUMENTS, EXIT_OK, run } from "../../../src/cli/run";
+import { EXIT_BAD_ARGUMENTS, EXIT_OK } from "../../../src/cli/run";
 import { CORE_SETTINGS_DEFAULTS, coreRuntime } from "../../../src/core/runtime";
-import "../../helpers/coreSetup";
+import { createTempDir, runCli } from "../../helpers/cli";
 
 const TOKEN = "ghp_secretToken123";
 
@@ -95,38 +94,22 @@ describe("bindCore", () => {
 });
 
 describe("run binding", () => {
-    let tempDir: string;
-    let stderr: string;
     let source: string;
 
-    const io = {
-        stdout: () => {},
-        stderr: (text: string) => {
-            stderr += text;
-        },
-    };
-
     beforeEach(async () => {
-        stderr = "";
-        tempDir = await mkdtemp(join(tmpdir(), "package-json-info-bind-"));
-        source = join(tempDir, "package.json");
+        source = join(await createTempDir(), "package.json");
         await writeFile(source, JSON.stringify({ name: "empty" }));
     });
 
-    afterEach(async () => {
-        await rm(tempDir, { recursive: true, force: true });
-        vi.restoreAllMocks();
-    });
-
     it("exits 2 for proxy URL with user:pass@", async () => {
-        const code = await run([source, "--proxy-url", "https://u:p@p.test/"], io, {});
+        const { code, stderr } = await runCli([source, "--proxy-url", "https://u:p@p.test/"], {});
 
         expect(code).toBe(EXIT_BAD_ARGUMENTS);
         expect(stderr).not.toContain("u:p");
     });
 
     it("passes env token to core without printing it", async () => {
-        const code = await run([source], io, { GITHUB_TOKEN: TOKEN });
+        const { code, stderr } = await runCli([source], { GITHUB_TOKEN: TOKEN });
 
         expect(code).toBe(EXIT_OK);
         expect(coreRuntime().settings().githubToken).toBe(TOKEN);
@@ -134,7 +117,7 @@ describe("run binding", () => {
     });
 
     it("applies flag over env", async () => {
-        await run([source, "--concurrency", "7"], io, { PJI_FETCH_CONCURRENCY: "2" });
+        await runCli([source, "--concurrency", "7"], { PJI_FETCH_CONCURRENCY: "2" });
 
         expect(coreRuntime().settings().fetchConcurrency).toBe(7);
     });

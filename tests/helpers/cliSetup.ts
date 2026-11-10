@@ -1,19 +1,17 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, vi } from "vitest";
+import { clearPackageInfoCache } from "../../src/core/api/npmPackage";
+import { createTempDir } from "./cli";
 
-// Fresh HOME + XDG_CACHE_HOME per test: CLI runs never write the real
-// ~/.cache, and no test serves lookups an earlier test stored.
-let home: string;
-
+// Fresh HOME + XDG_CACHE_HOME + in-memory lookups per test: CLI runs never
+// write the real ~/.cache, and no test serves lookups an earlier test stored.
 beforeEach(async () => {
-    home = await mkdtemp(join(tmpdir(), "package-json-info-home-"));
+    clearPackageInfoCache();
+    const home = await createTempDir();
     vi.stubEnv("HOME", home);
     vi.stubEnv("XDG_CACHE_HOME", join(home, ".cache"));
 });
 
-afterEach(async () => {
+afterEach(() => {
     vi.unstubAllEnvs();
-    await rm(home, { recursive: true, force: true });
 });
