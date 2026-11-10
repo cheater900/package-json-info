@@ -90,6 +90,10 @@ export default defineComponent({
 
         async function verifyToken() {
             const token = githubToken.value;
+            // Verify button is disabled without a token.
+            if (!token) {
+                return;
+            }
             tokenMessage.value = t("settings.token.verifying");
             const result = await settle(() => fetchGithubRateLimit(token));
             const isAnswerForReplacedToken = githubToken.value !== token;

@@ -2,13 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import SourceTreeBrowser from "../../../src/components/SourceTreeBrowser.vue";
 import { fetchSourceTree } from "../../../src/api/sourceTree";
+import type { SourceTree } from "../../../src/api/sourceTree";
+import type { FileTreeNode } from "../../../src/utils/fileTree";
+import type { SourceTreeRef } from "../../../src/types";
 import { npmSourceTree } from "../../fixtures/dependencies";
 
 vi.mock("../../../src/api/sourceTree", () => ({
     fetchSourceTree: vi.fn(),
 }));
 
-const sampleTree = [
+const sampleTree: FileTreeNode[] = [
     { name: "index.js", path: "index.js", type: "file", size: 10 },
     {
         name: "src",
@@ -25,7 +28,7 @@ beforeEach(() => {
 
 describe("SourceTreeBrowser", () => {
     it("shows loading state, then file tree", async () => {
-        let resolveTree: (value: unknown) => void;
+        let resolveTree: (value: SourceTree) => void;
         vi.mocked(fetchSourceTree).mockReturnValue(
             new Promise((resolve) => {
                 resolveTree = resolve;
@@ -39,7 +42,7 @@ describe("SourceTreeBrowser", () => {
 
         expect(wrapper.text()).toContain("Downloading source");
 
-        resolveTree!({ tree: sampleTree, readFile: vi.fn() });
+        resolveTree!({ tree: sampleTree, truncated: false, readFile: vi.fn() });
         await flushPromises();
 
         expect(wrapper.text()).toContain("index.js");
@@ -75,7 +78,11 @@ describe("SourceTreeBrowser", () => {
 
     it("fetches and shows file content on click", async () => {
         const readFile = vi.fn().mockResolvedValue("console.log(1);");
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile,
+        });
 
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
@@ -91,7 +98,11 @@ describe("SourceTreeBrowser", () => {
 
     it("shows read error instead of content on file read failure", async () => {
         const readFile = vi.fn().mockRejectedValue(new Error("status 404"));
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile,
+        });
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
@@ -106,7 +117,11 @@ describe("SourceTreeBrowser", () => {
 
     it("shows loading note, marks file selected while content loads", async () => {
         const readFile = vi.fn(() => new Promise<string>(() => {}));
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile,
+        });
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
@@ -123,7 +138,11 @@ describe("SourceTreeBrowser", () => {
 
     it("reads nested file by full path after directory expand", async () => {
         const readFile = vi.fn().mockResolvedValue("helper");
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile,
+        });
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
@@ -141,7 +160,11 @@ describe("SourceTreeBrowser", () => {
     });
 
     it("names dependency and provider in header", async () => {
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile: vi.fn() });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile: vi.fn(),
+        });
 
         const wrapper = mount(SourceTreeBrowser, {
             props: {
@@ -166,7 +189,11 @@ describe("SourceTreeBrowser", () => {
 
     it("clears selected file and content on new sourceTree prop", async () => {
         const readFile = vi.fn().mockResolvedValue("old content");
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile,
+        });
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
@@ -182,14 +209,23 @@ describe("SourceTreeBrowser", () => {
     });
 
     it("re-fetches on new sourceTree prop", async () => {
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: sampleTree, readFile: vi.fn() });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: sampleTree,
+            truncated: false,
+            readFile: vi.fn(),
+        });
 
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
         await flushPromises();
 
-        const otherSourceTree = { provider: "github", owner: "o", repo: "r", tag: "v1.0.0" };
+        const otherSourceTree: SourceTreeRef = {
+            provider: "github",
+            owner: "o",
+            repo: "r",
+            tag: "v1.0.0",
+        };
         await wrapper.setProps({ dependencyName: "other-pkg", sourceTree: otherSourceTree });
         await flushPromises();
 
@@ -198,7 +234,7 @@ describe("SourceTreeBrowser", () => {
     });
 
     it("shows last clicked file when earlier file loads slower", async () => {
-        const twoFileTree = [
+        const twoFileTree: FileTreeNode[] = [
             { name: "slow.js", path: "slow.js", type: "file", size: 1 },
             { name: "fast.js", path: "fast.js", type: "file", size: 1 },
         ];
@@ -210,7 +246,11 @@ describe("SourceTreeBrowser", () => {
                   })
                 : Promise.resolve("fast content"),
         );
-        vi.mocked(fetchSourceTree).mockResolvedValue({ tree: twoFileTree, readFile });
+        vi.mocked(fetchSourceTree).mockResolvedValue({
+            tree: twoFileTree,
+            truncated: false,
+            readFile,
+        });
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
@@ -227,23 +267,29 @@ describe("SourceTreeBrowser", () => {
     });
 
     it("ignores tree download replaced by newer sourceTree", async () => {
-        let resolveFirst: (value: unknown) => void;
+        let resolveFirst: (value: SourceTree) => void;
         vi.mocked(fetchSourceTree)
             .mockReturnValueOnce(
                 new Promise((resolve) => {
                     resolveFirst = resolve;
                 }),
             )
-            .mockResolvedValueOnce({ tree: sampleTree, readFile: vi.fn() });
+            .mockResolvedValueOnce({ tree: sampleTree, truncated: false, readFile: vi.fn() });
         const wrapper = mount(SourceTreeBrowser, {
             props: { dependencyName: "left-pad", sourceTree: npmSourceTree },
         });
-        const otherSourceTree = { provider: "github", owner: "o", repo: "r", tag: "v1.0.0" };
+        const otherSourceTree: SourceTreeRef = {
+            provider: "github",
+            owner: "o",
+            repo: "r",
+            tag: "v1.0.0",
+        };
         await wrapper.setProps({ sourceTree: otherSourceTree });
         await flushPromises();
 
         resolveFirst!({
             tree: [{ name: "stale.js", path: "stale.js", type: "file", size: 1 }],
+            truncated: false,
             readFile: vi.fn(),
         });
         await flushPromises();

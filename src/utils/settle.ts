@@ -8,6 +8,6 @@ export async function settle<T>(task: () => Promise<T>): Promise<Settled<T>> {
     try {
         return { ok: true, value: await task() };
     } catch (error) {
-        return { ok: false, error };
+        return { ok: false, error: error instanceof Error ? error : new Error(String(error)) };
     }
 }

@@ -33,6 +33,7 @@
 - Vitest with jsdom for unit and component tests; fake-indexeddb stands in
   for IndexedDB, which jsdom lacks
 - Playwright for end-to-end tests
+- TypeScript, checked by vue-tsc (strict mode); Vite only strips types
 - oxlint and oxfmt for linting and formatting
 
 ## Configuration
@@ -134,6 +135,12 @@ npm run screenshots
 ```
 
 ## Lint and format
+
+Type-check sources, tests and config files:
+
+```sh
+npm run typecheck
+```
 
 Lint:
 

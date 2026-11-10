@@ -2,6 +2,9 @@ import { BYTES_PER_MB, MAX_UNPACKED_TARBALL_BYTES } from "../constants";
 import { t } from "../i18n";
 import { concatBytes } from "./bytes";
 
+/** lib.dom types `DecompressionStream` input as `BufferSource`, which rejects a plain `Uint8Array` stream. */
+type GzipTransform = ReadableWritablePair<Uint8Array, Uint8Array>;
+
 export type TarEntry = {
     path: string;
     size: number;
@@ -48,7 +51,9 @@ export async function gunzip(
     compressed: ReadableStream<Uint8Array>,
     maxBytes: number = MAX_UNPACKED_TARBALL_BYTES,
 ): Promise<Uint8Array> {
-    const reader = compressed.pipeThrough(new DecompressionStream("gzip")).getReader();
+    const reader = compressed
+        .pipeThrough<Uint8Array>(new DecompressionStream("gzip") as GzipTransform)
+        .getReader();
     const chunks: Uint8Array[] = [];
     let totalBytes = 0;
     for (;;) {

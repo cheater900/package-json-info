@@ -1,6 +1,10 @@
 import { ref, watch, defineComponent } from "vue";
+import type { PropType } from "vue";
 import { t } from "../i18n";
 import { fetchSourceTree } from "../api/sourceTree";
+import type { SourceTree } from "../api/sourceTree";
+import type { FileTreeNode } from "../utils/fileTree";
+import type { SourceTreeRef } from "../types";
 import { settle } from "../utils/settle";
 import FileTreeItem from "./FileTreeItem.vue";
 
@@ -12,22 +16,22 @@ export default defineComponent({
             default: null,
         },
         sourceTree: {
-            type: Object,
+            type: Object as PropType<SourceTreeRef | null>,
             default: null,
         },
     },
     setup(props) {
         const loading = ref(false);
-        const error = ref(null);
-        const tree = ref([]);
+        const error = ref<string | null>(null);
+        const tree = ref<FileTreeNode[]>([]);
         const truncated = ref(false);
-        const selectedPath = ref(null);
-        const selectedContent = ref(null);
+        const selectedPath = ref<string | null>(null);
+        const selectedContent = ref<string | null>(null);
         const loadingContent = ref(false);
-        const contentError = ref(null);
+        const contentError = ref<string | null>(null);
         // Not reactive state - just a closure held for the currently-open
         // tree's lazy per-file content lookup.
-        let readFile = null;
+        let readFile: SourceTree["readFile"] | null = null;
 
         watch(
             () => props.sourceTree,
@@ -66,12 +70,16 @@ export default defineComponent({
             { immediate: true },
         );
 
-        async function selectFile(path) {
+        async function selectFile(path: string) {
+            const read = readFile;
+            if (!read) {
+                return;
+            }
             selectedPath.value = path;
             selectedContent.value = null;
             contentError.value = null;
             loadingContent.value = true;
-            const result = await settle(() => readFile(path));
+            const result = await settle(() => read(path));
             const isOtherFileSelected = selectedPath.value !== path;
             if (isOtherFileSelected) {
                 return;

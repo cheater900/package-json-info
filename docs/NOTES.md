@@ -68,10 +68,6 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
   by UI column keys. Works because the keys equal `PackageInfo` fields.
 - **`DependencyCell.vue`**: column key `sourceCodeTree` does not match the
   field name `sourceTree`.
-- **No type check.** The repo has no `typescript` dependency, `tsconfig` or
-  `tsc`/`vue-tsc` script; Vite only strips types. Several `.ts` files hold
-  untyped parameters (`dependencyRowFormatting.ts`, the composables, most
-  component scripts), so a first type-check run will report many errors.
 - **`npmPackage.ts` does several jobs**: registry document, downloads, OSV,
   Bundlephobia, repo lookups and their caches. One `clearPackageInfoCache`
   ties the caches together; a split needs a shared cache registry first.

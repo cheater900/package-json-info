@@ -68,7 +68,9 @@ describe("reorderColumns", () => {
         await nextTick();
 
         const stored = JSON.parse(localStorage.getItem(STORAGE_KEY_COLUMN_ORDER)!);
-        expect(stored.filter((key) => DEFAULT_VISIBLE_COLUMNS.has(key))).toEqual(reversedVisible);
+        expect(stored.filter((key: string) => DEFAULT_VISIBLE_COLUMNS.has(key))).toEqual(
+            reversedVisible,
+        );
     });
 });
 

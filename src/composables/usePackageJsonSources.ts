@@ -9,6 +9,7 @@ import { hrefWithInputUrlParam, readInputUrlParam } from "../utils/urlInputSync"
 import { isHttpUrl } from "../utils/url";
 import { isRepoHostUrl } from "../utils/repoUrl";
 import { settle } from "../utils/settle";
+import type { PackageInput } from "../types";
 
 /**
  * Owns every way of bringing in package.json text (URL, repo URL, file,
@@ -24,9 +25,9 @@ export function usePackageJsonSources(
     // replaceState keeps typing out of browser history; debounced because
     // browsers throw once a page calls it ~100 times in a few seconds.
     const urlInput = ref(readInputUrlParam(window.location.search));
-    let urlSyncTimer;
+    let urlSyncTimer: ReturnType<typeof setTimeout> | undefined;
     // Only the most recent load may apply; an older, slower one is dropped.
-    let latestLoadToken;
+    let latestLoadToken: symbol | undefined;
 
     watch(urlInput, (value) => {
         clearTimeout(urlSyncTimer);
@@ -46,7 +47,11 @@ export function usePackageJsonSources(
      * own message when none is given. Only the most recent load applies, so
      * a slow fetch can't overwrite a newer paste or upload.
      */
-    async function loadFromSource(readContent, emptyMessage, failureMessage = null) {
+    async function loadFromSource(
+        readContent: () => Promise<string | null>,
+        emptyMessage: string,
+        failureMessage: string | null = null,
+    ) {
         const loadToken = Symbol();
         latestLoadToken = loadToken;
         isLoadingInput.value = true;
@@ -75,8 +80,8 @@ export function usePackageJsonSources(
         );
     }
 
-    function loadFromFile(event) {
-        const input = event.target;
+    function loadFromFile(event: Event) {
+        const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
         if (!file) {
             return;
@@ -104,7 +109,7 @@ export function usePackageJsonSources(
         );
     }
 
-    function loadDependency({ name, version }) {
+    function loadDependency({ name, version }: PackageInput) {
         return loadFromSource(
             () => fetchPackageJsonForVersion(name, version),
             t("errors.dependencyNotFound", { name }),

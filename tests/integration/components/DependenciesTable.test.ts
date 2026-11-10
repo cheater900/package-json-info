@@ -1,14 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
+import type { DOMWrapper, VueWrapper } from "@vue/test-utils";
 import draggable from "vuedraggable";
 import DependenciesTable from "../../../src/components/DependenciesTable.vue";
 import Tooltip from "../../../src/components/Tooltip.vue";
 import { TOGGLEABLE_COLUMNS } from "../../../src/utils/tableColumns";
+import type { DependencyRow } from "../../../src/types";
 import { columnKeysExcept } from "../../helpers/columns";
 import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/dependencies";
 
-function headerLabels(wrapper) {
+function headerLabels(wrapper: VueWrapper) {
     return wrapper.findAll("thead th").map((th) =>
         th
             .text()
@@ -17,7 +19,7 @@ function headerLabels(wrapper) {
     );
 }
 
-function rowNames(wrapper) {
+function rowNames(wrapper: VueWrapper) {
     return wrapper.findAll("tbody tr td:first-child .deps-table__name-text").map((td) => td.text());
 }
 
@@ -244,7 +246,7 @@ describe("DependenciesTable column order", () => {
 
         const expectedLabels = [
             "Name",
-            ...reversedOrder.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key).label),
+            ...reversedOrder.map((key) => TOGGLEABLE_COLUMNS.find((c) => c.key === key)!.label),
         ];
         expect(headerLabels(wrapper)).toEqual(expectedLabels);
     });
@@ -285,11 +287,11 @@ describe("DependenciesTable column order", () => {
         });
 
         const draggableComponent = wrapper.findComponent(draggable);
-        const list = draggableComponent.props("list");
+        const list = draggableComponent.props("list")!;
         [list[0], list[1]] = [list[1], list[0]];
         await nextTick();
 
-        const emitted = wrapper.emitted("reorder-columns");
+        const emitted = wrapper.emitted<[string[]]>("reorder-columns")!;
         expect(emitted).toBeTruthy();
         const [newOrder] = emitted[emitted.length - 1];
         expect(newOrder[0]).toBe(TOGGLEABLE_COLUMNS[1].key);
@@ -436,7 +438,7 @@ describe("DependenciesTable column labels", () => {
             props: { dependencies: [fullDependency], shrinkLabels: true },
         });
 
-        const tooltipFor = (labelText) =>
+        const tooltipFor = (labelText: string) =>
             wrapper
                 .findAllComponents(Tooltip)
                 .find(
@@ -455,7 +457,7 @@ describe("DependenciesTable sorting", () => {
     const pkgB = { ...sparseDependency, name: "bbb", weeklyDownloads: 300, gitStars: null };
     const pkgC = { ...sparseDependency, name: "ccc", weeklyDownloads: 200, gitStars: 15 };
 
-    function sortButton(wrapper, label) {
+    function sortButton(wrapper: VueWrapper, label: string) {
         const button = wrapper.findAll("th button").find((b) => b.text().startsWith(label));
         if (!button) {
             throw new Error(`No sort button found for column "${label}"`);
@@ -464,7 +466,7 @@ describe("DependenciesTable sorting", () => {
     }
 
     /** Which direction's arrow icon is currently highlighted as active, if any. */
-    function activeSortDirection(button) {
+    function activeSortDirection(button: DOMWrapper<Element>) {
         const active = button.find(".sort-indicator__arrow--active");
         if (!active.exists()) {
             return null;
@@ -642,7 +644,7 @@ describe("DependenciesTable search", () => {
 });
 
 describe("DependenciesTable source tree", () => {
-    function mountWithSourceTree(dependency) {
+    function mountWithSourceTree(dependency: DependencyRow) {
         return mount(DependenciesTable, {
             props: { dependencies: [dependency], columns: ["sourceCodeTree"] },
         });

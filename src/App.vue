@@ -156,7 +156,7 @@
                 @open-source-tree="openSourceTree"
             />
             <source-tree-browser
-                v-else
+                v-else-if="modalContent.kind === 'sourceTree'"
                 :dependency-name="modalContent.dependency.name"
                 :source-tree="modalContent.dependency.sourceTree"
             />

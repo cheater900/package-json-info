@@ -20,7 +20,7 @@ export default defineComponent({
         },
     },
     setup(props) {
-        const wrapperRef = ref(null);
+        const wrapperRef = ref<HTMLElement | null>(null);
         const visible = ref(false);
         const coords = ref({ top: 0, left: 0 });
 

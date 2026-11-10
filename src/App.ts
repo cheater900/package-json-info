@@ -31,7 +31,7 @@ export default defineComponent({
         VueJsonPretty,
     },
     setup() {
-        const fileInputRef = ref(null);
+        const fileInputRef = ref<HTMLInputElement | null>(null);
         // One search box filters both tables.
         const searchInputId = useId();
         const searchQuery = ref("");
@@ -85,21 +85,22 @@ export default defineComponent({
         ]);
 
         const modalContent = ref<ModalContent | null>(null);
-        const expandedSection = computed(() =>
-            modalContent.value?.kind === "table"
-                ? tableSections.value.find((s) => s.id === modalContent.value.sectionId)
-                : null,
-        );
+        const expandedSection = computed(() => {
+            const content = modalContent.value;
+            return content?.kind === "table"
+                ? tableSections.value.find((s) => s.id === content.sectionId)
+                : null;
+        });
 
-        function expandTable(sectionId) {
+        function expandTable(sectionId: string) {
             modalContent.value = { kind: "table", sectionId };
         }
 
-        function openSourceTree(dependency) {
+        function openSourceTree(dependency: PackageInfo) {
             modalContent.value = { kind: "sourceTree", dependency };
         }
 
-        function showPackageSummary(dependency) {
+        function showPackageSummary(dependency: DependencyRow) {
             modalContent.value = { kind: "summary", dependency };
         }
 

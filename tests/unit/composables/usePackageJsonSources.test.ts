@@ -7,11 +7,16 @@ import { jsonResponse, HTTP_STATUS, statusResponse, textResponse } from "../../h
 
 const PACKAGE_JSON = '{"name":"x"}';
 
+/** Bare `change` event: the composable reads only `target`. */
+function changeEvent(target: object) {
+    return { target } as unknown as Event;
+}
+
 function setup() {
     const loadPackageJsonText = vi.fn();
-    const loadError = ref(null);
+    const loadError = ref<string | null>(null);
     const scope = effectScope();
-    const sources = scope.run(() => usePackageJsonSources(loadPackageJsonText, loadError));
+    const sources = scope.run(() => usePackageJsonSources(loadPackageJsonText, loadError))!;
     return { ...sources, loadPackageJsonText, loadError, scope };
 }
 
@@ -26,7 +31,7 @@ afterEach(() => {
 
 describe("load ordering", () => {
     it("drops slow URL result once newer drill-down finished", async () => {
-        let resolveSlow;
+        let resolveSlow: (response: unknown) => void;
         vi.stubGlobal(
             "fetch",
             vi.fn((url: string) => {
@@ -49,7 +54,7 @@ describe("load ordering", () => {
 
         const slowLoad = loadFromUrlInput();
         await loadDependency({ name: "dep", version: "1.0.0" });
-        resolveSlow(jsonResponse(null));
+        resolveSlow!(jsonResponse(null));
         await slowLoad;
 
         expect(loadPackageJsonText).toHaveBeenCalledTimes(1);
@@ -87,7 +92,7 @@ describe("loadFromUrlInput", () => {
     );
 
     it("resolves repo host URL through raw file host", async () => {
-        const fetchMock = vi.fn(async () => textResponse(PACKAGE_JSON));
+        const fetchMock = vi.fn(async (_url: string) => textResponse(PACKAGE_JSON));
         vi.stubGlobal("fetch", fetchMock);
         const { urlInput, loadFromUrlInput, loadPackageJsonText } = setup();
         urlInput.value = "  https://github.com/o/r  ";
@@ -118,7 +123,7 @@ describe("loadFromUrlInput", () => {
     });
 
     it("clears previous error, flags loading until fetch settles", async () => {
-        let answer;
+        let answer: (response: unknown) => void;
         vi.stubGlobal(
             "fetch",
             vi.fn(
@@ -136,7 +141,7 @@ describe("loadFromUrlInput", () => {
 
         expect(loadError.value).toBeNull();
         expect(isLoadingInput.value).toBe(true);
-        answer(textResponse(PACKAGE_JSON));
+        answer!(textResponse(PACKAGE_JSON));
         await load;
         expect(isLoadingInput.value).toBe(false);
     });
@@ -200,7 +205,7 @@ describe("loadFromFile", () => {
             value: "C:\\package.json",
         };
 
-        await loadFromFile({ target: input });
+        await loadFromFile(changeEvent(input));
 
         expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON);
         expect(input.value).toBe("");
@@ -212,7 +217,7 @@ describe("loadFromFile failures", () => {
         const { loadFromFile, loadPackageJsonText, loadError, isLoadingInput } = setup();
         loadError.value = "old error";
 
-        await loadFromFile({ target: { files: [], value: "" } });
+        await loadFromFile(changeEvent({ files: [], value: "" }));
 
         expect(loadPackageJsonText).not.toHaveBeenCalled();
         expect(loadError.value).toBe("old error");
@@ -222,7 +227,7 @@ describe("loadFromFile failures", () => {
     it("shows empty-file error for empty file", async () => {
         const { loadFromFile, loadPackageJsonText, loadError } = setup();
 
-        await loadFromFile({ target: { files: [new File([], "package.json")], value: "" } });
+        await loadFromFile(changeEvent({ files: [new File([], "package.json")], value: "" }));
 
         expect(loadError.value).toBe("The selected file is empty.");
         expect(loadPackageJsonText).not.toHaveBeenCalled();
@@ -232,7 +237,7 @@ describe("loadFromFile failures", () => {
         const { loadFromFile, loadError } = setup();
         const file = { text: () => Promise.reject(new Error("NotReadableError")) };
 
-        await loadFromFile({ target: { files: [file], value: "" } });
+        await loadFromFile(changeEvent({ files: [file], value: "" }));
 
         expect(loadError.value).toBe("Failed to read the selected file.");
     });

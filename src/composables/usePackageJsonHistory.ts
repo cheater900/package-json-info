@@ -9,7 +9,9 @@ import {
     isEntryCacheValid,
 } from "../utils/packageJsonHistory";
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
-import type { DependencyMap } from "../utils/packageJson";
+import type { DependencyMap, PackageJson } from "../utils/packageJson";
+import type { HistoryEntry } from "../utils/packageJsonHistory";
+import type { DependencyRow } from "../types";
 import { t } from "../i18n";
 import { githubToken, settings } from "../settings";
 
@@ -29,21 +31,21 @@ function toPackageInputs(dependencies: DependencyMap | undefined) {
  * data triggers a request.
  */
 export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) {
-    const pkg = ref(null);
-    const deps = ref([]);
-    const devDeps = ref([]);
+    const pkg = ref<PackageJson | null>(null);
+    const deps = ref<DependencyRow[]>([]);
+    const devDeps = ref<DependencyRow[]>([]);
     const isLoadingDeps = ref(false);
     const isLoadingDevDeps = ref(false);
-    const loadError = ref(null);
-    const history = ref([]);
+    const loadError = ref<string | null>(null);
+    const history = ref<HistoryEntry[]>([]);
     const historyIndex = ref(-1);
     const canGoBack = computed(() => canGoBackPure(historyIndex.value));
     const canGoForward = computed(() => canGoForwardPure(history.value, historyIndex.value));
     // Latest fetch started per entry. A slower, older fetch for the same entry
     // (e.g. columns toggled mid-fetch) finishes later and must not win.
-    const latestFetchByEntry = new WeakMap();
+    const latestFetchByEntry = new WeakMap<HistoryEntry, symbol>();
 
-    function isCurrentEntry(entry) {
+    function isCurrentEntry(entry: HistoryEntry) {
         return history.value[historyIndex.value] === entry;
     }
 
@@ -52,12 +54,12 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      * history entry and applies it. Returns true on success; on failure,
      * sets loadError and leaves the previous content untouched.
      */
-    function loadPackageJsonText(text) {
-        let parsed;
+    function loadPackageJsonText(text: string) {
+        let parsed: unknown;
         try {
             parsed = JSON.parse(text);
         } catch (err) {
-            loadError.value = t("errors.invalidJson", { message: err.message });
+            loadError.value = t("errors.invalidJson", { message: (err as SyntaxError).message });
             return false;
         }
         const result = PackageJsonSchema.safeParse(parsed);
@@ -119,7 +121,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      * only while this entry is still the current one; position alone isn't
      * enough, since loading after going back reuses the same index.
      */
-    async function fetchEntryDependencies(entry) {
+    async function fetchEntryDependencies(entry: HistoryEntry) {
         const fetchToken = Symbol();
         latestFetchByEntry.set(toRaw(entry), fetchToken);
         const rawDeps = toPackageInputs(entry.pkg.dependencies);

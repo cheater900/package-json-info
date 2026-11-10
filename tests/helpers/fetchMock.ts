@@ -56,7 +56,7 @@ export function stubFetchByUrl(handlers: Record<string, unknown>) {
 
 /** Calls of `fetchMock` whose URL contains `pattern`, as `[url, init]` pairs. */
 export function fetchCallsTo(fetchMock: ReturnType<typeof vi.fn>, pattern: string) {
-    return fetchMock.mock.calls.filter(([url]: [string]) => url.includes(pattern));
+    return fetchMock.mock.calls.filter(([url]: string[]) => url.includes(pattern));
 }
 
 export function countFetchCalls(fetchMock: ReturnType<typeof vi.fn>, pattern: string): number {

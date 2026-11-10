@@ -1,4 +1,5 @@
 import { ref, computed, watch, defineComponent } from "vue";
+import type { PropType } from "vue";
 import { t } from "../i18n";
 import draggable from "vuedraggable";
 import {
@@ -7,6 +8,8 @@ import {
     NAME_COLUMN_KEY,
     abbreviateLabel,
 } from "../utils/tableColumns";
+import type { ColumnDef } from "../utils/tableColumns";
+import type { DependencyRow, SortDirection } from "../types";
 import { sortDependencies } from "../utils/dependencyRowFormatting";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
@@ -18,12 +21,12 @@ export default defineComponent({
     components: { draggable, Tooltip, SortIndicator, DependencyCell },
     props: {
         dependencies: {
-            type: Array,
+            type: Array as PropType<DependencyRow[]>,
             required: true,
         },
         /** Visible column keys in display order. Labels and cell rendering stay in this component. */
         columns: {
-            type: Array,
+            type: Array as PropType<readonly string[]>,
             default: () => DEFAULT_COLUMN_ORDER,
         },
         searchQuery: {
@@ -50,11 +53,11 @@ export default defineComponent({
             return props.dependencies.filter((d) => d.name?.toLowerCase().includes(query));
         });
 
-        function labelFor(col) {
+        function labelFor(col: ColumnDef) {
             return props.shrinkLabels ? abbreviateLabel(col.label) : col.label;
         }
 
-        function titleFor(col) {
+        function titleFor(col: ColumnDef) {
             const label = labelFor(col);
             return label !== col.label ? col.label : undefined;
         }
@@ -70,7 +73,7 @@ export default defineComponent({
         // (prop-driven) order via the watchers below.
         const draggableColumns = ref([...orderedVisibleColumns.value]);
 
-        function sameKeyOrder(a, b) {
+        function sameKeyOrder(a: ColumnDef[], b: ColumnDef[]) {
             return a.length === b.length && a.every((col, i) => col.key === b[i].key);
         }
 
@@ -100,10 +103,10 @@ export default defineComponent({
             { deep: true },
         );
 
-        const sortKey = ref(null);
-        const sortDir = ref("asc");
+        const sortKey = ref<string | null>(null);
+        const sortDir = ref<SortDirection>("asc");
 
-        function toggleSort(key) {
+        function toggleSort(key: string) {
             if (sortKey.value === key) {
                 sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
                 return;
@@ -112,7 +115,7 @@ export default defineComponent({
             sortDir.value = "asc";
         }
 
-        function sortDirectionFor(key) {
+        function sortDirectionFor(key: string) {
             return sortKey.value === key ? sortDir.value : null;
         }
 
@@ -123,17 +126,17 @@ export default defineComponent({
         // Cells expanded via click-to-expand (see deps-table__truncate-cell in the
         // template), keyed by "<dependency name>:<column key>" so expansion
         // state is per-cell rather than per-column or per-row.
-        const expandedCells = ref(new Set());
+        const expandedCells = ref(new Set<string>());
 
-        function cellKey(name, key) {
+        function cellKey(name: string, key: string) {
             return `${name}:${key}`;
         }
 
-        function isExpanded(name, key) {
+        function isExpanded(name: string, key: string) {
             return expandedCells.value.has(cellKey(name, key));
         }
 
-        function toggleExpand(name, key) {
+        function toggleExpand(name: string, key: string) {
             const k = cellKey(name, key);
             if (expandedCells.value.has(k)) {
                 expandedCells.value.delete(k);
@@ -146,14 +149,14 @@ export default defineComponent({
         // now - false once its content fits within the max-width, at which
         // point there's nothing to expand and the hover/cursor affordance
         // should disappear.
-        function isOverflowing(el) {
+        function isOverflowing(el: Element) {
             return el.scrollWidth > el.clientWidth;
         }
 
         // Recomputed on hover (cheap, and avoids tracking overflow state for
         // every cell up front - most never get hovered).
-        function onCellMouseEnter(event) {
-            const el = event.currentTarget;
+        function onCellMouseEnter(event: MouseEvent) {
+            const el = event.currentTarget as HTMLElement;
             el.classList.toggle("deps-table__truncate-cell--overflowing", isOverflowing(el));
         }
 
@@ -162,8 +165,8 @@ export default defineComponent({
         // neither applies, the click is a no-op here and is left to bubble
         // up to the row's own click handler (open the package summary card)
         // instead of being swallowed.
-        function onCellClick(event, name, key) {
-            if (!isExpanded(name, key) && !isOverflowing(event.currentTarget)) {
+        function onCellClick(event: MouseEvent, name: string, key: string) {
+            if (!isExpanded(name, key) && !isOverflowing(event.currentTarget as HTMLElement)) {
                 return;
             }
             event.stopPropagation();

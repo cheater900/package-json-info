@@ -131,7 +131,7 @@ describe("gunzip", () => {
     });
 
     it("stops endless download once output passes cap", async () => {
-        const endless = new ReadableStream<Uint8Array>({
+        const endless = new ReadableStream<Uint8Array<ArrayBuffer>>({
             pull(controller) {
                 controller.enqueue(new Uint8Array(TAR_BLOCK_SIZE));
             },

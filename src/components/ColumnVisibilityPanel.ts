@@ -1,4 +1,5 @@
 import { computed, defineComponent } from "vue";
+import type { PropType } from "vue";
 import { t } from "../i18n";
 import {
     TOGGLEABLE_COLUMNS,
@@ -10,11 +11,11 @@ import {
 export default defineComponent({
     props: {
         visibleColumns: {
-            type: Set,
+            type: Set as PropType<ReadonlySet<string>>,
             required: true,
         },
         columnOrder: {
-            type: Array,
+            type: Array as PropType<readonly string[]>,
             default: () => DEFAULT_COLUMN_ORDER,
         },
     },

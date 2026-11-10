@@ -15,6 +15,12 @@ export type HistoryEntry = {
     visibleColumnsSnapshot: ReadonlySet<string> | null;
 };
 
+/** Entry whose `deps`/`devDeps` are fetched. */
+export type FetchedHistoryEntry = HistoryEntry & {
+    deps: DependencyRow[];
+    devDeps: DependencyRow[];
+};
+
 export type HistoryPosition = {
     history: HistoryEntry[];
     index: number;
@@ -79,7 +85,7 @@ function hasFailedRow(rows: DependencyRow[]): boolean {
 export function isEntryCacheValid(
     entry: HistoryEntry,
     visibleColumns: ReadonlySet<string>,
-): boolean {
+): entry is FetchedHistoryEntry {
     return (
         entry.deps !== null &&
         entry.devDeps !== null &&

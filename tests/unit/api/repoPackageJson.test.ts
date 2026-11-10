@@ -89,7 +89,7 @@ describe("fetchPackageJsonFromRepo", () => {
         "https://github.com/owner/repo?tab=readme",
         "https://github.com/owner/repo#readme",
     ])("resolves %s to raw package.json", async (url) => {
-        const fetchMock = vi.fn(async () => jsonResponse({ name: "repo" }));
+        const fetchMock = vi.fn(async (_url: string) => jsonResponse({ name: "repo" }));
         vi.stubGlobal("fetch", fetchMock);
 
         await fetchPackageJsonFromRepo(url);
@@ -100,7 +100,7 @@ describe("fetchPackageJsonFromRepo", () => {
     });
 
     it("keeps .git inside repo name", async () => {
-        const fetchMock = vi.fn(async () => jsonResponse({ name: "repo" }));
+        const fetchMock = vi.fn(async (_url: string) => jsonResponse({ name: "repo" }));
         vi.stubGlobal("fetch", fetchMock);
 
         await fetchPackageJsonFromRepo("https://github.com/owner/my.git.repo");

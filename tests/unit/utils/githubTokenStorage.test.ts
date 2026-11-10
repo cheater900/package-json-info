@@ -67,7 +67,7 @@ describe("githubTokenStorage", () => {
         await purgeGithubToken();
 
         expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
-        localStorage.setItem(STORAGE_KEY_GITHUB_TOKEN, stored);
+        localStorage.setItem(STORAGE_KEY_GITHUB_TOKEN, stored!);
         expect(await loadGithubToken()).toBeUndefined();
     });
 

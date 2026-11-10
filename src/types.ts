@@ -33,6 +33,8 @@ export type PackageInfo = {
     sourceTree: SourceTreeRef | null;
 };
 
+export type SortDirection = "asc" | "desc";
+
 export type PackageError = {
     name: string;
     version: string;

@@ -37,7 +37,7 @@ describe("findGithubReleaseTag", () => {
     });
 
     it("uses exact-match ref endpoint", async () => {
-        const fetchMock = vi.fn(async () => jsonResponse({}, true));
+        const fetchMock = vi.fn(async (_url: string) => jsonResponse({}, true));
         vi.stubGlobal("fetch", fetchMock);
 
         await findGithubReleaseTag("o", "r", "1.2.3");

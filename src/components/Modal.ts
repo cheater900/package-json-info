@@ -10,13 +10,13 @@ export default defineComponent({
             emit("close");
         }
 
-        function onOverlayClick(event) {
+        function onOverlayClick(event: MouseEvent) {
             if (event.target === event.currentTarget) {
                 close();
             }
         }
 
-        function onKeydown(event) {
+        function onKeydown(event: KeyboardEvent) {
             if (event.key === "Escape") {
                 close();
             }

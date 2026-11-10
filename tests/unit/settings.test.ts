@@ -78,7 +78,7 @@ describe("settings", () => {
         settings.proxyUrl = "https://proxy.example/";
         await nextTick();
 
-        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS))).toEqual({
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS)!)).toEqual({
             ...SETTINGS_DEFAULTS,
             proxyUrl: "https://proxy.example/",
         });

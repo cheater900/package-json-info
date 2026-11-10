@@ -1,4 +1,5 @@
 import { test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { mockExternalApis, loadJson, expandAllSections } from "../helpers";
 import { STORAGE_KEY_SETTINGS } from "../../../src/constants";
 
@@ -55,7 +56,7 @@ test("package.json viewer - vue-json-pretty tree view, open by default", async (
     await page.screenshot({ path: "screenshots/05-json-viewer.png", fullPage: true });
 });
 
-async function openColumnsPanel(page) {
+async function openColumnsPanel(page: Page) {
     await page.goto("/");
     await page.locator("summary", { hasText: "Columns" }).click();
     await page.locator(".column-visibility-panel").waitFor();

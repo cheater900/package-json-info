@@ -8,6 +8,7 @@ import { githubToken, settings } from "../../../src/settings";
 import { HTTP_STATUS, fetchCallsTo, jsonResponse, statusResponse } from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
 import { GITHUB_API_URL, NPM_REGISTRY_URL } from "../../../src/constants";
+import type { PackageInfo } from "../../../src/types";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
@@ -29,7 +30,7 @@ const validPackageJson = JSON.stringify({
 let scope = effectScope();
 
 function useHistory(visibleColumns: Ref<ReadonlySet<string>>) {
-    return scope.run(() => usePackageJsonHistory(visibleColumns));
+    return scope.run(() => usePackageJsonHistory(visibleColumns))!;
 }
 
 beforeEach(() => {
@@ -119,7 +120,7 @@ describe("loadPackageJsonText", () => {
 });
 
 describe("history navigation", () => {
-    async function loadTwoEntries(visibleColumns) {
+    async function loadTwoEntries(visibleColumns: Ref<ReadonlySet<string>>) {
         const composable = useHistory(visibleColumns);
         composable.loadPackageJsonText(JSON.stringify({ name: "first" }));
         await vi.waitFor(() => expect(composable.isLoadingDeps.value).toBe(false));
@@ -143,15 +144,15 @@ describe("history navigation", () => {
         const { goBack, goForward, pkg, canGoBack, canGoForward } =
             await loadTwoEntries(visibleColumns);
 
-        expect(pkg.value.name).toBe("second");
+        expect(pkg.value?.name).toBe("second");
 
         goBack();
-        expect(pkg.value.name).toBe("first");
+        expect(pkg.value?.name).toBe("first");
         expect(canGoBack.value).toBe(false);
         expect(canGoForward.value).toBe(true);
 
         goForward();
-        expect(pkg.value.name).toBe("second");
+        expect(pkg.value?.name).toBe("second");
     });
 
     it("goBack no-op at start", async () => {
@@ -163,7 +164,7 @@ describe("history navigation", () => {
         goBack();
         goBack();
 
-        expect(pkg.value.name).toBe("first");
+        expect(pkg.value?.name).toBe("first");
     });
 
     it("goForward no-op at end", async () => {
@@ -173,7 +174,7 @@ describe("history navigation", () => {
 
         goForward();
 
-        expect(pkg.value.name).toBe("second");
+        expect(pkg.value?.name).toBe("second");
         expect(historyIndex.value).toBe(1);
     });
 
@@ -285,8 +286,8 @@ describe("async fetch ordering", () => {
         await release("api.npmjs.org/downloads", { downloads: 5 });
         await release("api.osv.dev", { vulns: [] });
 
-        expect(deps.value[0].weeklyDownloads).toBe(5);
-        expect(deps.value[0].vulnerabilityCount).toBeNull();
+        expect((deps.value[0] as PackageInfo).weeklyDownloads).toBe(5);
+        expect((deps.value[0] as PackageInfo).vulnerabilityCount).toBeNull();
         expect(isLoadingDeps.value).toBe(false);
     });
 
@@ -379,7 +380,7 @@ describe("settings refetch", () => {
         const fetchMock = stubGithubRateLimitedWithoutToken();
         const { deps } = loadInScope(["gitStars"]);
         await flushPromises();
-        expect(deps.value[0].gitStars).toBeNull();
+        expect((deps.value[0] as PackageInfo).gitStars).toBeNull();
 
         githubToken.value = "abc";
         await flushPromises();
@@ -387,7 +388,7 @@ describe("settings refetch", () => {
         const calls = fetchCallsTo(fetchMock, REPO_API_URL);
         expect(calls).toHaveLength(2);
         expect(calls[1][1].headers.Authorization).toBe("Bearer abc");
-        expect(deps.value[0].gitStars).toBe(7);
+        expect((deps.value[0] as PackageInfo).gitStars).toBe(7);
     });
 
     it("skips refetch on token purge", async () => {
@@ -417,7 +418,7 @@ describe("settings refetch", () => {
                 if (name === "gated-pkg") {
                     await gate;
                 }
-                return registryDocWithRepo(name);
+                return registryDocWithRepo(name!);
             }),
         );
         const { loadPackageJsonText, goBack, deps } = useHistory(ref(new Set(["gitStars"])));
@@ -432,7 +433,7 @@ describe("settings refetch", () => {
         goBack();
         await flushPromises();
 
-        expect(deps.value[0].gitStars).toBe(7);
+        expect((deps.value[0] as PackageInfo).gitStars).toBe(7);
     });
 
     it("clears cache, refetches through new proxy", async () => {

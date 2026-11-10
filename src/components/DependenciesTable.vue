@@ -66,7 +66,7 @@
                     </span>
                 </td>
                 <td
-                    v-if="dependency.error"
+                    v-if="'error' in dependency"
                     class="deps-table__error-cell"
                     role="alert"
                     :colspan="orderedVisibleColumns.length"
