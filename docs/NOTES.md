@@ -45,7 +45,8 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
 - **Only the registry document is type-checked.** A wrong type from the
   downloads, stars, issue-count, bundle-size or OSV services shows as odd
   cell text. A malformed GitHub tree answer shows a raw engine error in the
-  source-tree modal.
+  source-tree modal; a `/rate_limit` answer without `rate` shows one in the
+  token status.
 - **Source-tree viewer renders a file whole.** A file of tens of MB can
   stall the tab until the modal closes. A size cap would fix it.
 - **Malformed tarball with both file `a` and directory `a/…`** gives
@@ -67,6 +68,18 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
   by UI column keys. Works because the keys equal `PackageInfo` fields.
 - **`DependencyCell.vue`**: column key `sourceCodeTree` does not match the
   field name `sourceTree`.
+- **No type check.** The repo has no `typescript` dependency, `tsconfig` or
+  `tsc`/`vue-tsc` script; Vite only strips types. Several `.ts` files hold
+  untyped parameters (`dependencyRowFormatting.ts`, the composables, most
+  component scripts), so a first type-check run will report many errors.
+- **`npmPackage.ts` does several jobs**: registry document, downloads, OSV,
+  Bundlephobia, repo lookups and their caches. One `clearPackageInfoCache`
+  ties the caches together; a split needs a shared cache registry first.
+- **`fetchRepoStars` guards an unknown host** although `parseRepoSlug`
+  yields only `SUPPORTED_REPO_HOSTS`. Kept: it covers a host added to that
+  list before it gets a stars fetcher.
+- **CHANGELOG groups by day**, in flat bullets. Month, scope and area
+  grouping would need a rewrite of the whole file.
 
 ## Verification
 

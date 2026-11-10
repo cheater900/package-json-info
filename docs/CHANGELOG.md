@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-10
 
+- Record missing type check, `npmPackage.ts` scope, `fetchRepoStars` host guard, unchecked `/rate_limit` answer and changelog grouping in NOTES
 - Name Playwright dev server port, URL and start timeout once in `playwright.config.ts`; tarball e2e helper builds on `minimalRegistryDoc`
 - Build `github:` shorthand URL from `GITHUB_HOST`, loop semver compare over tuple length, group `settings.ts` types by kind
 - Drop unreachable `readFile` guard in source tree browser: file items render only after tree and reader load together
