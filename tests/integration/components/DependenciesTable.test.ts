@@ -297,6 +297,110 @@ describe("DependenciesTable column order", () => {
     });
 });
 
+describe("DependenciesTable column changes after mount", () => {
+    it("drops hidden column from header and rows, emits no reorder", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: columnKeysExcept() },
+        });
+
+        await wrapper.setProps({ columns: columnKeysExcept("license") });
+
+        expect(headerLabels(wrapper)).not.toContain("License");
+        expect(wrapper.findAll("tbody tr td")).toHaveLength(wrapper.findAll("thead th").length);
+        expect(wrapper.emitted("reorder-columns")).toBeUndefined();
+    });
+
+    it("follows order changed by sibling table", async () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["version", "license"] },
+        });
+
+        await wrapper.setProps({ columns: ["license", "version"] });
+
+        expect(headerLabels(wrapper)).toEqual(["Name", "License", "Version"]);
+        expect(wrapper.emitted("reorder-columns")).toBeUndefined();
+    });
+
+    it("ignores unknown column key", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["version", "removedColumn"] },
+        });
+
+        expect(headerLabels(wrapper)).toEqual(["Name", "Version"]);
+        expect(wrapper.findAll("tbody tr td")).toHaveLength(2);
+    });
+});
+
+describe("DependenciesTable truncated cells", () => {
+    const EXPANDED_CLASS = "deps-table__truncate-cell--expanded";
+    const OVERFLOWING_CLASS = "deps-table__truncate-cell--overflowing";
+
+    function setCellWidths(cell: Element, scrollWidth: number) {
+        Object.defineProperty(cell, "scrollWidth", { value: scrollWidth, configurable: true });
+        Object.defineProperty(cell, "clientWidth", { value: 100, configurable: true });
+    }
+
+    function mountWithLicenseCell(isClipped: boolean) {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [fullDependency, { ...sparseDependency, license: "MIT" }],
+                columns: ["license", "version"],
+            },
+        });
+        const cells = wrapper.findAll("td.deps-table__truncate-cell");
+        // jsdom lays nothing out: both widths read 0 unless set.
+        setCellWidths(cells[0].element, isClipped ? 300 : 100);
+        return { wrapper, cell: cells[0], otherRowCell: cells[1] };
+    }
+
+    it("makes only truncatable columns truncate cells", () => {
+        const { wrapper } = mountWithLicenseCell(true);
+
+        expect(wrapper.findAll("td.deps-table__truncate-cell")).toHaveLength(2);
+    });
+
+    it("click expands clipped cell only, skips select-package", async () => {
+        const { wrapper, cell, otherRowCell } = mountWithLicenseCell(true);
+
+        await cell.trigger("click");
+
+        expect(cell.classes()).toContain(EXPANDED_CLASS);
+        expect(otherRowCell.classes()).not.toContain(EXPANDED_CLASS);
+        expect(wrapper.emitted("select-package")).toBeUndefined();
+    });
+
+    it("second click collapses expanded cell even when text fits again", async () => {
+        const { wrapper, cell } = mountWithLicenseCell(true);
+        await cell.trigger("click");
+        setCellWidths(cell.element, 100);
+
+        await cell.trigger("click");
+
+        expect(cell.classes()).not.toContain(EXPANDED_CLASS);
+        expect(wrapper.emitted("select-package")).toBeUndefined();
+    });
+
+    it("click on fitting cell selects package, expands nothing", async () => {
+        const { wrapper, cell } = mountWithLicenseCell(false);
+
+        await cell.trigger("click");
+
+        expect(cell.classes()).not.toContain(EXPANDED_CLASS);
+        expect(wrapper.emitted("select-package")).toEqual([[fullDependency]]);
+    });
+
+    it.each([
+        [true, true],
+        [false, false],
+    ])("hover on cell with clipped=%s sets overflowing marker %s", async (isClipped, expected) => {
+        const { cell } = mountWithLicenseCell(isClipped);
+
+        await cell.trigger("mouseenter");
+
+        expect(cell.classes().includes(OVERFLOWING_CLASS)).toBe(expected);
+    });
+});
+
 describe("DependenciesTable column labels", () => {
     it("renders full labels without shrinkLabels", () => {
         const wrapper = mount(DependenciesTable, {
