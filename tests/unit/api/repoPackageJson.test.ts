@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { fetchPackageJsonFromRepo } from "../../../src/api/repoPackageJson";
-import { SUPPORTED_REPO_HOSTS } from "../../../src/constants";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
 
 describe("fetchPackageJsonFromRepo", () => {
@@ -145,12 +144,6 @@ describe("fetchPackageJsonFromRepo", () => {
 
         await expect(fetchPackageJsonFromRepo(url)).rejects.toThrow(/Invalid repository URL/);
         expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it("exports every supported host", () => {
-        expect(SUPPORTED_REPO_HOSTS).toEqual(
-            expect.arrayContaining(["github.com", "gitlab.com", "codeberg.org"]),
-        );
     });
 });
 

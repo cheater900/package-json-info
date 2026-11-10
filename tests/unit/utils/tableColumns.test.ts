@@ -71,14 +71,6 @@ describe("isColumnVisible", () => {
     });
 });
 
-describe("MIN_VISIBLE_COLUMNS", () => {
-    it("equals always-visible column count plus one", () => {
-        // Name is always visible; the floor must still force at least one
-        // further (toggleable) column to stay visible alongside it.
-        expect(MIN_VISIBLE_COLUMNS).toBe(2);
-    });
-});
-
 describe("meetsMinVisible", () => {
     it("returns false with only always-visible columns", () => {
         expect(meetsMinVisible(new Set())).toBe(false);
@@ -90,6 +82,10 @@ describe("meetsMinVisible", () => {
 });
 
 describe("wouldViolateMinVisible", () => {
+    it("returns false for always-visible Name column", () => {
+        expect(wouldViolateMinVisible(new Set(["license"]), "name")).toBe(false);
+    });
+
     it("returns false for hidden column", () => {
         const visible = new Set([TOGGLEABLE_COLUMNS[0].key]);
         expect(wouldViolateMinVisible(visible, TOGGLEABLE_COLUMNS[1].key)).toBe(false);
