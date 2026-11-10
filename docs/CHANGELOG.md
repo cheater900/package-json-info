@@ -21,8 +21,10 @@ Condensed from git history. Newest month first.
   it. `--output` names file, else `<package>-dependencies.<ext>` or
   `<package>-report.pdf` in current dir; written path goes to stderr.
 - **`package-json-info <source>`** prints Markdown dependency tables
-  (Deps, Dev Deps unless `--no-dev`) to stdout. Source: file path, http(s)
-  URL (repo URLs resolve to their package.json) or npm spec. Exit code 1
+  (Deps, Dev Deps unless `--no-dev`) to stdout. Source: file path (BOM
+  dropped), directory (its `package.json`), http(s) URL (repo URLs
+  resolve to their package.json) or npm spec. Piping into `head` exits
+  clean. Exit code 1
   on load or parse failure, 2 on bad arguments. **`npm run build:cli`**
   bundles `src/cli/main.ts` with Vite SSR into `dist-cli/main.js`, wired
   as `bin`.
@@ -281,6 +283,15 @@ Condensed from git history. Newest month first.
   commits or issues lookups, nor leaves private repo data in store.
 
 ### Security
+
+#### CLI
+
+- **Terminal control characters** (ESC, BEL, C1) from registry data and
+  package.json are stripped from CLI output, so hostile package text
+  cannot drive terminal (OSC 52 clipboard write, hidden lines).
+- **Lookup cache** is owner-only (dir 0700, files 0600), since token
+  lookups can hold private repo metadata. Tmp file opens with `wx`, so
+  planted symlink is never followed; failed write removes it.
 
 #### Export
 
