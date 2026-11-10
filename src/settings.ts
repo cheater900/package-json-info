@@ -10,6 +10,8 @@ import {
 import { readStoredJson, writeStoredJson } from "./utils/storage";
 import { isHttpUrl } from "./utils/url";
 
+export type ColorScheme = "light" | "dark";
+
 const SettingsIntSchema = z.number().refine(isConfigInt);
 
 /**
@@ -63,12 +65,10 @@ watch(settings, (value) => writeStoredJson(STORAGE_KEY_SETTINGS, value), { deep:
  */
 export const githubToken = shallowRef<string | undefined>();
 
-export type Settings = z.infer<typeof SettingsSchema>;
-
 /** Color scheme a theme renders with; "system" follows the OS preference. */
 export function resolveColorScheme(theme: Settings["theme"], prefersLight: boolean): ColorScheme {
     const isLight = theme === "light" || (theme === "system" && prefersLight);
     return isLight ? "light" : "dark";
 }
 
-export type ColorScheme = "light" | "dark";
+export type Settings = z.infer<typeof SettingsSchema>;

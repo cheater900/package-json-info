@@ -1,4 +1,4 @@
-import { SUPPORTED_REPO_HOSTS } from "../constants";
+import { GITHUB_HOST, SUPPORTED_REPO_HOSTS } from "../constants";
 
 /** A parsed `{ host, owner, repo }` reference to a source code repository. */
 export type RepoSlug = {
@@ -41,7 +41,7 @@ export function normaliseRepoUrl(raw: string | undefined): string | null {
 export function parseRepoSlug(raw: string): RepoSlug | null {
     const normalised = normaliseRepoUrl(raw)
         ?.replace(/^git@([^:]+):/, "https://$1/")
-        .replace(/^github:/, "https://github.com/");
+        .replace(/^github:/, `https://${GITHUB_HOST}/`);
     if (!normalised) {
         return null;
     }

@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-10
 
+- Build `github:` shorthand URL from `GITHUB_HOST`, loop semver compare over tuple length, group `settings.ts` types by kind
 - Drop unreachable `readFile` guard in source tree browser: file items render only after tree and reader load together
 - Move npm license schema to `utils/license.ts` and infer `NpmLicenseField` from it, drop hand-written copy of same shape
 - Name tar typeflag `X` Solaris extended header, skip PAX global header `g` explicitly so it no longer drops pending long path

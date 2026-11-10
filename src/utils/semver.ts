@@ -19,7 +19,7 @@ export function pinnedVersionOf(range: string): string | undefined {
 
 /** Compares two parsed semver tuples: negative if `a` < `b`, positive if `a` > `b`, 0 if equal. */
 export function compareSemver(a: SemverTuple, b: SemverTuple): number {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) {
             return a[i] - b[i];
         }
