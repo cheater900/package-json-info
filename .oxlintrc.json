@@ -10,7 +10,7 @@
     },
     "overrides": [
         {
-            "files": ["src/core/**"],
+            "files": ["src/core/**", "src/cli/**"],
             "rules": {
                 "no-restricted-imports": [
                     "error",
@@ -18,31 +18,11 @@
                         "patterns": [
                             {
                                 "group": ["vue", "vue-*", "vuedraggable"],
-                                "message": "src/core must stay framework-free."
+                                "message": "src/core and src/cli must stay framework-free."
                             },
                             {
                                 "group": ["**/app/**", "**/app"],
-                                "message": "src/core must not import src/app."
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "files": ["src/cli/**"],
-            "rules": {
-                "no-restricted-imports": [
-                    "error",
-                    {
-                        "patterns": [
-                            {
-                                "group": ["vue", "vue-*", "vuedraggable"],
-                                "message": "src/cli must stay framework-free."
-                            },
-                            {
-                                "group": ["**/app/**", "**/app"],
-                                "message": "src/cli must not import src/app; share code through src/core."
+                                "message": "src/core and src/cli must not import src/app; share code through src/core."
                             }
                         ]
                     }

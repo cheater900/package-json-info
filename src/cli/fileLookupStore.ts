@@ -12,7 +12,7 @@ const CACHE_DIR_MODE = 0o700;
 const CACHE_FILE_MODE = 0o600;
 
 /** `$XDG_CACHE_HOME/package-json-info`, else `~/.cache/package-json-info`. */
-export function defaultLookupCacheDir(env: NodeJS.ProcessEnv = process.env): string {
+export function defaultLookupCacheDir(env: NodeJS.ProcessEnv): string {
     const base = env.XDG_CACHE_HOME || join(homedir(), ".cache");
     return join(base, CACHE_DIR_NAME);
 }
