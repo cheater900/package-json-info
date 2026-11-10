@@ -21,7 +21,7 @@
 | `tests/e2e/`                | Playwright end-to-end tests. `visual/` holds the screenshot run.          |
 | `tests/helpers/`            | Shared test helpers: fetch stubs, column keys, IndexedDB, settings reset. |
 | `tests/fixtures/`           | Shared test data: dependency rows, registry docs, tarballs, GitHub token. |
-| `docs/`                     | Project docs: intent, features, roadmap, ideas, changelog.                |
+| `docs/`                     | Project docs: intent, features, roadmap, notes, known issues, changelog.  |
 
 ## Stack
 

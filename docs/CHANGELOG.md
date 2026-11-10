@@ -1,253 +1,421 @@
 # Changelog
 
-Changes derived from git history, newest first, grouped by date.
+Condensed from git history. Newest month first.
 
-## 2026-11-10
+## 2026-11
 
-- Cap source tree at 20,000 listed entries (larger tree shows the truncated notice, now for npm tarballs too) and file viewer at 2 MB per file, so huge tarball or file no longer stalls the tab
-- Add `npm run typecheck` (vue-tsc, strict) with `tsconfig.json`; type composables, component props and tests so sources, tests and config files pass
-- Record missing type check, `npmPackage.ts` scope, `fetchRepoStars` host guard, unchecked `/rate_limit` answer and changelog grouping in NOTES
-- Name Playwright dev server port, URL and start timeout once in `playwright.config.ts`; tarball e2e helper builds on `minimalRegistryDoc`
-- Build `github:` shorthand URL from `GITHUB_HOST`, loop semver compare over tuple length, group `settings.ts` types by kind
-- Drop unreachable `readFile` guard in source tree browser: file items render only after tree and reader load together
-- Move npm license schema to `utils/license.ts` and infer `NpmLicenseField` from it, drop hand-written copy of same shape
-- Name tar typeflag `X` Solaris extended header, skip PAX global header `g` explicitly so it no longer drops pending long path
-- Cover tar edge cases, source tree viewer flow, URL sync under `//` path, tooltip, file tree item and truncated table cells with tests; drop constant-only tests
-- Report tarball response without body as corrupt tarball instead of raw `TypeError`
-- Pass absolute URL to `history.replaceState` so URL input sync works when app is served under path starting with `//`
-- Reject file tree paths deeper than `MAX_FILE_TREE_DEPTH` with translated error so crafted tarball cannot overflow call stack
-- Validate npm registry documents with zod so a field of wrong type reads as missing instead of failing whole row
-- Refuse `Authorization` requests to any origin but `api.github.com` in `fetchWithTimeout` so GitHub token cannot reach another host
+### Features
 
-## 2026-11-04
+#### Settings and token
 
-- Record open audit gaps in NOTES, settings ideas in IDEA, link NOTES from README
-- Resolve theme to data-color-scheme in main.js, drop light-dark() so themes render on browsers without it
-- Open settings dropdown with Vue state and absolute CSS instead of Popover API so older Safari/Firefox can close it
-- Rewrap settings docs, split main.js display paragraph, list all shared types in DEVELOPMENT
-- Unexport SettingsSchema and IndexedDB request helpers used only in their own module
-- Share IndexedDB stub, settings reset, GitHub token and rate limit fixtures, fetchCallsTo across tests
-- Name main.js startup steps instead of comments, move timer promise to delay util
-- Share token purge-and-forget step in settings menu, move percent formatter to utils with NUMBER_LOCALE
-- Share isConfigInt between env config and settings, fill int error max from MAX_CONFIG_INT, test tables with it.each
-- Move IndexedDB promisify helpers to indexedDb utils, token cipher constants to constants
-- Stop each history test's watchers after test so token and proxy changes can't refetch leaked composables
-- Drop verify result when token changed meanwhile so purged token never shows stale quota
-- Discard in-flight entry fetches on token or proxy change so back navigation can't restore stale rows
-- Purge token on failed save so half-written key and stale ciphertext can't silently drop it on reload
-- Keep stored token when IndexedDB fails on load, purge only for corrupt data or lost key
-- Wait for IndexedDB commit before token save resolves so aborted key write never reports saved
-- Mount app after 2 s even if IndexedDB token load hangs, apply late token via refetch
-- Reject CORS proxy URL with user:password so credentials never stored or echoed in fetch errors
-- Add Green/Light/System themes and font/padding scales to settings menu
-- Add settings gear menu for GitHub token and network, drop build-time VITE_GITHUB_TOKEN so bundle never carries token
-- Store GitHub token AES-GCM encrypted with non-extractable IndexedDB key, add rate limit check
-- Route fetch timeout, concurrency and CORS proxy through persisted settings store
-- Remove unused Vite scaffold styles
-- Move remaining TODO items (reliability, i18n, tests) into ROADMAP, detail settings token scope
-- Document test helper layout, docs folder and vitest auto-restore in DEVELOPMENT
-- Settle each package fetch with shared settle helper instead of local try/catch
-- Share stubFetchByUrl helper and minimal registry doc fixture across tests
-- Build e2e mock routes from API constants, name screenshot viewports, stop json viewer test closing open section
-- Import en.json with type attribute so Playwright can load specs that pull in i18n
-- Restore spies and stubbed globals via vitest config instead of per-file hooks
-- Replace modal and column comments with ModalContent type and names, share JSON_INDENT constant
-- Move OSV page cap and config int limit into constants
-- Rename storage key, tar byte and fetch column group constants to shared-prefix names
-- Replace always-true isCentered check with static class, name Name column key
-- Drop unused per-call githubToken option from package fetch; headers always come from config
-- Move isRepoHostUrl to repoUrl utils, build GitLab/Codeberg raw URLs from repoWebUrl
-- Move SourceTreeRef and DependencyRow to types so domain types don't import from api layer
-- Split planned work out of FEATURES into ROADMAP and IDEA, backfill CHANGELOG from git log
-- Reject config ints above 2^31-1 so huge timeout can't overflow timer and abort every fetch
-- Clear previous entry's rows on fetch start so empty list doesn't show stale deps
-- Stream tarball download into gunzip so oversized or endless body can't exhaust memory
-- Cap OSV paging, stop on any repeated token so cycles can't loop forever
-- Ignore .env files so build-time GitHub token can't be committed
-- Parse repo slug from URL path only so query or hash can't swap repo
-- Bound PAX "=" search to its record to stop quadratic tar parsing
-- Anchor semver regex at digit-run start to stop quadratic scan
-- Normalize tree paths by split to stop slash-run ReDoS in tarball paths
+- **Themes** Green, Light and System, plus **font and padding scales** in
+  the settings menu.
+- **GitHub token** stored AES-GCM encrypted under a non-extractable
+  IndexedDB key, with a **rate limit check**. Build-time
+  `VITE_GITHUB_TOKEN` is gone, so the bundle never carries a token.
+- **Settings menu** behind a gear icon: GitHub token, fetch timeout,
+  concurrency and CORS proxy, kept in a persisted settings store.
 
-## 2026-10-31
+### Changes
 
-- Reword docs: drop spaced-hyphen dashes and filler phrasing
-- Add INTENT doc with purpose, principles and non-goals
-- Type history entry rows as PackageInfo or PackageError
-- Share settle helper for load-then-check-staleness flows
-- Type composable parameters and drop .ts import extensions
-- Name scope marker offset and kilobyte decimals
-- Share HTTP status constants and response builders across tests
-- Share first-found URL probing between tag and branch lookups
-- Move pinnedVersionOf to semver utils
-- Move tarball size constants to constants and share byte concat util
-- Fetch npm tarball only from http(s) URLs
-- Cap unpacked tarball size to stop gzip bombs exhausting memory
-- Bump vue, oxfmt and transitive deps past known advisories
-- Report undecodable tarball as corrupt instead of blank error
-- Read GNU long-name tar entries for paths over 100 chars
-- Show notice when GitHub lists source tree only in part
-- Follow OSV result pages for full vulnerability count
-- Restrict repo slug owner and repo to host name characters
-- Resolve version data and date from leading semver of ranges
+#### Source tree
 
-## 2026-10-28
+- **Source tree** lists at most 20,000 entries and the **file viewer**
+  shows files up to 2 MB. The truncated notice now covers npm tarballs too.
+- **Tarball download** streams into gunzip, so an oversized or endless body
+  cannot exhaust memory.
 
-- Name tarball, memo and submodule checks instead of commenting
-- Reuse parseRepoSlug for repo URL input instead of own regex
-- Shorten new test names
-- Evict only own failed request from async memo cache
-- Omit submodule entries from GitHub source tree
-- Fail on truncated or corrupt tarball instead of partial tree
-- Reject URL input without http(s) scheme
-- Accept .git suffix, query and host case in repo URLs
-- Look up GitHub release tag by exact ref, not prefix match
+#### Settings and token
 
-## 2026-10-27
+- **Theme** resolves to `data-color-scheme` in `main.js`; `light-dark()` is
+  dropped so themes render on browsers without it.
+- **Settings dropdown** opens with Vue state and absolute CSS instead of the
+  Popover API, so older Safari and Firefox can close it.
+- App mounts after 2 s even when the IndexedDB **token load** hangs; a late
+  token applies through a refetch.
 
-- Match repo host only as whole hostname
-- Ignore stale results in source tree browser
-- Parse PAX tar records as bytes for non-ASCII paths
-- Allow reselecting same file, reject blank URL
-- Debounce address bar sync of URL input
-- Apply only most recent package.json load
-- Fix duplicate tree nodes, invalid dates, stale error banner
-- Show error on failed package rows and refetch them
-- Apply dependency fetch only to entry that started it
-- Only link http(s) source URLs from npm data
-- Resolve npm alias specs to real registry package
-- Look up GitHub release tag by pinned version, not raw range
-- Stop caching rate limits and outages as missing data
-- Fall back per field when optional lookup fails
-- Abort network requests after configurable timeout
-- Validate numeric env settings at startup
-- Apply code style rules to src and tests, shorten test titles
-- Move user-facing text into i18n message catalog
-- Split network code into api layer, dedupe components and tests
+### Fixes
 
-## 2026-10-15
+#### Package data
 
-- Validate loaded package.json with a zod schema and derive its types
-- Replace non-ASCII em dashes in README with hyphens
-- Shorten test titles to terse present-tense descriptions
-- Brace all conditionals and prefer early returns over nesting and else
-- Sort CSS properties alphabetically and space rules by one blank line
-- Rename CSS classes to BEM block__element--modifier form
+- **npm registry documents** are validated with zod: a field of the wrong
+  type reads as missing instead of failing the whole row.
+- **OSV paging** is capped and stops on any repeated page token.
+- **Repo slug** is parsed from the URL path only, so query or hash cannot
+  swap the repo.
 
-## 2026-09-12
+#### Source tree
 
-- Widen the search input so its placeholder fits
-- Move search/shrink-columns row below the package name heading
-- Move the status row inside the table
-- Give the Name cell its own arrow cursor, row cursor to pointer
-- Open the package summary card by clicking a row
-- Add PackageSummaryCard for inspecting one dependency in the modal
-- Replace Actions column with a clickable Name cell
-- Exclude version columns from cell truncation
-- Truncate long text cells with click-to-expand
-- Use SVG upload icon instead of arrow glyph
-- Center every column except Name
-- Move expand/source-tree modal ownership from DependenciesTable to App
-- Add a reusable Modal component, drop deps-table Teleport
-- Add green border to source tree modal
-- Center the loading and empty-dependencies messages
-- Add a sharp green grid to the deps table
-- Remove the tooltip from the expand/collapse table button
-- Expand Deps, Dev Deps, and package.json accordions by default
-- Bound the expanded table's proportions to the screen size
-- Replace native title tooltips with a reusable Tooltip component
-- Add icons to input-method buttons and uppercase all button labels
-- Give the UI a retro terminal theme
+- **PAX global header** `g` is skipped and no longer drops a pending long
+  path; tar typeflag `X` is named Solaris extended header.
+- **Tarball response** without a body reports a corrupt tarball instead of
+  a raw `TypeError`.
+- **File tree paths** deeper than `MAX_FILE_TREE_DEPTH` get a translated
+  error, so a crafted tarball cannot overflow the call stack.
 
-## 2026-09-10
+#### Input and loading
 
-- Add a browsable Source Code Tree column to the dependencies table
-- Give DependenciesTable ownership of its own column knowledge
-- Add fullscreen expand modal to the dependencies table
-- Split Vue components into separate .vue, .ts, and .css files
+- **URL input sync** passes an absolute URL to `history.replaceState`, so
+  it works when the app is served under a path starting with `//`.
 
-## 2026-09-07
+#### Drill-down and history
 
-- Disable Node's experimental webstorage global in test scripts
-- Restore comma-formatted numbers and weekday-free dates lost in merge
-- Merge from remote branch
+- **In-flight entry fetches** are discarded on token or proxy change, so
+  back navigation cannot restore stale rows.
+- A fetch start clears the **previous entry's rows**, so an empty list
+  does not show stale dependencies.
 
-## 2026-09-05
+#### Settings and token
 
-- refact: separation of concerns, extract composables and pure row logic
+- **Token save** waits for the IndexedDB commit, and a failed save purges
+  the half-written key and ciphertext.
+- **Stored token** survives an IndexedDB failure on load; only corrupt data
+  or a lost key purges it.
+- **Verify result** is dropped when the token changed meanwhile, so a
+  purged token never shows a stale quota.
+- **Config integers** above 2^31-1 are rejected, so a huge timeout cannot
+  overflow the timer and abort every fetch.
 
-## 2026-09-06
+### Security
 
-- Center and uppercase the h1; center Actions column via a centeredColumns prop
-- Polish general UI: table density, header weight, sticky search, button/summary padding
-- Rework toolbar rows with flex layouts instead of stacked labels
-- Format numeric columns with comma-separated thousands
-- Drop the weekday from formatted dates in the deps table
-- Show a loading row in deps tables while a package.json swap is in flight
-- Correct misspelled package name in package.json
-- Show current package name above deps tables; rename Load column/button
+#### Network
 
-## 2026-09-05
+- **`Authorization` requests** go only to `api.github.com`;
+  `fetchWithTimeout` refuses any other origin, so the GitHub token cannot
+  reach another host.
+- **CORS proxy URL** with `user:password` is rejected, so credentials are
+  never stored or echoed in fetch errors.
 
-- Add a preference to shrink table columns by abbreviating their labels
-- Replace per-table search boxes with one shared search box
-- Restyle table headers: no wrap, plain-text sort trigger, icon on the right
+#### Source tree
 
-## 2026-09-04
+- **PAX `=` search** is bound to its record and **tree paths** are
+  normalized by split, which stops quadratic parsing and a slash-run ReDoS.
 
-- Add drag-to-reorder table columns
-- Lay out the columns panel in a responsive multi-column grid
-- Replace hiddenColumns with visibleColumns throughout
-- Persist column visibility preferences in localStorage
-- Sync the URL input with a ?inputUrl= query param
-- Render package.json with vue-json-pretty instead of raw <pre> text
+#### Package data
 
-## 2026-08-31
+- **Semver regex** is anchored at the digit-run start to stop a quadratic
+  scan.
 
-- Export and unit-test internal parsing/caching helpers
-- Fix unicorn/no-new-array lint finding in fetchPackagesInfo
-- Reformat codebase with oxfmt
-- Add oxlint and oxfmt
-- Move tests into a unified tests/ tree
+#### Tooling
 
-## 2026-08-30
+- **`.env` files** are ignored by git.
 
-- Collapse the Columns accordion by default too
-- Move History below Columns, hide it until there's more than one entry
-- Add a screenshot script for visual review while tweaking the UI
-- Collapse Deps and Dev Deps accordions by default
-- Consolidate the four inputs into one URL row + two action buttons
-- Make Columns, Deps, and Dev Deps collapsible accordions
+### Refactors
 
-## 2026-08-29
+#### Code structure
 
-- UI: remove flex display from columns panel and from input methods
-- Mark completed items in the README with checkboxes
-- Add a search box to filter the table by package name
-- Add history navigation with back/forward buttons
-- Add a Load column that drills into a row's own package.json
-- Hide third-party-backed columns by default
-- Skip network requests entirely for hidden columns
-- Add a heavy in-memory cache for package metadata lookups
-- Add e2e test for horizontal table scrolling
-- Add a column visibility panel with a two-column floor
-- Add the nice-to-have data enrichment columns
-- Add click-to-sort on the table's numeric/date columns
-- Fetch star counts from GitLab and Codeberg, not just GitHub
-- Support GitLab and Codeberg in the Git URL input, not just GitHub
-- Scope vitest to src/, excluding Playwright's e2e specs
-- Add Playwright for headless e2e tests
-- Fix invalid table markup and drop needless defineProps import
-- Add component tests for DependenciesTable
-- Add vitest and unit tests for the npm/GitHub metadata fetcher
-- Bump nanoid and postcss to patched versions
-- Add closed PR/issue counts and dependency list to the table
+- **npm license schema** moved to `utils/license.ts`; `NpmLicenseField` is
+  inferred from it.
+- **Named constants** replace literals: Playwright dev server settings,
+  `GITHUB_HOST` in the `github:` shorthand URL, OSV page cap, config
+  integer limit, shared-prefix names for storage keys and tar bytes.
+- **Shared helpers**: `settle` for package fetches, IndexedDB promisify
+  helpers, percent formatter, `isConfigInt`, `isRepoHostUrl` in repo URL
+  utils.
+- **`SourceTreeRef`** and **`DependencyRow`** moved to `types.ts`, so
+  domain types do not import from the api layer.
+- **`main.js` startup steps** are named functions; modal content has a
+  `ModalContent` type.
 
-## 2026-08-28
+### Tests
 
-- Implement all four package.json input methods, with validation and loading state
-- Promote table/input data and UX basics to must-have in README
-- Add optional/nice-to-have features section to README
-- Document transitive dependency resolution goal in README
-- Document project goals in README
-- Initial commit
+#### Coverage
+
+- Tests added for **tar edge cases**, the **source tree viewer**, URL sync
+  under a `//` path, tooltip, file tree item and truncated table cells.
+  Tests that only restated a constant are gone.
+- **History tests** stop their watchers after each test.
+
+#### Tooling
+
+- **Shared test helpers**: IndexedDB stub, settings reset, token and rate
+  limit fixtures, `stubFetchByUrl`, `fetchCallsTo`, minimal registry
+  document.
+- **Vitest config** restores spies and stubbed globals; e2e mock routes are
+  built from API constants.
+
+### Build and tooling
+
+#### Tooling
+
+- **`npm run typecheck`** runs vue-tsc in strict mode over sources, tests
+  and config files, with a new `tsconfig.json`.
+- `en.json` is imported with a type attribute so Playwright can load specs
+  that pull in i18n.
+
+### Docs and licensing
+
+#### Docs
+
+- Docs follow the standard layout: **`KNOWN_ISSUES.md`** split from
+  `NOTES.md`, changelog grouped by month, scope and area.
+- Planned work moved out of `FEATURES.md` into **`ROADMAP.md`** and
+  **`IDEA.md`**; open audit gaps recorded in `NOTES.md`.
+- `DEVELOPMENT.md` documents test helper layout, shared types and the docs
+  folder.
+
+## 2026-10
+
+### Features
+
+#### Package data
+
+- **OSV result pages** are followed for the full vulnerability count.
+- **npm alias specs** resolve to the real registry package.
+
+#### Source tree
+
+- **GNU long-name tar entries** are read for paths over 100 characters.
+- A **notice** shows when GitHub lists the source tree only in part.
+
+#### Network
+
+- **Network requests** abort after a configurable timeout; numeric env
+  settings are validated at startup.
+
+### Changes
+
+#### Package data
+
+- **Version data and date** resolve from the leading semver of a range.
+- **GitHub release tag** lookup uses the pinned version and an exact ref,
+  not the raw range or a prefix match.
+- An optional lookup that fails falls back **per field**; rate limits and
+  outages are no longer cached as missing data.
+
+#### Input and loading
+
+- **Repo URLs** accept a `.git` suffix, a query and any host case.
+- **URL input** rejects a value without an http(s) scheme, and a blank
+  value.
+- **Address bar sync** of the URL input is debounced.
+
+#### UI and theme
+
+- **CSS classes** renamed to BEM `block__element--modifier` form.
+
+### Fixes
+
+#### Package data
+
+- **Failed package rows** show their error and are refetched.
+- **Async memo cache** evicts only its own failed request.
+
+#### Source tree
+
+- A truncated or corrupt **tarball** fails instead of showing a partial
+  tree; an undecodable one reports as corrupt instead of a blank error.
+- **PAX tar records** are parsed as bytes, so non-ASCII paths work.
+- **Submodule entries** are left out of the GitHub source tree.
+- **Stale results** are ignored in the source tree browser; the same file
+  can be selected again.
+- **Duplicate tree nodes** and invalid dates are fixed.
+
+#### Drill-down and history
+
+- Only the most recent **`package.json` load** applies, and a dependency
+  fetch applies only to the entry that started it.
+- **Stale error banner** is cleared.
+
+### Security
+
+#### Source tree
+
+- **Unpacked tarball size** is capped to stop gzip bombs.
+- **npm tarball** is fetched only from http(s) URLs.
+
+#### Package data
+
+- **Repo host** matches only as a whole hostname; owner and repo are
+  limited to host name characters.
+- **Source links** from npm data are shown only for http(s) URLs.
+
+#### Tooling
+
+- vue, oxfmt and transitive dependencies bumped past known advisories.
+
+### Refactors
+
+#### Code structure
+
+- **Network code** split into an api layer; components and tests
+  deduplicated.
+- **Loaded `package.json`** is validated with a zod schema, and its types
+  derive from that schema.
+- **Shared helpers**: `settle` for load-then-check-staleness flows,
+  first-found URL probing, `parseRepoSlug` for repo URL input, byte concat,
+  `pinnedVersionOf` in semver utils.
+- **Code style pass** over `src` and tests: braces on all conditionals,
+  early returns, named checks in place of comments, sorted CSS properties.
+- **History entry rows** typed as `PackageInfo` or `PackageError`;
+  composable parameters typed.
+
+#### i18n
+
+- **User-facing text** moved into an i18n message catalog.
+
+### Tests
+
+#### Tooling
+
+- **HTTP status constants** and response builders shared across tests;
+  test titles shortened.
+
+### Docs and licensing
+
+#### Docs
+
+- **`INTENT.md`** added: purpose, principles and non-goals.
+- Docs reworded; non-ASCII dashes in README replaced with hyphens.
+
+## 2026-09
+
+### Features
+
+#### Dependencies table
+
+- **Package summary card** opens in the modal when a row is clicked.
+- **Clickable Name cell** replaces the Actions column.
+- **Long text cells** truncate with click to expand; version columns are
+  excluded.
+- **Fullscreen expand modal** for the dependencies table.
+- **Drag to reorder** table columns.
+- **Shrink columns** preference abbreviates column labels.
+- **Column visibility** persists in `localStorage`.
+- One shared **search box** replaces the search box of each table.
+- **Loading row** shows while a `package.json` swap is in flight.
+
+#### Source tree
+
+- **Source Code Tree column** opens a browsable source tree.
+
+#### Input and loading
+
+- **URL input** syncs with the `?inputUrl=` query parameter.
+- **`package.json` viewer** uses vue-json-pretty instead of raw `<pre>`
+  text.
+- Current **package name** shows above the tables.
+
+#### UI and theme
+
+- **Retro terminal theme**, with icons on input buttons and uppercase
+  button labels.
+- **Tooltip component** replaces native `title` tooltips.
+
+### Changes
+
+#### Dependencies table
+
+- **Numeric columns** use comma-separated thousands; dates drop the
+  weekday.
+- **Table layout**: every column but Name is centered, a green grid, a
+  status row inside the table, centered loading and empty messages.
+- **Table headers** do not wrap; the sort trigger is plain text with its
+  icon on the right.
+- **Columns panel** uses a responsive grid.
+
+#### UI and theme
+
+- **Accordions** for Deps, Dev Deps and `package.json` are open by default.
+- **Toolbar rows** use flex layouts; the search row sits below the package
+  name and the search input is wider.
+- The expanded table is bound to the screen size; the source tree modal
+  has a green border.
+
+### Fixes
+
+#### Dependencies table
+
+- Comma-formatted numbers and weekday-free dates, lost in a merge, are
+  restored.
+
+### Refactors
+
+#### Code structure
+
+- **Vue components** split into separate `.vue`, `.ts` and `.css` files.
+- **Composables** and pure row logic extracted from the app component.
+- **Modal component** is reusable and owned by `App`; `DependenciesTable`
+  owns its column knowledge.
+- `hiddenColumns` replaced with `visibleColumns`.
+
+### Build and tooling
+
+#### Tooling
+
+- Test scripts disable Node's experimental webstorage global.
+
+## 2026-08
+
+### Features
+
+#### Input and loading
+
+- **Four `package.json` input methods** with validation and loading state,
+  later merged into one URL row and two action buttons.
+- **Git URL input** supports GitLab and Codeberg next to GitHub.
+
+#### Dependencies table
+
+- **Search box** filters the table by package name.
+- **Column visibility panel** with a floor of two columns; hidden columns
+  make no network requests.
+- **Click to sort** on numeric and date columns.
+- **Accordions** for Columns, Deps and Dev Deps.
+
+#### Package data
+
+- **Enrichment columns**: closed PR and issue counts, dependency list and
+  the other nice-to-have data.
+- **Star counts** from GitLab and Codeberg next to GitHub.
+- **In-memory cache** for package metadata lookups.
+
+#### Drill-down and history
+
+- **Load column** drills into a row's own `package.json`.
+- **History navigation** with back and forward buttons, shown once there
+  is more than one entry.
+
+### Changes
+
+#### Dependencies table
+
+- Columns backed by third-party services are hidden by default.
+
+### Fixes
+
+#### Dependencies table
+
+- Invalid table markup fixed.
+
+### Security
+
+#### Tooling
+
+- nanoid and postcss bumped to patched versions.
+
+### Tests
+
+#### Coverage
+
+- **Unit tests** for the npm and GitHub metadata fetcher and for parsing
+  and caching helpers; **component tests** for `DependenciesTable`.
+- **Playwright e2e tests**, including horizontal table scrolling.
+
+#### Tooling
+
+- Tests live in one `tests/` tree; a **screenshot script** captures the UI
+  for visual review.
+
+### Build and tooling
+
+#### Tooling
+
+- **oxlint** and **oxfmt** added; codebase reformatted.
+- **Vitest** and **Playwright** added.
+
+### Docs and licensing
+
+#### Docs
+
+- README documents project goals, must-have and optional features.

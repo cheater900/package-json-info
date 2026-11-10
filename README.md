@@ -19,5 +19,6 @@ menu; it stays encrypted in their browser, so a public static deploy is safe.
 - [Development](docs/DEVELOPMENT.md): code layout, stack, configuration, and how to run, build, and test.
 - [Roadmap](docs/ROADMAP.md): planned work.
 - [Ideas](docs/IDEA.md): features worth trying, not planned.
-- [Notes](docs/NOTES.md): known gaps and open decisions, not planned.
-- [Changelog](docs/CHANGELOG.md): changes by date, from git history.
+- [Notes](docs/NOTES.md): open gaps and decisions, not planned.
+- [Known issues](docs/KNOWN_ISSUES.md): issues left as they are, with reasons.
+- [Changelog](docs/CHANGELOG.md): changes by month, condensed from git history.
