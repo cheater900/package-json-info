@@ -99,6 +99,27 @@ describe("source dispatch", () => {
         expect(result.stdout).toMatch(/^# bom-app\n/);
     });
 
+    it("reads package.json of dir path", async () => {
+        const fetchMock = stubFetchByUrl({});
+        await writePackageJson('{"name":"dir-app"}');
+
+        const result = await runCli(tempDir);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(result.stdout).toMatch(/^# dir-app\n/);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("exits 1 for dir without package.json", async () => {
+        const fetchMock = stubFetchByUrl({});
+
+        const result = await runCli(tempDir);
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(result.stderr).toContain("ENOENT");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("fetches http URL", async () => {
         const fetchMock = stubFetchByUrl({
             "example.com/package.json": { name: "remote-app" },

@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { bindCore } from "./coreBinding";
 import type { CoreSettingsInput } from "./coreBinding";
@@ -59,7 +60,7 @@ export const USAGE = `Usage: package-json-info <source> [--no-dev] [--format <id
 
 Print dependency tables of a package.json as Markdown, or export them to a file.
 
-<source>  package.json file path, http(s) URL (repo URLs resolve to their
+<source>  package.json file or its directory, http(s) URL (repo URLs resolve to their
           package.json) or npm package spec (name or name@version)
 
 Options:
@@ -186,10 +187,18 @@ async function readTextFile(path: string): Promise<string> {
     return new TextDecoder().decode(await readFile(path));
 }
 
-/** Existing file path -> file, http(s) URL -> URL, anything else -> npm spec. */
+/**
+ * Existing file path -> file, existing dir -> its package.json, http(s) URL
+ * -> URL, anything else -> npm spec. A dir never falls through to the npm
+ * spec: `my-app/` would load an unrelated registry package of that name.
+ */
 function readSource(source: string): Promise<string> {
-    if (statSync(source, { throwIfNoEntry: false })?.isFile()) {
+    const stats = statSync(source, { throwIfNoEntry: false });
+    if (stats?.isFile()) {
         return readTextFile(source);
+    }
+    if (stats?.isDirectory()) {
+        return readTextFile(join(source, "package.json"));
     }
     if (isHttpUrl(source)) {
         return textOf(fetchUrlSource(source), t("errors.urlNotFound"));
