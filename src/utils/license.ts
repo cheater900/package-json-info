@@ -1,5 +1,9 @@
+import { z } from "zod";
+
+const NpmLicenseEntrySchema = z.union([z.string(), z.object({ type: z.string().optional() })]);
+
 /** npm's license field: a string, `{ type }`, or (in old packages) an array of either. */
-export type NpmLicenseField = string | { type?: string } | Array<string | { type?: string }>;
+export const NpmLicenseSchema = z.union([NpmLicenseEntrySchema, z.array(NpmLicenseEntrySchema)]);
 
 /**
  * SPDX identifier families considered copyleft (or otherwise carrying
@@ -36,3 +40,5 @@ export function extractLicense(value: NpmLicenseField | undefined): string | nul
     }
     return value.type ?? null;
 }
+
+export type NpmLicenseField = z.infer<typeof NpmLicenseSchema>;

@@ -12,7 +12,7 @@ import {
 } from "../constants";
 import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
-import { extractLicense } from "../utils/license";
+import { extractLicense, NpmLicenseSchema } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
@@ -25,9 +25,6 @@ import type { HttpHeaders } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
 import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repoMetadata";
 import type { RepoIssueCounts } from "./repoMetadata";
-
-const NpmLicenseEntrySchema = z.union([z.string(), z.object({ type: z.string().optional() })]);
-const NpmLicenseSchema = z.union([NpmLicenseEntrySchema, z.array(NpmLicenseEntrySchema)]);
 
 /**
  * Registry documents hold whatever each package published. A field of the
