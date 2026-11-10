@@ -11,6 +11,7 @@ import {
 } from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
 import { githubTokenFixture } from "../../fixtures/github";
+import { MAX_FILE_TREE_ENTRIES, MAX_VIEWED_FILE_BYTES } from "../../../src/constants";
 
 const NPM_TREE_REF = {
     provider: "npm",
@@ -92,6 +93,40 @@ describe("fetchSourceTree - npm provider", () => {
         );
 
         await expect(fetchSourceTree(NPM_TREE_REF)).rejects.toThrow(/corrupt or incomplete/);
+    });
+
+    it("lists at most MAX_FILE_TREE_ENTRIES tarball entries, flags truncated", async () => {
+        const files = Object.fromEntries(
+            Array.from({ length: MAX_FILE_TREE_ENTRIES + 1 }, (_, i) => [`f${i}.js`, ""]),
+        );
+        const tarball = buildNpmTarball(files);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => binaryResponse(tarball)),
+        );
+
+        const { tree, truncated } = await fetchSourceTree(NPM_TREE_REF);
+
+        expect(tree).toHaveLength(MAX_FILE_TREE_ENTRIES);
+        expect(truncated).toBe(true);
+    });
+
+    it("readFile shows file at size cap, rejects file over it", async () => {
+        const tarball = buildNpmTarball({
+            "at-cap.txt": "x".repeat(MAX_VIEWED_FILE_BYTES),
+            "over-cap.txt": "x".repeat(MAX_VIEWED_FILE_BYTES + 1),
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => binaryResponse(tarball)),
+        );
+
+        const { readFile } = await fetchSourceTree(NPM_TREE_REF);
+
+        expect(await readFile("at-cap.txt")).toHaveLength(MAX_VIEWED_FILE_BYTES);
+        await expect(readFile("over-cap.txt")).rejects.toThrow(
+            "This file is larger than 2 MB, too large to show.",
+        );
     });
 
     it("readFile rejects for path missing from tarball", async () => {
@@ -182,6 +217,47 @@ describe("fetchSourceTree - github provider", () => {
         const { truncated } = await fetchSourceTree(GITHUB_TREE_REF);
 
         expect(truncated).toBe(true);
+    });
+
+    it("lists at most MAX_FILE_TREE_ENTRIES entries, flags truncated", async () => {
+        const blobs = Array.from({ length: MAX_FILE_TREE_ENTRIES + 1 }, (_, i) => ({
+            path: `f${i}.js`,
+            type: "blob",
+        }));
+        stubGithubFetch({ tree: blobs });
+
+        const { tree, truncated } = await fetchSourceTree(GITHUB_TREE_REF);
+
+        expect(tree).toHaveLength(MAX_FILE_TREE_ENTRIES);
+        expect(truncated).toBe(true);
+    });
+
+    it("tree at entry cap stays unflagged", async () => {
+        const blobs = Array.from({ length: MAX_FILE_TREE_ENTRIES }, (_, i) => ({
+            path: `f${i}.js`,
+            type: "blob",
+        }));
+        stubGithubFetch({ tree: blobs });
+
+        const { truncated } = await fetchSourceTree(GITHUB_TREE_REF);
+
+        expect(truncated).toBe(false);
+    });
+
+    it("readFile rejects file listed over size cap without fetching it", async () => {
+        const fetchMock = stubGithubFetch({
+            tree: [
+                { path: "big.bin", type: "blob", size: MAX_VIEWED_FILE_BYTES + 1 },
+                { path: "ok.txt", type: "blob", size: MAX_VIEWED_FILE_BYTES },
+            ],
+        });
+        const { readFile } = await fetchSourceTree(GITHUB_TREE_REF);
+
+        await expect(readFile("big.bin")).rejects.toThrow(
+            "This file is larger than 2 MB, too large to show.",
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(await readFile("ok.txt")).toBe("content");
     });
 
     it("omits submodule entries", async () => {

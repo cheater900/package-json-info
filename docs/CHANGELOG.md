@@ -4,6 +4,7 @@ Changes derived from git history, newest first, grouped by date.
 
 ## 2026-11-10
 
+- Cap source tree at 20,000 listed entries (larger tree shows the truncated notice, now for npm tarballs too) and file viewer at 2 MB per file, so huge tarball or file no longer stalls the tab
 - Add `npm run typecheck` (vue-tsc, strict) with `tsconfig.json`; type composables, component props and tests so sources, tests and config files pass
 - Record missing type check, `npmPackage.ts` scope, `fetchRepoStars` host guard, unchecked `/rate_limit` answer and changelog grouping in NOTES
 - Name Playwright dev server port, URL and start timeout once in `playwright.config.ts`; tarball e2e helper builds on `minimalRegistryDoc`

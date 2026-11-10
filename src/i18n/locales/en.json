@@ -121,7 +121,7 @@
         "downloading": "Downloading source…",
         "selectFile": "Select a file to view its contents.",
         "loadingFile": "Loading…",
-        "truncated": "This repository is too large to list in full. Some files are missing."
+        "truncated": "This file tree is too large to list in full. Some files are missing."
     },
     "errors": {
         "clipboard": "Could not read the clipboard. Check the browser's clipboard permission and try again.",
@@ -144,6 +144,7 @@
         "tarballFileMissing": "File not found in the downloaded tarball: {path}",
         "treeTooDeep": "The file tree nests deeper than {max} folders, too deep to browse.",
         "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
+        "fileTooLarge": "This file is larger than {megabytes} MB, too large to show.",
         "fileContentFetch": "Could not fetch file contents (status {status})."
     },
     "validation": {

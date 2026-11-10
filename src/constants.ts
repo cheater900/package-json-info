@@ -69,5 +69,9 @@ export const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
 export const MAX_UNPACKED_TARBALL_BYTES = 256 * BYTES_PER_MB;
 /** Deepest path the file tree accepts; no real file system nests this far. */
 export const MAX_FILE_TREE_DEPTH = 1000;
+/** Most entries the file tree lists; one folder holding more stalls rendering. */
+export const MAX_FILE_TREE_ENTRIES = 20_000;
+/** Largest file the source viewer shows; bigger text stalls the tab. */
+export const MAX_VIEWED_FILE_BYTES = 2 * BYTES_PER_MB;
 
 export const TOOLTIP_OFFSET_PX = 6;

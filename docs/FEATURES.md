@@ -39,6 +39,8 @@ the data is available:
 - Maintainers who publish the package on npm
 - Deprecation notice, when npm marks the package deprecated
 - Published source tree browser, from the npm tarball or a GitHub release tag
+- Source tree lists at most 20,000 entries and shows files up to 2 MB; a
+  larger tree shows a notice, a larger file an error
 
 ## Package drill-down / history
 

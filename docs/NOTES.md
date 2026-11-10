@@ -20,10 +20,6 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
 - **Proxy prefix without trailing `/`** (`https://p.example` + target)
   builds a broken host such as `p.examplehttps`. The requests fail; no real
   TLD matches.
-- **Malicious tarball can freeze the tab.** The 256 MB unpacked cap still
-  allows hundreds of thousands of entries in one directory, all rendered
-  at once. Only the user's own tab, only after "View tree"; closing the
-  modal or tab recovers. An entry-count cap would fix it.
 - **Dev-only `npm audit` findings**: moderate advisories in the
   `@vue/test-utils` → js-beautify → editorconfig/minimatch/glob chain. Not
   in the bundle. `npm audit fix --force` downgrades `@vue/test-utils`;
@@ -47,8 +43,6 @@ moves to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
   cell text. A malformed GitHub tree answer shows a raw engine error in the
   source-tree modal; a `/rate_limit` answer without `rate` shows one in the
   token status.
-- **Source-tree viewer renders a file whole.** A file of tens of MB can
-  stall the tab until the modal closes. A size cap would fix it.
 - **Malformed tarball with both file `a` and directory `a/…`** gives
   duplicate Vue keys in the file tree. Cosmetic.
 - **`URL.canParse`** needs Safari 17+.
