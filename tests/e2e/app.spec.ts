@@ -713,8 +713,7 @@ async function loadPackageWithTarball(page: Page, tarball: Buffer) {
     await page.route(`${NPM_REGISTRY_URL}/tree-pkg`, async (route) => {
         await route.fulfill({
             json: {
-                "dist-tags": { latest: "1.0.0" },
-                time: {},
+                ...minimalRegistryDoc,
                 versions: { "1.0.0": { dist: { tarball: TREE_PACKAGE_TARBALL_URL } } },
             },
         });

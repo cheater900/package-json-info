@@ -1,12 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const DEV_SERVER_PORT = 4173;
+const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
+const DEV_SERVER_START_TIMEOUT_MS = 30_000;
+
 export default defineConfig({
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
     reporter: "list",
     use: {
-        baseURL: "http://localhost:4173",
+        baseURL: DEV_SERVER_URL,
         trace: "on-first-retry",
     },
     // Two projects, two test directories, so `playwright test` (no
@@ -27,9 +31,9 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: "npm run dev -- --port 4173 --strictPort",
-        url: "http://localhost:4173",
+        command: `npm run dev -- --port ${DEV_SERVER_PORT} --strictPort`,
+        url: DEV_SERVER_URL,
         reuseExistingServer: !process.env.CI,
-        timeout: 30000,
+        timeout: DEV_SERVER_START_TIMEOUT_MS,
     },
 });
