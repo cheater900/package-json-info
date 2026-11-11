@@ -148,8 +148,11 @@ code {
     background: var(--code-bg);
     border-bottom: 1px solid var(--border);
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
+    /* Anchors the settings panel on phones, see SettingsMenu.css. */
+    position: relative;
     text-align: left;
 }
 

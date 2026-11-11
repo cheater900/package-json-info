@@ -4,6 +4,10 @@
     height: min(700px, 100%);
     overflow: hidden;
     width: min(1000px, 100%);
+
+    @media (max-width: 700px) {
+        height: 100%;
+    }
 }
 
 .source-tree__header {
@@ -40,6 +44,11 @@
     display: flex;
     flex: 1;
     min-height: 0;
+
+    /* Phones: file tree above the file view. */
+    @media (max-width: 700px) {
+        flex-direction: column;
+    }
 }
 
 .source-tree__file-tree {
@@ -49,6 +58,13 @@
     overflow: auto;
     padding: calc(8px * var(--space-scale));
     width: 280px;
+
+    @media (max-width: 700px) {
+        border-bottom: 1px solid var(--border);
+        border-right: 0;
+        max-height: 40%;
+        width: auto;
+    }
 }
 
 .source-tree__viewer {

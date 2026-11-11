@@ -74,6 +74,21 @@ tbody tr:not(.deps-table__status-row):hover {
         pointer;
 }
 
+/* Name column stays in view while the table scrolls sideways; the opaque
+   background hides the cells scrolling underneath it. */
+.deps-table thead th:first-child,
+.deps-table__name-cell {
+    background: var(--bg);
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+/* Keeps the row hover tint on the opaque name cell. */
+tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
+    background: linear-gradient(var(--accent-bg), var(--accent-bg)), var(--bg);
+}
+
 .deps-table__name-inner {
     align-items: center;
     display: flex;
@@ -87,6 +102,11 @@ tbody tr:not(.deps-table__status-row):hover {
     max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    /* Phones: a compact sticky column leaves room for the scrolled cells. */
+    @media (max-width: 700px) {
+        max-width: 120px;
+    }
 }
 
 .deps-table__stale-badge {
