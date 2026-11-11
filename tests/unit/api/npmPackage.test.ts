@@ -92,6 +92,7 @@ describe("fetchPackageInfo", () => {
                 tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
             },
             staleSince: null,
+            failedLookups: null,
         });
     });
 
@@ -1110,6 +1111,42 @@ describe("fetchPackageInfo failures", () => {
         expect(info.closedIssues).toBeNull();
     });
 
+    it("marks failed downloads lookup with its error", async () => {
+        vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "status"));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.failedLookups).toEqual({
+            weeklyDownloads: "Request failed with status 503",
+        });
+        expect(info.staleSince).toBeNull();
+    });
+
+    it("marks every issue count column on failed search", async () => {
+        vi.stubGlobal("fetch", failingFetch("search/issues", "network"));
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.failedLookups).toEqual({
+            openPRs: "Failed to fetch",
+            closedPRs: "Failed to fetch",
+            openIssues: "Failed to fetch",
+            closedIssues: "Failed to fetch",
+        });
+    });
+
+    it("leaves failedLookups null for live 404", async () => {
+        vi.stubGlobal(
+            "fetch",
+            failingFetch("api.npmjs.org/downloads", "status", HTTP_STATUS.notFound),
+        );
+
+        const info = await fetchPackageInfo("pkg", "1.0.0");
+
+        expect(info.weeklyDownloads).toBeNull();
+        expect(info.failedLookups).toBeNull();
+    });
+
     it("rejects on registry server error, retries on next fetch", async () => {
         const fetchMock = failingFetch("registry.npmjs.org", "status");
         vi.stubGlobal("fetch", fetchMock);
@@ -1162,6 +1199,7 @@ describe("fetchPackageInfo failures", () => {
             expect(info.weeklyDownloads).toBe(42);
             expect(info.gitStars).toBe(9);
             expect(info.staleSince).toBe(SAVED_OLD);
+            expect(info.failedLookups).toBeNull();
         });
 
         it("builds row from stored registry document on registry outage", async () => {

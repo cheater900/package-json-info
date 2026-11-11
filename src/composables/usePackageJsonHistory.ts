@@ -12,12 +12,19 @@ import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson"
 import type { DependencyMap, PackageJson } from "../utils/packageJson";
 import type { EntrySource, HistoryEntry } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../utils/workspaces";
-import type { DependencyRow } from "../types";
+import type { DependencyRow, PackageInput } from "../types";
 import { t } from "../i18n";
 import { githubToken, settings } from "../settings";
 
 function toPackageInputs(dependencies: DependencyMap | undefined) {
     return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
+}
+
+/** `rows` with each row of `replacement`'s name and version swapped for it. */
+function replaceRow(rows: DependencyRow[], replacement: DependencyRow): DependencyRow[] {
+    return rows.map((row) =>
+        row.name === replacement.name && row.version === replacement.version ? replacement : row,
+    );
 }
 
 /**
@@ -46,6 +53,8 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     // Latest fetch started per entry. A slower, older fetch for the same entry
     // (e.g. columns toggled mid-fetch) finishes later and must not win.
     const latestFetchByEntry = new WeakMap<HistoryEntry, symbol>();
+    // Names of rows whose retry is in flight; a name is one row per table.
+    const retryingPackages = ref(new Set<string>());
 
     function isCurrentEntry(entry: HistoryEntry) {
         return history.value[historyIndex.value] === entry;
@@ -170,6 +179,46 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     }
 
     /**
+     * Refetches one package of the current entry under the current columns
+     * and swaps it into the entry's cache and both tables (a package can be
+     * in deps and devDeps). Failed lookups were evicted from the memo
+     * caches, so the refetch goes live. Applies only while the same entry
+     * is current and no full fetch started since; else the fresher rows win.
+     * Skipped while a full fetch runs: it refetches the row anyway.
+     *
+     * @returns The new row, or null when it was not applied.
+     */
+    async function retryRow(input: PackageInput): Promise<DependencyRow | null> {
+        const entry = history.value[historyIndex.value];
+        const isFetching = isLoadingDeps.value || isLoadingDevDeps.value;
+        if (
+            !entry?.deps ||
+            !entry.devDeps ||
+            isFetching ||
+            retryingPackages.value.has(input.name)
+        ) {
+            return null;
+        }
+        const fetchToken = latestFetchByEntry.get(toRaw(entry));
+        retryingPackages.value.add(input.name);
+        const rows = await fetchPackagesInfo([input], {
+            visibleColumns: new Set(visibleColumns.value),
+        });
+        retryingPackages.value.delete(input.name);
+        const isStillWanted =
+            isCurrentEntry(entry) && latestFetchByEntry.get(toRaw(entry)) === fetchToken;
+        if (!rows || !isStillWanted) {
+            return null;
+        }
+        const [row] = rows;
+        entry.deps = replaceRow(entry.deps, row);
+        entry.devDeps = replaceRow(entry.devDeps, row);
+        deps.value = entry.deps;
+        devDeps.value = entry.devDeps;
+        return row;
+    }
+
+    /**
      * Drops every entry's column snapshot so each one refetches when shown,
      * then refetches the current one. Cells that failed earlier (rate limit,
      * proxy) are cached as missing until then. Fetches still in flight
@@ -224,5 +273,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         goBack,
         goForward,
         loadPackageJsonText,
+        retryingPackages,
+        retryRow,
     };
 }

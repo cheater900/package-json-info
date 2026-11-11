@@ -149,6 +149,103 @@ describe("fetchPackageJsonFromRepo", () => {
     });
 });
 
+describe("fetchPackageJsonFromRepo GitHub blob and tree URLs", () => {
+    const RAW = "https://raw.githubusercontent.com/o/r";
+
+    function stubFile() {
+        const fetchMock = vi.fn(async (_url: string) => jsonResponse({ name: "file" }));
+        vi.stubGlobal("fetch", fetchMock);
+        return fetchMock;
+    }
+
+    it.each([
+        ["https://github.com/o/r/blob/v2/package.json", `${RAW}/v2/package.json`, "v2"],
+        ["https://github.com/o/r/tree/v2", `${RAW}/v2/package.json`, "v2"],
+        ["https://github.com/o/r/tree/v2/", `${RAW}/v2/package.json`, "v2"],
+        ["https://github.com/o/r/blob/feat/x/package.json", `${RAW}/feat/x/package.json`, null],
+        [
+            "https://github.com/o/r/blob/main/packages/a/package.json",
+            `${RAW}/main/packages/a/package.json`,
+            null,
+        ],
+        [
+            "https://github.com/o/r/tree/main/packages/a",
+            `${RAW}/main/packages/a/package.json`,
+            null,
+        ],
+        [
+            "https://github.com/o/r/blob/main/my%20dir/package.json",
+            `${RAW}/main/my%20dir/package.json`,
+            null,
+        ],
+        ["https://github.com/o/r/blob/v2/package.json?plain=1#L3", `${RAW}/v2/package.json`, "v2"],
+    ])("fetches %s directly", async (url, rawUrl, branch) => {
+        const fetchMock = stubFile();
+
+        const content = await fetchPackageJsonFromRepo(url);
+
+        expect(fetchMock.mock.calls.map(([called]) => called)).toEqual([rawUrl]);
+        expect(content).toEqual({
+            text: JSON.stringify({ name: "file" }),
+            slug: { host: "github.com", owner: "o", repo: "r" },
+            branch,
+        });
+    });
+
+    it("returns null for missing file without probing branches", async () => {
+        const fetchMock = vi.fn(async () => statusResponse(HTTP_STATUS.notFound));
+        vi.stubGlobal("fetch", fetchMock);
+
+        const content = await fetchPackageJsonFromRepo("https://github.com/o/r/tree/gone");
+
+        expect(content).toBeNull();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        "https://github.com/o/r/blob/main/../package.json",
+        "https://github.com/o/r/blob/main/%2e%2e/package.json",
+        "https://github.com/o/r/blob/main",
+        "https://github.com/o/r/tree/",
+        "https://github.com/o/r/blob/main/%E0%A4%A",
+    ])("rejects %s", async (url) => {
+        const fetchMock = stubFile();
+
+        await expect(fetchPackageJsonFromRepo(url)).rejects.toThrow(/Invalid repository URL/);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("ignores blob path in query and hash", async () => {
+        const fetchMock = stubFile();
+
+        await fetchPackageJsonFromRepo("https://github.com/o/r?p=/blob/x/package.json#/tree/y");
+
+        expect(fetchMock.mock.calls[0][0]).toBe(`${RAW}/main/package.json`);
+    });
+
+    it.each([
+        [
+            "https://gitlab.com/o/r/-/blob/dev/package.json",
+            "https://gitlab.com/o/r/-/raw/main/package.json",
+        ],
+        [
+            "https://codeberg.org/o/r/src/branch/dev/package.json",
+            "https://codeberg.org/o/r/raw/branch/main/package.json",
+        ],
+        [
+            "https://gitlab.com/o/r/blob/dev/package.json",
+            "https://gitlab.com/o/r/-/raw/main/package.json",
+        ],
+    ])("probes default branches for non-GitHub %s", async (url, rawUrl) => {
+        const fetchMock = stubFile();
+
+        const content = await fetchPackageJsonFromRepo(url);
+
+        expect(fetchMock.mock.calls[0][0]).toBe(rawUrl);
+        expect(content!.branch).toBe("main");
+    });
+});
+
 describe("fetchPackageJsonFromRepo failures", () => {
     it("throws on rate limit instead of trying next branch", async () => {
         const fetchMock = vi.fn(async () => statusResponse(HTTP_STATUS.tooManyRequests));

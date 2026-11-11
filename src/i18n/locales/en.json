@@ -105,7 +105,10 @@
         "sourceLink": "link",
         "viewTree": "View tree",
         "stale": "stale",
-        "staleNote": "Cached data from {date}; live lookup failed."
+        "staleNote": "Cached data from {date}; live lookup failed.",
+        "lookupFailed": "Lookup failed: {error}",
+        "retry": "↻",
+        "retryLabel": "Retry lookups for {name}"
     },
     "cell": {
         "yes": "Yes",

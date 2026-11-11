@@ -162,6 +162,26 @@ test("URL input fetches repo host URL via raw-file API", async ({ page }) => {
     await expect(page.getByRole("cell", { name: "repo-dep", exact: true })).toBeVisible();
 });
 
+test("URL input loads GitHub blob URL's file at its ref", async ({ page }) => {
+    await page.route(
+        `${GITHUB_RAW_URL}/some-owner/some-repo/feat/x/packages/a/package.json`,
+        async (route) => {
+            await route.fulfill({
+                json: { name: "pkg-a", dependencies: { "blob-dep": "1.0.0" } },
+            });
+        },
+    );
+
+    await page.goto("/");
+    await expandAllSections(page);
+    await fetchFromUrlInput(
+        page,
+        "https://github.com/some-owner/some-repo/blob/feat/x/packages/a/package.json",
+    );
+
+    await expect(page.getByRole("cell", { name: "blob-dep", exact: true })).toBeVisible();
+});
+
 const MONOREPO_URL = "https://github.com/mono-owner/mono-repo";
 const MONOREPO_RAW_URL = `${GITHUB_RAW_URL}/mono-owner/mono-repo/main`;
 const MONOREPO_TREE_URL = `${GITHUB_API_URL}/repos/mono-owner/mono-repo/git/trees/main?recursive=1`;
@@ -701,6 +721,37 @@ test("registry outage after reload shows stored row with stale badge and health 
     await expect(row.locator(".deps-table__stale-badge")).toHaveText("stale");
     // Health needs the registry document, so a score proves the stored one was used.
     await expect(row.getByRole("cell", { name: "100 good", exact: true })).toBeVisible();
+});
+
+test("failed downloads lookup shows '?', retry button shows number", async ({ page }) => {
+    let isDownloadsDown = true;
+    await page.route(`${NPM_WEEKLY_DOWNLOADS_URL}/flaky-pkg`, async (route) => {
+        if (isDownloadsDown) {
+            await route.abort();
+            return;
+        }
+        await route.fulfill({ json: { downloads: 777 } });
+    });
+    const depsTable = page.locator("table.deps-table").first();
+    const row = depsTable.locator("tbody tr").filter({ hasText: "flaky-pkg" });
+
+    await page.goto("/");
+    await expandAllSections(page);
+    await loadJson(page, { name: "demo", dependencies: { "flaky-pkg": "1.0.0" } });
+
+    const failedCell = row.locator(".dependency-cell--failed");
+    await expect(failedCell).toHaveText("?");
+    await failedCell.hover();
+    await expect(page.getByRole("tooltip")).toContainText("Lookup failed:");
+
+    isDownloadsDown = false;
+    await row.getByRole("button", { name: "Retry lookups for flaky-pkg" }).click();
+
+    await expect(row.getByRole("cell", { name: "777", exact: true })).toBeVisible();
+    await expect(failedCell).toHaveCount(0);
+    await expect(row.getByRole("button", { name: "Retry lookups for flaky-pkg" })).toHaveCount(0);
+    // Retry is not a drill-down: the loaded package.json stays.
+    await expect(depsTable.getByRole("cell", { name: "flaky-pkg", exact: true })).toBeVisible();
 });
 
 test("hidden column skips request, re-shown column fetches missing data", async ({ page }) => {

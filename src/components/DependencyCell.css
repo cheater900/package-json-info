@@ -1,3 +1,8 @@
+.dependency-cell--failed {
+    color: var(--error);
+    font-weight: bold;
+}
+
 .health-score {
     font-weight: bold;
 }

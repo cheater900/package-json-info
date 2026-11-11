@@ -11,6 +11,7 @@ import {
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyRow, SortDirection } from "../types";
 import { fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
+import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
@@ -42,8 +43,19 @@ export default defineComponent({
             type: Boolean,
             default: false,
         },
+        /** Names of rows whose retry is in flight; their retry button is disabled. */
+        retryingPackages: {
+            type: Set as PropType<ReadonlySet<string>>,
+            default: () => new Set(),
+        },
     },
-    emits: ["load-package", "reorder-columns", "open-source-tree", "select-package"],
+    emits: [
+        "load-package",
+        "reorder-columns",
+        "open-source-tree",
+        "select-package",
+        "retry-package",
+    ],
     setup(props, { emit }) {
         const filteredDependencies = computed(() => {
             const query = props.searchQuery.trim().toLowerCase();
@@ -181,6 +193,7 @@ export default defineComponent({
             t,
             NAME_COLUMN_KEY,
             staleNoteFor,
+            isRowRetryable,
             labelFor,
             titleFor,
             orderedVisibleColumns,

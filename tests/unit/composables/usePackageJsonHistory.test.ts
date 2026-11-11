@@ -526,3 +526,129 @@ describe("settings refetch", () => {
         ]);
     });
 });
+
+describe("retryRow", () => {
+    const PKG = { name: "pkg", version: "1.0.0" };
+    const DOWNLOADS_URL = "last-week/pkg";
+
+    type PendingRequest = {
+        url: string;
+        resolve: (response: unknown) => void;
+        reject: (error: Error) => void;
+    };
+
+    /** Fetch mock whose requests stay pending until answered by URL fragment. */
+    function pendingFetch() {
+        const pending: PendingRequest[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                (url: string) =>
+                    new Promise((resolve, reject) => pending.push({ url, resolve, reject })),
+            ),
+        );
+        /** Answers pending requests matching `urlFragment` with `body`; an Error body fails them. */
+        return async function answer(urlFragment: string, body: unknown) {
+            const matching = pending.filter((p) => p.url.includes(urlFragment));
+            for (const request of matching) {
+                pending.splice(pending.indexOf(request), 1);
+                if (body instanceof Error) {
+                    request.reject(body);
+                } else {
+                    request.resolve(jsonResponse(body));
+                }
+            }
+            await flushPromises();
+        };
+    }
+
+    /** Loads `packageJson`; registry answers, weeklyDownloads lookup fails. */
+    async function loadWithFailedDownloads(
+        packageJson: object,
+        visibleColumns: Ref<ReadonlySet<string>> = ref(new Set(["weeklyDownloads"])),
+    ) {
+        const answer = pendingFetch();
+        const history = useHistory(visibleColumns);
+        history.loadPackageJsonText(JSON.stringify(packageJson));
+        await answer("registry.npmjs.org", minimalRegistryDoc);
+        await answer(DOWNLOADS_URL, new TypeError("Failed to fetch"));
+        return { ...history, answer };
+    }
+
+    it("replaces row in deps, devDeps and entry cache", async () => {
+        const { deps, devDeps, history, retryRow, answer } = await loadWithFailedDownloads({
+            dependencies: { pkg: "1.0.0" },
+            devDependencies: { pkg: "1.0.0" },
+        });
+        expect(deps.value[0]).toMatchObject({
+            failedLookups: { weeklyDownloads: "Failed to fetch" },
+        });
+
+        const retry = retryRow(PKG);
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+
+        const expected = { name: "pkg", weeklyDownloads: 5, failedLookups: null };
+        expect(await retry).toMatchObject(expected);
+        expect(deps.value[0]).toMatchObject(expected);
+        expect(devDeps.value[0]).toMatchObject(expected);
+        expect(history.value[0].deps![0]).toMatchObject(expected);
+        expect(history.value[0].devDeps![0]).toMatchObject(expected);
+    });
+
+    it("marks package retrying until refetch ends", async () => {
+        const { retryRow, retryingPackages, answer } = await loadWithFailedDownloads({
+            dependencies: { pkg: "1.0.0" },
+        });
+
+        const retry = retryRow(PKG);
+
+        expect(retryingPackages.value.has("pkg")).toBe(true);
+        expect(await retryRow(PKG)).toBeNull();
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
+        expect(retryingPackages.value.has("pkg")).toBe(false);
+    });
+
+    it("drops result once entry switched mid-retry", async () => {
+        const { deps, history, loadPackageJsonText, retryRow, answer } =
+            await loadWithFailedDownloads({ dependencies: { pkg: "1.0.0" } });
+
+        const retry = retryRow(PKG);
+        loadPackageJsonText(JSON.stringify({ dependencies: { other: "1.0.0" } }));
+        await answer("/other", { downloads: 1 });
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+
+        expect(await retry).toBeNull();
+        expect(deps.value.map((d) => d.name)).toEqual(["other"]);
+        expect(history.value[0].deps![0]).toMatchObject({ weeklyDownloads: null });
+    });
+
+    it("drops result once newer full fetch replaced rows", async () => {
+        const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+        const { deps, retryRow, answer } = await loadWithFailedDownloads(
+            { dependencies: { pkg: "1.0.0" } },
+            visibleColumns,
+        );
+
+        const retry = retryRow(PKG);
+        visibleColumns.value = new Set(["vulnerabilityCount"]);
+        await nextTick();
+        await answer("api.osv.dev", { vulns: [] });
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+
+        expect(await retry).toBeNull();
+        expect(deps.value[0]).toMatchObject({ vulnerabilityCount: 0, weeklyDownloads: null });
+    });
+
+    it("skips retry while full fetch runs", async () => {
+        const answer = pendingFetch();
+        const { loadPackageJsonText, retryRow, retryingPackages } = useHistory(
+            ref(new Set(["weeklyDownloads"])),
+        );
+        loadPackageJsonText(JSON.stringify({ dependencies: { pkg: "1.0.0" } }));
+
+        expect(await retryRow(PKG)).toBeNull();
+        expect(retryingPackages.value.size).toBe(0);
+        await answer("npmjs.org", minimalRegistryDoc);
+    });
+});

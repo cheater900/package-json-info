@@ -36,13 +36,13 @@ async function asSource(text: Promise<string | null>): Promise<LoadedSource | nu
     return resolved == null ? null : { text: resolved };
 }
 
-/** A repo's root package.json; a GitHub repo also gets its workspaces listed. */
+/** A repo's package.json; a GitHub repo-root one also gets its workspaces listed. */
 async function readRepoSource(url: string): Promise<LoadedSource | null> {
     const found = await fetchPackageJsonFromRepo(url);
     if (!found) {
         return null;
     }
-    if (found.slug.host !== GITHUB_HOST) {
+    if (found.slug.host !== GITHUB_HOST || found.branch === null) {
         return { text: found.text };
     }
     const repo = { owner: found.slug.owner, repo: found.slug.repo, branch: found.branch };

@@ -16,7 +16,7 @@ import appPackageJson from "../package.json";
 import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
-import type { DependencyRow, PackageInfo } from "./types";
+import type { DependencyRow, PackageInfo, PackageInput } from "./types";
 
 type ModalContent =
     | { kind: "table"; sectionId: string }
@@ -62,6 +62,8 @@ export default defineComponent({
             goBack,
             goForward,
             loadPackageJsonText,
+            retryingPackages,
+            retryRow,
         } = usePackageJsonHistory(visibleColumns);
         const {
             isLoadingInput,
@@ -134,16 +136,32 @@ export default defineComponent({
             modalContent.value = null;
         }
 
+        /** Retries one row; an open summary card of that row shows the new data. */
+        async function retryPackage(input: PackageInput) {
+            const row = await retryRow(input);
+            const content = modalContent.value;
+            const isSummaryOfRow =
+                content?.kind === "summary" &&
+                content.dependency.name === input.name &&
+                content.dependency.version === input.version;
+            if (!row || !isSummaryOfRow) {
+                return;
+            }
+            modalContent.value = { kind: "summary", dependency: row };
+        }
+
         const tableProps = computed(() => ({
             columns: visibleColumnKeys.value,
             searchQuery: searchQuery.value,
             shrinkLabels: shrinkColumnLabels.value,
+            retryingPackages: retryingPackages.value,
         }));
         const tableListeners = {
             loadPackage: loadDependency,
             reorderColumns,
             openSourceTree,
             selectPackage: showPackageSummary,
+            retryPackage,
         };
 
         return {
@@ -181,6 +199,8 @@ export default defineComponent({
             expandTable,
             openSourceTree,
             closeModal,
+            retryingPackages,
+            retryPackage,
         };
     },
 });

@@ -1,5 +1,10 @@
 <template>
-    <template v-if="column.render === 'link'">
+    <tooltip v-if="failedLookupError" :text="t('table.lookupFailed', { error: failedLookupError })">
+        <span class="dependency-cell dependency-cell--failed" tabindex="0">
+            {{ FAILED_VALUE }}
+        </span>
+    </tooltip>
+    <template v-else-if="column.render === 'link'">
         <a v-if="dependency.sourceCode" :href="dependency.sourceCode" @click.stop>
             {{ t("table.sourceLink") }}
         </a>

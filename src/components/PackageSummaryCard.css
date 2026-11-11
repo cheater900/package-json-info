@@ -23,6 +23,10 @@
     margin: 0 0 16px;
 }
 
+.package-summary__retry {
+    margin: 0 0 16px;
+}
+
 .package-summary__list {
     display: grid;
     gap: 10px 16px;

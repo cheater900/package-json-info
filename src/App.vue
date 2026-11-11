@@ -163,7 +163,9 @@
             <package-summary-card
                 v-else-if="modalContent.kind === 'summary'"
                 :dependency="modalContent.dependency"
+                :is-retrying="retryingPackages.has(modalContent.dependency.name)"
                 @open-source-tree="openSourceTree"
+                @retry-package="retryPackage"
             />
             <source-tree-browser
                 v-else-if="modalContent.kind === 'sourceTree'"

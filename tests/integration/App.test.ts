@@ -89,6 +89,66 @@ describe("App", () => {
         expect(document.body.querySelectorAll(".modal")).toHaveLength(1);
     });
 
+    describe("retry", () => {
+        /** Registry answers every package but zod until `recover` runs. */
+        function stubZodRegistryDown() {
+            let isZodDown = true;
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (url: string) => {
+                    if (isZodDown && url === `${NPM_REGISTRY_URL}/zod`) {
+                        throw new TypeError("Failed to fetch");
+                    }
+                    return jsonResponse(minimalRegistryDoc);
+                }),
+            );
+            return function recover() {
+                isZodDown = false;
+            };
+        }
+
+        function zodRow(wrapper: Awaited<ReturnType<typeof mountApp>>) {
+            return wrapper
+                .findAllComponents(DependenciesTable)[0]
+                .props("dependencies")
+                .find((row: { name: string }) => row.name === "zod");
+        }
+
+        it("retry button replaces failed row in table", async () => {
+            const recover = stubZodRegistryDown();
+            const wrapper = await mountApp();
+            expect(zodRow(wrapper)).toMatchObject({ error: "Failed to fetch" });
+            recover();
+
+            await wrapper.find('[aria-label="Retry lookups for zod"]').trigger("click");
+            await flushPromises();
+
+            expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
+            expect(wrapper.find('[aria-label="Retry lookups for zod"]').exists()).toBe(false);
+        });
+
+        it("summary card retry shows refetched row", async () => {
+            const recover = stubZodRegistryDown();
+            const wrapper = await mountApp();
+            wrapper
+                .findAllComponents(DependenciesTable)[0]
+                .vm.$emit("select-package", zodRow(wrapper));
+            await flushPromises();
+            recover();
+
+            await wrapper
+                .findComponent(PackageSummaryCard)
+                .find(".package-summary__retry")
+                .trigger("click");
+            await flushPromises();
+
+            expect(wrapper.findComponent(PackageSummaryCard).props("dependency")).toMatchObject({
+                name: "zod",
+                latestVersion: "1.0.0",
+            });
+        });
+    });
+
     it("shows error banner for URL without scheme, keeps loaded package", async () => {
         const wrapper = await mountApp();
         const loadedName = wrapper.find(".package-name").text();

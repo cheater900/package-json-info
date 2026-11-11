@@ -257,6 +257,30 @@ describe("workspaces", () => {
         );
     });
 
+    it("lists workspaces for blob URL of root package.json", async () => {
+        stubMonorepo();
+        const { loadUrl, loadPackageJsonText } = setup();
+        const url = "https://github.com/o/r/blob/main/package.json";
+
+        await loadUrl(url);
+
+        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, rootWorkspaceContext, {
+            kind: "url",
+            url,
+        });
+    });
+
+    it("skips workspace lookup for deep blob path", async () => {
+        const fetchMock = stubMonorepo();
+        const { loadUrl, loadPackageJsonText } = setup();
+        const url = "https://github.com/o/r/blob/main/packages/a/package.json";
+
+        await loadUrl(url);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null, { kind: "url", url });
+    });
+
     it("loads root with failed context for failed workspace listing", async () => {
         vi.stubGlobal(
             "fetch",

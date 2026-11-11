@@ -1,5 +1,11 @@
 import { z } from "zod";
-import type { DependencyRow, PackageInfo, PackageInput, SourceTreeRef } from "../types";
+import type {
+    DependencyRow,
+    FailedLookups,
+    PackageInfo,
+    PackageInput,
+    SourceTreeRef,
+} from "../types";
 import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_HOST,
@@ -100,6 +106,11 @@ type BundlephobiaData = {
     gzip?: number;
 };
 
+/** An optional lookup's answer; `error` is set when it failed live with nothing stored. */
+type OptionalLookup<T> = Lookup<T> & {
+    error?: string;
+};
+
 const COLUMNS_ALL_TOGGLEABLE = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
 
 /** Columns derived from the npm registry document, directly or via its repo slug. */
@@ -153,9 +164,25 @@ export function clearPackageInfoCache(): void {
     githubReleaseTagCache.clear();
 }
 
-/** Optional per-field lookups fall back to `fallback` so one failing service can't fail the row. */
-function withFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
-    return request.catch(() => fallback);
+/**
+ * Optional per-field lookups fall back to `fallback` so one failing service
+ * can't fail the row; the error message is kept so the cells can tell
+ * "lookup failed" from "no data".
+ */
+async function withFallback<T>(
+    request: () => Promise<Lookup<T>>,
+    fallback: T,
+): Promise<OptionalLookup<T>> {
+    const result = await settle(request);
+    return result.ok ? result.value : { ...fresh(fallback), error: result.error.message };
+}
+
+/** Error message per column backed by a failed lookup; null when none failed. */
+function failedColumns(lookups: [OptionalLookup<unknown>, string[]][]): FailedLookups | null {
+    const failed = lookups.flatMap(([{ error }, columns]) =>
+        error == null ? [] : columns.map((column) => [column, error]),
+    );
+    return failed.length > 0 ? Object.fromEntries(failed) : null;
 }
 
 function anyColumnVisible(visibleColumns: ReadonlySet<string>, keys: string[]): boolean {
@@ -210,13 +237,13 @@ export async function fetchPackageInfo(
             ? fetchRegistryData(registryName)
             : noData,
         isVisible("weeklyDownloads")
-            ? withFallback(fetchWeeklyDownloads(registryName), noData)
+            ? withFallback(() => fetchWeeklyDownloads(registryName), null)
             : noData,
         isVisible("vulnerabilityCount")
-            ? withFallback(fetchVulnerabilityCount(registryName), noData)
+            ? withFallback(() => fetchVulnerabilityCount(registryName), null)
             : noData,
         isVisible("bundleSizeGzip")
-            ? withFallback(fetchBundleGzipSize(registryName, range), noData)
+            ? withFallback(() => fetchBundleGzipSize(registryName, range), null)
             : noData,
     ]);
     const npmData = registry.value;
@@ -226,13 +253,13 @@ export async function fetchPackageInfo(
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
     const [gitStars, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
-            ? withFallback(fetchCachedRepoStars(slug, headers), noData)
+            ? withFallback(() => fetchCachedRepoStars(slug, headers), null)
             : noData,
         slug != null && anyColumnVisible(visibleColumns, COLUMNS_FROM_ISSUE_SEARCH)
-            ? withFallback(fetchCachedIssueCounts(slug, headers), fresh(EMPTY_ISSUE_COUNTS))
+            ? withFallback(() => fetchCachedIssueCounts(slug, headers), EMPTY_ISSUE_COUNTS)
             : fresh(EMPTY_ISSUE_COUNTS),
         isVisible("sourceCodeTree")
-            ? withFallback(resolveSourceTree(versionData, slug, range, headers), noData)
+            ? withFallback(() => resolveSourceTree(versionData, slug, range, headers), null)
             : noData,
     ]);
     const sourceCode =
@@ -285,6 +312,14 @@ export async function fetchPackageInfo(
             gitStars,
             issueCounts,
             sourceTree,
+        ]),
+        failedLookups: failedColumns([
+            [weeklyDownloads, ["weeklyDownloads"]],
+            [vulnerabilityCount, ["vulnerabilityCount"]],
+            [bundleSizeGzip, ["bundleSizeGzip"]],
+            [gitStars, ["gitStars"]],
+            [issueCounts, COLUMNS_FROM_ISSUE_SEARCH],
+            [sourceTree, ["sourceCodeTree"]],
         ]),
     };
 }

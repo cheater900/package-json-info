@@ -96,16 +96,21 @@ export function visibleColumnsEqual(
     return true;
 }
 
-/** Rows that failed, or were built from stored values after a failed live lookup. */
+/** Row that failed, holds a failed lookup, or was built from stored values after one. */
+export function isRowRetryable(row: DependencyRow): boolean {
+    return "error" in row || row.staleSince != null || row.failedLookups != null;
+}
+
 function hasRowToRetry(rows: DependencyRow[]): boolean {
-    return rows.some((row) => "error" in row || row.staleSince != null);
+    return rows.some(isRowRetryable);
 }
 
 /**
  * True if a history entry's cached deps/devDeps are still good for the
  * given visibleColumns - fetched under the same column visibility, with no
- * failed rows - so navigating to it needs no fetch. Failed rows, and rows
- * showing stored values, count as stale so revisiting an entry retries them.
+ * failed rows - so navigating to it needs no fetch. Failed rows, rows with
+ * failed lookups, and rows showing stored values count as stale so
+ * revisiting an entry retries them.
  */
 export function isEntryCacheValid(
     entry: HistoryEntry,

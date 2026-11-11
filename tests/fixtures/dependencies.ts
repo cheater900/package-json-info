@@ -34,6 +34,7 @@ export const fullDependency = {
     maintainers: ["alice", "bob"],
     sourceTree: null,
     staleSince: null,
+    failedLookups: null,
 };
 
 /** A dependency row where every fetched field is unavailable. */
@@ -62,4 +63,5 @@ export const sparseDependency = {
     maintainers: null,
     sourceTree: null,
     staleSince: null,
+    failedLookups: null,
 };

@@ -16,6 +16,9 @@ export const GITHUB_API_URL = "https://api.github.com";
 export const GITHUB_RAW_URL = "https://raw.githubusercontent.com";
 export const GITHUB_RATE_LIMIT_URL = `${GITHUB_API_URL}/rate_limit`;
 export const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
+/** Path segments after `/<owner>/<repo>` in a GitHub file or folder page URL. */
+export const GITHUB_URL_VIEW_BLOB = "blob";
+export const GITHUB_URL_VIEW_TREE = "tree";
 /** Classic and fine-grained PATs: letters, digits and underscores only. */
 export const GITHUB_TOKEN_PATTERN = /^[A-Za-z0-9_]{1,255}$/;
 export const GITLAB_API_URL = "https://gitlab.com/api/v4";
@@ -70,6 +73,8 @@ export const MAX_SHARE_STEP_LENGTH = 2000;
 
 /** Cell text shown when a value is unavailable. */
 export const MISSING_VALUE = "-";
+/** Cell text shown when the lookup behind a value failed with nothing stored. */
+export const FAILED_VALUE = "?";
 export const NUMBER_LOCALE = "en-US";
 /** Spaces per level when the app pretty-prints a package.json. */
 export const JSON_INDENT = 2;

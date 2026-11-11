@@ -146,6 +146,14 @@ describe("isEntryCacheValid", () => {
         expect(isEntryCacheValid(entry, new Set(COLUMNS_AT_FETCH))).toBe(false);
     });
 
+    it("returns false for row with failed lookups, so revisit retries", () => {
+        const entry = fetchedEntry([
+            { ...fullDependency, failedLookups: { weeklyDownloads: "Request failed" } },
+        ]);
+
+        expect(isEntryCacheValid(entry, new Set(COLUMNS_AT_FETCH))).toBe(false);
+    });
+
     it("returns true for live rows", () => {
         expect(isEntryCacheValid(fetchedEntry([fullDependency]), new Set(COLUMNS_AT_FETCH))).toBe(
             true,

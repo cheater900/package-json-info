@@ -8,6 +8,8 @@ export type PackageInput = {
     version: string;
 };
 
+export type FailedLookups = Record<string, string>;
+
 export type PackageInfo = {
     name: string;
     version: string;
@@ -37,6 +39,8 @@ export type PackageInfo = {
     sourceTree: SourceTreeRef | null;
     /** ISO time of the oldest stored value used after a failed live lookup; null when every lookup was live. */
     staleSince: string | null;
+    /** Column key -> error message, per column whose live lookup failed with no stored value; null when none failed. */
+    failedLookups: FailedLookups | null;
 };
 
 export type SortDirection = "asc" | "desc";

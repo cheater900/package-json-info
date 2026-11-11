@@ -48,3 +48,39 @@ describe("DependencyCell health score", () => {
         expect(wrapper.find(".health-score").exists()).toBe(false);
     });
 });
+
+describe("DependencyCell failed lookup", () => {
+    const failed = { ...sparseDependency, failedLookups: { weeklyDownloads: "Request failed" } };
+
+    function mountCell(key: string, dependency: object) {
+        const column = DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === key)!;
+        return mount(DependencyCell, { attachTo: document.body, props: { column, dependency } });
+    }
+
+    it("renders '?' with error tooltip for failed column", async () => {
+        const wrapper = mountCell("weeklyDownloads", failed);
+
+        expect(wrapper.find(".dependency-cell--failed").text()).toBe("?");
+        await wrapper.find(".tooltip").trigger("mouseenter");
+        expect(document.body.querySelector('[role="tooltip"]')!.textContent).toContain(
+            "Lookup failed: Request failed",
+        );
+    });
+
+    it("renders '-' for other column without data", () => {
+        const wrapper = mountCell("gitStars", failed);
+
+        expect(wrapper.text()).toBe("-");
+        expect(wrapper.find(".dependency-cell--failed").exists()).toBe(false);
+    });
+
+    it("renders '?' instead of button for failed button column", () => {
+        const wrapper = mountCell("sourceCodeTree", {
+            ...sparseDependency,
+            failedLookups: { sourceCodeTree: "Request failed with status 429" },
+        });
+
+        expect(wrapper.find(".dependency-cell--failed").text()).toBe("?");
+        expect(wrapper.find("button").exists()).toBe(false);
+    });
+});
