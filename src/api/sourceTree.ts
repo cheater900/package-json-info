@@ -1,7 +1,12 @@
 import { gunzip, parseTar } from "../utils/tarball";
 import { buildFileTree, normalizePath } from "../utils/fileTree";
 import type { FileTreeNode } from "../utils/fileTree";
-import { githubHeaders, githubRawFileUrl, githubRepoApiUrl } from "./github";
+import {
+    fetchGithubTree,
+    GITHUB_ENTRY_FOLDER,
+    GITHUB_ENTRY_SUBMODULE,
+    githubRawFileUrl,
+} from "./github";
 import { fetchWithTimeout } from "./http";
 import { BYTES_PER_MB, MAX_FILE_TREE_ENTRIES, MAX_VIEWED_FILE_BYTES } from "../constants";
 import { t } from "../i18n";
@@ -14,20 +19,6 @@ export type SourceTree = {
     /** Reads one file's content as text. GitHub fetches lazily, one file per call. */
     readFile: (path: string) => Promise<string>;
 };
-
-type GithubTreeEntry = {
-    path: string;
-    type: "blob" | "tree" | typeof GITHUB_SUBMODULE_ENTRY_TYPE;
-    size?: number;
-};
-
-type GithubTreeResponse = {
-    tree?: GithubTreeEntry[];
-    truncated?: boolean;
-};
-
-/** Git-trees entry type of a submodule: a pointer to another repo, with no content here. */
-const GITHUB_SUBMODULE_ENTRY_TYPE = "commit";
 
 /** npm tarballs wrap every entry under a single top-level "package/" directory. */
 const NPM_TARBALL_ROOT = /^package\//;
@@ -86,31 +77,23 @@ async function fetchGithubSourceTree(
     tag: string,
 ): Promise<SourceTree> {
     const encodedTag = encodeURIComponent(tag);
-    const response = await fetchWithTimeout(
-        `${githubRepoApiUrl(owner, repo)}/git/trees/${encodedTag}?recursive=1`,
-        { headers: githubHeaders() },
-    );
-    if (!response.ok) {
-        throw new Error(t("errors.repoTreeFetch", { status: response.status }));
-    }
-    const data = (await response.json()) as GithubTreeResponse;
-    const allEntries = (data.tree ?? [])
-        .filter((entry) => entry.type !== GITHUB_SUBMODULE_ENTRY_TYPE)
+    const githubTree = await fetchGithubTree(owner, repo, tag);
+    const allEntries = githubTree.entries
+        .filter((entry) => entry.type !== GITHUB_ENTRY_SUBMODULE)
         .map((entry) => ({
             path: entry.path,
-            type: entry.type === "tree" ? ("directory" as const) : ("file" as const),
+            type: entry.type === GITHUB_ENTRY_FOLDER ? ("directory" as const) : ("file" as const),
             size: entry.size ?? 0,
         }));
     const entries = allEntries.slice(0, MAX_FILE_TREE_ENTRIES);
     const sizeByPath = new Map(entries.map((entry) => [entry.path, entry.size]));
     return {
         tree: buildFileTree(entries),
-        truncated: data.truncated === true || allEntries.length > MAX_FILE_TREE_ENTRIES,
+        truncated: githubTree.truncated || allEntries.length > MAX_FILE_TREE_ENTRIES,
         readFile: async (path) => {
             assertViewableSize(sizeByPath.get(path) ?? 0);
-            const encodedPath = path.split("/").map(encodeURIComponent).join("/");
             const fileResponse = await fetchWithTimeout(
-                githubRawFileUrl(owner, repo, encodedTag, encodedPath),
+                githubRawFileUrl(owner, repo, encodedTag, path),
             );
             if (!fileResponse.ok) {
                 throw new Error(t("errors.fileContentFetch", { status: fileResponse.status }));

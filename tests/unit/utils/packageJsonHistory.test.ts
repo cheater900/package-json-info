@@ -7,6 +7,7 @@ import {
     visibleColumnsEqual,
     isEntryCacheValid,
 } from "../../../src/utils/packageJsonHistory";
+import { rootWorkspaceContext } from "../../fixtures/workspaces";
 
 describe("createHistoryEntry", () => {
     it("starts with unfetched deps/devDeps, no visibleColumns snapshot", () => {
@@ -14,10 +15,19 @@ describe("createHistoryEntry", () => {
         expect(entry).toEqual({
             content: "{}",
             pkg: { name: "demo" },
+            workspace: null,
             deps: null,
             devDeps: null,
             visibleColumnsSnapshot: null,
         });
+    });
+});
+
+describe("createHistoryEntry with workspace", () => {
+    it("keeps given workspace context", () => {
+        expect(createHistoryEntry("{}", {}, rootWorkspaceContext).workspace).toBe(
+            rootWorkspaceContext,
+        );
     });
 });
 

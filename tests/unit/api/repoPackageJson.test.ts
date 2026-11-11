@@ -12,7 +12,7 @@ describe("fetchPackageJsonFromRepo", () => {
 
         const content = await fetchPackageJsonFromRepo("https://github.com/owner/repo");
 
-        expect(JSON.parse(content!)).toEqual({ name: "repo" });
+        expect(JSON.parse(content!.text)).toEqual({ name: "repo" });
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
@@ -30,7 +30,9 @@ describe("fetchPackageJsonFromRepo", () => {
 
         const content = await fetchPackageJsonFromRepo("https://github.com/owner/repo");
 
-        expect(JSON.parse(content!)).toEqual({ name: "repo" });
+        expect(JSON.parse(content!.text)).toEqual({ name: "repo" });
+        expect(content!.branch).toBe("master");
+        expect(content!.slug).toEqual({ host: "github.com", owner: "owner", repo: "repo" });
         expect(requestedUrls).toEqual([
             "https://raw.githubusercontent.com/owner/repo/main/package.json",
             "https://raw.githubusercontent.com/owner/repo/master/package.json",
@@ -80,7 +82,7 @@ describe("fetchPackageJsonFromRepo", () => {
 
         const content = await fetchPackageJsonFromRepo("https://github.com/owner/repo/tree/main");
 
-        expect(JSON.parse(content!)).toEqual({ name: "repo" });
+        expect(JSON.parse(content!.text)).toEqual({ name: "repo" });
     });
 
     it.each([

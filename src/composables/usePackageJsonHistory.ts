@@ -11,6 +11,7 @@ import {
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
 import type { DependencyMap, PackageJson } from "../utils/packageJson";
 import type { HistoryEntry } from "../utils/packageJsonHistory";
+import type { WorkspaceContext } from "../utils/workspaces";
 import type { DependencyRow } from "../types";
 import { t } from "../i18n";
 import { githubToken, settings } from "../settings";
@@ -32,6 +33,7 @@ function toPackageInputs(dependencies: DependencyMap | undefined) {
  */
 export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) {
     const pkg = ref<PackageJson | null>(null);
+    const workspace = ref<WorkspaceContext | null>(null);
     const deps = ref<DependencyRow[]>([]);
     const devDeps = ref<DependencyRow[]>([]);
     const isLoadingDeps = ref(false);
@@ -52,9 +54,10 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     /**
      * Validates raw package.json text and, on success, records it as a new
      * history entry and applies it. Returns true on success; on failure,
-     * sets loadError and leaves the previous content untouched.
+     * sets loadError and leaves the previous content untouched. `sourceWorkspace`
+     * names the monorepo the text came from, if any.
      */
-    function loadPackageJsonText(text: string) {
+    function loadPackageJsonText(text: string, sourceWorkspace: WorkspaceContext | null = null) {
         let parsed: unknown;
         try {
             parsed = JSON.parse(text);
@@ -73,7 +76,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         const pushed = pushHistoryEntry(
             history.value,
             historyIndex.value,
-            createHistoryEntry(text, result.data),
+            createHistoryEntry(text, result.data, sourceWorkspace),
         );
         history.value = pushed.history;
         historyIndex.value = pushed.index;
@@ -105,6 +108,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
             return;
         }
         pkg.value = entry.pkg;
+        workspace.value = entry.workspace;
         if (isEntryCacheValid(entry, visibleColumns.value)) {
             deps.value = entry.deps;
             devDeps.value = entry.devDeps;
@@ -194,6 +198,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
 
     return {
         pkg,
+        workspace,
         deps,
         devDeps,
         isLoadingDeps,

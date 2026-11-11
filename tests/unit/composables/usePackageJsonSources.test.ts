@@ -4,6 +4,12 @@ import { usePackageJsonSources } from "../../../src/composables/usePackageJsonSo
 import { URL_SYNC_DEBOUNCE_MS } from "../../../src/constants";
 import { clearPackageInfoCache } from "../../../src/api/npmPackage";
 import { jsonResponse, HTTP_STATUS, statusResponse, textResponse } from "../../helpers/fetchMock";
+import {
+    githubTreeBody,
+    monorepoRef,
+    monorepoRootJson,
+    rootWorkspaceContext,
+} from "../../fixtures/workspaces";
 
 const PACKAGE_JSON = '{"name":"x"}';
 
@@ -102,7 +108,7 @@ describe("loadFromUrlInput", () => {
         expect(fetchMock.mock.calls[0][0]).toBe(
             "https://raw.githubusercontent.com/o/r/main/package.json",
         );
-        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null);
     });
 
     it.each([
@@ -161,6 +167,147 @@ describe("loadFromUrlInput", () => {
     });
 });
 
+describe("workspaces", () => {
+    function stubMonorepo() {
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url.includes("/git/trees/")) {
+                return jsonResponse(githubTreeBody(rootWorkspaceContext.paths));
+            }
+            return textResponse(
+                url.endsWith("/main/package.json") ? monorepoRootJson : PACKAGE_JSON,
+            );
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        return fetchMock;
+    }
+
+    it("passes workspace list for GitHub monorepo URL", async () => {
+        stubMonorepo();
+        const { urlInput, loadFromUrlInput, loadPackageJsonText } = setup();
+        urlInput.value = "https://github.com/o/r";
+
+        await loadFromUrlInput();
+
+        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, rootWorkspaceContext);
+    });
+
+    it("skips workspace lookup for GitLab repo", async () => {
+        const fetchMock = stubMonorepo();
+        const { urlInput, loadFromUrlInput, loadPackageJsonText } = setup();
+        urlInput.value = "https://gitlab.com/o/r";
+
+        await loadFromUrlInput();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, null);
+    });
+
+    it("loadWorkspace loads workspace package.json, keeps list, marks current", async () => {
+        const fetchMock = stubMonorepo();
+        const { loadWorkspace, loadPackageJsonText } = setup();
+
+        await loadWorkspace(rootWorkspaceContext, "packages/a");
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://raw.githubusercontent.com/o/r/main/packages/a/package.json",
+        );
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, {
+            ...rootWorkspaceContext,
+            current: "packages/a",
+        });
+    });
+
+    it("lists workspaces on branch holding package.json", async () => {
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url.includes("/main/")) {
+                return statusResponse(HTTP_STATUS.notFound);
+            }
+            if (url.includes("/git/trees/")) {
+                return jsonResponse(githubTreeBody(["packages/a"]));
+            }
+            return textResponse(monorepoRootJson);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const { urlInput, loadFromUrlInput, loadPackageJsonText } = setup();
+        urlInput.value = "https://github.com/o/r";
+
+        await loadFromUrlInput();
+
+        expect(fetchMock.mock.calls.map(([url]) => url)).toContain(
+            "https://api.github.com/repos/o/r/git/trees/master?recursive=1",
+        );
+        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, {
+            ...rootWorkspaceContext,
+            repo: { ...monorepoRef, branch: "master" },
+            paths: ["packages/a"],
+        });
+    });
+
+    it("loads root with failed context for failed workspace listing", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string) =>
+                url.includes("/git/trees/")
+                    ? statusResponse(HTTP_STATUS.forbidden)
+                    : textResponse(monorepoRootJson),
+            ),
+        );
+        const { urlInput, loadFromUrlInput, loadPackageJsonText, loadError } = setup();
+        urlInput.value = "https://github.com/o/r";
+
+        await loadFromUrlInput();
+
+        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, {
+            ...rootWorkspaceContext,
+            paths: [],
+            failed: true,
+        });
+        expect(loadError.value).toBeNull();
+    });
+
+    it("drops slow workspace load once newer file load finished", async () => {
+        let resolveSlow: (response: unknown) => void;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveSlow = resolve;
+                    }),
+            ),
+        );
+        const { loadWorkspace, loadFromFile, loadPackageJsonText, loadError, isLoadingInput } =
+            setup();
+
+        const slowLoad = loadWorkspace(rootWorkspaceContext, "packages/a");
+        await loadFromFile(
+            changeEvent({ files: [new File(['{"name":"file"}'], "package.json")], value: "" }),
+        );
+        resolveSlow!(statusResponse(HTTP_STATUS.notFound));
+        await slowLoad;
+
+        expect(loadPackageJsonText).toHaveBeenCalledTimes(1);
+        expect(loadPackageJsonText).toHaveBeenCalledWith('{"name":"file"}', null);
+        expect(loadError.value).toBeNull();
+        expect(isLoadingInput.value).toBe(false);
+    });
+
+    it("loadWorkspace shows error naming missing workspace", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
+        );
+        const { loadWorkspace, loadPackageJsonText, loadError } = setup();
+
+        await loadWorkspace(rootWorkspaceContext, "packages/gone");
+
+        expect(loadError.value).toBe(
+            'Could not load the package.json of workspace "packages/gone".',
+        );
+        expect(loadPackageJsonText).not.toHaveBeenCalled();
+    });
+});
+
 describe("loadDependency", () => {
     it("shows not-found error naming unknown package", async () => {
         vi.stubGlobal(
@@ -207,7 +354,7 @@ describe("loadFromFile", () => {
 
         await loadFromFile(changeEvent(input));
 
-        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null);
         expect(input.value).toBe("");
     });
 });

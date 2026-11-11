@@ -145,7 +145,15 @@
         "treeTooDeep": "The file tree nests deeper than {max} folders, too deep to browse.",
         "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
         "fileTooLarge": "This file is larger than {megabytes} MB, too large to show.",
-        "fileContentFetch": "Could not fetch file contents (status {status})."
+        "fileContentFetch": "Could not fetch file contents (status {status}).",
+        "workspaceNotFound": "Could not load the package.json of workspace \"{path}\"."
+    },
+    "workspaces": {
+        "label": "Workspace",
+        "root": "(root)",
+        "truncated": "The repository is too large to list in full; some workspaces may be missing.",
+        "failed": "Could not check this repository for workspaces. A GitHub token in the settings raises the rate limit.",
+        "hint": "This package.json declares workspaces. Load it by GitHub repository URL to browse them."
     },
     "validation": {
         "dependencyMap": "expected an object mapping package names to version strings",

@@ -25,7 +25,12 @@ to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas are in
   type from the downloads, stars, issue-count, bundle-size or OSV services
   shows as odd cell text. A malformed GitHub tree answer shows a raw engine
   error in the source-tree modal; a `/rate_limit` answer without `rate`
-  shows one in the token status.
+  shows one in the token status. The workspace lookup takes the same
+  malformed tree answer as a failed lookup and shows its notice.
+- **Workspace pattern `packages/**` also lists `packages` itself** when
+  `packages/package.json` exists: a trailing `**` matches zero folders.
+  npm and pnpm are believed to do the same; not checked against their
+  source.
 
 ## Display
 

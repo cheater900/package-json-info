@@ -2,9 +2,11 @@ import type { Page } from "@playwright/test";
 import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_API_URL,
+    GITHUB_RAW_URL,
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
+    PNPM_WORKSPACE_FILE,
 } from "../../src/constants";
 
 /**
@@ -35,6 +37,11 @@ export async function mockExternalApis(page: Page) {
 
     await page.route(`${GITHUB_API_URL}/search/issues**`, async (route) => {
         await route.fulfill({ json: { total_count: 3 } });
+    });
+
+    // Probed for every GitHub repo URL without a `workspaces` field.
+    await page.route(`${GITHUB_RAW_URL}/**/${PNPM_WORKSPACE_FILE}`, async (route) => {
+        await route.fulfill({ status: 404 });
     });
 
     await page.route(OSV_QUERY_URL, async (route) => {
@@ -76,4 +83,12 @@ export async function expandAllSections(page: Page) {
             await section.locator("summary").click();
         }
     }
+}
+
+/** Types `url` into the URL input and submits it. */
+export async function fetchFromUrlInput(page: Page, url: string) {
+    await page
+        .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
+        .fill(url);
+    await page.getByRole("button", { name: "FETCH" }).click();
 }

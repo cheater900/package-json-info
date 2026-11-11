@@ -5,6 +5,7 @@ import {
     GITHUB_RAW_URL,
     HTTP_UNAUTHORIZED,
 } from "../constants";
+import { t } from "../i18n";
 import { githubToken } from "../settings";
 import { fetchWithTimeout, findFirstFound, HttpError } from "./http";
 import type { HttpHeaders } from "./http";
@@ -17,6 +18,28 @@ export type GithubRateLimit = {
 type GithubRateLimitResponse = {
     rate: GithubRateLimit;
 };
+
+export type GithubTreeEntry = {
+    path: string;
+    type: typeof GITHUB_ENTRY_FILE | typeof GITHUB_ENTRY_FOLDER | typeof GITHUB_ENTRY_SUBMODULE;
+    size?: number;
+};
+
+export type GithubTree = {
+    entries: GithubTreeEntry[];
+    /** True when GitHub cut the listing short; it caps very large repos. */
+    truncated: boolean;
+};
+
+type GithubTreeResponse = {
+    tree?: GithubTreeEntry[];
+    truncated?: boolean;
+};
+
+/** Git-trees entry types. A submodule is a pointer to another repo, with no content here. */
+export const GITHUB_ENTRY_FILE = "blob";
+export const GITHUB_ENTRY_FOLDER = "tree";
+export const GITHUB_ENTRY_SUBMODULE = "commit";
 
 export function githubHeaders(token: string | undefined = githubToken.value): HttpHeaders {
     if (!token) {
@@ -47,8 +70,10 @@ export function githubRepoApiUrl(owner: string, repo: string): string {
     return `${GITHUB_API_URL}/repos/${owner}/${repo}`;
 }
 
+/** Raw file URL. `path` is URL-encoded folder by folder; `ref` goes in as given. */
 export function githubRawFileUrl(owner: string, repo: string, ref: string, path: string): string {
-    return `${GITHUB_RAW_URL}/${owner}/${repo}/${ref}/${path}`;
+    const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+    return `${GITHUB_RAW_URL}/${owner}/${repo}/${ref}/${encodedPath}`;
 }
 
 /**
@@ -73,4 +98,21 @@ export async function findGithubReleaseTag(
         { headers },
     );
     return found?.candidate ?? null;
+}
+
+/** Every file and folder of a repo at `ref` (branch, tag or commit), in one request. */
+export async function fetchGithubTree(
+    owner: string,
+    repo: string,
+    ref: string,
+): Promise<GithubTree> {
+    const response = await fetchWithTimeout(
+        `${githubRepoApiUrl(owner, repo)}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
+        { headers: githubHeaders() },
+    );
+    if (!response.ok) {
+        throw new Error(t("errors.repoTreeFetch", { status: response.status }));
+    }
+    const data = (await response.json()) as GithubTreeResponse;
+    return { entries: data.tree ?? [], truncated: data.truncated === true };
 }

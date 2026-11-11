@@ -5,8 +5,9 @@ import DependenciesTable from "../../src/components/DependenciesTable.vue";
 import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
 import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
 import { clearPackageInfoCache } from "../../src/api/npmPackage";
-import { jsonResponse } from "../helpers/fetchMock";
+import { jsonResponse, textResponse } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
+import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
 
@@ -96,5 +97,155 @@ describe("App", () => {
         );
         expect(wrapper.find(".package-name").text()).toBe(loadedName);
         expect(wrapper.find(".history-controls").exists()).toBe(false);
+    });
+
+    describe("workspaces", () => {
+        const RAW_REPO_URL = "https://raw.githubusercontent.com/o/r/main";
+
+        function stubMonorepo(treeResponse: unknown) {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (url: string) => {
+                    if (url === `${RAW_REPO_URL}/package.json`) {
+                        return textResponse(monorepoRootJson);
+                    }
+                    if (url === `${RAW_REPO_URL}/packages/a/package.json`) {
+                        return textResponse('{"name":"pkg-a"}');
+                    }
+                    if (url.includes("/git/trees/")) {
+                        return treeResponse;
+                    }
+                    if (url.startsWith(RAW_REPO_URL)) {
+                        return jsonResponse(null, false);
+                    }
+                    return jsonResponse(minimalRegistryDoc);
+                }),
+            );
+        }
+
+        async function loadMonorepo(wrapper: Awaited<ReturnType<typeof mountApp>>) {
+            await wrapper.find("#url-input").setValue("https://github.com/o/r");
+            await wrapper.find("form.input-methods__url-form").trigger("submit");
+            await flushPromises();
+        }
+
+        it("lists workspaces for GitHub monorepo, select loads picked workspace", async () => {
+            stubMonorepo(jsonResponse(githubTreeBody(["packages/a", "packages/b"])));
+            const wrapper = await mountApp();
+
+            await loadMonorepo(wrapper);
+
+            const select = wrapper.find(".workspace-picker select");
+            expect(select.findAll("option").map((option) => option.text())).toEqual([
+                "(root)",
+                "packages/a",
+                "packages/b",
+            ]);
+            await select.setValue("packages/a");
+            await flushPromises();
+            expect(wrapper.find(".package-name").text()).toBe("pkg-a");
+            const reloaded = wrapper.find(".workspace-picker select");
+            expect((reloaded.element as HTMLSelectElement).value).toBe("packages/a");
+        });
+
+        it("shows notice, keeps root table for failed workspace listing", async () => {
+            stubMonorepo(jsonResponse(null, false));
+            const wrapper = await mountApp();
+
+            await loadMonorepo(wrapper);
+
+            expect(wrapper.find(".package-name").text()).toBe("mono-root");
+            expect(wrapper.find(".workspace-picker select").exists()).toBe(false);
+            expect(wrapper.find(".workspace-picker__note").text()).toContain(
+                "Could not check this repository for workspaces",
+            );
+            expect(wrapper.find(".banner--error").exists()).toBe(false);
+        });
+
+        it("puts select back on loaded workspace after failed workspace load", async () => {
+            stubMonorepo(jsonResponse(githubTreeBody(["packages/a", "packages/gone"])));
+            const wrapper = await mountApp();
+            await loadMonorepo(wrapper);
+            const select = wrapper.find(".workspace-picker select");
+
+            await select.setValue("packages/gone");
+            await flushPromises();
+
+            expect(wrapper.find(".banner--error").text()).toContain("packages/gone");
+            expect(wrapper.find(".package-name").text()).toBe("mono-root");
+            expect((select.element as HTMLSelectElement).value).toBe("");
+            expect((select.element as HTMLSelectElement).disabled).toBe(false);
+        });
+
+        it("disables select while workspace loads", async () => {
+            stubMonorepo(jsonResponse(githubTreeBody(["packages/slow"])));
+            const wrapper = await mountApp();
+            await loadMonorepo(wrapper);
+            const loadedFetch = vi.mocked(fetch).getMockImplementation()!;
+            let answer: (response: unknown) => void;
+            vi.mocked(fetch).mockImplementation((url, init) => {
+                if (String(url).endsWith("/packages/slow/package.json")) {
+                    return new Promise((resolve) => {
+                        answer = resolve as (response: unknown) => void;
+                    });
+                }
+                return loadedFetch(url, init);
+            });
+            const select = wrapper.find(".workspace-picker select");
+
+            await select.setValue("packages/slow");
+            await flushPromises();
+
+            expect((select.element as HTMLSelectElement).disabled).toBe(true);
+            answer!(textResponse('{"name":"pkg-slow"}'));
+            await flushPromises();
+            expect(wrapper.find(".package-name").text()).toBe("pkg-slow");
+            const reloaded = wrapper.find(".workspace-picker select");
+            expect((reloaded.element as HTMLSelectElement).disabled).toBe(false);
+        });
+
+        it("shows truncated note beside picker for cut-short tree with matches", async () => {
+            stubMonorepo(jsonResponse({ ...githubTreeBody(["packages/a"]), truncated: true }));
+            const wrapper = await mountApp();
+
+            await loadMonorepo(wrapper);
+
+            expect(wrapper.find(".workspace-picker select").exists()).toBe(true);
+            expect(wrapper.findAll(".workspace-picker__note").map((note) => note.text())).toEqual([
+                expect.stringContaining("too large to list"),
+            ]);
+        });
+
+        it("shows truncated note for cut-short tree without matching workspace", async () => {
+            stubMonorepo(jsonResponse({ tree: [], truncated: true }));
+            const wrapper = await mountApp();
+
+            await loadMonorepo(wrapper);
+
+            expect(wrapper.find(".workspace-picker select").exists()).toBe(false);
+            expect(wrapper.find(".workspace-picker__note").text()).toContain("too large to list");
+        });
+
+        it("shows repo URL hint for uploaded package.json with workspaces", async () => {
+            const wrapper = await mountApp();
+            const input = wrapper.find(".input-methods__file-input");
+            Object.defineProperty(input.element, "files", {
+                value: [new File([monorepoRootJson], "package.json")],
+            });
+
+            await input.trigger("change");
+            await flushPromises();
+
+            expect(wrapper.find(".workspace-picker__note").text()).toContain(
+                "Load it by GitHub repository URL",
+            );
+        });
+
+        it("shows no workspace UI for package.json without workspaces", async () => {
+            const wrapper = await mountApp();
+
+            expect(wrapper.find(".workspace-picker").exists()).toBe(false);
+            expect(wrapper.find(".workspace-picker__note").exists()).toBe(false);
+        });
     });
 });

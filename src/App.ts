@@ -13,6 +13,7 @@ import "vue-json-pretty/lib/styles.css";
 import appPackageJson from "../package.json";
 import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
+import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
 import type { DependencyRow, PackageInfo } from "./types";
 
 type ModalContent =
@@ -45,6 +46,7 @@ export default defineComponent({
         } = useColumnPreferences();
         const {
             pkg,
+            workspace,
             deps,
             devDeps,
             isLoadingDeps,
@@ -65,7 +67,20 @@ export default defineComponent({
             loadFromFile,
             loadFromUrlInput,
             loadDependency,
+            loadWorkspace,
         } = usePackageJsonSources(loadPackageJsonText, loadError);
+        const workspaceSelectId = useId();
+        // Workspaces are listed only for a GitHub repo URL; other sources get a hint.
+        const hasUnlistedWorkspaces = computed(
+            () => workspace.value === null && workspacePatternsOf(pkg.value).length > 0,
+        );
+
+        function selectWorkspace(event: Event) {
+            if (!workspace.value) {
+                return;
+            }
+            loadWorkspace(workspace.value, (event.target as HTMLSelectElement).value);
+        }
 
         loadPackageJsonText(JSON.stringify(appPackageJson, null, JSON_INDENT));
 
@@ -132,6 +147,11 @@ export default defineComponent({
             shrinkColumnLabels,
             toggleColumn,
             pkg,
+            workspace,
+            workspaceSelectId,
+            WORKSPACE_ROOT,
+            hasUnlistedWorkspaces,
+            selectWorkspace,
             loadError,
             history,
             historyIndex,

@@ -6,6 +6,13 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### Input and loading
+
+- **Monorepo workspaces** for GitHub repo URLs: a **Workspace select**
+  lists folders matched from `workspaces` or `pnpm-workspace.yaml`, and
+  loads the picked workspace's `package.json`. Matching work and list
+  length are capped, so a crafted repo cannot stall the tab.
+
 #### Settings and token
 
 - **Themes** Green, Light and System, plus **font and padding scales** in

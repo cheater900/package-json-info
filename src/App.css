@@ -132,6 +132,20 @@ textarea {
     padding-bottom: calc(8px * var(--space-scale));
 }
 
+.workspace-picker {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.workspace-picker__note {
+    font-size: 0.875em;
+    margin: 0 0 12px;
+    opacity: 0.8;
+}
+
 .table-toolbar {
     display: flex;
     justify-content: flex-end;

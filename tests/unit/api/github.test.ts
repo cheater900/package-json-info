@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { fetchGithubRateLimit, findGithubReleaseTag, githubHeaders } from "../../../src/api/github";
+import {
+    fetchGithubRateLimit,
+    fetchGithubTree,
+    findGithubReleaseTag,
+    githubHeaders,
+} from "../../../src/api/github";
 import { githubToken } from "../../../src/settings";
 import { GITHUB_RATE_LIMIT_URL } from "../../../src/constants";
 import { jsonResponse, HTTP_STATUS, statusResponse } from "../../helpers/fetchMock";
@@ -103,5 +108,55 @@ describe("fetchGithubRateLimit", () => {
         );
 
         await expect(fetchGithubRateLimit("abc")).rejects.toThrow("500");
+    });
+});
+
+describe("fetchGithubTree", () => {
+    it("returns entries and truncated flag, encodes ref, sends token", async () => {
+        const entries = [{ path: "a.js", type: "blob", size: 3 }];
+        const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+            jsonResponse({ tree: entries, truncated: true }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        githubToken.value = "mem";
+
+        expect(await fetchGithubTree("o", "r", "feat/x")).toEqual({ entries, truncated: true });
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://api.github.com/repos/o/r/git/trees/feat%2Fx?recursive=1",
+            expect.objectContaining({
+                headers: expect.objectContaining({ Authorization: "Bearer mem" }),
+            }),
+        );
+    });
+
+    it("returns no entries, untruncated, for answer without tree", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => jsonResponse({})),
+        );
+
+        expect(await fetchGithubTree("o", "r", "main")).toEqual({ entries: [], truncated: false });
+    });
+
+    it("throws with status on 403", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.forbidden)),
+        );
+
+        await expect(fetchGithubTree("o", "r", "main")).rejects.toThrow("403");
+    });
+
+    it("rejects on malformed JSON body", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => ({
+                ok: true,
+                status: HTTP_STATUS.ok,
+                json: async () => JSON.parse("<html>"),
+            })),
+        );
+
+        await expect(fetchGithubTree("o", "r", "main")).rejects.toThrow(SyntaxError);
     });
 });

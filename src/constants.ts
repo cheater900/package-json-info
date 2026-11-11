@@ -75,3 +75,12 @@ export const MAX_FILE_TREE_ENTRIES = 20_000;
 export const MAX_VIEWED_FILE_BYTES = 2 * BYTES_PER_MB;
 
 export const TOOLTIP_OFFSET_PX = 6;
+
+export const PACKAGE_JSON_FILE = "package.json";
+export const PNPM_WORKSPACE_FILE = "pnpm-workspace.yaml";
+/** Workspace patterns come from the loaded repository; the caps bound the matching work. */
+export const MAX_WORKSPACE_PATTERNS = 100;
+export const MAX_WORKSPACE_PATTERN_LENGTH = 200;
+/** Total matching steps for one repo; a crafted repo cannot stall the tab past this. */
+export const MAX_WORKSPACE_MATCH_STEPS = 50_000_000;
+export const MAX_WORKSPACE_DIRS = 5_000;

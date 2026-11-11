@@ -13,6 +13,16 @@ The app accepts a `package.json` from any of the following sources:
 - **File URL** - fetch a `package.json` from a remote URL.
 - **Repo URL** - paste a GitHub/GitLab/Codeberg repo URL directly (not just a
   raw file URL); the app finds `package.json` on the `main` or `master` branch.
+- **Monorepo workspaces** - a GitHub repo URL whose root declares workspaces
+  (`workspaces` in `package.json`, or `packages` in `pnpm-workspace.yaml`)
+  gets a Workspace select listing each workspace folder. Picking one loads
+  its `package.json` as a new history entry; `(root)` returns to the root.
+  Listing costs one GitHub API request. When it fails, the root table still
+  loads and a notice says so. Any other source that declares workspaces
+  shows a hint to load the repo by GitHub URL.
+- Workspace select lists at most 5,000 folders, from the first 100
+  patterns of up to 200 characters each; a repo past a cap, or cut short
+  by GitHub, shows a notice.
 
 ## Output: the dependency summary table
 

@@ -7,8 +7,10 @@ to [ROADMAP.md](ROADMAP.md) once planned.
 
 - **Lockfile parsing**: read `pnpm-lock.yaml` / `yarn.lock` /
   `package-lock.json` to show resolved versions instead of semver ranges.
-- **Monorepo / workspaces support**: detect `workspaces` and let the user
-  pick which workspace's `package.json` to summarize, or merge them.
+- **Merged workspaces table**: one table for every workspace of a
+  monorepo, with each dependency's users.
+- **Workspaces on GitLab and Codeberg**: only GitHub repos list workspaces.
+- **Workspace package names** in the Workspace select, next to the paths.
 - **Drag-and-drop file upload**, next to the file picker.
 
 ## Table / data

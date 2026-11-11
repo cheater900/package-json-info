@@ -93,6 +93,30 @@
 
         <h2 v-if="pkg?.name" class="package-name">{{ pkg.name }}</h2>
 
+        <div v-if="workspace?.paths.length" class="workspace-picker">
+            <label :for="workspaceSelectId">{{ t("workspaces.label") }}</label>
+            <select
+                :id="workspaceSelectId"
+                :value="workspace.current"
+                :disabled="isLoadingInput"
+                @change="selectWorkspace"
+            >
+                <option :value="WORKSPACE_ROOT">{{ t("workspaces.root") }}</option>
+                <option v-for="path in workspace.paths" :key="path" :value="path">
+                    {{ path }}
+                </option>
+            </select>
+        </div>
+        <p v-if="workspace?.truncated" class="workspace-picker__note">
+            {{ t("workspaces.truncated") }}
+        </p>
+        <p v-if="workspace?.failed" class="workspace-picker__note">
+            {{ t("workspaces.failed") }}
+        </p>
+        <p v-if="hasUnlistedWorkspaces" class="workspace-picker__note">
+            {{ t("workspaces.hint") }}
+        </p>
+
         <div class="search-shrink-row">
             <div class="search-shrink-row__search">
                 <label :for="searchInputId" class="visually-hidden">

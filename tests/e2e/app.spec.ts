@@ -1,15 +1,17 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { mockExternalApis, loadJson, expandAllSections } from "./helpers";
+import { mockExternalApis, loadJson, expandAllSections, fetchFromUrlInput } from "./helpers";
 import { TOGGLEABLE_COLUMNS } from "../../src/utils/tableColumns";
 import {
     BUNDLEPHOBIA_SIZE_URL,
+    GITHUB_API_URL,
     GITHUB_RAW_URL,
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
 } from "../../src/constants";
 import { minimalRegistryDoc } from "../fixtures/dependencies";
+import { githubTreeBody } from "../fixtures/workspaces";
 import { buildNpmTarball } from "../fixtures/tarball";
 
 test.beforeEach(async ({ page }) => {
@@ -148,12 +150,106 @@ test("URL input fetches repo host URL via raw-file API", async ({ page }) => {
 
     await page.goto("/");
     await expandAllSections(page);
-    await page
-        .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
-        .fill("https://github.com/some-owner/some-repo");
-    await page.getByRole("button", { name: "FETCH" }).click();
+    await fetchFromUrlInput(page, "https://github.com/some-owner/some-repo");
 
     await expect(page.getByRole("cell", { name: "repo-dep", exact: true })).toBeVisible();
+});
+
+const MONOREPO_URL = "https://github.com/mono-owner/mono-repo";
+const MONOREPO_RAW_URL = `${GITHUB_RAW_URL}/mono-owner/mono-repo/main`;
+const MONOREPO_TREE_URL = `${GITHUB_API_URL}/repos/mono-owner/mono-repo/git/trees/main?recursive=1`;
+const MONOREPO_ROOT = {
+    name: "mono-root",
+    workspaces: ["packages/*"],
+    devDependencies: { "root-dep": "1.0.0" },
+};
+
+test("GitHub monorepo URL lists pnpm workspaces, picked workspace loads, Back returns to root", async ({
+    page,
+}) => {
+    await page.route(`${MONOREPO_RAW_URL}/package.json`, async (route) => {
+        await route.fulfill({
+            json: { name: "mono-root", devDependencies: { "root-dep": "1.0.0" } },
+        });
+    });
+    await page.route(`${MONOREPO_RAW_URL}/pnpm-workspace.yaml`, async (route) => {
+        await route.fulfill({ body: "packages:\n  - 'packages/*'\n" });
+    });
+    await page.route(`${MONOREPO_RAW_URL}/packages/core/package.json`, async (route) => {
+        await route.fulfill({ json: { name: "mono-core", dependencies: { "core-dep": "1.0.0" } } });
+    });
+    await page.route(MONOREPO_TREE_URL, async (route) => {
+        await route.fulfill({ json: githubTreeBody(["packages/core", "packages/ui"]) });
+    });
+
+    await page.goto("/");
+    await expandAllSections(page);
+    await fetchFromUrlInput(page, MONOREPO_URL);
+
+    const workspaceSelect = page.getByLabel("Workspace");
+    await expect(workspaceSelect.locator("option")).toHaveText([
+        "(root)",
+        "packages/core",
+        "packages/ui",
+    ]);
+    await expect(page.getByRole("cell", { name: "root-dep", exact: true })).toBeVisible();
+
+    await workspaceSelect.selectOption("packages/core");
+    await expect(page.getByRole("heading", { name: "mono-core" })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "core-dep", exact: true })).toBeVisible();
+    await expect(workspaceSelect).toHaveValue("packages/core");
+
+    await page.getByRole("button", { name: "← Back" }).click();
+    await expect(page.getByRole("heading", { name: "mono-root" })).toBeVisible();
+    await expect(workspaceSelect).toHaveValue("");
+});
+
+test("missing workspace package.json shows error, keeps root loaded, select back on root", async ({
+    page,
+}) => {
+    await page.route(`${MONOREPO_RAW_URL}/package.json`, async (route) => {
+        await route.fulfill({ json: MONOREPO_ROOT });
+    });
+    await page.route(`${MONOREPO_RAW_URL}/packages/gone/package.json`, async (route) => {
+        await route.fulfill({ status: 404 });
+    });
+    await page.route(MONOREPO_TREE_URL, async (route) => {
+        await route.fulfill({ json: githubTreeBody(["packages/gone"]) });
+    });
+    await page.goto("/");
+    await expandAllSections(page);
+    await fetchFromUrlInput(page, MONOREPO_URL);
+    const workspaceSelect = page.getByLabel("Workspace");
+    await expect(workspaceSelect.locator("option")).toHaveText(["(root)", "packages/gone"]);
+
+    await workspaceSelect.selectOption("packages/gone");
+
+    await expect(page.locator(".banner--error")).toContainText("packages/gone");
+    await expect(page.getByRole("heading", { name: "mono-root" })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "root-dep", exact: true })).toBeVisible();
+    await expect(workspaceSelect).toHaveValue("");
+    await expect(workspaceSelect).toBeEnabled();
+});
+
+test("rate-limited workspace listing shows notice, root package.json still loads", async ({
+    page,
+}) => {
+    await page.route(`${MONOREPO_RAW_URL}/package.json`, async (route) => {
+        await route.fulfill({ json: MONOREPO_ROOT });
+    });
+    await page.route(MONOREPO_TREE_URL, async (route) => {
+        await route.fulfill({ status: 403 });
+    });
+    await page.goto("/");
+    await expandAllSections(page);
+
+    await fetchFromUrlInput(page, MONOREPO_URL);
+
+    await expect(page.getByRole("heading", { name: "mono-root" })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "root-dep", exact: true })).toBeVisible();
+    await expect(page.getByText("Could not check this repository for workspaces")).toBeVisible();
+    await expect(page.getByLabel("Workspace")).toHaveCount(0);
+    await expect(page.locator(".banner--error")).toHaveCount(0);
 });
 
 test("URL input fetches non-repo-host URL directly", async ({ page }) => {
@@ -165,10 +261,7 @@ test("URL input fetches non-repo-host URL directly", async ({ page }) => {
 
     await page.goto("/");
     await expandAllSections(page);
-    await page
-        .getByLabel("Enter a package.json URL, or a GitHub/GitLab/Codeberg repo URL")
-        .fill("https://example.com/some/package.json");
-    await page.getByRole("button", { name: "FETCH" }).click();
+    await fetchFromUrlInput(page, "https://example.com/some/package.json");
 
     await expect(page.getByRole("cell", { name: "remote-dep", exact: true })).toBeVisible();
 });

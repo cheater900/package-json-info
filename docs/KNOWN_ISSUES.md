@@ -29,3 +29,11 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
 - **Malformed tarball with both file `a` and directory `a/...`** gives
   duplicate Vue keys in the file tree. Cosmetic.
 - **`URL.canParse`** needs Safari 17+.
+- **Brace sets in workspace patterns** (`packages/{a,b}`) are not
+  expanded, so those workspaces are not listed. Rare in practice.
+- **`pnpm-workspace.yaml`** is read by a small line parser that takes only
+  the top-level `packages` list. Anchors, multi-document files and
+  `catalog:` entries are ignored; a full YAML parser is not worth the
+  dependency.
+- **`workspace:` dependency ranges** (`workspace:*`) are looked up on npm
+  by package name. A private workspace package shows an empty row.

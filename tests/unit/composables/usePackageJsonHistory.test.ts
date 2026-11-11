@@ -10,6 +10,7 @@ import { resetSettings } from "../../helpers/settings";
 import { GITHUB_API_URL, NPM_REGISTRY_URL } from "../../../src/constants";
 import type { PackageInfo } from "../../../src/types";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
+import { rootWorkspaceContext } from "../../fixtures/workspaces";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
  * for fetchPackageInfo to complete without needing per-package data. */
@@ -190,6 +191,27 @@ describe("history navigation", () => {
 
         expect(fetchSpy.mock.calls.length).toBe(callsAfterBack);
         expect(deps.value).toBeDefined();
+    });
+});
+
+describe("workspace context", () => {
+    it("exposes current entry workspace, restores on goBack/goForward", () => {
+        stubFetchResolvesEmpty();
+        const { loadPackageJsonText, goBack, goForward, workspace } = useHistory(
+            ref(new Set<string>()),
+        );
+
+        loadPackageJsonText(validPackageJson, rootWorkspaceContext);
+        loadPackageJsonText(validPackageJson, { ...rootWorkspaceContext, current: "packages/a" });
+        loadPackageJsonText(validPackageJson);
+
+        expect(workspace.value).toBeNull();
+        goBack();
+        expect(workspace.value?.current).toBe("packages/a");
+        goBack();
+        expect(workspace.value).toEqual(rootWorkspaceContext);
+        goForward();
+        expect(workspace.value?.current).toBe("packages/a");
     });
 });
 

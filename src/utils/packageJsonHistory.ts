@@ -1,15 +1,18 @@
 import type { DependencyRow } from "../types";
 import type { PackageJson } from "./packageJson";
+import type { WorkspaceContext } from "./workspaces";
 
 /**
  * One visited package.json state. `deps`/`devDeps` start out null (not yet
  * fetched); once fetched they're cached here, tagged with the
  * visibleColumns set that was active at fetch time, so a later revisit can
  * tell whether the cached data still covers every currently-visible column.
+ * `workspace` is set when the package.json came from a monorepo on GitHub.
  */
 export type HistoryEntry = {
     content: string;
     pkg: PackageJson;
+    workspace: WorkspaceContext | null;
     deps: DependencyRow[] | null;
     devDeps: DependencyRow[] | null;
     visibleColumnsSnapshot: ReadonlySet<string> | null;
@@ -26,8 +29,12 @@ export type HistoryPosition = {
     index: number;
 };
 
-export function createHistoryEntry(content: string, pkg: PackageJson): HistoryEntry {
-    return { content, pkg, deps: null, devDeps: null, visibleColumnsSnapshot: null };
+export function createHistoryEntry(
+    content: string,
+    pkg: PackageJson,
+    workspace: WorkspaceContext | null = null,
+): HistoryEntry {
+    return { content, pkg, workspace, deps: null, devDeps: null, visibleColumnsSnapshot: null };
 }
 
 /**
