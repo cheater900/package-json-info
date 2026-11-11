@@ -13,6 +13,8 @@ import {
 import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
+import { loadLookup, saveLookup } from "../utils/lookupStore";
+import type { LookupKind } from "../utils/lookupStore";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
@@ -82,6 +84,12 @@ type BundlephobiaData = {
     gzip?: number;
 };
 
+/** One lookup's answer. `staleSince` is the save time of a stored value used after the live fetch failed, else null. */
+type Lookup<T> = {
+    value: T;
+    staleSince: string | null;
+};
+
 const COLUMNS_ALL_TOGGLEABLE = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
 
 /** Columns derived from the npm registry document, directly or via its repo slug. */
@@ -113,14 +121,15 @@ const COLUMNS_FROM_ISSUE_SEARCH = ["openPRs", "closedPRs", "openIssues", "closed
 // whole-PackageInfo cache: which sub-fetches run depends on visible columns.
 // Caches live for the page load. Failed lookups reject and are evicted
 // (see memoizeAsync), so a rate limit or outage is retried on the next
-// fetch instead of being cached as "no data".
-const registryDataCache = new Map<string, Promise<NpmRegistryData | null>>();
-const weeklyDownloadsCache = new Map<string, Promise<number | null>>();
-const vulnerabilityCountCache = new Map<string, Promise<number | null>>();
-const bundleSizeCache = new Map<string, Promise<number | null>>();
-const repoStarsCache = new Map<string, Promise<number | null>>();
-const repoIssueCountsCache = new Map<string, Promise<RepoIssueCounts>>();
-const githubReleaseTagCache = new Map<string, Promise<string | null>>();
+// fetch instead of being cached as "no data". A failed lookup answered from
+// the offline store is evicted too (see memoizeLookup).
+const registryDataCache = new Map<string, Promise<Lookup<NpmRegistryData | null>>>();
+const weeklyDownloadsCache = new Map<string, Promise<Lookup<number | null>>>();
+const vulnerabilityCountCache = new Map<string, Promise<Lookup<number | null>>>();
+const bundleSizeCache = new Map<string, Promise<Lookup<number | null>>>();
+const repoStarsCache = new Map<string, Promise<Lookup<number | null>>>();
+const repoIssueCountsCache = new Map<string, Promise<Lookup<RepoIssueCounts>>>();
+const githubReleaseTagCache = new Map<string, Promise<Lookup<string | null>>>();
 
 /** Clears every in-memory metadata cache, e.g. after the proxy changes. */
 export function clearPackageInfoCache(): void {
@@ -131,6 +140,55 @@ export function clearPackageInfoCache(): void {
     repoStarsCache.clear();
     repoIssueCountsCache.clear();
     githubReleaseTagCache.clear();
+}
+
+function fresh<T>(value: T): Lookup<T> {
+    return { value, staleSince: null };
+}
+
+/** Oldest save time among stale lookups; null when all were live. ISO timestamps sort as text. */
+function oldestStaleSince(lookups: Lookup<unknown>[]): string | null {
+    return (
+        lookups
+            .map((lookup) => lookup.staleSince)
+            .filter((staleSince) => staleSince != null)
+            .sort()[0] ?? null
+    );
+}
+
+/**
+ * memoizeAsync backed by the offline store. A live answer (`null` included:
+ * 404 means "no data") is saved and returned fresh. When the live fetch
+ * fails, the last saved answer is returned as stale and evicted from
+ * `cache`, so the next fetch retries live; callers already waiting share
+ * it. Without a saved answer the live error is thrown unchanged.
+ */
+function memoizeLookup<T>(
+    cache: Map<string, Promise<Lookup<T>>>,
+    kind: LookupKind,
+    key: string,
+    fetchLive: () => Promise<T>,
+): Promise<Lookup<T>> {
+    const request: Promise<Lookup<T>> = memoizeAsync(cache, key, async () => {
+        let value: T;
+        try {
+            value = await fetchLive();
+        } catch (error) {
+            const stored = await loadLookup<T>(kind, key);
+            if (!stored) {
+                throw error;
+            }
+            const isStillCached = cache.get(key) === request;
+            if (isStillCached) {
+                cache.delete(key);
+            }
+            return { value: stored.value, staleSince: stored.savedAt };
+        }
+        // Not awaited: a slow or hanging IndexedDB must not delay the row.
+        void saveLookup(kind, key, value);
+        return fresh(value);
+    });
+    return request;
 }
 
 /** Optional per-field lookups fall back to `fallback` so one failing service can't fail the row. */
@@ -184,34 +242,36 @@ export async function fetchPackageInfo(
     const { registryName, range } = resolveRegistrySpec(name, version);
     const headers = githubHeaders();
     const isVisible = (key: string) => isColumnVisible(visibleColumns, key);
-    const [npmData, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
+    const noData = fresh(null);
+    const [registry, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
         anyColumnVisible(visibleColumns, COLUMNS_FROM_REGISTRY)
             ? fetchRegistryData(registryName)
-            : null,
+            : noData,
         isVisible("weeklyDownloads")
-            ? withFallback(fetchWeeklyDownloads(registryName), null)
-            : null,
+            ? withFallback(fetchWeeklyDownloads(registryName), noData)
+            : noData,
         isVisible("vulnerabilityCount")
-            ? withFallback(fetchVulnerabilityCount(registryName), null)
-            : null,
+            ? withFallback(fetchVulnerabilityCount(registryName), noData)
+            : noData,
         isVisible("bundleSizeGzip")
-            ? withFallback(fetchBundleGzipSize(registryName, range), null)
-            : null,
+            ? withFallback(fetchBundleGzipSize(registryName, range), noData)
+            : noData,
     ]);
+    const npmData = registry.value;
     const times = npmData?.time ?? {};
     const latestVersion = npmData?.["dist-tags"]?.latest ?? null;
     const versionData = NpmVersionSchema.parse(resolveVersionData(npmData, range));
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
     const [gitStars, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
-            ? withFallback(fetchCachedRepoStars(slug, headers), null)
-            : null,
+            ? withFallback(fetchCachedRepoStars(slug, headers), noData)
+            : noData,
         slug != null && anyColumnVisible(visibleColumns, COLUMNS_FROM_ISSUE_SEARCH)
-            ? withFallback(fetchCachedIssueCounts(slug, headers), EMPTY_ISSUE_COUNTS)
-            : EMPTY_ISSUE_COUNTS,
+            ? withFallback(fetchCachedIssueCounts(slug, headers), fresh(EMPTY_ISSUE_COUNTS))
+            : fresh(EMPTY_ISSUE_COUNTS),
         isVisible("sourceCodeTree")
-            ? withFallback(resolveSourceTree(versionData, slug, range, headers), null)
-            : null,
+            ? withFallback(resolveSourceTree(versionData, slug, range, headers), noData)
+            : noData,
     ]);
     const sourceCode =
         slug != null
@@ -224,25 +284,34 @@ export async function fetchPackageInfo(
         latestVersion,
         latestReleaseDate: latestVersion ? (times[latestVersion] ?? null) : null,
         latestUpdateDate: times.modified ?? null,
-        weeklyDownloads,
+        weeklyDownloads: weeklyDownloads.value,
         sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
-        gitStars,
-        ...issueCounts,
+        gitStars: gitStars.value,
+        ...issueCounts.value,
         dependencies: versionData.dependencies ? Object.keys(versionData.dependencies) : null,
         license: extractLicense(versionData.license) ?? extractLicense(npmData?.license),
         isOutdated: isVersionOutdated(range, latestVersion),
         deprecated: versionData.deprecated ?? null,
-        vulnerabilityCount,
-        bundleSizeGzip,
+        vulnerabilityCount: vulnerabilityCount.value,
+        bundleSizeGzip: bundleSizeGzip.value,
         maintainers: maintainerNames(npmData),
-        sourceTree,
+        sourceTree: sourceTree.value,
+        staleSince: oldestStaleSince([
+            registry,
+            weeklyDownloads,
+            vulnerabilityCount,
+            bundleSizeGzip,
+            gitStars,
+            issueCounts,
+            sourceTree,
+        ]),
     };
 }
 
 /**
  * Fetches a package version's manifest (npm's per-version registry data,
  * essentially its package.json) as JSON text, for the drill-down action.
- * Shares the registry cache with fetchPackageInfo.
+ * Shares the registry cache, and its offline store, with fetchPackageInfo.
  *
  * @returns The package.json text, or null if the package/version is unknown.
  */
@@ -251,7 +320,7 @@ export async function fetchPackageJsonForVersion(
     version: string,
 ): Promise<string | null> {
     const { registryName, range } = resolveRegistrySpec(name, version);
-    const versionData = resolveVersionData(await fetchRegistryData(registryName), range);
+    const versionData = resolveVersionData((await fetchRegistryData(registryName)).value, range);
     if (!versionData) {
         return null;
     }
@@ -283,15 +352,15 @@ export async function fetchPackagesInfo(
     return results;
 }
 
-function fetchRegistryData(name: string): Promise<NpmRegistryData | null> {
-    return memoizeAsync(registryDataCache, name, async () => {
+function fetchRegistryData(name: string): Promise<Lookup<NpmRegistryData | null>> {
+    return memoizeLookup(registryDataCache, "registry", name, async () => {
         const data = await fetchJson(`${NPM_REGISTRY_URL}/${encodeURIComponent(name)}`);
         return data == null ? null : NpmRegistrySchema.parse(data);
     });
 }
 
-function fetchWeeklyDownloads(name: string): Promise<number | null> {
-    return memoizeAsync(weeklyDownloadsCache, name, () =>
+function fetchWeeklyDownloads(name: string): Promise<Lookup<number | null>> {
+    return memoizeLookup(weeklyDownloadsCache, "weeklyDownloads", name, () =>
         fetchJson<NpmDownloadsData>(`${NPM_WEEKLY_DOWNLOADS_URL}/${encodeURIComponent(name)}`).then(
             (d) => d?.downloads ?? null,
         ),
@@ -303,8 +372,8 @@ function fetchWeeklyDownloads(name: string): Promise<number | null> {
  * result pages. Throws on failure; OSV may block browser requests (CORS,
  * rate limits).
  */
-function fetchVulnerabilityCount(name: string): Promise<number | null> {
-    return memoizeAsync(vulnerabilityCountCache, name, async () => {
+function fetchVulnerabilityCount(name: string): Promise<Lookup<number | null>> {
+    return memoizeLookup(vulnerabilityCountCache, "vulnerabilityCount", name, async () => {
         const seenPageTokens = new Set<string>();
         let count = 0;
         let pageToken: string | undefined;
@@ -334,22 +403,30 @@ function fetchVulnerabilityCount(name: string): Promise<number | null> {
 }
 
 /** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
-function fetchBundleGzipSize(name: string, range: string): Promise<number | null> {
+function fetchBundleGzipSize(name: string, range: string): Promise<Lookup<number | null>> {
     const pinnedVersion = pinnedVersionOf(range);
     const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
-    return memoizeAsync(bundleSizeCache, packageSpec, () =>
+    return memoizeLookup(bundleSizeCache, "bundleSize", packageSpec, () =>
         fetchJson<BundlephobiaData>(
             `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
         ).then((data) => data?.gzip ?? null),
     );
 }
 
-function fetchCachedRepoStars(slug: RepoSlug, headers: HttpHeaders): Promise<number | null> {
-    return memoizeAsync(repoStarsCache, repoSlugKey(slug), () => fetchRepoStars(slug, headers));
+function fetchCachedRepoStars(
+    slug: RepoSlug,
+    headers: HttpHeaders,
+): Promise<Lookup<number | null>> {
+    return memoizeLookup(repoStarsCache, "repoStars", repoSlugKey(slug), () =>
+        fetchRepoStars(slug, headers),
+    );
 }
 
-function fetchCachedIssueCounts(slug: RepoSlug, headers: HttpHeaders): Promise<RepoIssueCounts> {
-    return memoizeAsync(repoIssueCountsCache, repoSlugKey(slug), () =>
+function fetchCachedIssueCounts(
+    slug: RepoSlug,
+    headers: HttpHeaders,
+): Promise<Lookup<RepoIssueCounts>> {
+    return memoizeLookup(repoIssueCountsCache, "repoIssueCounts", repoSlugKey(slug), () =>
         fetchRepoIssueCounts(slug, headers),
     );
 }
@@ -364,25 +441,26 @@ async function resolveSourceTree(
     slug: RepoSlug | null,
     range: string,
     headers: HttpHeaders,
-): Promise<SourceTreeRef | null> {
+): Promise<Lookup<SourceTreeRef | null>> {
     // Registry data picks the URL; only http(s) may be fetched, never data: or blob:.
     const tarballUrl = versionData.dist?.tarball;
     if (isHttpUrl(tarballUrl)) {
-        return { provider: "npm", tarballUrl };
+        return fresh({ provider: "npm", tarballUrl });
     }
     const pinnedVersion = pinnedVersionOf(range);
     if (slug?.host !== GITHUB_HOST || !pinnedVersion) {
-        return null;
+        return fresh(null);
     }
-    const tag = await memoizeAsync(
+    const { value: tag, staleSince } = await memoizeLookup(
         githubReleaseTagCache,
+        "githubReleaseTag",
         `${repoSlugKey(slug)}@${pinnedVersion}`,
         () => findGithubReleaseTag(slug.owner, slug.repo, pinnedVersion, headers),
     );
     if (!tag) {
-        return null;
+        return { value: null, staleSince };
     }
-    return { provider: "github", owner: slug.owner, repo: slug.repo, tag };
+    return { value: { provider: "github", owner: slug.owner, repo: slug.repo, tag }, staleSince };
 }
 
 type NpmVersionData = z.infer<typeof NpmVersionSchema>;

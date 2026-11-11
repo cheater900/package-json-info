@@ -82,9 +82,19 @@ tbody tr:not(.deps-table__status-row):hover {
 }
 
 .deps-table__name-text {
+    /* Keeps the stale badge beside the arrow instead of mid-cell. */
+    margin-right: auto;
     max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.deps-table__stale-badge {
+    background: var(--accent-bg, rgba(51, 255, 102, 0.1));
+    border: 1px dashed var(--accent-border, rgba(51, 255, 102, 0.5));
+    color: var(--text-h, #66ffa0);
+    font-size: 0.75em;
+    padding: 0 calc(4px * var(--space-scale));
 }
 
 .deps-table__name-arrow {

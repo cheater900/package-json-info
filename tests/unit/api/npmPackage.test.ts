@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
     fetchPackageInfo,
     fetchPackagesInfo,
@@ -6,6 +6,8 @@ import {
     clearPackageInfoCache,
 } from "../../../src/api/npmPackage";
 import { OSV_MAX_PAGES } from "../../../src/constants";
+import { loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import type { LookupKind } from "../../../src/utils/lookupStore";
 import { columnKeysExcept } from "../../helpers/columns";
 import {
     countFetchCalls,
@@ -14,7 +16,11 @@ import {
     statusResponse,
     stubFetchByUrl,
 } from "../../helpers/fetchMock";
+import { IDBObjectStore } from "fake-indexeddb";
+import { githubToken } from "../../../src/settings";
+import { resetSettings, stubIndexedDb } from "../../helpers/settings";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
+import { githubTokenFixture as TOKEN } from "../../fixtures/github";
 
 function visibleColumnsExcept(...excluded: string[]): Set<string> {
     return new Set(columnKeysExcept(...excluded));
@@ -82,6 +88,7 @@ describe("fetchPackageInfo", () => {
                 provider: "npm",
                 tarballUrl: "https://registry.npmjs.org/left-pad/-/left-pad-1.2.0.tgz",
             },
+            staleSince: null,
         });
     });
 
@@ -1014,6 +1021,133 @@ describe("fetchPackageInfo failures", () => {
         await expect(fetchPackageInfo("pkg", "1.0.0")).rejects.toThrow("503");
         await expect(fetchPackageInfo("pkg", "1.0.0")).rejects.toThrow("503");
         expect(countFetchCalls(fetchMock, "registry.npmjs.org")).toBe(2);
+    });
+
+    describe("offline store", () => {
+        const SAVED_OLD = "2024-01-01T00:00:00.000Z";
+        const SAVED_NEW = "2024-02-01T00:00:00.000Z";
+
+        /** Saves a lookup value as if fetched live at `savedAt`. */
+        async function seedLookup(kind: LookupKind, key: string, value: unknown, savedAt: string) {
+            vi.setSystemTime(new Date(savedAt));
+            await saveLookup(kind, key, value);
+        }
+
+        beforeEach(() => {
+            stubIndexedDb();
+            // Date only: fake-indexeddb schedules its work on real timers.
+            vi.useFakeTimers({ toFake: ["Date"] });
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+            resetSettings();
+        });
+
+        it("saves live values", async () => {
+            vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.staleSince).toBeNull();
+            await vi.waitFor(async () => {
+                expect(await loadLookup("weeklyDownloads", "pkg")).toMatchObject({ value: 7 });
+                expect(await loadLookup("repoStars", "github.com/o/r")).toMatchObject({ value: 9 });
+                expect(await loadLookup("registry", "pkg")).toBeDefined();
+            });
+        });
+
+        it("returns stored value marked stale on rejected optional lookup", async () => {
+            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.weeklyDownloads).toBe(42);
+            expect(info.gitStars).toBe(9);
+            expect(info.staleSince).toBe(SAVED_OLD);
+        });
+
+        it("builds row from stored registry document on registry outage", async () => {
+            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "status"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.latestVersion).toBe("1.0.0");
+            expect(info.staleSince).toBe(SAVED_OLD);
+        });
+
+        it("rethrows live error on store miss", async () => {
+            vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "status"));
+
+            await expect(fetchPackageInfo("pkg", "1.0.0")).rejects.toThrow("503");
+        });
+
+        it("keeps live null fresh over stored value", async () => {
+            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
+            vi.stubGlobal(
+                "fetch",
+                failingFetch("api.npmjs.org/downloads", "status", HTTP_STATUS.notFound),
+            );
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.weeklyDownloads).toBeNull();
+            expect(info.staleSince).toBeNull();
+        });
+
+        it("retries live after stale result instead of memoizing it", async () => {
+            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            const fetchMock = failingFetch("registry.npmjs.org", "status");
+            vi.stubGlobal("fetch", fetchMock);
+
+            await fetchPackageInfo("pkg", "1.0.0");
+            await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(countFetchCalls(fetchMock, "registry.npmjs.org")).toBe(2);
+        });
+
+        it("returns fresh row once live lookup recovers", async () => {
+            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
+            await fetchPackageInfo("pkg", "1.0.0");
+            vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.weeklyDownloads).toBe(7);
+            expect(info.staleSince).toBeNull();
+        });
+
+        it("sets staleSince to oldest stored lookup used", async () => {
+            await seedLookup("weeklyDownloads", "pkg", 42, SAVED_NEW);
+            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("npmjs.org", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.weeklyDownloads).toBe(42);
+            expect(info.staleSince).toBe(SAVED_OLD);
+        });
+
+        it("serves drill-down manifest from stored registry document", async () => {
+            await seedLookup("registry", "pkg", registryDoc, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "network"));
+
+            expect(await fetchPackageJsonForVersion("pkg", "1.0.0")).toBe("{}");
+        });
+
+        it("stores no request headers or token", async () => {
+            const put = vi.spyOn(IDBObjectStore.prototype, "put");
+            githubToken.value = TOKEN;
+            vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
+
+            await fetchPackageInfo("pkg", "1.0.0");
+
+            await vi.waitFor(() => expect(put.mock.calls.length).toBeGreaterThan(0));
+            expect(JSON.stringify(put.mock.calls)).not.toContain(TOKEN);
+        });
     });
 });
 

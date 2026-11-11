@@ -31,6 +31,8 @@ export type PackageInfo = {
     maintainers: string[] | null;
     /** How to fetch this version's browsable source tree, or null if neither npm nor a supported host has one available. */
     sourceTree: SourceTreeRef | null;
+    /** ISO time of the oldest stored value used after a failed live lookup; null when every lookup was live. */
+    staleSince: string | null;
 };
 
 export type SortDirection = "asc" | "desc";

@@ -7,6 +7,7 @@ import {
     visibleColumnsEqual,
     isEntryCacheValid,
 } from "../../../src/utils/packageJsonHistory";
+import { fullDependency } from "../../fixtures/dependencies";
 import { rootWorkspaceContext } from "../../fixtures/workspaces";
 
 describe("createHistoryEntry", () => {
@@ -126,5 +127,23 @@ describe("isEntryCacheValid", () => {
         entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
 
         expect(isEntryCacheValid(entry, new Set())).toBe(false);
+    });
+
+    it("returns false for stale row, so revisit retries", () => {
+        const entry = createHistoryEntry("{}", {});
+        entry.deps = [{ ...fullDependency, staleSince: "2024-01-01T00:00:00.000Z" }];
+        entry.devDeps = [];
+        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
+
+        expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(false);
+    });
+
+    it("returns true for live rows", () => {
+        const entry = createHistoryEntry("{}", {});
+        entry.deps = [fullDependency];
+        entry.devDeps = [];
+        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
+
+        expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(true);
     });
 });
