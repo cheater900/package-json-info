@@ -5,6 +5,7 @@ import { createHistoryEntry } from "../../../src/utils/packageJsonHistory";
 import type { EntrySource, HistoryEntry } from "../../../src/utils/packageJsonHistory";
 import type { WorkspaceContext } from "../../../src/utils/workspaces";
 import { rootWorkspaceContext } from "../../fixtures/workspaces";
+import { openShareLink, shareSteps } from "../../helpers/shareLink";
 
 const STEP_URL = "url:https://github.com/o/r";
 const SOURCE_URL: EntrySource = { kind: "url", url: "https://github.com/o/r" };
@@ -33,15 +34,6 @@ function setup(urlWorkspace: WorkspaceContext | null = rootWorkspaceContext) {
     return { ...share, ...loaders, history, historyIndex };
 }
 
-function openLink(steps: string[]) {
-    const params = new URLSearchParams(steps.map((step) => ["step", step]));
-    window.history.replaceState(null, "", `/?${params}`);
-}
-
-function shareSteps() {
-    return new URLSearchParams(window.location.search).getAll("step");
-}
-
 beforeEach(() => {
     window.history.replaceState(null, "", "/");
 });
@@ -53,7 +45,7 @@ afterEach(() => {
 
 describe("replaySteps", () => {
     it("loads steps in order, workspace step with current entry context", async () => {
-        openLink([STEP_URL, "ws:packages/a", "dep:@scope/pkg@^1.0.0"]);
+        openShareLink([STEP_URL, "ws:packages/a", "dep:@scope/pkg@^1.0.0"]);
         const { replaySteps, loadUrl, loadWorkspace, loadDependency, history } = setup();
 
         await replaySteps();
@@ -65,7 +57,7 @@ describe("replaySteps", () => {
     });
 
     it("loads root workspace step", async () => {
-        openLink([STEP_URL, "ws:packages/a", "ws:"]);
+        openShareLink([STEP_URL, "ws:packages/a", "ws:"]);
         const { replaySteps, loadWorkspace } = setup();
 
         await replaySteps();
@@ -77,7 +69,7 @@ describe("replaySteps", () => {
     });
 
     it("stops at failed step, trims link to loaded steps", async () => {
-        openLink([STEP_URL, "dep:ghost@1.0.0", "dep:left-pad@1.0.0"]);
+        openShareLink([STEP_URL, "dep:ghost@1.0.0", "dep:left-pad@1.0.0"]);
         const { replaySteps, loadDependency } = setup();
         loadDependency.mockResolvedValueOnce(false);
 
@@ -88,7 +80,7 @@ describe("replaySteps", () => {
     });
 
     it("stops at workspace step for entry without workspace list", async () => {
-        openLink([STEP_URL, "ws:packages/a", "dep:left-pad@1.0.0"]);
+        openShareLink([STEP_URL, "ws:packages/a", "dep:left-pad@1.0.0"]);
         const { replaySteps, loadWorkspace, loadDependency } = setup(null);
 
         await replaySteps();
@@ -98,7 +90,7 @@ describe("replaySteps", () => {
     });
 
     it("stops at workspace path missing from list", async () => {
-        openLink([STEP_URL, "ws:packages/unlisted"]);
+        openShareLink([STEP_URL, "ws:packages/unlisted"]);
         const { replaySteps, loadWorkspace } = setup();
 
         await replaySteps();
@@ -109,7 +101,7 @@ describe("replaySteps", () => {
 
 describe("address bar sync", () => {
     it("keeps link steps until replay ends", async () => {
-        openLink([STEP_URL, "dep:left-pad@1.0.0"]);
+        openShareLink([STEP_URL, "dep:left-pad@1.0.0"]);
         let finishUrlLoad: (loaded: boolean) => void;
         const { replaySteps, loadUrl, history } = setup();
         loadUrl.mockImplementationOnce(

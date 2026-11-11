@@ -97,7 +97,7 @@ export function visibleColumnsEqual(
 }
 
 /** Rows that failed, or were built from stored values after a failed live lookup. */
-function hasFailedRow(rows: DependencyRow[]): boolean {
+function hasRowToRetry(rows: DependencyRow[]): boolean {
     return rows.some((row) => "error" in row || row.staleSince != null);
 }
 
@@ -114,8 +114,8 @@ export function isEntryCacheValid(
     return (
         entry.deps !== null &&
         entry.devDeps !== null &&
-        !hasFailedRow(entry.deps) &&
-        !hasFailedRow(entry.devDeps) &&
+        !hasRowToRetry(entry.deps) &&
+        !hasRowToRetry(entry.devDeps) &&
         visibleColumnsEqual(entry.visibleColumnsSnapshot, visibleColumns)
     );
 }

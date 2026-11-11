@@ -8,7 +8,8 @@ import { clearPackageInfoCache } from "../../src/api/npmPackage";
 import { jsonResponse, textResponse } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
-import { NPM_REGISTRY_URL, SHARE_STEP_QUERY_PARAM } from "../../src/constants";
+import { NPM_REGISTRY_URL } from "../../src/constants";
+import { openShareLink, shareSteps } from "../helpers/shareLink";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
 
@@ -22,10 +23,6 @@ beforeEach(() => {
     // A loaded source leaves share steps in the address bar; the next mount would replay them.
     window.history.replaceState(null, "", "/");
 });
-
-function shareSteps() {
-    return new URLSearchParams(window.location.search).getAll(SHARE_STEP_QUERY_PARAM);
-}
 
 async function mountApp() {
     const wrapper = mount(App, { attachTo: document.body });
@@ -259,13 +256,6 @@ describe("App", () => {
             const STEP_URL = "url:https://github.com/o/r";
             const STEP_DEPENDENCY = "dep:left-pad@^1.0.0";
 
-            function openLink(steps: string[]) {
-                const params = new URLSearchParams(
-                    steps.map((step) => [SHARE_STEP_QUERY_PARAM, step]),
-                );
-                window.history.replaceState(null, "", `/?keep=1&${params}`);
-            }
-
             function stubMonorepoWithLeftPad(dirs: string[]) {
                 stubMonorepo(jsonResponse(githubTreeBody(dirs)));
                 const monorepoFetch = vi.mocked(fetch).getMockImplementation()!;
@@ -280,9 +270,9 @@ describe("App", () => {
                 });
             }
 
-            it("replays url, workspace, dependency steps in order", async () => {
+            it("replays url, workspace, dependency steps in order, keeps other params", async () => {
                 stubMonorepoWithLeftPad(["packages/a"]);
-                openLink([STEP_URL, "ws:packages/a", STEP_DEPENDENCY]);
+                openShareLink([STEP_URL, "ws:packages/a", STEP_DEPENDENCY], { keep: "1" });
 
                 const wrapper = await mountApp();
 
@@ -296,7 +286,7 @@ describe("App", () => {
 
             it("stops replay at failed step, shows error banner, trims link", async () => {
                 stubMonorepoWithLeftPad(["packages/gone"]);
-                openLink([STEP_URL, "ws:packages/gone", STEP_DEPENDENCY]);
+                openShareLink([STEP_URL, "ws:packages/gone", STEP_DEPENDENCY]);
 
                 const wrapper = await mountApp();
 
@@ -308,7 +298,7 @@ describe("App", () => {
 
             it("stops replay at workspace missing from repo list", async () => {
                 stubMonorepoWithLeftPad(["packages/b"]);
-                openLink([STEP_URL, "ws:packages/a", STEP_DEPENDENCY]);
+                openShareLink([STEP_URL, "ws:packages/a", STEP_DEPENDENCY]);
 
                 const wrapper = await mountApp();
 

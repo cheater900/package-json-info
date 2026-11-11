@@ -14,9 +14,8 @@ import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { computeHealthScore } from "../utils/healthScore";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
-import { loadLookup, lookupStoreGeneration, saveLookup } from "../utils/lookupStore";
-import type { LookupKind } from "../utils/lookupStore";
-import { memoizeAsync } from "../utils/memoizeAsync";
+import { fresh, memoizeLookup, oldestStaleSince } from "../utils/memoizeLookup";
+import type { Lookup } from "../utils/memoizeLookup";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
 import { isHttpUrl } from "../utils/url";
@@ -59,23 +58,19 @@ const NpmRegistrySchema = z
     })
     .catch({});
 
+/** Shape checks of values read back from the offline store (see memoizeLookup). */
 const StoredCountSchema = z.number().nullable();
 
-/** Shape check of a stored value on read: another app version may have saved another shape. */
-const STORED_VALUE_SCHEMAS: Record<LookupKind, z.ZodType> = {
-    registry: NpmRegistrySchema.nullable(),
-    weeklyDownloads: StoredCountSchema,
-    vulnerabilityCount: StoredCountSchema,
-    bundleSize: StoredCountSchema,
-    repoStars: StoredCountSchema,
-    repoIssueCounts: z.object({
-        openPRs: StoredCountSchema,
-        closedPRs: StoredCountSchema,
-        openIssues: StoredCountSchema,
-        closedIssues: StoredCountSchema,
-    }),
-    githubReleaseTag: z.string().nullable(),
-};
+const StoredIssueCountsSchema = z.object({
+    openPRs: StoredCountSchema,
+    closedPRs: StoredCountSchema,
+    openIssues: StoredCountSchema,
+    closedIssues: StoredCountSchema,
+});
+
+const StoredRegistrySchema = NpmRegistrySchema.nullable();
+
+const StoredReleaseTagSchema = z.string().nullable();
 
 export type FetchPackageOptions = {
     /**
@@ -103,12 +98,6 @@ type OsvQueryResponse = {
 
 type BundlephobiaData = {
     gzip?: number;
-};
-
-/** One lookup's answer. `staleSince` is the save time of a stored value used after the live fetch failed, else null. */
-type Lookup<T> = {
-    value: T;
-    staleSince: string | null;
 };
 
 const COLUMNS_ALL_TOGGLEABLE = new Set(TOGGLEABLE_COLUMNS.map((c) => c.key));
@@ -162,59 +151,6 @@ export function clearPackageInfoCache(): void {
     repoStarsCache.clear();
     repoIssueCountsCache.clear();
     githubReleaseTagCache.clear();
-}
-
-function fresh<T>(value: T): Lookup<T> {
-    return { value, staleSince: null };
-}
-
-/** Oldest save time among stale lookups; null when all were live. ISO timestamps sort as text. */
-function oldestStaleSince(lookups: Lookup<unknown>[]): string | null {
-    return (
-        lookups
-            .map((lookup) => lookup.staleSince)
-            .filter((staleSince) => staleSince != null)
-            .sort()[0] ?? null
-    );
-}
-
-/**
- * memoizeAsync backed by the offline store. A live answer (`null` included:
- * 404 means "no data") is saved and returned fresh. When the live fetch
- * fails, the last saved answer is returned as stale and evicted from
- * `cache`, so the next fetch retries live; callers already waiting share
- * it. Without a saved answer passing STORED_VALUE_SCHEMAS the live error
- * is thrown unchanged. Nothing is saved when clearLookups ran meanwhile.
- */
-function memoizeLookup<T>(
-    cache: Map<string, Promise<Lookup<T>>>,
-    kind: LookupKind,
-    key: string,
-    fetchLive: () => Promise<T>,
-): Promise<Lookup<T>> {
-    const request: Promise<Lookup<T>> = memoizeAsync(cache, key, async () => {
-        const generation = lookupStoreGeneration();
-        let value: T;
-        try {
-            value = await fetchLive();
-        } catch (error) {
-            const stored = await loadLookup<unknown>(kind, key);
-            const parsed = STORED_VALUE_SCHEMAS[kind].safeParse(stored?.value);
-            if (!stored || !parsed.success) {
-                throw error;
-            }
-            const isStillCached = cache.get(key) === request;
-            if (isStillCached) {
-                cache.delete(key);
-            }
-            // Parsed by the schema of `kind`, which yields T.
-            return { value: parsed.data as T, staleSince: stored.savedAt };
-        }
-        // Not awaited: a slow or hanging IndexedDB must not delay the row.
-        void saveLookup(kind, key, value, generation);
-        return fresh(value);
-    });
-    return request;
 }
 
 /** Optional per-field lookups fall back to `fallback` so one failing service can't fail the row. */
@@ -408,14 +344,14 @@ export async function fetchPackagesInfo(
 }
 
 function fetchRegistryData(name: string): Promise<Lookup<NpmRegistryData | null>> {
-    return memoizeLookup(registryDataCache, "registry", name, async () => {
+    return memoizeLookup(registryDataCache, "registry", name, StoredRegistrySchema, async () => {
         const data = await fetchJson(`${NPM_REGISTRY_URL}/${encodeURIComponent(name)}`);
         return data == null ? null : NpmRegistrySchema.parse(data);
     });
 }
 
 function fetchWeeklyDownloads(name: string): Promise<Lookup<number | null>> {
-    return memoizeLookup(weeklyDownloadsCache, "weeklyDownloads", name, () =>
+    return memoizeLookup(weeklyDownloadsCache, "weeklyDownloads", name, StoredCountSchema, () =>
         fetchJson<NpmDownloadsData>(`${NPM_WEEKLY_DOWNLOADS_URL}/${encodeURIComponent(name)}`).then(
             (d) => d?.downloads ?? null,
         ),
@@ -428,40 +364,46 @@ function fetchWeeklyDownloads(name: string): Promise<Lookup<number | null>> {
  * rate limits).
  */
 function fetchVulnerabilityCount(name: string): Promise<Lookup<number | null>> {
-    return memoizeLookup(vulnerabilityCountCache, "vulnerabilityCount", name, async () => {
-        const seenPageTokens = new Set<string>();
-        let count = 0;
-        let pageToken: string | undefined;
-        for (let page = 1; page <= OSV_MAX_PAGES; page++) {
-            const data = await fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    package: { name, ecosystem: OSV_NPM_ECOSYSTEM },
-                    page_token: pageToken,
-                }),
-            });
-            if (!data) {
-                return null;
+    return memoizeLookup(
+        vulnerabilityCountCache,
+        "vulnerabilityCount",
+        name,
+        StoredCountSchema,
+        async () => {
+            const seenPageTokens = new Set<string>();
+            let count = 0;
+            let pageToken: string | undefined;
+            for (let page = 1; page <= OSV_MAX_PAGES; page++) {
+                const data = await fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        package: { name, ecosystem: OSV_NPM_ECOSYSTEM },
+                        page_token: pageToken,
+                    }),
+                });
+                if (!data) {
+                    return null;
+                }
+                count += data.vulns?.length ?? 0;
+                pageToken = data.next_page_token;
+                // A token seen before (A -> B -> A) would loop forever; treat it as the last page.
+                if (!pageToken || seenPageTokens.has(pageToken)) {
+                    return count;
+                }
+                seenPageTokens.add(pageToken);
             }
-            count += data.vulns?.length ?? 0;
-            pageToken = data.next_page_token;
-            // A token seen before (A -> B -> A) would loop forever; treat it as the last page.
-            if (!pageToken || seenPageTokens.has(pageToken)) {
-                return count;
-            }
-            seenPageTokens.add(pageToken);
-        }
-        // Still paging after OSV_MAX_PAGES: the total is unknown, not `count`.
-        return null;
-    });
+            // Still paging after OSV_MAX_PAGES: the total is unknown, not `count`.
+            return null;
+        },
+    );
 }
 
 /** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
 function fetchBundleGzipSize(name: string, range: string): Promise<Lookup<number | null>> {
     const pinnedVersion = pinnedVersionOf(range);
     const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
-    return memoizeLookup(bundleSizeCache, "bundleSize", packageSpec, () =>
+    return memoizeLookup(bundleSizeCache, "bundleSize", packageSpec, StoredCountSchema, () =>
         fetchJson<BundlephobiaData>(
             `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
         ).then((data) => data?.gzip ?? null),
@@ -472,7 +414,7 @@ function fetchCachedRepoStars(
     slug: RepoSlug,
     headers: HttpHeaders,
 ): Promise<Lookup<number | null>> {
-    return memoizeLookup(repoStarsCache, "repoStars", repoSlugKey(slug), () =>
+    return memoizeLookup(repoStarsCache, "repoStars", repoSlugKey(slug), StoredCountSchema, () =>
         fetchRepoStars(slug, headers),
     );
 }
@@ -481,8 +423,12 @@ function fetchCachedIssueCounts(
     slug: RepoSlug,
     headers: HttpHeaders,
 ): Promise<Lookup<RepoIssueCounts>> {
-    return memoizeLookup(repoIssueCountsCache, "repoIssueCounts", repoSlugKey(slug), () =>
-        fetchRepoIssueCounts(slug, headers),
+    return memoizeLookup(
+        repoIssueCountsCache,
+        "repoIssueCounts",
+        repoSlugKey(slug),
+        StoredIssueCountsSchema,
+        () => fetchRepoIssueCounts(slug, headers),
     );
 }
 
@@ -510,6 +456,7 @@ async function resolveSourceTree(
         githubReleaseTagCache,
         "githubReleaseTag",
         `${repoSlugKey(slug)}@${pinnedVersion}`,
+        StoredReleaseTagSchema,
         () => findGithubReleaseTag(slug.owner, slug.repo, pinnedVersion, headers),
     );
     if (!tag) {

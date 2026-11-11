@@ -74,6 +74,7 @@ to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas are in
 - **`npmPackage.ts` does several jobs**: registry document, downloads, OSV,
   Bundlephobia, repo lookups and their caches. One `clearPackageInfoCache`
   ties the caches together; a split needs a shared cache registry first.
+  The offline store fallback lives in `utils/memoizeLookup.ts`.
 - **`fetchRepoStars` guards an unknown host** although `parseRepoSlug`
   yields only `SUPPORTED_REPO_HOSTS`. Kept: it covers a host added to that
   list before it gets a stars fetcher.

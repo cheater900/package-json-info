@@ -141,6 +141,11 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **`memoizeLookup`** and its `Lookup` helpers moved to
+  `utils/memoizeLookup.ts`; each lookup passes its stored-value schema, so
+  the result needs no cast. `loadFromSource` takes an options object,
+  **`--warning`** color joins `style.css`, and share link and history
+  tests share helpers.
 - **`var()` fallback colors** removed from component CSS; `style.css`
   defines every variable for both themes.
 - **Inline SVG icons** moved into `IconUpload.vue` and `IconGear.vue`.

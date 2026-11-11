@@ -15,6 +15,7 @@ import {
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
+    SHARE_STEP_QUERY_PARAM,
 } from "../../src/constants";
 import { minimalRegistryDoc } from "../fixtures/dependencies";
 import { githubTreeBody } from "../fixtures/workspaces";
@@ -374,7 +375,10 @@ test("share link replays steps, Back and drill-down rewrite link", async ({ page
     const urlStep = "url:https://github.com/some-owner/some-repo";
     const dependencyStep = "dep:left-pad@^1.0.0";
     const linkSteps = () =>
-        page.evaluate(() => new URLSearchParams(window.location.search).getAll("step"));
+        page.evaluate(
+            (param) => new URLSearchParams(window.location.search).getAll(param),
+            SHARE_STEP_QUERY_PARAM,
+        );
     await page.route(`${GITHUB_RAW_URL}/some-owner/some-repo/main/package.json`, async (route) => {
         await route.fulfill({
             json: { name: "some-repo", dependencies: { "left-pad": "^1.0.0" } },
@@ -400,8 +404,8 @@ test("share link replays steps, Back and drill-down rewrite link", async ({ page
     });
 
     const params = new URLSearchParams([
-        ["step", urlStep],
-        ["step", dependencyStep],
+        [SHARE_STEP_QUERY_PARAM, urlStep],
+        [SHARE_STEP_QUERY_PARAM, dependencyStep],
     ]);
     await page.goto(`/?${params}`);
     await expandAllSections(page);

@@ -16,6 +16,8 @@
     --space-scale: 1;
     --text: #33ff66;
     --text-h: #66ffa0;
+    /* Halfway between accent and error, so it follows both themes. */
+    --warning: color-mix(in srgb, var(--accent), var(--error));
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
     background: var(--bg);

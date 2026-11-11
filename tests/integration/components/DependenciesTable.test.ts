@@ -116,6 +116,16 @@ describe("DependenciesTable", () => {
             String(headerCount),
         );
     });
+
+    it("renders health score with band class", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["healthScore"] },
+        });
+
+        const health = wrapper.find("tbody .health-score");
+        expect(health.text()).toBe("55 fair");
+        expect(health.classes()).toContain("health-score--fair");
+    });
 });
 
 describe("DependenciesTable load-as-input action", () => {
@@ -576,16 +586,6 @@ describe("DependenciesTable sorting", () => {
         await sortButton(wrapper, "Health").trigger("click");
 
         expect(rowNames(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
-    });
-
-    it("renders health score with band class", () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columns: ["healthScore"] },
-        });
-
-        const health = wrapper.find("tbody .health-score");
-        expect(health.text()).toBe("55 fair");
-        expect(health.classes()).toContain("health-score--fair");
     });
 });
 

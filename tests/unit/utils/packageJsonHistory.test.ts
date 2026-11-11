@@ -7,6 +7,7 @@ import {
     visibleColumnsEqual,
     isEntryCacheValid,
 } from "../../../src/utils/packageJsonHistory";
+import type { DependencyRow } from "../../../src/types";
 import { fullDependency } from "../../fixtures/dependencies";
 import { rootWorkspaceContext } from "../../fixtures/workspaces";
 
@@ -115,44 +116,39 @@ describe("visibleColumnsEqual", () => {
 });
 
 describe("isEntryCacheValid", () => {
+    const COLUMNS_AT_FETCH = new Set(["vulnerabilityCount"]);
+
+    /** Entry fetched under COLUMNS_AT_FETCH, with `deps` and no devDeps. */
+    function fetchedEntry(deps: DependencyRow[] = []) {
+        const entry = createHistoryEntry("{}", {});
+        entry.deps = deps;
+        entry.devDeps = [];
+        entry.visibleColumnsSnapshot = COLUMNS_AT_FETCH;
+        return entry;
+    }
+
     it("returns false for never-fetched entry", () => {
         const entry = createHistoryEntry("{}", {});
         expect(isEntryCacheValid(entry, new Set())).toBe(false);
     });
 
     it("returns true once fetched under same visibleColumns", () => {
-        const entry = createHistoryEntry("{}", {});
-        entry.deps = [];
-        entry.devDeps = [];
-        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
-
-        expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(true);
+        expect(isEntryCacheValid(fetchedEntry(), new Set(COLUMNS_AT_FETCH))).toBe(true);
     });
 
     it("returns false for visibleColumns changed since fetch", () => {
-        const entry = createHistoryEntry("{}", {});
-        entry.deps = [];
-        entry.devDeps = [];
-        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
-
-        expect(isEntryCacheValid(entry, new Set())).toBe(false);
+        expect(isEntryCacheValid(fetchedEntry(), new Set())).toBe(false);
     });
 
     it("returns false for stale row, so revisit retries", () => {
-        const entry = createHistoryEntry("{}", {});
-        entry.deps = [{ ...fullDependency, staleSince: "2024-01-01T00:00:00.000Z" }];
-        entry.devDeps = [];
-        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
+        const entry = fetchedEntry([{ ...fullDependency, staleSince: "2024-01-01T00:00:00.000Z" }]);
 
-        expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(false);
+        expect(isEntryCacheValid(entry, new Set(COLUMNS_AT_FETCH))).toBe(false);
     });
 
     it("returns true for live rows", () => {
-        const entry = createHistoryEntry("{}", {});
-        entry.deps = [fullDependency];
-        entry.devDeps = [];
-        entry.visibleColumnsSnapshot = new Set(["vulnerabilityCount"]);
-
-        expect(isEntryCacheValid(entry, new Set(["vulnerabilityCount"]))).toBe(true);
+        expect(isEntryCacheValid(fetchedEntry([fullDependency]), new Set(COLUMNS_AT_FETCH))).toBe(
+            true,
+        );
     });
 });

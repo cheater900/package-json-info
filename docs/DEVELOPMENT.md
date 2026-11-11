@@ -19,7 +19,7 @@
 | `tests/unit/`               | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.   |
 | `tests/integration/`        | Vitest component tests mounted with `@vue/test-utils`.                    |
 | `tests/e2e/`                | Playwright end-to-end tests. `visual/` holds the screenshot run.          |
-| `tests/helpers/`            | Shared test helpers: fetch stubs, column keys, IndexedDB, settings reset. |
+| `tests/helpers/`            | Helpers: fetch stubs, columns, IndexedDB, settings, share links.          |
 | `tests/fixtures/`           | Shared test data: dependency rows, registry docs, tarballs, GitHub token. |
 | `docs/`                     | Project docs: intent, features, roadmap, notes, known issues, changelog.  |
 

@@ -20,6 +20,17 @@ type LoadedSource = {
     workspace?: WorkspaceContext | null;
 };
 
+/**
+ * How one load reports and tags its result. Empty text shows `emptyMessage`;
+ * a failure shows `failureMessage`, or the error's own message when none is
+ * given. `source` tags the history entry for share links.
+ */
+type LoadOptions = {
+    emptyMessage: string;
+    failureMessage?: string;
+    source?: EntrySource | null;
+};
+
 async function asSource(text: Promise<string | null>): Promise<LoadedSource | null> {
     const resolved = await text;
     return resolved == null ? null : { text: resolved };
@@ -73,17 +84,13 @@ export function usePackageJsonSources(
     onScopeDispose(() => clearTimeout(urlSyncTimer));
 
     /**
-     * Runs one load: `readContent` resolves to a package.json source. Empty text
-     * shows `emptyMessage`; a failure shows `failureMessage`, or the error's
-     * own message when none is given. Only the most recent load applies, so
-     * a slow fetch can't overwrite a newer paste or upload. `source` tags the
-     * history entry for share links. Resolves to true once the text is loaded.
+     * Runs one load: `readContent` resolves to a package.json source. Only
+     * the most recent load applies, so a slow fetch can't overwrite a newer
+     * paste or upload. Resolves to true once the text is loaded.
      */
     async function loadFromSource(
         readContent: () => Promise<LoadedSource | null>,
-        emptyMessage: string,
-        failureMessage: string | null = null,
-        source: EntrySource | null = null,
+        { emptyMessage, failureMessage, source = null }: LoadOptions,
     ): Promise<boolean> {
         const loadToken = Symbol();
         latestLoadToken = loadToken;
@@ -106,11 +113,10 @@ export function usePackageJsonSources(
     }
 
     function loadFromClipboard() {
-        return loadFromSource(
-            () => asSource(navigator.clipboard.readText()),
-            t("errors.clipboardEmpty"),
-            t("errors.clipboard"),
-        );
+        return loadFromSource(() => asSource(navigator.clipboard.readText()), {
+            emptyMessage: t("errors.clipboardEmpty"),
+            failureMessage: t("errors.clipboard"),
+        });
     }
 
     async function loadFromFile(event: Event) {
@@ -121,11 +127,10 @@ export function usePackageJsonSources(
         }
         // Reset so choosing the same file again still fires `change`.
         input.value = "";
-        return loadFromSource(
-            () => asSource(file.text()),
-            t("errors.fileEmpty"),
-            t("errors.fileRead"),
-        );
+        return loadFromSource(() => asSource(file.text()), {
+            emptyMessage: t("errors.fileEmpty"),
+            failureMessage: t("errors.fileRead"),
+        });
     }
 
     /** Repo host URLs resolve to the repo's package.json; any other URL is fetched as-is. */
@@ -142,9 +147,7 @@ export function usePackageJsonSources(
         }
         return loadFromSource(
             () => (isRepoHostUrl(url) ? readRepoSource(url) : asSource(fetchText(url))),
-            t("errors.urlNotFound"),
-            null,
-            { kind: "url", url },
+            { emptyMessage: t("errors.urlNotFound"), source: { kind: "url", url } },
         );
     }
 
@@ -153,12 +156,10 @@ export function usePackageJsonSources(
     }
 
     function loadDependency({ name, version }: PackageInput) {
-        return loadFromSource(
-            () => asSource(fetchPackageJsonForVersion(name, version)),
-            t("errors.dependencyNotFound", { name }),
-            null,
-            { kind: "dependency", name, version },
-        );
+        return loadFromSource(() => asSource(fetchPackageJsonForVersion(name, version)), {
+            emptyMessage: t("errors.dependencyNotFound", { name }),
+            source: { kind: "dependency", name, version },
+        });
     }
 
     /** Loads another workspace of the same monorepo; the workspace list carries over. */
@@ -169,9 +170,7 @@ export function usePackageJsonSources(
                 text: await fetchWorkspacePackageJson(context.repo, path),
                 workspace: { ...context, current: path },
             }),
-            message,
-            message,
-            { kind: "workspace", path },
+            { emptyMessage: message, failureMessage: message, source: { kind: "workspace", path } },
         );
     }
 

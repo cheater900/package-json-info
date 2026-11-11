@@ -6,9 +6,8 @@
     color: var(--accent);
 }
 
-/* No warning color variable exists; halfway between accent and error reads as one in both themes. */
 .health-score--fair {
-    color: color-mix(in srgb, var(--accent), var(--error));
+    color: var(--warning);
 }
 
 .health-score--poor {
