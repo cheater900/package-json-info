@@ -6,7 +6,7 @@ import {
     clearPackageInfoCache,
 } from "../../../src/api/npmPackage";
 import { OSV_MAX_PAGES } from "../../../src/constants";
-import { loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import { clearLookups, loadLookup, saveLookup } from "../../../src/utils/lookupStore";
 import type { LookupKind } from "../../../src/utils/lookupStore";
 import { columnKeysExcept } from "../../helpers/columns";
 import {
@@ -989,14 +989,14 @@ describe("fetchPackagesInfo", () => {
         ]);
 
         expect(results).toHaveLength(2);
-        expect(results[0]).toMatchObject({ name: "good" });
-        expect(results[1]).toMatchObject({ name: "bad", error: "network down" });
+        expect(results?.[0]).toMatchObject({ name: "good" });
+        expect(results?.[1]).toMatchObject({ name: "bad", error: "network down" });
     });
 
-    it("starts no package once isCancelled true", async () => {
+    it("starts no package once isCancelled true, returns null", async () => {
         const fetchMock = stubFetchByUrl({ "api.npmjs.org/downloads": { downloads: 1 } });
 
-        await fetchPackagesInfo(
+        const results = await fetchPackagesInfo(
             [
                 { name: "first", version: "1.0.0" },
                 { name: "second", version: "1.0.0" },
@@ -1010,6 +1010,20 @@ describe("fetchPackagesInfo", () => {
 
         expect(countFetchCalls(fetchMock, "/first")).toBe(1);
         expect(countFetchCalls(fetchMock, "/second")).toBe(0);
+        expect(results).toBeNull();
+    });
+
+    it("returns rows once every package started before cancel", async () => {
+        stubFetchByUrl({ "api.npmjs.org/downloads": { downloads: 1 } });
+        let isCancelled = false;
+
+        const request = fetchPackagesInfo([{ name: "only", version: "1.0.0" }], {
+            visibleColumns: new Set(["weeklyDownloads"]),
+            isCancelled: () => isCancelled,
+        });
+        isCancelled = true;
+
+        expect(await request).toEqual([expect.objectContaining({ name: "only" })]);
     });
 });
 
@@ -1211,6 +1225,50 @@ describe("fetchPackageInfo failures", () => {
 
             expect(info.weeklyDownloads).toBe(42);
             expect(info.staleSince).toBe(SAVED_OLD);
+        });
+
+        it("ignores stored value of wrong shape", async () => {
+            await seedLookup("weeklyDownloads", "pkg", "lots", SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.weeklyDownloads).toBeNull();
+            expect(info.staleSince).toBeNull();
+        });
+
+        it("reads malformed stored registry field as missing", async () => {
+            await seedLookup("registry", "pkg", { ...registryDoc, maintainers: "x" }, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("registry.npmjs.org", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0");
+
+            expect(info.maintainers).toBeNull();
+            expect(info.staleSince).toBe(SAVED_OLD);
+        });
+
+        it("skips save of lookup in flight at clearLookups", async () => {
+            let releaseDownloads = (_response: unknown) => {};
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(
+                    () =>
+                        new Promise((resolve) => {
+                            releaseDownloads = resolve;
+                        }),
+                ),
+            );
+            const request = fetchPackageInfo("pkg", "1.0.0", {
+                visibleColumns: new Set(["weeklyDownloads"]),
+            });
+
+            await clearLookups();
+            releaseDownloads(jsonResponse({ downloads: 7 }));
+            expect((await request).weeklyDownloads).toBe(7);
+            // Transactions commit in order: once this save lands, an earlier one would have too.
+            await saveLookup("weeklyDownloads", "later-pkg", 1);
+
+            expect(await loadLookup("weeklyDownloads", "pkg")).toBeUndefined();
         });
 
         it("serves drill-down manifest from stored registry document", async () => {

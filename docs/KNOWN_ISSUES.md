@@ -17,10 +17,10 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
 - **Stored lookups are not encrypted.** With a GitHub token, star and
   issue counts of private repos land in IndexedDB as plain values until
   token purge clears them. The token is never stored there.
-- **Stored lookups skip schema checks on read.** A malformed record can
-  fail its row. Only same-origin script writes the store, and such script
-  can already read the decrypted token. Links from stored data are
-  rechecked as http(s) on every use.
+- **History entries keep rows fetched with a purged token.** Star and
+  issue counts of private repos stay in memory and show again on back
+  navigation until a column or proxy change refetches. Memory only, gone
+  on reload; a refetch on every purge would spend quota for little gain.
 - **Share link carries the entered URL verbatim.** A raw URL with a secret
   query (`?token=`) lands in the address bar and in shared links. The
   step needs the URL to reload it, and `?inputUrl=` already mirrors it.
@@ -59,5 +59,12 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
 - **Fallback store keeps whole registry documents** and never evicts.
   Popular packages take several MB each. See cleanup in
   [IDEA.md](IDEA.md).
+- **Back or Forward during share link replay** does not stop it. The next
+  replayed step loads on top of the entry picked and drops the forward
+  history. Only during the first seconds after opening a link.
+- **Rapid navigation can hit the `replaceState` limit.** Some browsers
+  throw past about 100 calls in a short window; share link sync then logs
+  an error and the address bar lags until the next navigation. Each sync
+  is one user navigation, so only sustained fast clicking hits it.
 - **`workspace:` dependency ranges** (`workspace:*`) are looked up on npm
   by package name. A private workspace package shows an empty row.

@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { clearLookups, loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import { LOOKUP_DB_NAME, LOOKUP_DB_STORE } from "../../../src/constants";
+import { withObjectStore } from "../../../src/utils/indexedDb";
+import {
+    clearLookups,
+    loadLookup,
+    lookupStoreGeneration,
+    saveLookup,
+} from "../../../src/utils/lookupStore";
 import { stubIndexedDb } from "../../helpers/settings";
 
 describe("lookupStore", () => {
@@ -48,6 +55,23 @@ describe("lookupStore", () => {
         await clearLookups();
 
         expect(await loadLookup("weeklyDownloads", "left-pad")).toBeUndefined();
+        expect(await loadLookup("repoStars", "github.com/o/r")).toBeUndefined();
+    });
+
+    it("skips save started before clearLookups", async () => {
+        const generation = lookupStoreGeneration();
+
+        await clearLookups();
+        await saveLookup("repoStars", "github.com/private/repo", 7, generation);
+
+        expect(await loadLookup("repoStars", "github.com/private/repo")).toBeUndefined();
+    });
+
+    it("returns undefined for non-ISO savedAt", async () => {
+        await withObjectStore(LOOKUP_DB_NAME, LOOKUP_DB_STORE, "readwrite", (store) =>
+            store.put({ value: 1, savedAt: "yesterday" }, "repoStars:github.com/o/r"),
+        );
+
         expect(await loadLookup("repoStars", "github.com/o/r")).toBeUndefined();
     });
 

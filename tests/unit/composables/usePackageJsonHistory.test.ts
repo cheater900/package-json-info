@@ -332,6 +332,23 @@ describe("async fetch ordering", () => {
         expect(isLoadingDeps.value).toBe(false);
     });
 
+    it("keeps cached rows when columns toggle back mid-fetch", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, deps, isLoadingDeps } = useHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("pkg"));
+        await release("api.npmjs.org/downloads", { downloads: 5 });
+        visibleColumns.value = new Set(["vulnerabilityCount"]);
+        await nextTick();
+        visibleColumns.value = new Set(["weeklyDownloads"]);
+        await nextTick();
+
+        await release("api.osv.dev", { vulns: [] });
+
+        expect((deps.value[0] as PackageInfo).weeklyDownloads).toBe(5);
+        expect(isLoadingDeps.value).toBe(false);
+    });
+
     it("stops table fetch of replaced entry, refetches on revisit", async () => {
         const release = deferredFetch();
         settings.fetchConcurrency = 1;

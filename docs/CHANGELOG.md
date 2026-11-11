@@ -60,6 +60,8 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Stored lookups** of the wrong shape or with a malformed save time are
+  ignored, so a corrupt record shows the live error, not odd cell text.
 - **npm registry documents** are validated with zod: a field of the wrong
   type reads as missing instead of failing the whole row.
 - **OSV paging** is capped and stops on any repeated page token.
@@ -82,6 +84,8 @@ Condensed from git history. Newest month first.
 
 #### Drill-down and history
 
+- Toggling **columns** back mid-fetch keeps the cached rows; the abandoned
+  fetch stops and no longer overwrites them.
 - **In-flight entry fetches** are discarded on token or proxy change, so
   back navigation cannot restore stale rows.
 - A fetch start clears the **previous entry's rows**, so an empty list
@@ -126,7 +130,8 @@ Condensed from git history. Newest month first.
 #### Settings and token
 
 - **Token purge** also clears **cached and stored lookups**, so private
-  repo data does not outlive the token.
+  repo data does not outlive the token. The in-memory token goes first,
+  and a lookup still in flight at purge saves nothing.
 
 #### Tooling
 

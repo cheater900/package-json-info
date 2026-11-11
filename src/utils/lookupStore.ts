@@ -6,7 +6,8 @@ import { settle } from "./settle";
 
 const StoredLookupSchema = z.object({
     value: z.unknown(),
-    savedAt: z.string(),
+    // ISO in UTC: staleSince picks the oldest by text order.
+    savedAt: z.iso.datetime(),
 });
 
 /** Metadata lookups whose last good value is kept for offline use. */
@@ -25,6 +26,14 @@ export type StoredLookup<T> = {
     savedAt: string;
 };
 
+// Bumped by clearLookups; a lookup started before a clear must not save after it.
+let storeGeneration = 0;
+
+/** Pass to saveLookup, read when the lookup starts. */
+export function lookupStoreGeneration(): number {
+    return storeGeneration;
+}
+
 function isLookupStoreAvailable(): boolean {
     return typeof indexedDB !== "undefined";
 }
@@ -37,9 +46,16 @@ function recordKey(kind: LookupKind, key: string): string {
  * Keeps `value` as the last good answer of lookup `kind` for `key`.
  * Store public metadata only, never tokens or request headers.
  * Never rejects: a failing IndexedDB (quota, blocked) loses only the copy.
+ * Skipped when clearLookups ran since `generation` was read: a lookup in
+ * flight at token purge may hold private repo data.
  */
-export async function saveLookup(kind: LookupKind, key: string, value: unknown): Promise<void> {
-    if (!isLookupStoreAvailable()) {
+export async function saveLookup(
+    kind: LookupKind,
+    key: string,
+    value: unknown,
+    generation: number = storeGeneration,
+): Promise<void> {
+    if (!isLookupStoreAvailable() || generation !== storeGeneration) {
         return;
     }
     const record = { value, savedAt: new Date().toISOString() };
@@ -55,6 +71,7 @@ export async function saveLookup(kind: LookupKind, key: string, value: unknown):
  * so token purge calls this. Never rejects.
  */
 export async function clearLookups(): Promise<void> {
+    storeGeneration++;
     if (!isLookupStoreAvailable()) {
         return;
     }

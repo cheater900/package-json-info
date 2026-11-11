@@ -158,6 +158,16 @@ describe("SettingsMenu token", () => {
         expect(document.activeElement).toBe(wrapper.find('input[type="password"]').element);
     });
 
+    it("purge drops in-memory token before IndexedDB clears", async () => {
+        const wrapper = mountMenu();
+        await saveToken(wrapper, TOKEN);
+
+        await button(wrapper, "Purge").trigger("click");
+
+        expect(githubToken.value).toBeUndefined();
+        await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
+    });
+
     it("purge drops cached and stored lookups", async () => {
         const fetchMock = stubFetchByUrl({ "api.npmjs.org/downloads": { downloads: 1 } });
         const downloadsOnly = { visibleColumns: new Set(["weeklyDownloads"]) };

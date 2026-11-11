@@ -115,6 +115,8 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         pkg.value = entry.pkg;
         workspace.value = entry.workspace;
         if (isEntryCacheValid(entry, visibleColumns.value)) {
+            // Columns toggled back mid-fetch: that fetch must not overwrite the cached rows.
+            latestFetchByEntry.delete(toRaw(entry));
             deps.value = entry.deps;
             devDeps.value = entry.devDeps;
             isLoadingDeps.value = false;
@@ -155,7 +157,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
             fetchPackagesInfo(rawDeps, fetchOptions),
             fetchPackagesInfo(rawDevDeps, fetchOptions),
         ]);
-        if (isCancelled()) {
+        if (!depsResult || !devDepsResult || isCancelled()) {
             return;
         }
         entry.deps = depsResult;

@@ -14,7 +14,7 @@ import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
 import { computeHealthScore } from "../utils/healthScore";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
-import { loadLookup, saveLookup } from "../utils/lookupStore";
+import { loadLookup, lookupStoreGeneration, saveLookup } from "../utils/lookupStore";
 import type { LookupKind } from "../utils/lookupStore";
 import { memoizeAsync } from "../utils/memoizeAsync";
 import { resolveRegistrySpec } from "../utils/npmSpec";
@@ -58,6 +58,24 @@ const NpmRegistrySchema = z
         maintainers: lenient(z.array(z.object({ name: lenient(z.string()) }).catch({}))),
     })
     .catch({});
+
+const StoredCountSchema = z.number().nullable();
+
+/** Shape check of a stored value on read: another app version may have saved another shape. */
+const STORED_VALUE_SCHEMAS: Record<LookupKind, z.ZodType> = {
+    registry: NpmRegistrySchema.nullable(),
+    weeklyDownloads: StoredCountSchema,
+    vulnerabilityCount: StoredCountSchema,
+    bundleSize: StoredCountSchema,
+    repoStars: StoredCountSchema,
+    repoIssueCounts: z.object({
+        openPRs: StoredCountSchema,
+        closedPRs: StoredCountSchema,
+        openIssues: StoredCountSchema,
+        closedIssues: StoredCountSchema,
+    }),
+    githubReleaseTag: z.string().nullable(),
+};
 
 export type FetchPackageOptions = {
     /**
@@ -165,7 +183,8 @@ function oldestStaleSince(lookups: Lookup<unknown>[]): string | null {
  * 404 means "no data") is saved and returned fresh. When the live fetch
  * fails, the last saved answer is returned as stale and evicted from
  * `cache`, so the next fetch retries live; callers already waiting share
- * it. Without a saved answer the live error is thrown unchanged.
+ * it. Without a saved answer passing STORED_VALUE_SCHEMAS the live error
+ * is thrown unchanged. Nothing is saved when clearLookups ran meanwhile.
  */
 function memoizeLookup<T>(
     cache: Map<string, Promise<Lookup<T>>>,
@@ -174,22 +193,25 @@ function memoizeLookup<T>(
     fetchLive: () => Promise<T>,
 ): Promise<Lookup<T>> {
     const request: Promise<Lookup<T>> = memoizeAsync(cache, key, async () => {
+        const generation = lookupStoreGeneration();
         let value: T;
         try {
             value = await fetchLive();
         } catch (error) {
-            const stored = await loadLookup<T>(kind, key);
-            if (!stored) {
+            const stored = await loadLookup<unknown>(kind, key);
+            const parsed = STORED_VALUE_SCHEMAS[kind].safeParse(stored?.value);
+            if (!stored || !parsed.success) {
                 throw error;
             }
             const isStillCached = cache.get(key) === request;
             if (isStillCached) {
                 cache.delete(key);
             }
-            return { value: stored.value, staleSince: stored.savedAt };
+            // Parsed by the schema of `kind`, which yields T.
+            return { value: parsed.data as T, staleSince: stored.savedAt };
         }
         // Not awaited: a slow or hanging IndexedDB must not delay the row.
-        void saveLookup(kind, key, value);
+        void saveLookup(kind, key, value, generation);
         return fresh(value);
     });
     return request;
@@ -353,12 +375,12 @@ export async function fetchPackageJsonForVersion(
 /**
  * Fetches enriched metadata for multiple packages, at most `concurrency`
  * at a time. A failing package yields a PackageError instead of rejecting.
- * After `isCancelled` turns true, packages not yet started stay unset.
+ * Null once `isCancelled` stopped a package from starting: rows would be missing.
  */
 export async function fetchPackagesInfo(
     packages: PackageInput[],
     options: FetchPackagesOptions = {},
-): Promise<DependencyRow[]> {
+): Promise<DependencyRow[] | null> {
     const {
         concurrency = settings.fetchConcurrency,
         isCancelled = () => false,
@@ -366,9 +388,14 @@ export async function fetchPackagesInfo(
     } = options;
     const results = Array.from<DependencyRow>({ length: packages.length });
     let nextIndex = 0;
+    let wasCancelled = false;
 
     async function worker(): Promise<void> {
-        while (nextIndex < packages.length && !isCancelled()) {
+        while (nextIndex < packages.length) {
+            wasCancelled ||= isCancelled();
+            if (wasCancelled) {
+                return;
+            }
             const i = nextIndex++;
             const { name, version } = packages[i];
             const result = await settle(() => fetchPackageInfo(name, version, fetchOptions));
@@ -377,7 +404,7 @@ export async function fetchPackagesInfo(
     }
 
     await Promise.all(Array.from({ length: Math.min(concurrency, packages.length) }, worker));
-    return results;
+    return wasCancelled ? null : results;
 }
 
 function fetchRegistryData(name: string): Promise<Lookup<NpmRegistryData | null>> {

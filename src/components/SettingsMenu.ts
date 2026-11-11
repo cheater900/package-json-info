@@ -70,11 +70,13 @@ export default defineComponent({
          * save this also drops the stale ciphertext beside the new key, so
          * memory matches what a reload would find. Cached and stored lookups
          * go too: fetched with the token, they may hold private repo data.
+         * Memory goes first, so no lookup starts with the token while
+         * IndexedDB clears.
          */
         async function forgetToken() {
-            await Promise.all([purgeGithubToken(), clearLookups()]);
-            clearPackageInfoCache();
             githubToken.value = undefined;
+            clearPackageInfoCache();
+            await Promise.all([purgeGithubToken(), clearLookups()]);
         }
 
         async function saveToken() {
