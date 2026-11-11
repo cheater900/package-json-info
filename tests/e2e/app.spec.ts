@@ -49,6 +49,52 @@ test("dependency table scrolls horizontally", async ({ page }) => {
     expect(scrolledLeft).toBeGreaterThan(0);
 });
 
+const VIEWPORT_PHONE = { width: 360, height: 740 };
+
+test("phone viewport keeps page width, scrolls table only, Name column sticks, settings fit", async ({
+    page,
+}) => {
+    await page.setViewportSize(VIEWPORT_PHONE);
+    await page.goto("/");
+    await expandAllSections(page);
+    await expect(page.getByRole("cell", { name: "vue", exact: true })).toBeVisible();
+
+    const pageWidth = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth,
+    }));
+    expect(pageWidth.scrollWidth).toBeLessThanOrEqual(pageWidth.innerWidth);
+
+    const depsTable = page.locator("table.deps-table").first();
+    const scrolled = await depsTable.evaluate((el) => {
+        el.scrollLeft = el.scrollWidth;
+        // Sticky cells pin to the scrollport, which starts inside the border.
+        const scrollportLeft = el.getBoundingClientRect().left + el.clientLeft;
+        const nameHeaderCell = el.querySelector("thead th")!;
+        const nameCell = el.querySelector(".deps-table__name-cell")!;
+        return {
+            scrollWidth: el.scrollWidth,
+            clientWidth: el.clientWidth,
+            scrollLeft: el.scrollLeft,
+            nameHeaderOffset: nameHeaderCell.getBoundingClientRect().left - scrollportLeft,
+            nameCellOffset: nameCell.getBoundingClientRect().left - scrollportLeft,
+        };
+    });
+    expect(scrolled.scrollWidth).toBeGreaterThan(scrolled.clientWidth);
+    expect(scrolled.scrollLeft).toBeGreaterThan(0);
+    expect(Math.abs(scrolled.nameHeaderOffset)).toBeLessThan(1);
+    expect(Math.abs(scrolled.nameCellOffset)).toBeLessThan(1);
+
+    await page.getByRole("button", { name: /^Open settings/ }).click();
+    const settingsPanel = page.getByRole("dialog", { name: "Settings" });
+    await expect(settingsPanel).toBeVisible();
+    const panelBox = (await settingsPanel.boundingBox())!;
+    expect(panelBox.x).toBeGreaterThanOrEqual(0);
+    expect(panelBox.y).toBeGreaterThanOrEqual(0);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(VIEWPORT_PHONE.width);
+    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(VIEWPORT_PHONE.height);
+});
+
 test("fetches package in both dependencies and devDependencies once", async ({ page }) => {
     let registryRequests = 0;
     await page.route(`${NPM_REGISTRY_URL}/shared-pkg`, async (route) => {

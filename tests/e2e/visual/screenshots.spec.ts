@@ -13,6 +13,7 @@ const VIEWPORT_LARGE_DESKTOP = { width: 1400, height: VIEWPORT_HEIGHT };
 const VIEWPORT_MID_DESKTOP = { width: 900, height: VIEWPORT_HEIGHT };
 const VIEWPORT_NARROW = { width: 600, height: VIEWPORT_HEIGHT };
 const VIEWPORT_PHONE = { width: 390, height: 844 };
+const VIEWPORT_PHONE_SMALL = { width: 360, height: 740 };
 
 test.beforeEach(async ({ page }) => {
     await mockExternalApis(page);
@@ -96,4 +97,18 @@ test("light theme - default view", async ({ page }) => {
     }, STORAGE_KEY_SETTINGS);
     await page.goto("/");
     await page.screenshot({ path: "screenshots/10-light-theme.png", fullPage: true });
+});
+
+test("phone viewport - 360 px, table scrolled sideways, Name column sticky", async ({ page }) => {
+    await page.setViewportSize(VIEWPORT_PHONE_SMALL);
+    await page.goto("/");
+    await expandAllSections(page);
+    await page.getByRole("cell", { name: "vue", exact: true }).waitFor();
+    await page
+        .locator("table.deps-table")
+        .first()
+        .evaluate((el) => {
+            el.scrollLeft = el.scrollWidth;
+        });
+    await page.screenshot({ path: "screenshots/11-phone-table.png", fullPage: true });
 });

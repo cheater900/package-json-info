@@ -1,6 +1,12 @@
 .settings-menu {
     margin-left: auto;
     position: relative;
+
+    /* The panel anchors to the full-width title bar instead of the gear,
+       so its left edge stays on screen. */
+    @media (max-width: 700px) {
+        position: static;
+    }
 }
 
 .settings-menu__gear {
@@ -36,6 +42,10 @@
     width: 360px;
     /* Above body::before scanlines. */
     z-index: 1000;
+
+    @media (max-width: 700px) {
+        max-width: 100%;
+    }
 }
 
 .settings-menu__section {
