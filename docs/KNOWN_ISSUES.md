@@ -10,6 +10,13 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
 - **Proxy fetches any URL it is given.** A crafted `?inputUrl=` link or a
   registry `dist.tarball` URL makes the user's proxy fetch that URL; the
   response goes only to that user. Comes with having a proxy at all.
+- **Share link fetches on open.** A `?step=url:` link makes the browser
+  (or proxy) fetch that URL without a click, and its dependency steps
+  query npm. Needed for a link to reopen a view; step count and length are
+  capped, and only http(s) URLs pass.
+- **Stored lookups are not encrypted.** With a GitHub token, star and
+  issue counts of private repos land in IndexedDB as plain values. The
+  token is never stored there.
 - **Proxy prefix without trailing `/`** (`https://p.example` + target)
   builds a broken host such as `p.examplehttps`. The requests fail; no real
   TLD matches.
@@ -35,5 +42,15 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
   the top-level `packages` list. Anchors, multi-document files and
   `catalog:` entries are ignored; a full YAML parser is not worth the
   dependency.
+- **Health score varies with visible columns.** Issue ratio and
+  vulnerabilities count only while their columns are shown, so the same
+  package can score differently. Fetching them always would spend the
+  GitHub search quota. The vulnerability count covers every version, not
+  the declared one.
+- **Share link stores ranges**, not resolved versions, and workspace steps
+  follow the repo's current branch. An old link can open newer data.
+- **Fallback store keeps whole registry documents** and never evicts.
+  Popular packages take several MB each. See cleanup in
+  [IDEA.md](IDEA.md).
 - **`workspace:` dependency ranges** (`workspace:*`) are looked up on npm
   by package name. A private workspace package shows an empty row.

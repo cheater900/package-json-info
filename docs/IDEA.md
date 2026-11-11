@@ -13,21 +13,18 @@ to [ROADMAP.md](ROADMAP.md) once planned.
 - **Workspace package names** in the Workspace select, next to the paths.
 - **Drag-and-drop file upload**, next to the file picker.
 
-## Table / data
-
-- **Health/risk score** per package, combining staleness, open issue ratio,
-  maintainer count and similar signals into one indicator.
-
 ## UX
 
-- **Shareable table state**: encode the loaded source and drill-down
-  history in the URL so a view can be linked.
+- **Share links for pasted or uploaded files**, and for sort, search and
+  column state. Links carry only URL, dependency and workspace steps.
 - **Export** the table as CSV, JSON or Markdown.
 - **Diff view**: compare two `package.json` files side by side.
 - **Persistent metadata cache** with visible "last checked" timestamps and
-  a manual refresh.
-- **Offline-tolerant mode**: show cached data when live lookups fail,
-  marked as stale.
+  a manual refresh. Stored values are used only as fallback today.
+- **Stored lookup cleanup**: size cap, expiry and a clear button for the
+  fallback store.
+- **Offline fallback for the URL input**: only per-package lookups fall
+  back to stored values.
 
 ## Settings
 

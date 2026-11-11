@@ -44,6 +44,11 @@ the data is available:
 - License, with a warning badge for copyleft or missing licenses
 - Outdated version indicator: the declared version or range against the
   latest published version
+- Health score from 0 to 100, labelled good (70 and up), fair (40 and up)
+  or poor. It averages the signals the row has: release age, deprecation,
+  outdated version, maintainer count, open issue ratio and vulnerabilities.
+  Issue ratio and vulnerabilities count only while their columns are
+  visible. A tooltip lists the signals used.
 - Known security advisories, via OSV
 - Bundle size (min+gzip), via Bundlephobia
 - Maintainers who publish the package on npm
@@ -62,6 +67,18 @@ input for the table. Clicking it:
 - Records the navigation in a history stack, so the user can move back and
   forth between previously loaded tables (similar to browser back/forward)
   without re-fetching or losing earlier results.
+
+### Share links
+
+The address bar always holds a link to the current view. Each history
+entry up to the current position becomes one `?step=` param: `url:<url>`,
+`dep:<name>@<range>` or `ws:<workspace path>`. Opening the link replays the
+steps in order, on top of the built-in `package.json`, and stops at the
+first step that fails.
+
+- Pasted and uploaded files are not part of the link.
+- A link holds at most 20 steps of up to 2,000 characters each.
+- `?inputUrl=` still only fills the URL box.
 
 ## Table and UX
 
@@ -86,6 +103,11 @@ input for the table. Clicking it:
   file URL, invalid upload) and for failed per-package metadata lookups.
 - **In-memory metadata cache**: rows that share a package or repository
   share one request, and failed lookups are retried instead of cached.
+- **Offline fallback**: each successful lookup is stored in IndexedDB. When
+  a live lookup fails (offline, rate limit, outage), the row shows the
+  stored value, and a "stale" badge next to the name gives its date.
+  Returning to the table through history retries the lookup. Without
+  IndexedDB there is no fallback.
 - **Column preferences**: visibility, drag-and-drop order and abbreviated
   labels, stored in `localStorage`.
 

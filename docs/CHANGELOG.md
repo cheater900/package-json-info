@@ -6,6 +6,21 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### Package data
+
+- **Health score** column, 0 to 100 with a good, fair or poor band, from
+  release age, deprecation, outdated version, maintainer count, open issue
+  ratio and vulnerabilities. It uses only data the row already has; a
+  tooltip lists the signals used.
+- **Offline fallback**: when a live lookup fails, the row shows the last
+  value stored in IndexedDB, with a **stale badge** and its date. A stale
+  row refetches on history revisit.
+
+#### Drill-down and history
+
+- **Share links**: the address bar carries the loaded URL, drill-down and
+  workspace chain as `?step=` params, and the page replays them on open.
+
 #### Input and loading
 
 - **Monorepo workspaces** for GitHub repo URLs: a **Workspace select**
@@ -111,6 +126,7 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **Inline SVG icons** moved into `IconUpload.vue` and `IconGear.vue`.
 - **npm license schema** moved to `utils/license.ts`; `NpmLicenseField` is
   inferred from it.
 - **Named constants** replace literals: Playwright dev server settings,

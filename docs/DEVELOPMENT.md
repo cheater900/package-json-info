@@ -63,6 +63,10 @@ IndexedDB database `package-json-info`. `main.js` decrypts it into memory
 before mounting the app, waiting at most `TOKEN_LOAD_TIMEOUT_MS` since
 IndexedDB can hang; a late token refetches the tables.
 
+`src/utils/lookupStore.ts` keeps the last good answer of each metadata
+lookup in a second IndexedDB database, `package-json-info:lookups`.
+`src/api/npmPackage.ts` reads it only after a live lookup fails.
+
 `main.js` also mirrors the display settings onto `<html>`. It resolves
 the theme to `data-color-scheme` (`light` or `dark`; System follows the OS
 `prefers-color-scheme`), which picks the color variables in `style.css`.
