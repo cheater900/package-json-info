@@ -1,0 +1,63 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import { stubIndexedDb } from "../../helpers/settings";
+
+describe("lookupStore", () => {
+    beforeEach(() => {
+        stubIndexedDb();
+    });
+
+    it("round-trips value with ISO savedAt", async () => {
+        await saveLookup("weeklyDownloads", "left-pad", 4242);
+
+        const stored = await loadLookup<number>("weeklyDownloads", "left-pad");
+
+        expect(stored?.value).toBe(4242);
+        expect(new Date(stored?.savedAt ?? "").toISOString()).toBe(stored?.savedAt);
+    });
+
+    it("round-trips null value", async () => {
+        await saveLookup("bundleSize", "left-pad@1.0.0", null);
+
+        expect(await loadLookup("bundleSize", "left-pad@1.0.0")).toMatchObject({ value: null });
+    });
+
+    it("returns undefined on miss", async () => {
+        expect(await loadLookup("registry", "left-pad")).toBeUndefined();
+    });
+
+    it("keeps kinds apart for same key", async () => {
+        await saveLookup("weeklyDownloads", "left-pad", 1);
+        await saveLookup("vulnerabilityCount", "left-pad", 2);
+
+        expect((await loadLookup("weeklyDownloads", "left-pad"))?.value).toBe(1);
+        expect((await loadLookup("vulnerabilityCount", "left-pad"))?.value).toBe(2);
+    });
+
+    it("overwrites older value", async () => {
+        await saveLookup("repoStars", "github.com/o/r", 1);
+        await saveLookup("repoStars", "github.com/o/r", 2);
+
+        expect((await loadLookup("repoStars", "github.com/o/r"))?.value).toBe(2);
+    });
+
+    it("swallows failing IndexedDB", async () => {
+        vi.stubGlobal("indexedDB", {
+            open: () => {
+                throw new DOMException("blocked", "SecurityError");
+            },
+        });
+
+        await expect(saveLookup("registry", "left-pad", {})).resolves.toBeUndefined();
+        expect(await loadLookup("registry", "left-pad")).toBeUndefined();
+    });
+});
+
+describe("lookupStore without indexedDB", () => {
+    it("skips save, loads undefined", async () => {
+        expect(typeof indexedDB).toBe("undefined");
+
+        await expect(saveLookup("registry", "left-pad", {})).resolves.toBeUndefined();
+        expect(await loadLookup("registry", "left-pad")).toBeUndefined();
+    });
+});

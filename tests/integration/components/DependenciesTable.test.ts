@@ -697,6 +697,30 @@ describe("DependenciesTable source tree", () => {
     });
 });
 
+describe("DependenciesTable stale rows", () => {
+    it("shows stale badge with cache date tooltip", () => {
+        const stale = { ...fullDependency, staleSince: "2024-03-05T12:00:00.000Z" };
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [stale], columns: ["version"] },
+        });
+
+        const nameCell = wrapper.find(".deps-table__name-cell");
+        expect(nameCell.find(".deps-table__stale-badge").text()).toBe("stale");
+        expect(nameCell.findComponent(Tooltip).props("text")).toBe(
+            "Cached data from Mar 05 2024; live lookup failed.",
+        );
+    });
+
+    it("shows no badge on live or failed row", () => {
+        const failed = { name: "broken", version: "1.0.0", error: "503" };
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency, failed], columns: ["version"] },
+        });
+
+        expect(wrapper.find(".deps-table__stale-badge").exists()).toBe(false);
+    });
+});
+
 describe("DependenciesTable failed rows", () => {
     it("shows row error message instead of dashes", () => {
         const failed = {

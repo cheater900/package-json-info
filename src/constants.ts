@@ -50,6 +50,11 @@ export const TOKEN_CIPHER = { name: "AES-GCM", length: 256 } as const;
 export const TOKEN_IV_BYTES = 12;
 /** Longest wait for the stored token before mounting; IndexedDB open can hang (seen in Safari). */
 export const TOKEN_LOAD_TIMEOUT_MS = 2000;
+/** Own database: the token database opens without a version, so it cannot gain a second store. */
+export const LOOKUP_DB_NAME = `${STORAGE_KEY_NAMESPACE}:lookups`;
+export const LOOKUP_DB_STORE = "lookups";
+/** Longest wait for a stored lookup before the live error shows; IndexedDB open can hang. */
+export const LOOKUP_READ_TIMEOUT_MS = 2000;
 
 /** Options offered by the settings menu's Display section; the first theme is the default. */
 export const SETTINGS_THEMES = ["green", "light", "system"] as const;

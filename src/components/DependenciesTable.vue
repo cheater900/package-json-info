@@ -62,6 +62,9 @@
                 >
                     <span class="deps-table__name-inner">
                         <span class="deps-table__name-text">{{ dependency.name }}</span>
+                        <tooltip v-if="staleNoteFor(dependency)" :text="staleNoteFor(dependency)">
+                            <span class="deps-table__stale-badge">{{ t("table.stale") }}</span>
+                        </tooltip>
                         <span class="deps-table__name-arrow" aria-hidden="true">→</span>
                     </span>
                 </td>

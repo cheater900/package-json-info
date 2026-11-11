@@ -10,7 +10,7 @@ import {
 } from "../utils/tableColumns";
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyRow, SortDirection } from "../types";
-import { sortDependencies } from "../utils/dependencyRowFormatting";
+import { fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
@@ -173,9 +173,14 @@ export default defineComponent({
             toggleExpand(name, key);
         }
 
+        function staleNoteFor(row: DependencyRow) {
+            return "error" in row ? "" : fmtStaleNote(row.staleSince);
+        }
+
         return {
             t,
             NAME_COLUMN_KEY,
+            staleNoteFor,
             labelFor,
             titleFor,
             orderedVisibleColumns,

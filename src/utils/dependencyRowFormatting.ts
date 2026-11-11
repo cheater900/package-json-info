@@ -24,6 +24,11 @@ export function fmtDate(dateStr: string | null | undefined): string {
     return date.toDateString().slice(WEEKDAY_PREFIX_LENGTH);
 }
 
+/** Note shown on a row built from stored values; empty when the row is live. */
+export function fmtStaleNote(staleSince: string | null | undefined): string {
+    return staleSince ? t("table.staleNote", { date: fmtDate(staleSince) }) : "";
+}
+
 export function fmtList(names: readonly string[] | null | undefined): string {
     if (!names || names.length === 0) {
         return MISSING_VALUE;

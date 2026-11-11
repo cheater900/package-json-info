@@ -65,6 +65,24 @@ describe("PackageSummaryCard", () => {
     });
 });
 
+describe("PackageSummaryCard stale package", () => {
+    it("shows cache date note", () => {
+        const wrapper = mount(PackageSummaryCard, {
+            props: { dependency: { ...fullDependency, staleSince: "2024-03-05T12:00:00.000Z" } },
+        });
+
+        expect(wrapper.find(".package-summary__stale").text()).toBe(
+            "Cached data from Mar 05 2024; live lookup failed.",
+        );
+    });
+
+    it("shows no note on live package", () => {
+        const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
+
+        expect(wrapper.find(".package-summary__stale").exists()).toBe(false);
+    });
+});
+
 describe("PackageSummaryCard failed package", () => {
     it("shows load error", () => {
         const wrapper = mount(PackageSummaryCard, {

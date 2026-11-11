@@ -17,6 +17,12 @@
     margin: 0 0 16px;
 }
 
+.package-summary__stale {
+    color: var(--text-h, #66ffa0);
+    font-style: italic;
+    margin: 0 0 16px;
+}
+
 .package-summary__list {
     display: grid;
     gap: 10px 16px;

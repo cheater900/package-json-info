@@ -103,7 +103,9 @@
         "empty": "No dependencies",
         "rowError": "Could not load package data: {error}",
         "sourceLink": "link",
-        "viewTree": "View tree"
+        "viewTree": "View tree",
+        "stale": "stale",
+        "staleNote": "Cached data from {date}; live lookup failed."
     },
     "cell": {
         "yes": "Yes",

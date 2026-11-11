@@ -33,6 +33,7 @@ export const fullDependency = {
     bundleSizeGzip: 15360,
     maintainers: ["alice", "bob"],
     sourceTree: null,
+    staleSince: null,
 };
 
 /** A dependency row where every fetched field is unavailable. */
@@ -60,4 +61,5 @@ export const sparseDependency = {
     bundleSizeGzip: null,
     maintainers: null,
     sourceTree: null,
+    staleSince: null,
 };
