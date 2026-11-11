@@ -11,6 +11,7 @@ import {
     OSV_QUERY_URL,
 } from "../constants";
 import { isVersionOutdated, pinnedVersionOf } from "../utils/semver";
+import { computeHealthScore } from "../utils/healthScore";
 import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
 import { memoizeAsync } from "../utils/memoizeAsync";
@@ -94,6 +95,7 @@ const COLUMNS_FROM_REGISTRY = [
     "license",
     "deprecated",
     "isOutdated",
+    "healthScore",
     "maintainers",
     "sourceCode",
     "sourceCodeTree",
@@ -217,12 +219,29 @@ export async function fetchPackageInfo(
         slug != null
             ? repoWebUrl(slug)
             : (normaliseRepoUrl(repositoryUrl(npmData)) ?? npmData?.homepage);
+    const latestReleaseDate = latestVersion ? (times[latestVersion] ?? null) : null;
+    const isOutdated = isVersionOutdated(range, latestVersion);
+    const deprecated = versionData.deprecated ?? null;
+    const maintainers = maintainerNames(npmData);
+    const health = computeHealthScore(
+        {
+            latestReleaseDate,
+            // Without a registry document the deprecation state is unknown, not "not deprecated".
+            deprecated: npmData ? deprecated : undefined,
+            isOutdated,
+            maintainers,
+            openIssues: issueCounts.openIssues,
+            closedIssues: issueCounts.closedIssues,
+            vulnerabilityCount,
+        },
+        new Date(),
+    );
     return {
         name,
         version,
         versionDate: times[range] ?? times[pinnedVersionOf(range) ?? ""] ?? null,
         latestVersion,
-        latestReleaseDate: latestVersion ? (times[latestVersion] ?? null) : null,
+        latestReleaseDate,
         latestUpdateDate: times.modified ?? null,
         weeklyDownloads,
         sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
@@ -230,11 +249,13 @@ export async function fetchPackageInfo(
         ...issueCounts,
         dependencies: versionData.dependencies ? Object.keys(versionData.dependencies) : null,
         license: extractLicense(versionData.license) ?? extractLicense(npmData?.license),
-        isOutdated: isVersionOutdated(range, latestVersion),
-        deprecated: versionData.deprecated ?? null,
+        isOutdated,
+        healthScore: health?.score ?? null,
+        healthSignals: health?.signals ?? null,
+        deprecated,
         vulnerabilityCount,
         bundleSizeGzip,
-        maintainers: maintainerNames(npmData),
+        maintainers,
         sourceTree,
     };
 }

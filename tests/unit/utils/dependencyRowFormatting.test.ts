@@ -3,6 +3,7 @@ import {
     fmtDate,
     fmtList,
     fmtOutdated,
+    fmtHealth,
     fmtLicense,
     fmtBundleSize,
     formatCell,
@@ -66,6 +67,19 @@ describe("fmtLicense", () => {
     });
 });
 
+describe("fmtHealth", () => {
+    it("formats score with band label", () => {
+        expect(fmtHealth(82)).toBe("82 good");
+        expect(fmtHealth(55)).toBe("55 fair");
+        expect(fmtHealth(0)).toBe("0 poor");
+    });
+
+    it("returns '-' for missing score", () => {
+        expect(fmtHealth(null)).toBe("-");
+        expect(fmtHealth(undefined)).toBe("-");
+    });
+});
+
 describe("fmtBundleSize", () => {
     it("formats gzip bytes as KB", () => {
         expect(fmtBundleSize(15360)).toBe("15.0 KB");
@@ -81,6 +95,7 @@ describe("formatCell", () => {
     it("uses column formatter if present", () => {
         expect(formatCell("license", { license: "MIT" })).toBe("MIT");
         expect(formatCell("isOutdated", { isOutdated: true })).toBe("Yes");
+        expect(formatCell("healthScore", { healthScore: 82 })).toBe("82 good");
     });
 
     it("falls back to raw value for column without formatter", () => {

@@ -35,6 +35,7 @@ describe("DEFAULT_VISIBLE_COLUMNS", () => {
             "latestReleaseDate",
             "latestUpdateDate",
             "isOutdated",
+            "healthScore",
             "weeklyDownloads",
             "sourceCode",
             "gitStars",
@@ -56,6 +57,17 @@ describe("DEFAULT_VISIBLE_COLUMNS", () => {
         for (const key of DEFAULT_VISIBLE_COLUMNS) {
             expect(columnKeys.has(key)).toBe(true);
         }
+    });
+});
+
+describe("healthScore column", () => {
+    it("sits right after isOutdated, sortable", () => {
+        const keys = DEPENDENCY_TABLE_COLUMNS.map((c) => c.key);
+        const column = DEPENDENCY_TABLE_COLUMNS[keys.indexOf("isOutdated") + 1];
+
+        expect(column.key).toBe("healthScore");
+        expect(column.sortable).toBe(true);
+        expect(column.label).toBe("Health");
     });
 });
 

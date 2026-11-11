@@ -564,6 +564,29 @@ describe("DependenciesTable sorting", () => {
 
         expect(rowNames(wrapper)).toEqual(["bbb", "aaa", "ccc"]);
     });
+
+    it("sorts by health score, unknown last", async () => {
+        const fair = { ...sparseDependency, name: "aaa", healthScore: 55 };
+        const unknown = { ...sparseDependency, name: "bbb", healthScore: null };
+        const good = { ...sparseDependency, name: "ccc", healthScore: 90 };
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [good, unknown, fair] },
+        });
+
+        await sortButton(wrapper, "Health").trigger("click");
+
+        expect(rowNames(wrapper)).toEqual(["aaa", "ccc", "bbb"]);
+    });
+
+    it("renders health score with band class", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["healthScore"] },
+        });
+
+        const health = wrapper.find("tbody .health-score");
+        expect(health.text()).toBe("55 fair");
+        expect(health.classes()).toContain("health-score--fair");
+    });
 });
 
 describe("DependenciesTable search", () => {

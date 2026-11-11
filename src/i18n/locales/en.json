@@ -82,6 +82,7 @@
         "latestReleaseDate": "Latest release date",
         "latestUpdateDate": "Latest update date",
         "isOutdated": "Outdated",
+        "healthScore": "Health",
         "weeklyDownloads": "Weekly downloads",
         "sourceCode": "Source Code link",
         "sourceCodeTree": "Source Code Tree",
@@ -108,6 +109,22 @@
         "yes": "Yes",
         "no": "No",
         "kilobytes": "{size} KB"
+    },
+    "health": {
+        "tooltip": "Health score out of 100, from: {signals}",
+        "bands": {
+            "good": "good",
+            "fair": "fair",
+            "poor": "poor"
+        },
+        "signals": {
+            "releaseAge": "latest release age",
+            "deprecated": "deprecation",
+            "outdated": "outdated version",
+            "maintainers": "maintainer count",
+            "issues": "open issue ratio",
+            "vulnerabilities": "known vulnerabilities"
+        }
     },
     "modal": {
         "close": "Close"

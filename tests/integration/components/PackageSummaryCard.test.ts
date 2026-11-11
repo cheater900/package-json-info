@@ -55,6 +55,14 @@ describe("PackageSummaryCard", () => {
 
         expect(wrapper.find("button").exists()).toBe(false);
     });
+
+    it("renders health score with band class", () => {
+        const wrapper = mount(PackageSummaryCard, { props: { dependency: dependencyWithTree } });
+
+        const health = wrapper.find(".health-score");
+        expect(health.text()).toBe("55 fair");
+        expect(health.classes()).toContain("health-score--fair");
+    });
 });
 
 describe("PackageSummaryCard failed package", () => {

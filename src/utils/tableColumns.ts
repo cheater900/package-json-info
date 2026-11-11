@@ -7,7 +7,7 @@ export type ColumnDef = {
     // How this column's cell content renders. Omitted means plain formatted
     // text (see formatCell). DependenciesTable dispatches on this instead of
     // hardcoding column keys in its template.
-    render?: "link" | "button";
+    render?: "link" | "button" | "health";
     // Whether this column's text can run long enough to need ellipsis
     // truncation with click-to-expand (e.g. dependency/maintainer lists,
     // deprecation notices). Dates, numbers, and link/button columns never
@@ -26,6 +26,7 @@ const COLUMN_SPECS: Omit<ColumnDef, "label">[] = [
     { key: "latestReleaseDate", sortable: true },
     { key: "latestUpdateDate", sortable: true },
     { key: "isOutdated", sortable: true },
+    { key: "healthScore", sortable: true, render: "health" },
     { key: "weeklyDownloads", sortable: true },
     { key: "sourceCode", sortable: false, render: "link" },
     { key: "sourceCodeTree", sortable: false, render: "button" },

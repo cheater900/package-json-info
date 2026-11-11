@@ -74,6 +74,9 @@ describe("fetchPackageInfo", () => {
             dependencies: ["tiny-dep"],
             license: null,
             isOutdated: true,
+            // Stale release and outdated version, against no deprecation and 3 of 23 issues open.
+            healthScore: 56,
+            healthSignals: ["releaseAge", "deprecated", "outdated", "issues"],
             deprecated: null,
             vulnerabilityCount: null,
             bundleSizeGzip: null,
@@ -780,6 +783,7 @@ describe("fetchPackageInfo column gating", () => {
                 "license",
                 "deprecated",
                 "isOutdated",
+                "healthScore",
                 "maintainers",
                 "sourceCode",
                 "sourceCodeTree",
@@ -793,9 +797,68 @@ describe("fetchPackageInfo column gating", () => {
 
         expect(info.sourceCode).toBeNull();
         expect(info.latestVersion).toBeNull();
+        expect(info.healthScore).toBeNull();
+        expect(info.healthSignals).toBeNull();
         expect(countFetchCalls(fetchMock, "registry.npmjs.org/registry-not-needed")).toBe(0);
         // Weekly downloads wasn't hidden, so that call still goes out independently.
         expect(countFetchCalls(fetchMock, "api.npmjs.org/downloads")).toBe(1);
+    });
+
+    it("scores health from registry document alone with only healthScore visible", async () => {
+        const fetchMock = stubFetchByUrl({
+            "registry.npmjs.org/health-only": {
+                "dist-tags": { latest: "1.0.0" },
+                time: { "1.0.0": new Date().toISOString() },
+                repository: "https://github.com/health/only",
+                maintainers: [{ name: "alice" }],
+                versions: { "1.0.0": {} },
+            },
+        });
+
+        const info = await fetchPackageInfo("health-only", "1.0.0", {
+            visibleColumns: new Set(["healthScore"]),
+        });
+
+        // Fresh, current, not deprecated: only the single maintainer costs points.
+        expect(info.healthScore).toBe(92);
+        expect(info.healthSignals).toEqual(["releaseAge", "deprecated", "outdated", "maintainers"]);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(countFetchCalls(fetchMock, "registry.npmjs.org/health-only")).toBe(1);
+    });
+
+    it("lowers health score for deprecated version with vulnerabilities", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/unhealthy": {
+                "dist-tags": { latest: "1.0.0" },
+                time: { "1.0.0": new Date().toISOString() },
+                versions: { "1.0.0": { deprecated: "no longer maintained" } },
+            },
+            "api.osv.dev/v1/query": { vulns: [{ id: "GHSA-1" }] },
+        });
+
+        const info = await fetchPackageInfo("unhealthy", "1.0.0", {
+            visibleColumns: new Set(["healthScore", "vulnerabilityCount"]),
+        });
+
+        // Weights: release age 3 + outdated 2 healthy, of 13 with deprecated 6 + vulnerabilities 2.
+        expect(info.healthScore).toBe(38);
+        expect(info.healthSignals).toEqual([
+            "releaseAge",
+            "deprecated",
+            "outdated",
+            "vulnerabilities",
+        ]);
+    });
+
+    it("leaves health score null for unknown package", async () => {
+        stubFetchByUrl({});
+
+        const info = await fetchPackageInfo("missing-pkg", "1.0.0", {
+            visibleColumns: new Set(["healthScore"]),
+        });
+
+        expect(info.healthScore).toBeNull();
+        expect(info.healthSignals).toBeNull();
     });
 
     it("fetches everything without visibleColumns", async () => {

@@ -15,7 +15,17 @@
         </button>
         <template v-else>{{ MISSING_VALUE }}</template>
     </template>
+    <tooltip
+        v-else-if="column.render === 'health' && dependency.healthScore != null"
+        :text="healthTooltip"
+    >
+        <span class="health-score" :class="`health-score--${healthBand(dependency.healthScore)}`">
+            {{ formatCell(column.key, dependency) }}
+        </span>
+    </tooltip>
     <template v-else>{{ formatCell(column.key, dependency) }}</template>
 </template>
 
 <script lang="ts" src="./DependencyCell.ts"></script>
+
+<style src="./DependencyCell.css"></style>

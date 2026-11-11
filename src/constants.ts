@@ -76,6 +76,27 @@ export const MAX_VIEWED_FILE_BYTES = 2 * BYTES_PER_MB;
 
 export const TOOLTIP_OFFSET_PX = 6;
 
+/** Average month length (365.25 days / 12). */
+export const MS_PER_MONTH = 30.4375 * 24 * 60 * 60 * 1000;
+export const HEALTH_SCORE_MAX = 100;
+/** Relative weight of each health signal; only available signals count. */
+export const HEALTH_WEIGHT_RELEASE_AGE = 3;
+export const HEALTH_WEIGHT_DEPRECATED = 6;
+export const HEALTH_WEIGHT_OUTDATED = 2;
+export const HEALTH_WEIGHT_MAINTAINERS = 1;
+export const HEALTH_WEIGHT_ISSUES = 1;
+export const HEALTH_WEIGHT_VULNERABILITIES = 2;
+/** Latest release younger than this costs nothing; the penalty grows linearly up to the worst age. */
+export const HEALTH_STALE_FRESH_MONTHS = 6;
+export const HEALTH_STALE_WORST_MONTHS = 24;
+/** Maintainer count that earns the full maintainer rating; 1 maintainer earns none. */
+export const HEALTH_MAINTAINERS_BEST = 3;
+/** Open share of all issues that earns no issue rating. */
+export const HEALTH_ISSUE_RATIO_WORST = 0.5;
+/** Lowest score of the good and fair bands; anything lower is poor. */
+export const HEALTH_BAND_GOOD_MIN = 70;
+export const HEALTH_BAND_FAIR_MIN = 40;
+
 export const PACKAGE_JSON_FILE = "package.json";
 export const PNPM_WORKSPACE_FILE = "pnpm-workspace.yaml";
 /** Workspace patterns come from the loaded repository; the caps bound the matching work. */

@@ -1,3 +1,4 @@
+import { healthBand } from "./healthScore";
 import { hasLicenseWarning } from "./license";
 import { BYTES_PER_KB, MISSING_VALUE, NUMBER_LOCALE } from "../constants";
 import { t } from "../i18n";
@@ -37,6 +38,14 @@ export function fmtOutdated(isOutdated: boolean | null | undefined): string {
     return isOutdated ? t("cell.yes") : t("cell.no");
 }
 
+/** Score plus its band label, e.g. "82 good". */
+export function fmtHealth(score: number | null | undefined): string {
+    if (score == null) {
+        return MISSING_VALUE;
+    }
+    return `${score} ${t(`health.bands.${healthBand(score)}`)}`;
+}
+
 export function fmtLicense(license: string | null | undefined): string {
     const label = license ?? MISSING_VALUE;
     return hasLicenseWarning(license) ? `${label} ${LICENSE_WARNING_MARK}` : label;
@@ -63,6 +72,7 @@ const CELL_FORMATTERS: Partial<Record<string, CellFormatter>> = {
     latestReleaseDate: (d) => fmtDate(d.latestReleaseDate),
     latestUpdateDate: (d) => fmtDate(d.latestUpdateDate),
     isOutdated: (d) => fmtOutdated(d.isOutdated),
+    healthScore: (d) => fmtHealth(d.healthScore),
     weeklyDownloads: (d) => fmtNumber(d.weeklyDownloads),
     gitStars: (d) => fmtNumber(d.gitStars),
     openPRs: (d) => fmtNumber(d.openPRs),

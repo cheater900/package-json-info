@@ -25,6 +25,10 @@ export type PackageInfo = {
     dependencies: string[] | null;
     license: string | null;
     isOutdated: boolean | null;
+    /** 0-100, higher = healthier; null when no signal was available. */
+    healthScore: number | null;
+    /** Keys of the signals healthScore was computed from. */
+    healthSignals: string[] | null;
     deprecated: string | null;
     vulnerabilityCount: number | null;
     bundleSizeGzip: number | null;
