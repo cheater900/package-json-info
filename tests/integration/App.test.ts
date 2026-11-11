@@ -8,6 +8,7 @@ import { clearPackageInfoCache } from "../../src/api/npmPackage";
 import { jsonResponse, textResponse } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
+import { NPM_REGISTRY_URL, SHARE_STEP_QUERY_PARAM } from "../../src/constants";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
 
@@ -18,7 +19,13 @@ beforeEach(() => {
     );
     clearPackageInfoCache();
     document.body.innerHTML = "";
+    // A loaded source leaves share steps in the address bar; the next mount would replay them.
+    window.history.replaceState(null, "", "/");
 });
+
+function shareSteps() {
+    return new URLSearchParams(window.location.search).getAll(SHARE_STEP_QUERY_PARAM);
+}
 
 async function mountApp() {
     const wrapper = mount(App, { attachTo: document.body });
@@ -246,6 +253,83 @@ describe("App", () => {
 
             expect(wrapper.find(".workspace-picker").exists()).toBe(false);
             expect(wrapper.find(".workspace-picker__note").exists()).toBe(false);
+        });
+
+        describe("share link", () => {
+            const STEP_URL = "url:https://github.com/o/r";
+            const STEP_DEPENDENCY = "dep:left-pad@^1.0.0";
+
+            function openLink(steps: string[]) {
+                const params = new URLSearchParams(
+                    steps.map((step) => [SHARE_STEP_QUERY_PARAM, step]),
+                );
+                window.history.replaceState(null, "", `/?keep=1&${params}`);
+            }
+
+            function stubMonorepoWithLeftPad(dirs: string[]) {
+                stubMonorepo(jsonResponse(githubTreeBody(dirs)));
+                const monorepoFetch = vi.mocked(fetch).getMockImplementation()!;
+                vi.mocked(fetch).mockImplementation(async (url, init) => {
+                    if (url !== `${NPM_REGISTRY_URL}/left-pad`) {
+                        return monorepoFetch(url, init);
+                    }
+                    return jsonResponse({
+                        "dist-tags": { latest: "1.3.0" },
+                        versions: { "1.3.0": { name: "left-pad", version: "1.3.0" } },
+                    }) as unknown as Response;
+                });
+            }
+
+            it("replays url, workspace, dependency steps in order", async () => {
+                stubMonorepoWithLeftPad(["packages/a"]);
+                openLink([STEP_URL, "ws:packages/a", STEP_DEPENDENCY]);
+
+                const wrapper = await mountApp();
+
+                expect(wrapper.find(".package-name").text()).toBe("left-pad");
+                expect(wrapper.find(".history-controls span").text()).toBe("4 / 4");
+                expect(wrapper.find(".banner--error").exists()).toBe(false);
+                expect((wrapper.find("#url-input").element as HTMLInputElement).value).toBe("");
+                expect(shareSteps()).toEqual([STEP_URL, "ws:packages/a", STEP_DEPENDENCY]);
+                expect(window.location.search).toContain("keep=1");
+            });
+
+            it("stops replay at failed step, shows error banner, trims link", async () => {
+                stubMonorepoWithLeftPad(["packages/gone"]);
+                openLink([STEP_URL, "ws:packages/gone", STEP_DEPENDENCY]);
+
+                const wrapper = await mountApp();
+
+                expect(wrapper.find(".banner--error").text()).toContain("packages/gone");
+                expect(wrapper.find(".package-name").text()).toBe("mono-root");
+                expect(wrapper.find(".history-controls span").text()).toBe("2 / 2");
+                expect(shareSteps()).toEqual([STEP_URL]);
+            });
+
+            it("stops replay at workspace missing from repo list", async () => {
+                stubMonorepoWithLeftPad(["packages/b"]);
+                openLink([STEP_URL, "ws:packages/a", STEP_DEPENDENCY]);
+
+                const wrapper = await mountApp();
+
+                expect(wrapper.find(".package-name").text()).toBe("mono-root");
+                expect(wrapper.find(".history-controls span").text()).toBe("2 / 2");
+            });
+
+            it("drill-down adds dep step to link, Back removes it", async () => {
+                stubMonorepoWithLeftPad([]);
+                const wrapper = await mountApp();
+
+                wrapper
+                    .findAllComponents(DependenciesTable)[0]
+                    .vm.$emit("load-package", { name: "left-pad", version: "^1.0.0" });
+                await flushPromises();
+
+                expect(wrapper.find(".package-name").text()).toBe("left-pad");
+                expect(shareSteps()).toEqual([STEP_DEPENDENCY]);
+                await wrapper.find(".history-controls button").trigger("click");
+                expect(shareSteps()).toEqual([]);
+            });
         });
     });
 });

@@ -194,6 +194,19 @@ describe("history navigation", () => {
     });
 });
 
+describe("entry source", () => {
+    it("tags entry with given source, null without one", () => {
+        stubFetchResolvesEmpty();
+        const { loadPackageJsonText, history } = useHistory(ref(new Set<string>()));
+        const source = { kind: "dependency", name: "left-pad", version: "^1.0.0" } as const;
+
+        loadPackageJsonText(validPackageJson);
+        loadPackageJsonText(validPackageJson, null, source);
+
+        expect(history.value.map((entry) => entry.source)).toEqual([null, source]);
+    });
+});
+
 describe("workspace context", () => {
     it("exposes current entry workspace, restores on goBack/goForward", () => {
         stubFetchResolvesEmpty();

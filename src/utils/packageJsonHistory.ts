@@ -2,17 +2,25 @@ import type { DependencyRow } from "../types";
 import type { PackageJson } from "./packageJson";
 import type { WorkspaceContext } from "./workspaces";
 
+/** Where a package.json was loaded from, when a link can load it again. */
+export type EntrySource =
+    | { kind: "url"; url: string }
+    | { kind: "dependency"; name: string; version: string }
+    | { kind: "workspace"; path: string };
+
 /**
  * One visited package.json state. `deps`/`devDeps` start out null (not yet
  * fetched); once fetched they're cached here, tagged with the
  * visibleColumns set that was active at fetch time, so a later revisit can
  * tell whether the cached data still covers every currently-visible column.
  * `workspace` is set when the package.json came from a monorepo on GitHub.
+ * `source` is null for input a link cannot reload (clipboard, file, built-in).
  */
 export type HistoryEntry = {
     content: string;
     pkg: PackageJson;
     workspace: WorkspaceContext | null;
+    source: EntrySource | null;
     deps: DependencyRow[] | null;
     devDeps: DependencyRow[] | null;
     visibleColumnsSnapshot: ReadonlySet<string> | null;
@@ -33,8 +41,17 @@ export function createHistoryEntry(
     content: string,
     pkg: PackageJson,
     workspace: WorkspaceContext | null = null,
+    source: EntrySource | null = null,
 ): HistoryEntry {
-    return { content, pkg, workspace, deps: null, devDeps: null, visibleColumnsSnapshot: null };
+    return {
+        content,
+        pkg,
+        workspace,
+        source,
+        deps: null,
+        devDeps: null,
+        visibleColumnsSnapshot: null,
+    };
 }
 
 /**

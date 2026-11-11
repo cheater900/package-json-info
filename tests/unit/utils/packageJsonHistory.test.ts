@@ -17,6 +17,7 @@ describe("createHistoryEntry", () => {
             content: "{}",
             pkg: { name: "demo" },
             workspace: null,
+            source: null,
             deps: null,
             devDeps: null,
             visibleColumnsSnapshot: null,
@@ -29,6 +30,14 @@ describe("createHistoryEntry with workspace", () => {
         expect(createHistoryEntry("{}", {}, rootWorkspaceContext).workspace).toBe(
             rootWorkspaceContext,
         );
+    });
+});
+
+describe("createHistoryEntry with source", () => {
+    it("keeps given source", () => {
+        const source = { kind: "url", url: "https://a.example/package.json" } as const;
+
+        expect(createHistoryEntry("{}", {}, null, source).source).toBe(source);
     });
 });
 

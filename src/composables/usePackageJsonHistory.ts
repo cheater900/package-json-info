@@ -10,7 +10,7 @@ import {
 } from "../utils/packageJsonHistory";
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
 import type { DependencyMap, PackageJson } from "../utils/packageJson";
-import type { HistoryEntry } from "../utils/packageJsonHistory";
+import type { EntrySource, HistoryEntry } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../utils/workspaces";
 import type { DependencyRow } from "../types";
 import { t } from "../i18n";
@@ -55,9 +55,14 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      * Validates raw package.json text and, on success, records it as a new
      * history entry and applies it. Returns true on success; on failure,
      * sets loadError and leaves the previous content untouched. `sourceWorkspace`
-     * names the monorepo the text came from, if any.
+     * names the monorepo the text came from, if any; `source` says where a
+     * share link can load the text again.
      */
-    function loadPackageJsonText(text: string, sourceWorkspace: WorkspaceContext | null = null) {
+    function loadPackageJsonText(
+        text: string,
+        sourceWorkspace: WorkspaceContext | null = null,
+        source: EntrySource | null = null,
+    ) {
         let parsed: unknown;
         try {
             parsed = JSON.parse(text);
@@ -76,7 +81,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         const pushed = pushHistoryEntry(
             history.value,
             historyIndex.value,
-            createHistoryEntry(text, result.data, sourceWorkspace),
+            createHistoryEntry(text, result.data, sourceWorkspace, source),
         );
         history.value = pushed.history;
         historyIndex.value = pushed.index;
