@@ -32,6 +32,24 @@ to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas are in
   npm and pnpm are believed to do the same; not checked against their
   source.
 
+## Behavior to know
+
+- **Health column starts hidden for existing users.** Saved column
+  preferences lack the new key, so the column is hidden and last in order.
+  New users see it after Outdated.
+- **Health score varies with visible columns.** Issue ratio and
+  vulnerabilities count only while their columns are shown.
+- **Reload replays the share link.** A page reload refetches the `?step=`
+  chain instead of returning to the built-in view.
+- **Share link fetches on open.** A `step=url:` link fetches that URL
+  without a click. Capped at 20 steps of 2,000 characters, http(s) only.
+- **Fallback store never evicts.** It keeps whole registry documents,
+  several MB for popular packages. With a GitHub token, star and issue
+  counts of private repos are stored unencrypted; the token is never
+  stored.
+- **Not in a share link**: pasted and uploaded files, sort, search and
+  column state.
+
 ## Display
 
 - **Light theme contrast**: vue-json-pretty string values keep the
