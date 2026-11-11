@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { mockExternalApis, loadJson, expandAllSections, fetchFromUrlInput } from "./helpers";
+import {
+    mockExternalApis,
+    loadJson,
+    expandAllSections,
+    fetchFromUrlInput,
+    hasStoredLookup,
+} from "./helpers";
 import { TOGGLEABLE_COLUMNS } from "../../src/utils/tableColumns";
 import {
     BUNDLEPHOBIA_SIZE_URL,
@@ -651,6 +657,46 @@ test("renders license, outdated, deprecated, vulnerability, bundle size, maintai
     await expect(row.getByRole("cell", { name: "1", exact: true })).toBeVisible();
     await expect(row.getByRole("cell", { name: "2.0 KB", exact: true })).toBeVisible();
     await expect(row.getByRole("cell", { name: "alice, bob", exact: true })).toBeVisible();
+});
+
+test("registry outage after reload shows stored row with stale badge and health score", async ({
+    page,
+}) => {
+    let isRegistryDown = false;
+    await page.route(`${NPM_REGISTRY_URL}/offline-pkg`, async (route) => {
+        if (isRegistryDown) {
+            await route.abort();
+            return;
+        }
+        // Fresh, current, not deprecated, 3 maintainers, no repo lookups: every signal healthy.
+        await route.fulfill({
+            json: {
+                "dist-tags": { latest: "1.0.0" },
+                time: { "1.0.0": new Date().toISOString() },
+                maintainers: [{ name: "a" }, { name: "b" }, { name: "c" }],
+                versions: { "1.0.0": {} },
+            },
+        });
+    });
+    const offlinePackageJson = { name: "demo", dependencies: { "offline-pkg": "1.0.0" } };
+    const depsTable = page.locator("table.deps-table").first();
+    const row = depsTable.locator("tbody tr").filter({ hasText: "offline-pkg" });
+
+    await page.goto("/");
+    await expandAllSections(page);
+    await loadJson(page, offlinePackageJson);
+    await expect(row.getByRole("cell", { name: "100 good", exact: true })).toBeVisible();
+    await expect(row.locator(".deps-table__stale-badge")).toHaveCount(0);
+    await expect.poll(() => hasStoredLookup(page, "registry:offline-pkg")).toBe(true);
+
+    isRegistryDown = true;
+    await page.reload();
+    await expandAllSections(page);
+    await loadJson(page, offlinePackageJson);
+
+    await expect(row.locator(".deps-table__stale-badge")).toHaveText("stale");
+    // Health needs the registry document, so a score proves the stored one was used.
+    await expect(row.getByRole("cell", { name: "100 good", exact: true })).toBeVisible();
 });
 
 test("hidden column skips request, re-shown column fetches missing data", async ({ page }) => {

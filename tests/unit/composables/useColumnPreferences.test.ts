@@ -22,6 +22,32 @@ describe("initial state", () => {
     });
 });
 
+describe("preferences saved before healthScore column", () => {
+    beforeEach(() => {
+        const keysBeforeHealth = TOGGLEABLE_COLUMNS.map((c) => c.key).filter(
+            (key) => key !== "healthScore",
+        );
+        localStorage.setItem(STORAGE_KEY_VISIBLE_COLUMNS, JSON.stringify(keysBeforeHealth));
+        localStorage.setItem(STORAGE_KEY_COLUMN_ORDER, JSON.stringify(keysBeforeHealth));
+    });
+
+    it("keeps healthScore hidden, appends it to order end", () => {
+        const { visibleColumns, columnOrder, visibleColumnKeys } = useColumnPreferences();
+
+        expect(visibleColumns.value.has("healthScore")).toBe(false);
+        expect(visibleColumnKeys.value).not.toContain("healthScore");
+        expect(columnOrder.value.at(-1)).toBe("healthScore");
+    });
+
+    it("shows healthScore as last column once toggled on", () => {
+        const { visibleColumnKeys, toggleColumn } = useColumnPreferences();
+
+        toggleColumn("healthScore");
+
+        expect(visibleColumnKeys.value.at(-1)).toBe("healthScore");
+    });
+});
+
 describe("toggleColumn", () => {
     it("shows hidden column", () => {
         const { visibleColumns, toggleColumn } = useColumnPreferences();

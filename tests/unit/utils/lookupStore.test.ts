@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { LOOKUP_DB_NAME, LOOKUP_DB_STORE } from "../../../src/constants";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { LOOKUP_DB_NAME, LOOKUP_DB_STORE, LOOKUP_READ_TIMEOUT_MS } from "../../../src/constants";
 import { withObjectStore } from "../../../src/utils/indexedDb";
 import {
     clearLookups,
@@ -12,6 +12,10 @@ import { stubIndexedDb } from "../../helpers/settings";
 describe("lookupStore", () => {
     beforeEach(() => {
         stubIndexedDb();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it("round-trips value with ISO savedAt", async () => {
@@ -73,6 +77,16 @@ describe("lookupStore", () => {
         );
 
         expect(await loadLookup("repoStars", "github.com/o/r")).toBeUndefined();
+    });
+
+    it(`loads undefined once IndexedDB hangs ${LOOKUP_READ_TIMEOUT_MS} ms`, async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal("indexedDB", { open: () => ({}) });
+
+        const stored = loadLookup("registry", "left-pad");
+        await vi.advanceTimersByTimeAsync(LOOKUP_READ_TIMEOUT_MS);
+
+        expect(await stored).toBeUndefined();
     });
 
     it("swallows failing IndexedDB", async () => {

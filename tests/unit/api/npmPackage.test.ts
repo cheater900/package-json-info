@@ -1227,6 +1227,47 @@ describe("fetchPackageInfo failures", () => {
             expect(info.staleSince).toBe(SAVED_OLD);
         });
 
+        it("fills issue counts from store, scores health with them", async () => {
+            const counts = { openPRs: 1, closedPRs: 2, openIssues: 0, closedIssues: 4 };
+            await seedLookup("repoIssueCounts", "github.com/o/r", counts, SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("search/issues", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0", {
+                visibleColumns: new Set(["openIssues", "closedIssues", "healthScore"]),
+            });
+
+            expect(info).toMatchObject({ ...counts, staleSince: SAVED_OLD });
+            expect(info.healthSignals).toContain("issues");
+        });
+
+        it("builds GitHub source tree from stored release tag", async () => {
+            await seedLookup("githubReleaseTag", "github.com/o/r@1.0.0", "v1.0.0", SAVED_OLD);
+            vi.stubGlobal("fetch", failingFetch("git/ref/tags", "network"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0", {
+                visibleColumns: new Set(["sourceCodeTree"]),
+            });
+
+            expect(info.sourceTree).toEqual({
+                provider: "github",
+                owner: "o",
+                repo: "r",
+                tag: "v1.0.0",
+            });
+            expect(info.staleSince).toBe(SAVED_OLD);
+        });
+
+        it("returns live row while IndexedDB save hangs", async () => {
+            vi.stubGlobal("indexedDB", { open: () => ({}) });
+            vi.stubGlobal("fetch", failingFetch("no-such-host", "status"));
+
+            const info = await fetchPackageInfo("pkg", "1.0.0", {
+                visibleColumns: new Set(["weeklyDownloads"]),
+            });
+
+            expect(info.weeklyDownloads).toBe(7);
+        });
+
         it("ignores stored value of wrong shape", async () => {
             await seedLookup("weeklyDownloads", "pkg", "lots", SAVED_OLD);
             vi.stubGlobal("fetch", failingFetch("api.npmjs.org/downloads", "network"));

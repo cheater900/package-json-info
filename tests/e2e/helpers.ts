@@ -3,6 +3,8 @@ import {
     BUNDLEPHOBIA_SIZE_URL,
     GITHUB_API_URL,
     GITHUB_RAW_URL,
+    LOOKUP_DB_NAME,
+    LOOKUP_DB_STORE,
     NPM_REGISTRY_URL,
     NPM_WEEKLY_DOWNLOADS_URL,
     OSV_QUERY_URL,
@@ -83,6 +85,30 @@ export async function expandAllSections(page: Page) {
             await section.locator("summary").click();
         }
     }
+}
+
+/**
+ * True once the offline lookup store holds `recordKey` (`kind:key`). Opens
+ * the database the way the app does, so a first open still creates the store.
+ */
+export function hasStoredLookup(page: Page, recordKey: string) {
+    return page.evaluate(
+        ([dbName, storeName, key]) =>
+            new Promise<boolean>((resolve, reject) => {
+                const openRequest = indexedDB.open(dbName);
+                openRequest.onupgradeneeded = () => openRequest.result.createObjectStore(storeName);
+                openRequest.onerror = () => reject(openRequest.error);
+                openRequest.onsuccess = () => {
+                    const db = openRequest.result;
+                    const getRequest = db.transaction(storeName).objectStore(storeName).get(key);
+                    getRequest.onsuccess = () => {
+                        db.close();
+                        resolve(getRequest.result !== undefined);
+                    };
+                };
+            }),
+        [LOOKUP_DB_NAME, LOOKUP_DB_STORE, recordKey],
+    );
 }
 
 /** Types `url` into the URL input and submits it. */

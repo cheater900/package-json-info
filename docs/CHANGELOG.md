@@ -161,6 +161,10 @@ Condensed from git history. Newest month first.
 
 #### Coverage
 
+- Tests added for the **offline store**: stored issue counts and release
+  tag, a hanging IndexedDB on read and save, and an e2e reload during a
+  registry outage that shows the **stale badge** and health score. Saved
+  column preferences keep the **health column** hidden and last.
 - Tests added for **tar edge cases**, the **source tree viewer**, URL sync
   under a `//` path, tooltip, file tree item and truncated table cells.
   Tests that only restated a constant are gone.
