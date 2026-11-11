@@ -1,9 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
+import { fetchPackageInfo } from "../../../src/api/npmPackage";
 import SettingsMenu from "../../../src/components/SettingsMenu.vue";
 import { STORAGE_KEY_GITHUB_TOKEN } from "../../../src/constants";
 import { SETTINGS_DEFAULTS, githubToken, settings } from "../../../src/settings";
-import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
+import { loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import {
+    HTTP_STATUS,
+    countFetchCalls,
+    jsonResponse,
+    statusResponse,
+    stubFetchByUrl,
+} from "../../helpers/fetchMock";
 import { resetSettings, stubIndexedDb } from "../../helpers/settings";
 import {
     githubRateLimitBody,
@@ -148,6 +156,22 @@ describe("SettingsMenu token", () => {
         expect(githubToken.value).toBeUndefined();
         expect(localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN)).toBeNull();
         expect(document.activeElement).toBe(wrapper.find('input[type="password"]').element);
+    });
+
+    it("purge drops cached and stored lookups", async () => {
+        const fetchMock = stubFetchByUrl({ "api.npmjs.org/downloads": { downloads: 1 } });
+        const downloadsOnly = { visibleColumns: new Set(["weeklyDownloads"]) };
+        const wrapper = mountMenu();
+        await saveToken(wrapper, TOKEN);
+        await saveLookup("repoStars", "github.com/private/repo", 7);
+        await fetchPackageInfo("purge-cache-pkg", "1.0.0", downloadsOnly);
+
+        await button(wrapper, "Purge").trigger("click");
+        await vi.waitFor(() => expect(wrapper.text()).toContain("Token purged."));
+        await fetchPackageInfo("purge-cache-pkg", "1.0.0", downloadsOnly);
+
+        expect(await loadLookup("repoStars", "github.com/private/repo")).toBeUndefined();
+        expect(countFetchCalls(fetchMock, "purge-cache-pkg")).toBe(2);
     });
 
     it("shows unavailable without IndexedDB", () => {

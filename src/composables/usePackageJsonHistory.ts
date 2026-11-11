@@ -126,13 +126,21 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
 
     /**
      * Fetches (or re-fetches, if visibleColumns has changed) an entry's
-     * deps/devDeps and caches them on the entry. Results apply to the view
-     * only while this entry is still the current one; position alone isn't
-     * enough, since loading after going back reuses the same index.
+     * deps/devDeps and caches them on the entry. The fetch stops starting
+     * rows once the entry is no longer current (position alone isn't enough,
+     * since loading after going back reuses the same index) or a newer fetch
+     * replaces it, so share link replay cannot pile up table fetches. A
+     * stopped fetch caches nothing; a revisit refetches from memoized lookups.
      */
     async function fetchEntryDependencies(entry: HistoryEntry) {
         const fetchToken = Symbol();
         latestFetchByEntry.set(toRaw(entry), fetchToken);
+        let isStopped = false;
+        const isCancelled = () => {
+            isStopped ||=
+                !isCurrentEntry(entry) || latestFetchByEntry.get(toRaw(entry)) !== fetchToken;
+            return isStopped;
+        };
         const rawDeps = toPackageInputs(entry.pkg.dependencies);
         const rawDevDeps = toPackageInputs(entry.pkg.devDependencies);
         const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
@@ -142,19 +150,17 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         devDeps.value = [];
         isLoadingDeps.value = rawDeps.length > 0;
         isLoadingDevDeps.value = rawDevDeps.length > 0;
+        const fetchOptions = { visibleColumns: visibleColumnsAtFetchTime, isCancelled };
         const [depsResult, devDepsResult] = await Promise.all([
-            fetchPackagesInfo(rawDeps, { visibleColumns: visibleColumnsAtFetchTime }),
-            fetchPackagesInfo(rawDevDeps, { visibleColumns: visibleColumnsAtFetchTime }),
+            fetchPackagesInfo(rawDeps, fetchOptions),
+            fetchPackagesInfo(rawDevDeps, fetchOptions),
         ]);
-        if (latestFetchByEntry.get(toRaw(entry)) !== fetchToken) {
+        if (isCancelled()) {
             return;
         }
         entry.deps = depsResult;
         entry.devDeps = devDepsResult;
         entry.visibleColumnsSnapshot = visibleColumnsAtFetchTime;
-        if (!isCurrentEntry(entry)) {
-            return;
-        }
         deps.value = depsResult;
         devDeps.value = devDepsResult;
         isLoadingDeps.value = false;

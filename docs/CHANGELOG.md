@@ -118,6 +118,16 @@ Condensed from git history. Newest month first.
 - **Semver regex** is anchored at the digit-run start to stop a quadratic
   scan.
 
+#### Drill-down and history
+
+- **Share link replay** stops the **table fetch** of each entry it passes,
+  so a long link cannot multiply requests or burn the GitHub quota.
+
+#### Settings and token
+
+- **Token purge** also clears **cached and stored lookups**, so private
+  repo data does not outlive the token.
+
 #### Tooling
 
 - **`.env` files** are ignored by git.

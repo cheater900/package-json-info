@@ -45,8 +45,8 @@ to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas are in
   without a click. Capped at 20 steps of 2,000 characters, http(s) only.
 - **Fallback store never evicts.** It keeps whole registry documents,
   several MB for popular packages. With a GitHub token, star and issue
-  counts of private repos are stored unencrypted; the token is never
-  stored.
+  counts of private repos are stored unencrypted until token purge; the
+  token is never stored.
 - **Not in a share link**: pasted and uploaded files, sort, search and
   column state.
 

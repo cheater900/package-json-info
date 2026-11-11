@@ -74,7 +74,7 @@ The address bar always holds a link to the current view. Each history
 entry up to the current position becomes one `?step=` param: `url:<url>`,
 `dep:<name>@<range>` or `ws:<workspace path>`. Opening the link replays the
 steps in order, on top of the built-in `package.json`, and stops at the
-first step that fails.
+first step that fails. Each step stops the table fetch of the step before.
 
 - Pasted and uploaded files are not part of the link.
 - A link holds at most 20 steps of up to 2,000 characters each.
@@ -120,7 +120,8 @@ shows when a GitHub token is set.
   rate limit from 60 to 5000 requests per hour. Save stores it encrypted
   (AES-GCM, with a non-extractable key in IndexedDB) and refetches the
   tables. A failed save removes any stored token. Verify shows the
-  remaining quota, or says GitHub rejected the token. Purge deletes it.
+  remaining quota, or says GitHub rejected the token. Purge deletes it
+  and clears cached and stored lookups.
   The token is sent only to `api.github.com`, never through the proxy.
   Encryption protects it on disk, not from scripts on the page, so use a
   fine-grained token with no permissions.

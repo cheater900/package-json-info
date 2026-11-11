@@ -5,7 +5,13 @@ import { flushPromises } from "@vue/test-utils";
 import { usePackageJsonHistory } from "../../../src/composables/usePackageJsonHistory";
 import { clearPackageInfoCache } from "../../../src/api/npmPackage";
 import { githubToken, settings } from "../../../src/settings";
-import { HTTP_STATUS, fetchCallsTo, jsonResponse, statusResponse } from "../../helpers/fetchMock";
+import {
+    HTTP_STATUS,
+    countFetchCalls,
+    fetchCallsTo,
+    jsonResponse,
+    statusResponse,
+} from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
 import { GITHUB_API_URL, NPM_REGISTRY_URL } from "../../../src/constants";
 import type { PackageInfo } from "../../../src/types";
@@ -324,6 +330,24 @@ describe("async fetch ordering", () => {
         expect((deps.value[0] as PackageInfo).weeklyDownloads).toBe(5);
         expect((deps.value[0] as PackageInfo).vulnerabilityCount).toBeNull();
         expect(isLoadingDeps.value).toBe(false);
+    });
+
+    it("stops table fetch of replaced entry, refetches on revisit", async () => {
+        const release = deferredFetch();
+        settings.fetchConcurrency = 1;
+        const visibleColumns = ref(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, goBack, deps } = useHistory(visibleColumns);
+        loadPackageJsonText(JSON.stringify({ dependencies: { early: "1.0.0", late: "1.0.0" } }));
+        loadPackageJsonText(packageJsonWith("next"));
+
+        await release("/early", { downloads: 1 });
+        await release("/next", { downloads: 2 });
+
+        expect(countFetchCalls(vi.mocked(fetch), "/late")).toBe(0);
+        goBack();
+        await flushPromises();
+        await release("/late", { downloads: 3 });
+        expect(deps.value.map((d) => d.name)).toEqual(["early", "late"]);
     });
 
     it("clears previous rows from list with nothing to fetch", async () => {

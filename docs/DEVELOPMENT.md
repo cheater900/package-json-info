@@ -65,7 +65,8 @@ IndexedDB can hang; a late token refetches the tables.
 
 `src/utils/lookupStore.ts` keeps the last good answer of each metadata
 lookup in a second IndexedDB database, `package-json-info:lookups`.
-`src/api/npmPackage.ts` reads it only after a live lookup fails.
+`src/api/npmPackage.ts` reads it only after a live lookup fails. Token
+purge clears it.
 
 `main.js` also mirrors the display settings onto `<html>`. It resolves
 the theme to `data-color-scheme` (`light` or `dark`; System follows the OS

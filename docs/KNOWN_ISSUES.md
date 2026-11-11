@@ -15,8 +15,15 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
   query npm. Needed for a link to reopen a view; step count and length are
   capped, and only http(s) URLs pass.
 - **Stored lookups are not encrypted.** With a GitHub token, star and
-  issue counts of private repos land in IndexedDB as plain values. The
-  token is never stored there.
+  issue counts of private repos land in IndexedDB as plain values until
+  token purge clears them. The token is never stored there.
+- **Stored lookups skip schema checks on read.** A malformed record can
+  fail its row. Only same-origin script writes the store, and such script
+  can already read the decrypted token. Links from stored data are
+  rechecked as http(s) on every use.
+- **Share link carries the entered URL verbatim.** A raw URL with a secret
+  query (`?token=`) lands in the address bar and in shared links. The
+  step needs the URL to reload it, and `?inputUrl=` already mirrors it.
 - **Proxy prefix without trailing `/`** (`https://p.example` + target)
   builds a broken host such as `p.examplehttps`. The requests fail; no real
   TLD matches.

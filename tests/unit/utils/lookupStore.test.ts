@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { loadLookup, saveLookup } from "../../../src/utils/lookupStore";
+import { clearLookups, loadLookup, saveLookup } from "../../../src/utils/lookupStore";
 import { stubIndexedDb } from "../../helpers/settings";
 
 describe("lookupStore", () => {
@@ -41,6 +41,16 @@ describe("lookupStore", () => {
         expect((await loadLookup("repoStars", "github.com/o/r"))?.value).toBe(2);
     });
 
+    it("clearLookups drops every record", async () => {
+        await saveLookup("weeklyDownloads", "left-pad", 1);
+        await saveLookup("repoStars", "github.com/o/r", 2);
+
+        await clearLookups();
+
+        expect(await loadLookup("weeklyDownloads", "left-pad")).toBeUndefined();
+        expect(await loadLookup("repoStars", "github.com/o/r")).toBeUndefined();
+    });
+
     it("swallows failing IndexedDB", async () => {
         vi.stubGlobal("indexedDB", {
             open: () => {
@@ -49,6 +59,7 @@ describe("lookupStore", () => {
         });
 
         await expect(saveLookup("registry", "left-pad", {})).resolves.toBeUndefined();
+        await expect(clearLookups()).resolves.toBeUndefined();
         expect(await loadLookup("registry", "left-pad")).toBeUndefined();
     });
 });
@@ -58,6 +69,7 @@ describe("lookupStore without indexedDB", () => {
         expect(typeof indexedDB).toBe("undefined");
 
         await expect(saveLookup("registry", "left-pad", {})).resolves.toBeUndefined();
+        await expect(clearLookups()).resolves.toBeUndefined();
         expect(await loadLookup("registry", "left-pad")).toBeUndefined();
     });
 });

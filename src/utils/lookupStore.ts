@@ -51,6 +51,19 @@ export async function saveLookup(kind: LookupKind, key: string, value: unknown):
 }
 
 /**
+ * Drops every stored lookup. With a token these include private repo data,
+ * so token purge calls this. Never rejects.
+ */
+export async function clearLookups(): Promise<void> {
+    if (!isLookupStoreAvailable()) {
+        return;
+    }
+    await settle(() =>
+        withObjectStore(LOOKUP_DB_NAME, LOOKUP_DB_STORE, "readwrite", (store) => store.clear()),
+    );
+}
+
+/**
  * Last good answer of lookup `kind` for `key`. Undefined when none is
  * stored, or IndexedDB is missing, failing or not answering in time.
  * Never rejects. The caller names `T`: the store holds what saveLookup got.

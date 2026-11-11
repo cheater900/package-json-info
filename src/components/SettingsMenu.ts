@@ -1,5 +1,6 @@
 import { defineComponent, onMounted, onUnmounted, reactive, ref, useId } from "vue";
 import { fetchGithubRateLimit } from "../api/github";
+import { clearPackageInfoCache } from "../api/npmPackage";
 import { isConfigInt } from "../config";
 import {
     GITHUB_TOKEN_PATTERN,
@@ -15,6 +16,7 @@ import {
     purgeGithubToken,
     saveGithubToken,
 } from "../utils/githubTokenStorage";
+import { clearLookups } from "../utils/lookupStore";
 import { formatPercent } from "../utils/percent";
 import { settle } from "../utils/settle";
 import IconGear from "./IconGear.vue";
@@ -66,10 +68,12 @@ export default defineComponent({
         /**
          * Purges the stored token and its in-memory copy. After a half-done
          * save this also drops the stale ciphertext beside the new key, so
-         * memory matches what a reload would find.
+         * memory matches what a reload would find. Cached and stored lookups
+         * go too: fetched with the token, they may hold private repo data.
          */
         async function forgetToken() {
-            await purgeGithubToken();
+            await Promise.all([purgeGithubToken(), clearLookups()]);
+            clearPackageInfoCache();
             githubToken.value = undefined;
         }
 

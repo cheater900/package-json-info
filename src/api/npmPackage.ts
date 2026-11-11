@@ -70,6 +70,8 @@ export type FetchPackageOptions = {
 export type FetchPackagesOptions = FetchPackageOptions & {
     /** Maximum number of packages fetched in parallel. */
     concurrency?: number;
+    /** Once true, no further package starts; the caller drops the result. */
+    isCancelled?: () => boolean;
 };
 
 type NpmDownloadsData = {
@@ -351,17 +353,22 @@ export async function fetchPackageJsonForVersion(
 /**
  * Fetches enriched metadata for multiple packages, at most `concurrency`
  * at a time. A failing package yields a PackageError instead of rejecting.
+ * After `isCancelled` turns true, packages not yet started stay unset.
  */
 export async function fetchPackagesInfo(
     packages: PackageInput[],
     options: FetchPackagesOptions = {},
 ): Promise<DependencyRow[]> {
-    const { concurrency = settings.fetchConcurrency, ...fetchOptions } = options;
+    const {
+        concurrency = settings.fetchConcurrency,
+        isCancelled = () => false,
+        ...fetchOptions
+    } = options;
     const results = Array.from<DependencyRow>({ length: packages.length });
     let nextIndex = 0;
 
     async function worker(): Promise<void> {
-        while (nextIndex < packages.length) {
+        while (nextIndex < packages.length && !isCancelled()) {
             const i = nextIndex++;
             const { name, version } = packages[i];
             const result = await settle(() => fetchPackageInfo(name, version, fetchOptions));

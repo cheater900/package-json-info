@@ -992,6 +992,25 @@ describe("fetchPackagesInfo", () => {
         expect(results[0]).toMatchObject({ name: "good" });
         expect(results[1]).toMatchObject({ name: "bad", error: "network down" });
     });
+
+    it("starts no package once isCancelled true", async () => {
+        const fetchMock = stubFetchByUrl({ "api.npmjs.org/downloads": { downloads: 1 } });
+
+        await fetchPackagesInfo(
+            [
+                { name: "first", version: "1.0.0" },
+                { name: "second", version: "1.0.0" },
+            ],
+            {
+                concurrency: 1,
+                visibleColumns: new Set(["weeklyDownloads"]),
+                isCancelled: () => fetchMock.mock.calls.length > 0,
+            },
+        );
+
+        expect(countFetchCalls(fetchMock, "/first")).toBe(1);
+        expect(countFetchCalls(fetchMock, "/second")).toBe(0);
+    });
 });
 
 describe("fetchPackageInfo failures", () => {
