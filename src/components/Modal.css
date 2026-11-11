@@ -10,8 +10,8 @@
 }
 
 .modal__panel {
-    background: var(--bg, #fff);
-    border: 1px solid var(--accent, #33ff66);
+    background: var(--bg);
+    border: 1px solid var(--accent);
     border-radius: 8px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
     max-height: 100%;

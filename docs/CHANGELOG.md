@@ -126,6 +126,8 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **`var()` fallback colors** removed from component CSS; `style.css`
+  defines every variable for both themes.
 - **Inline SVG icons** moved into `IconUpload.vue` and `IconGear.vue`.
 - **npm license schema** moved to `utils/license.ts`; `NpmLicenseField` is
   inferred from it.

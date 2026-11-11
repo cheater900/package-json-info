@@ -28,11 +28,11 @@
 
 .file-tree-item__toggle:hover,
 .file-tree-item__file:hover {
-    background: var(--code-bg, #f4f3ec);
+    background: var(--code-bg);
 }
 
 .file-tree-item__file--selected {
-    background: var(--code-bg, #f4f3ec);
+    background: var(--code-bg);
     font-weight: 600;
 }
 

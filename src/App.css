@@ -10,12 +10,12 @@ h1 {
 
 input,
 textarea {
-    background: var(--code-bg, #0a1a0d);
-    border: 1px solid var(--border, #1e5c2e);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
     border-radius: 0;
     box-sizing: border-box;
-    caret-color: var(--accent, #33ff66);
-    color: var(--text-h, #66ffa0);
+    caret-color: var(--accent);
+    color: var(--text-h);
     display: block;
     font-family: var(--mono);
     padding: calc(6px * var(--space-scale)) calc(10px * var(--space-scale));
@@ -30,15 +30,15 @@ textarea {
 }
 
 .banner--error {
-    background: var(--code-bg, #0a1a0d);
+    background: var(--code-bg);
     border: 1px solid var(--error);
     color: var(--error);
 }
 
 .banner--loading {
-    background: var(--code-bg, #0a1a0d);
-    border: 1px solid var(--border, #1e5c2e);
-    color: var(--text, #33ff66);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .input-methods {
@@ -88,7 +88,7 @@ textarea {
 
 .search-shrink-row {
     align-items: center;
-    background: var(--bg, #fff);
+    background: var(--bg);
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
@@ -126,7 +126,7 @@ textarea {
 }
 
 .package-name {
-    border-bottom: 1px solid var(--border, #e5e4e7);
+    border-bottom: 1px solid var(--border);
     font-weight: 700;
     margin: 24px 0 12px;
     padding-bottom: calc(8px * var(--space-scale));
@@ -171,9 +171,9 @@ textarea {
 button {
     align-items: center;
     background: transparent;
-    border: 1px solid var(--accent, #33ff66);
+    border: 1px solid var(--accent);
     border-radius: 0;
-    color: var(--accent, #33ff66);
+    color: var(--accent);
     cursor: pointer;
     display: inline-flex;
     font-family: var(--mono);
@@ -190,7 +190,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-    background: var(--accent-bg, rgba(51, 255, 102, 0.1));
+    background: var(--accent-bg);
 }
 
 button:disabled {

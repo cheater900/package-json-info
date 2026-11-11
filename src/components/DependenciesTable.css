@@ -1,5 +1,5 @@
 .deps-table {
-    border: 1px solid var(--accent, #33ff66);
+    border: 1px solid var(--accent);
     display: block;
     font-size: 0.85rem;
     margin-top: 4px;
@@ -10,7 +10,7 @@
 
 table th,
 table td {
-    border: 1px solid var(--accent, #33ff66);
+    border: 1px solid var(--accent);
     border-radius: 0;
     padding: calc(6px * var(--space-scale)) calc(10px * var(--space-scale));
     white-space: nowrap;
@@ -30,7 +30,7 @@ tbody tr:not(.deps-table__status-row) {
 }
 
 tbody tr:not(.deps-table__status-row):hover {
-    background: var(--accent-bg, rgba(51, 255, 102, 0.1));
+    background: var(--accent-bg);
 }
 
 .deps-table__truncate-cell {
@@ -61,7 +61,7 @@ tbody tr:not(.deps-table__status-row):hover {
 
 .deps-table__truncate-cell--overflowing:hover,
 .deps-table__truncate-cell--expanded:hover {
-    background: var(--accent-border, rgba(51, 255, 102, 0.5));
+    background: var(--accent-border);
 }
 
 .deps-table__name-cell {
@@ -90,9 +90,9 @@ tbody tr:not(.deps-table__status-row):hover {
 }
 
 .deps-table__stale-badge {
-    background: var(--accent-bg, rgba(51, 255, 102, 0.1));
-    border: 1px dashed var(--accent-border, rgba(51, 255, 102, 0.5));
-    color: var(--text-h, #66ffa0);
+    background: var(--accent-bg);
+    border: 1px dashed var(--accent-border);
+    color: var(--text-h);
     font-size: 0.75em;
     padding: 0 calc(4px * var(--space-scale));
 }
