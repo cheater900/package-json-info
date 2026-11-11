@@ -364,6 +364,59 @@ test("row data cell click opens package summary card", async ({ page }) => {
     await expect(page.locator(".package-summary__name")).toHaveCount(0);
 });
 
+test("share link replays steps, Back and drill-down rewrite link", async ({ page }) => {
+    const urlStep = "url:https://github.com/some-owner/some-repo";
+    const dependencyStep = "dep:left-pad@^1.0.0";
+    const linkSteps = () =>
+        page.evaluate(() => new URLSearchParams(window.location.search).getAll("step"));
+    await page.route(`${GITHUB_RAW_URL}/some-owner/some-repo/main/package.json`, async (route) => {
+        await route.fulfill({
+            json: { name: "some-repo", dependencies: { "left-pad": "^1.0.0" } },
+        });
+    });
+    await page.route(`${NPM_REGISTRY_URL}/left-pad`, async (route) => {
+        await route.fulfill({
+            json: {
+                "dist-tags": { latest: "1.0.0" },
+                time: { "1.0.0": "2020-01-01T00:00:00.000Z", modified: "2020-01-01T00:00:00.000Z" },
+                versions: {
+                    "1.0.0": {
+                        name: "left-pad",
+                        version: "1.0.0",
+                        dependencies: { "nested-dep": "^1.0.0" },
+                    },
+                },
+            },
+        });
+    });
+    await page.route(`${NPM_REGISTRY_URL}/nested-dep`, async (route) => {
+        await route.fulfill({ json: minimalRegistryDoc });
+    });
+
+    const params = new URLSearchParams([
+        ["step", urlStep],
+        ["step", dependencyStep],
+    ]);
+    await page.goto(`/?${params}`);
+    await expandAllSections(page);
+
+    // Built-in package.json, then one entry per step.
+    const depsTable = page.locator("table.deps-table").first();
+    await expect(page.getByRole("heading", { name: "left-pad" })).toBeVisible();
+    await expect(depsTable.getByRole("cell", { name: "nested-dep", exact: true })).toBeVisible();
+    await expect(page.getByText("3 / 3", { exact: true })).toBeVisible();
+    await expect.poll(linkSteps).toEqual([urlStep, dependencyStep]);
+
+    await page.getByRole("button", { name: "← Back" }).click();
+    await expect(page.getByRole("heading", { name: "some-repo" })).toBeVisible();
+    await expect(page.getByText("2 / 3", { exact: true })).toBeVisible();
+    await expect.poll(linkSteps).toEqual([urlStep]);
+
+    await depsTable.getByRole("cell", { name: "left-pad", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "left-pad" })).toBeVisible();
+    await expect.poll(linkSteps).toEqual([urlStep, dependencyStep]);
+});
+
 test("back/forward buttons navigate loaded package.json states", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);

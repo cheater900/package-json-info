@@ -11,6 +11,7 @@ import { isHttpUrl } from "../utils/url";
 import { isRepoHostUrl } from "../utils/repoUrl";
 import { settle } from "../utils/settle";
 import type { PackageInput } from "../types";
+import type { EntrySource } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../utils/workspaces";
 
 /** Package.json text, with the monorepo it came from when one is known. */
@@ -43,7 +44,11 @@ async function readRepoSource(url: string): Promise<LoadedSource | null> {
  * `loadPackageJsonText`. Failures land in `loadError`.
  */
 export function usePackageJsonSources(
-    loadPackageJsonText: (text: string, workspace?: WorkspaceContext | null) => boolean,
+    loadPackageJsonText: (
+        text: string,
+        workspace?: WorkspaceContext | null,
+        source?: EntrySource | null,
+    ) => boolean,
     loadError: Ref<string | null>,
 ) {
     const isLoadingInput = ref(false);
@@ -71,31 +76,33 @@ export function usePackageJsonSources(
      * Runs one load: `readContent` resolves to a package.json source. Empty text
      * shows `emptyMessage`; a failure shows `failureMessage`, or the error's
      * own message when none is given. Only the most recent load applies, so
-     * a slow fetch can't overwrite a newer paste or upload.
+     * a slow fetch can't overwrite a newer paste or upload. `source` tags the
+     * history entry for share links. Resolves to true once the text is loaded.
      */
     async function loadFromSource(
         readContent: () => Promise<LoadedSource | null>,
         emptyMessage: string,
         failureMessage: string | null = null,
-    ) {
+        source: EntrySource | null = null,
+    ): Promise<boolean> {
         const loadToken = Symbol();
         latestLoadToken = loadToken;
         isLoadingInput.value = true;
         loadError.value = null;
         const result = await settle(readContent);
         if (latestLoadToken !== loadToken) {
-            return;
+            return false;
         }
         isLoadingInput.value = false;
         if (!result.ok) {
             loadError.value = failureMessage ?? result.error.message;
-            return;
+            return false;
         }
         if (!result.value?.text) {
             loadError.value = emptyMessage;
-            return;
+            return false;
         }
-        loadPackageJsonText(result.value.text, result.value.workspace ?? null);
+        return loadPackageJsonText(result.value.text, result.value.workspace ?? null, source);
     }
 
     function loadFromClipboard() {
@@ -106,11 +113,11 @@ export function usePackageJsonSources(
         );
     }
 
-    function loadFromFile(event: Event) {
+    async function loadFromFile(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
         if (!file) {
-            return;
+            return false;
         }
         // Reset so choosing the same file again still fires `change`.
         input.value = "";
@@ -122,27 +129,35 @@ export function usePackageJsonSources(
     }
 
     /** Repo host URLs resolve to the repo's package.json; any other URL is fetched as-is. */
-    function loadFromUrlInput() {
-        const url = urlInput.value.trim();
+    async function loadUrl(input: string) {
+        const url = input.trim();
         if (!url) {
             loadError.value = t("errors.urlEmpty");
-            return;
+            return false;
         }
         // fetch() resolves a scheme-less input against this app's own origin.
         if (!isHttpUrl(url)) {
             loadError.value = t("errors.urlInvalid");
-            return;
+            return false;
         }
         return loadFromSource(
             () => (isRepoHostUrl(url) ? readRepoSource(url) : asSource(fetchText(url))),
             t("errors.urlNotFound"),
+            null,
+            { kind: "url", url },
         );
+    }
+
+    function loadFromUrlInput() {
+        return loadUrl(urlInput.value);
     }
 
     function loadDependency({ name, version }: PackageInput) {
         return loadFromSource(
             () => asSource(fetchPackageJsonForVersion(name, version)),
             t("errors.dependencyNotFound", { name }),
+            null,
+            { kind: "dependency", name, version },
         );
     }
 
@@ -156,6 +171,7 @@ export function usePackageJsonSources(
             }),
             message,
             message,
+            { kind: "workspace", path },
         );
     }
 
@@ -165,6 +181,7 @@ export function usePackageJsonSources(
         loadFromClipboard,
         loadFromFile,
         loadFromUrlInput,
+        loadUrl,
         loadDependency,
         loadWorkspace,
     };

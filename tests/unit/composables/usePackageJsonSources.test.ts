@@ -12,6 +12,8 @@ import {
 } from "../../fixtures/workspaces";
 
 const PACKAGE_JSON = '{"name":"x"}';
+const MONOREPO_URL = "https://github.com/o/r";
+const MONOREPO_SOURCE = { kind: "url", url: MONOREPO_URL };
 
 /** Bare `change` event: the composable reads only `target`. */
 function changeEvent(target: object) {
@@ -19,7 +21,7 @@ function changeEvent(target: object) {
 }
 
 function setup() {
-    const loadPackageJsonText = vi.fn();
+    const loadPackageJsonText = vi.fn<(text: string, ...rest: unknown[]) => boolean>(() => true);
     const loadError = ref<string | null>(null);
     const scope = effectScope();
     const sources = scope.run(() => usePackageJsonSources(loadPackageJsonText, loadError))!;
@@ -108,7 +110,7 @@ describe("loadFromUrlInput", () => {
         expect(fetchMock.mock.calls[0][0]).toBe(
             "https://raw.githubusercontent.com/o/r/main/package.json",
         );
-        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null, MONOREPO_SOURCE);
     });
 
     it.each([
@@ -188,7 +190,11 @@ describe("workspaces", () => {
 
         await loadFromUrlInput();
 
-        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, rootWorkspaceContext);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(
+            monorepoRootJson,
+            rootWorkspaceContext,
+            MONOREPO_SOURCE,
+        );
     });
 
     it("skips workspace lookup for GitLab repo", async () => {
@@ -199,7 +205,10 @@ describe("workspaces", () => {
         await loadFromUrlInput();
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, null);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, null, {
+            kind: "url",
+            url: "https://gitlab.com/o/r",
+        });
     });
 
     it("loadWorkspace loads workspace package.json, keeps list, marks current", async () => {
@@ -211,10 +220,11 @@ describe("workspaces", () => {
         expect(fetchMock.mock.calls[0][0]).toBe(
             "https://raw.githubusercontent.com/o/r/main/packages/a/package.json",
         );
-        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, {
-            ...rootWorkspaceContext,
-            current: "packages/a",
-        });
+        expect(loadPackageJsonText).toHaveBeenCalledWith(
+            PACKAGE_JSON,
+            { ...rootWorkspaceContext, current: "packages/a" },
+            { kind: "workspace", path: "packages/a" },
+        );
     });
 
     it("lists workspaces on branch holding package.json", async () => {
@@ -236,11 +246,15 @@ describe("workspaces", () => {
         expect(fetchMock.mock.calls.map(([url]) => url)).toContain(
             "https://api.github.com/repos/o/r/git/trees/master?recursive=1",
         );
-        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, {
-            ...rootWorkspaceContext,
-            repo: { ...monorepoRef, branch: "master" },
-            paths: ["packages/a"],
-        });
+        expect(loadPackageJsonText).toHaveBeenCalledWith(
+            monorepoRootJson,
+            {
+                ...rootWorkspaceContext,
+                repo: { ...monorepoRef, branch: "master" },
+                paths: ["packages/a"],
+            },
+            MONOREPO_SOURCE,
+        );
     });
 
     it("loads root with failed context for failed workspace listing", async () => {
@@ -257,11 +271,11 @@ describe("workspaces", () => {
 
         await loadFromUrlInput();
 
-        expect(loadPackageJsonText).toHaveBeenCalledWith(monorepoRootJson, {
-            ...rootWorkspaceContext,
-            paths: [],
-            failed: true,
-        });
+        expect(loadPackageJsonText).toHaveBeenCalledWith(
+            monorepoRootJson,
+            { ...rootWorkspaceContext, paths: [], failed: true },
+            MONOREPO_SOURCE,
+        );
         expect(loadError.value).toBeNull();
     });
 
@@ -287,7 +301,7 @@ describe("workspaces", () => {
         await slowLoad;
 
         expect(loadPackageJsonText).toHaveBeenCalledTimes(1);
-        expect(loadPackageJsonText).toHaveBeenCalledWith('{"name":"file"}', null);
+        expect(loadPackageJsonText).toHaveBeenCalledWith('{"name":"file"}', null, null);
         expect(loadError.value).toBeNull();
         expect(isLoadingInput.value).toBe(false);
     });
@@ -308,7 +322,96 @@ describe("workspaces", () => {
     });
 });
 
+describe("load result", () => {
+    it("loadUrl loads given URL, leaves URL input alone, resolves true", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => textResponse(PACKAGE_JSON)),
+        );
+        const { loadUrl, urlInput, loadPackageJsonText } = setup();
+
+        const loaded = await loadUrl("https://example.com/package.json");
+
+        expect(loaded).toBe(true);
+        expect(urlInput.value).toBe("");
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null, {
+            kind: "url",
+            url: "https://example.com/package.json",
+        });
+    });
+
+    it("resolves false for text rejected by loadPackageJsonText", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => textResponse("{bad")),
+        );
+        const { loadUrl, loadPackageJsonText } = setup();
+        loadPackageJsonText.mockReturnValue(false);
+
+        expect(await loadUrl("https://example.com/package.json")).toBe(false);
+    });
+
+    it("resolves false for invalid URL, failed fetch, missing file", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
+        );
+        const { loadUrl, loadDependency, loadWorkspace, loadFromFile } = setup();
+
+        expect(await loadUrl("example.com/package.json")).toBe(false);
+        expect(await loadUrl("https://example.com/package.json")).toBe(false);
+        expect(await loadDependency({ name: "ghost-pkg", version: "1.0.0" })).toBe(false);
+        expect(await loadWorkspace(rootWorkspaceContext, "packages/gone")).toBe(false);
+        expect(await loadFromFile(changeEvent({ files: [], value: "" }))).toBe(false);
+    });
+
+    it("resolves false for load dropped by newer load", async () => {
+        let resolveSlow: (response: unknown) => void;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveSlow = resolve;
+                    }),
+            ),
+        );
+        const { loadUrl, loadFromFile } = setup();
+
+        const slowLoad = loadUrl("https://slow.example/package.json");
+        const fileLoad = loadFromFile(
+            changeEvent({ files: [new File([PACKAGE_JSON], "package.json")], value: "" }),
+        );
+        resolveSlow!(textResponse(PACKAGE_JSON));
+
+        expect(await slowLoad).toBe(false);
+        expect(await fileLoad).toBe(true);
+    });
+});
+
 describe("loadDependency", () => {
+    it("tags loaded text with dependency name and range", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                jsonResponse({
+                    "dist-tags": { latest: "1.2.0" },
+                    versions: { "1.2.0": { name: "@scope/dep" } },
+                }),
+            ),
+        );
+        const { loadDependency, loadPackageJsonText } = setup();
+
+        const loaded = await loadDependency({ name: "@scope/dep", version: "^1.0.0" });
+
+        expect(loaded).toBe(true);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(
+            expect.stringContaining('"name": "@scope/dep"'),
+            null,
+            { kind: "dependency", name: "@scope/dep", version: "^1.0.0" },
+        );
+    });
+
     it("shows not-found error naming unknown package", async () => {
         vi.stubGlobal(
             "fetch",
@@ -354,7 +457,7 @@ describe("loadFromFile", () => {
 
         await loadFromFile(changeEvent(input));
 
-        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null);
+        expect(loadPackageJsonText).toHaveBeenCalledWith(PACKAGE_JSON, null, null);
         expect(input.value).toBe("");
     });
 });

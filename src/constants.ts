@@ -57,6 +57,11 @@ export const SETTINGS_FONT_SCALES = [0.875, 1, 1.125, 1.25] as const;
 export const SETTINGS_SPACE_SCALES = [0.75, 1, 1.25] as const;
 
 export const INPUT_URL_QUERY_PARAM = "inputUrl";
+/** Repeated query param; each value is one step of the shared drill-down chain. */
+export const SHARE_STEP_QUERY_PARAM = "step";
+/** Share links come from anyone; the caps bound the requests one link starts. */
+export const MAX_SHARE_STEPS = 20;
+export const MAX_SHARE_STEP_LENGTH = 2000;
 
 /** Cell text shown when a value is unavailable. */
 export const MISSING_VALUE = "-";

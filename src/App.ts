@@ -2,6 +2,7 @@ import { ref, computed, useId, defineComponent } from "vue";
 import { useColumnPreferences } from "./composables/useColumnPreferences";
 import { usePackageJsonHistory } from "./composables/usePackageJsonHistory";
 import { usePackageJsonSources } from "./composables/usePackageJsonSources";
+import { useShareState } from "./composables/useShareState";
 import DependenciesTable from "./components/DependenciesTable.vue";
 import ColumnVisibilityPanel from "./components/ColumnVisibilityPanel.vue";
 import Modal from "./components/Modal.vue";
@@ -66,9 +67,15 @@ export default defineComponent({
             loadFromClipboard,
             loadFromFile,
             loadFromUrlInput,
+            loadUrl,
             loadDependency,
             loadWorkspace,
         } = usePackageJsonSources(loadPackageJsonText, loadError);
+        const { replaySteps } = useShareState(history, historyIndex, {
+            loadUrl,
+            loadDependency,
+            loadWorkspace,
+        });
         const workspaceSelectId = useId();
         // Workspaces are listed only for a GitHub repo URL; other sources get a hint.
         const hasUnlistedWorkspaces = computed(
@@ -82,7 +89,9 @@ export default defineComponent({
             loadWorkspace(workspace.value, (event.target as HTMLSelectElement).value);
         }
 
+        // The built-in package.json stays the fallback view under a share link.
         loadPackageJsonText(JSON.stringify(appPackageJson, null, JSON_INDENT));
+        replaySteps();
 
         const tableSections = computed(() => [
             {
