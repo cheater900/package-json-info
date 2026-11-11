@@ -17,6 +17,7 @@ import {
 } from "../utils/githubTokenStorage";
 import { formatPercent } from "../utils/percent";
 import { settle } from "../utils/settle";
+import IconGear from "./IconGear.vue";
 
 type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
 
@@ -27,6 +28,7 @@ type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
  * display selects write straight to `settings`.
  */
 export default defineComponent({
+    components: { IconGear },
     setup() {
         const panelId = useId();
         const isOpen = ref(false);

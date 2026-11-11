@@ -8,6 +8,7 @@ import Modal from "./components/Modal.vue";
 import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
+import IconUpload from "./components/IconUpload.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import appPackageJson from "../package.json";
@@ -29,6 +30,7 @@ export default defineComponent({
         SourceTreeBrowser,
         PackageSummaryCard,
         SettingsMenu,
+        IconUpload,
         VueJsonPretty,
     },
     setup() {
