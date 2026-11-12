@@ -5,6 +5,8 @@
     --bg: #010401;
     --border: #1e5c2e;
     --code-bg: #0a1a0d;
+    /* Page and wide modals: 10% side margin on big screens, full width below 1024px. */
+    --content-width: 80vw;
     --error: #ff5555;
     --font-scale: 1;
     --glow: currentColor;
@@ -30,6 +32,7 @@
     text-shadow: 0 0 1px var(--glow);
 
     @media (max-width: 1024px) {
+        --content-width: 100vw;
         font-size: calc(16px * var(--font-scale));
     }
 }
@@ -140,7 +143,7 @@ code {
     max-width: 100%;
     min-height: 100svh;
     text-align: center;
-    width: 1126px;
+    width: var(--content-width);
 }
 
 .terminal-titlebar {
