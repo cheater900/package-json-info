@@ -34,7 +34,9 @@ describe("App", () => {
     it("renders Deps and Dev Deps tables", async () => {
         const wrapper = await mountApp();
 
-        const summaries = wrapper.findAll("details.accordion summary").map((s) => s.text());
+        const summaries = wrapper
+            .findAll("details.accordion summary")
+            .map((s) => s.text().replace("⤢", "").trim());
         expect(summaries).toEqual(["Columns", "Deps", "Dev Deps", "package.json"]);
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
     });
@@ -42,8 +44,9 @@ describe("App", () => {
     it("expand button opens table modal, close removes modal", async () => {
         const wrapper = await mountApp();
 
-        await wrapper.findAll(".table-toolbar__expand")[1].trigger("click");
+        await wrapper.findAll(".accordion__expand")[1].trigger("click");
 
+        expect(wrapper.findAll("details.accordion")[2].attributes("open")).toBeDefined();
         expect(document.body.querySelector(".modal .table-modal-content")).not.toBeNull();
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(3);
         await wrapper.findComponent({ name: "Modal" }).vm.$emit("close");
@@ -114,38 +117,26 @@ describe("App", () => {
                 .find((row: { name: string }) => row.name === "zod");
         }
 
-        it("retry button replaces failed row in table", async () => {
+        it("retry failed fetches button replaces failed row, then hides", async () => {
             const recover = stubZodRegistryDown();
             const wrapper = await mountApp();
             expect(zodRow(wrapper)).toMatchObject({ error: "Failed to fetch" });
             recover();
 
-            await wrapper.find('[aria-label="Retry lookups for zod"]').trigger("click");
+            await wrapper.find(".table-retry").trigger("click");
             await flushPromises();
 
             expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
-            expect(wrapper.find('[aria-label="Retry lookups for zod"]').exists()).toBe(false);
+            expect(wrapper.find(".table-retry").exists()).toBe(false);
         });
 
-        it("summary card retry shows refetched row", async () => {
-            const recover = stubZodRegistryDown();
+        it("shows retry failed fetches button only under table with failed row", async () => {
+            stubZodRegistryDown();
             const wrapper = await mountApp();
-            wrapper
-                .findAllComponents(DependenciesTable)[0]
-                .vm.$emit("select-package", zodRow(wrapper));
-            await flushPromises();
-            recover();
 
-            await wrapper
-                .findComponent(PackageSummaryCard)
-                .find(".package-summary__retry")
-                .trigger("click");
-            await flushPromises();
-
-            expect(wrapper.findComponent(PackageSummaryCard).props("dependency")).toMatchObject({
-                name: "zod",
-                latestVersion: "1.0.0",
-            });
+            const buttons = wrapper.findAll(".table-retry");
+            expect(buttons).toHaveLength(1);
+            expect(buttons[0].text()).toContain("Retry failed fetches");
         });
     });
 

@@ -16,8 +16,8 @@ Condensed from git history. Newest month first.
 #### Package data
 
 - **Failed lookups** show `?` with the error as tooltip; `-` now means
-  only "no data". A **retry button** refetches one row that failed, is
-  stale or has a failed lookup.
+  only "no data". A **Retry failed fetches** button below each table
+  refetches its rows that failed, are stale or have a failed lookup.
 - **Health score** column, 0 to 100 with a good, fair or poor band, from
   release age, deprecation, outdated version, maintainer count, open issue
   ratio and vulnerabilities. It uses only data the row already has; a

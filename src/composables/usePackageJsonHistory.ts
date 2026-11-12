@@ -9,6 +9,7 @@ import {
     columnsMissingFrom,
     entryCoversColumns,
     isEntryCacheValid,
+    isRowRetryable,
 } from "../utils/packageJsonHistory";
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
 import type { DependencyMap, PackageJson } from "../utils/packageJson";
@@ -22,11 +23,14 @@ function toPackageInputs(dependencies: DependencyMap | undefined) {
     return Object.entries(dependencies ?? {}).map(([name, version]) => ({ name, version }));
 }
 
-/** `rows` with each row of `replacement`'s name and version swapped for it. */
-function replaceRow(rows: DependencyRow[], replacement: DependencyRow): DependencyRow[] {
-    return rows.map((row) =>
-        row.name === replacement.name && row.version === replacement.version ? replacement : row,
-    );
+function rowKey(row: PackageInput) {
+    return `${row.name}@${row.version}`;
+}
+
+/** `rows` with each row of a replacement's name and version swapped for it. */
+function replaceRows(rows: DependencyRow[], replacements: DependencyRow[]): DependencyRow[] {
+    const byKey = new Map(replacements.map((row) => [rowKey(row), row]));
+    return rows.map((row) => byKey.get(rowKey(row)) ?? row);
 }
 
 /**
@@ -59,8 +63,8 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     // Latest fetch started per entry. A slower, older fetch for the same entry
     // (e.g. columns toggled mid-fetch) finishes later and must not win.
     const latestFetchByEntry = new WeakMap<HistoryEntry, symbol>();
-    // Names of rows whose retry is in flight; a name is one row per table.
-    const retryingPackages = ref(new Set<string>());
+    // True while a retry of failed rows is in flight.
+    const isRetrying = ref(false);
 
     function isCurrentEntry(entry: HistoryEntry) {
         return history.value[historyIndex.value] === entry;
@@ -205,44 +209,40 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     }
 
     /**
-     * Refetches one package of the current entry under the current columns
-     * and swaps it into the entry's cache and both tables (a package can be
-     * in deps and devDeps). Failed lookups were evicted from the memo
-     * caches, so the refetch goes live. Applies only while the same entry
-     * is current and no full fetch started since; else the fresher rows win.
-     * Skipped while a full fetch runs: it refetches the row anyway.
-     *
-     * @returns The new row, or null when it was not applied.
+     * Refetches the retryable rows among `rows` (one table's rows) under the
+     * current columns and swaps them into the entry's cache and both tables
+     * (a package can be in deps and devDeps). Failed lookups were evicted
+     * from the memo caches, so the refetch goes live. Applies only while the
+     * same entry is current and no full fetch started since; else the
+     * fresher rows win. Skipped while a full fetch runs: it refetches the
+     * rows anyway.
      */
-    async function retryRow(input: PackageInput): Promise<DependencyRow | null> {
+    async function retryFailedRows(rows: readonly DependencyRow[]): Promise<void> {
         const entry = history.value[historyIndex.value];
         const isFetching =
             isLoadingDeps.value || isLoadingDevDeps.value || pendingColumns.value.size > 0;
-        if (
-            !entry?.deps ||
-            !entry.devDeps ||
-            isFetching ||
-            retryingPackages.value.has(input.name)
-        ) {
-            return null;
+        const inputs = rows.filter(isRowRetryable).map(({ name, version }) => ({ name, version }));
+        if (!entry?.deps || !entry.devDeps || isFetching || isRetrying.value) {
+            return;
+        }
+        if (inputs.length === 0) {
+            return;
         }
         const fetchToken = latestFetchByEntry.get(toRaw(entry));
-        retryingPackages.value.add(input.name);
-        const rows = await fetchPackagesInfo([input], {
+        isRetrying.value = true;
+        const retried = await fetchPackagesInfo(inputs, {
             visibleColumns: new Set(visibleColumns.value),
         });
-        retryingPackages.value.delete(input.name);
+        isRetrying.value = false;
         const isStillWanted =
             isCurrentEntry(entry) && latestFetchByEntry.get(toRaw(entry)) === fetchToken;
-        if (!rows || !isStillWanted) {
-            return null;
+        if (!retried || !isStillWanted) {
+            return;
         }
-        const [row] = rows;
-        entry.deps = replaceRow(entry.deps, row);
-        entry.devDeps = replaceRow(entry.devDeps, row);
+        entry.deps = replaceRows(entry.deps, retried);
+        entry.devDeps = replaceRows(entry.devDeps, retried);
         deps.value = entry.deps;
         devDeps.value = entry.devDeps;
-        return row;
     }
 
     /**
@@ -303,7 +303,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         goBack,
         goForward,
         loadPackageJsonText,
-        retryingPackages,
-        retryRow,
+        isRetrying,
+        retryFailedRows,
     };
 }

@@ -598,8 +598,7 @@ describe("settings refetch", () => {
     });
 });
 
-describe("retryRow", () => {
-    const PKG = { name: "pkg", version: "1.0.0" };
+describe("retryFailedRows", () => {
     const DOWNLOADS_URL = "last-week/pkg";
 
     type PendingRequest = {
@@ -646,8 +645,8 @@ describe("retryRow", () => {
         return { ...history, answer };
     }
 
-    it("replaces row in deps, devDeps and entry cache", async () => {
-        const { deps, devDeps, history, retryRow, answer } = await loadWithFailedDownloads({
+    it("replaces failed rows in deps, devDeps and entry cache", async () => {
+        const { deps, devDeps, history, retryFailedRows, answer } = await loadWithFailedDownloads({
             dependencies: { pkg: "1.0.0" },
             devDependencies: { pkg: "1.0.0" },
         });
@@ -655,71 +654,93 @@ describe("retryRow", () => {
             failedLookups: { weeklyDownloads: "Failed to fetch" },
         });
 
-        const retry = retryRow(PKG);
+        const retry = retryFailedRows(deps.value);
         await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
 
         const expected = { name: "pkg", weeklyDownloads: 5, failedLookups: null };
-        expect(await retry).toMatchObject(expected);
         expect(deps.value[0]).toMatchObject(expected);
         expect(devDeps.value[0]).toMatchObject(expected);
         expect(history.value[0].deps![0]).toMatchObject(expected);
         expect(history.value[0].devDeps![0]).toMatchObject(expected);
     });
 
-    it("marks package retrying until refetch ends", async () => {
-        const { retryRow, retryingPackages, answer } = await loadWithFailedDownloads({
+    it("refetches only retryable rows", async () => {
+        const { deps, retryFailedRows, answer } = await loadWithFailedDownloads({
             dependencies: { pkg: "1.0.0" },
         });
+        const liveRow = { ...(deps.value[0] as PackageInfo), name: "live", failedLookups: null };
+        const callsBefore = vi.mocked(fetch).mock.calls.length;
 
-        const retry = retryRow(PKG);
-
-        expect(retryingPackages.value.has("pkg")).toBe(true);
-        expect(await retryRow(PKG)).toBeNull();
+        const retry = retryFailedRows([...deps.value, liveRow]);
         await answer(DOWNLOADS_URL, { downloads: 5 });
         await retry;
-        expect(retryingPackages.value.has("pkg")).toBe(false);
+
+        const retriedUrls = vi
+            .mocked(fetch)
+            .mock.calls.slice(callsBefore)
+            .map(([url]) => url);
+        expect(retriedUrls).toEqual([expect.stringContaining(DOWNLOADS_URL)]);
+    });
+
+    it("flags retry in flight, ignores second retry meanwhile", async () => {
+        const { deps, retryFailedRows, isRetrying, answer } = await loadWithFailedDownloads({
+            dependencies: { pkg: "1.0.0" },
+        });
+        const callsBefore = vi.mocked(fetch).mock.calls.length;
+
+        const retry = retryFailedRows(deps.value);
+        await retryFailedRows(deps.value);
+
+        expect(isRetrying.value).toBe(true);
+        expect(vi.mocked(fetch).mock.calls.length).toBe(callsBefore + 1);
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
+        expect(isRetrying.value).toBe(false);
     });
 
     it("drops result once entry switched mid-retry", async () => {
-        const { deps, history, loadPackageJsonText, retryRow, answer } =
+        const { deps, history, loadPackageJsonText, retryFailedRows, answer } =
             await loadWithFailedDownloads({ dependencies: { pkg: "1.0.0" } });
 
-        const retry = retryRow(PKG);
+        const retry = retryFailedRows(deps.value);
         loadPackageJsonText(JSON.stringify({ dependencies: { other: "1.0.0" } }));
         await answer("/other", { downloads: 1 });
         await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
 
-        expect(await retry).toBeNull();
         expect(deps.value.map((d) => d.name)).toEqual(["other"]);
         expect(history.value[0].deps![0]).toMatchObject({ weeklyDownloads: null });
     });
 
     it("drops result once newer full fetch replaced rows", async () => {
         const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
-        const { deps, retryRow, answer } = await loadWithFailedDownloads(
+        const { deps, retryFailedRows, answer } = await loadWithFailedDownloads(
             { dependencies: { pkg: "1.0.0" } },
             visibleColumns,
         );
 
-        const retry = retryRow(PKG);
+        const retry = retryFailedRows(deps.value);
         visibleColumns.value = new Set(["vulnerabilityCount"]);
         await nextTick();
         await answer("api.osv.dev", { vulns: [] });
         await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
 
-        expect(await retry).toBeNull();
         expect(deps.value[0]).toMatchObject({ vulnerabilityCount: 0, weeklyDownloads: null });
     });
 
     it("skips retry while full fetch runs", async () => {
         const answer = pendingFetch();
-        const { loadPackageJsonText, retryRow, retryingPackages } = useHistory(
+        const { loadPackageJsonText, retryFailedRows, isRetrying } = useHistory(
             ref(new Set(["weeklyDownloads"])),
         );
         loadPackageJsonText(JSON.stringify({ dependencies: { pkg: "1.0.0" } }));
 
-        expect(await retryRow(PKG)).toBeNull();
-        expect(retryingPackages.value.size).toBe(0);
+        await retryFailedRows([{ name: "pkg", version: "1.0.0", error: "Failed to fetch" }]);
+
+        expect(isRetrying.value).toBe(false);
+        expect(vi.mocked(fetch).mock.calls).toHaveLength(1);
         await answer("npmjs.org", minimalRegistryDoc);
     });
 });

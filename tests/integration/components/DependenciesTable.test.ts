@@ -738,7 +738,7 @@ describe("DependenciesTable failed rows", () => {
     });
 });
 
-describe("DependenciesTable retry button", () => {
+describe("DependenciesTable retryable rows", () => {
     const errorRow = { name: "broken", version: "1.0.0", error: "503" };
     const staleRow = { ...fullDependency, name: "stale", staleSince: "2024-03-05T12:00:00.000Z" };
     const failedRow = {
@@ -747,42 +747,16 @@ describe("DependenciesTable retry button", () => {
         failedLookups: { weeklyDownloads: "Request failed with status 503" },
     };
 
-    function mountTable(dependencies: DependencyRow[], retryingPackages = new Set<string>()) {
+    function mountTable(dependencies: DependencyRow[]) {
         return mount(DependenciesTable, {
-            props: { dependencies, columns: ["weeklyDownloads"], retryingPackages },
+            props: { dependencies, columns: ["weeklyDownloads"] },
         });
     }
 
-    it("shows for error, stale and failed-lookup rows only", () => {
+    it("shows no retry button in rows", () => {
         const wrapper = mountTable([fullDependency, errorRow, staleRow, failedRow]);
 
-        const labels = wrapper
-            .findAll(".deps-table__retry")
-            .map((button) => button.attributes("aria-label"));
-        expect(labels).toEqual([
-            "Retry lookups for broken",
-            "Retry lookups for stale",
-            "Retry lookups for failed",
-        ]);
-    });
-
-    it("emits retry-package, not load-package or select-package", async () => {
-        const wrapper = mountTable([failedRow]);
-
-        await wrapper.find(".deps-table__retry").trigger("click");
-
-        expect(wrapper.emitted("retry-package")).toEqual([[{ name: "failed", version: "1.2.0" }]]);
-        expect(wrapper.emitted("load-package")).toBeUndefined();
-        expect(wrapper.emitted("select-package")).toBeUndefined();
-    });
-
-    it("disables button of retrying row", () => {
-        const wrapper = mountTable([errorRow, failedRow], new Set(["broken"]));
-
-        const disabled = wrapper
-            .findAll(".deps-table__retry")
-            .map((button) => button.attributes("disabled") !== undefined);
-        expect(disabled).toEqual([true, false]);
+        expect(wrapper.find(".deps-table__name-cell button").exists()).toBe(false);
     });
 
     it("shows '?' in failed column cell", () => {

@@ -122,36 +122,44 @@
                     {{ t("sections.shrinkColumnLabels") }}
                 </label>
             </div>
-
-            <export-menu
-                :document="exportDocument"
-                :file-base-name="exportFileName"
-                :disabled="isLoadingTables"
-            />
         </div>
 
         <details v-for="section in tableSections" :key="section.id" class="accordion" open>
             <summary>
                 {{ section.title }}
                 <span v-if="section.isLoading">{{ t("sections.loading") }}</span>
-            </summary>
-            <div class="table-toolbar">
                 <button
                     type="button"
-                    class="table-toolbar__expand"
+                    class="accordion__expand"
                     :aria-label="t('sections.expandTable')"
-                    @click="expandTable(section.id)"
+                    @click.prevent="expandTable(section.id)"
                 >
                     ⤢
                 </button>
-            </div>
+            </summary>
             <dependencies-table
                 v-bind="tableProps"
                 :dependencies="section.dependencies"
                 :is-loading="section.isLoading"
                 v-on="tableListeners"
             />
+            <button
+                v-if="section.hasRetryableRows && !section.isLoading"
+                type="button"
+                class="table-retry"
+                :disabled="isRetrying"
+                @click="retryFailedRows(section.dependencies)"
+            >
+                <span class="btn-icon" aria-hidden="true">↻</span>
+                {{ t("sections.retryFailed") }}
+            </button>
         </details>
+        <export-menu
+            class="table-export"
+            :document="exportDocument"
+            :file-base-name="exportFileName"
+            :disabled="isLoadingTables"
+        />
         <details class="accordion" open>
             <summary>{{ t("sections.packageJson") }}</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
@@ -169,9 +177,7 @@
             <package-summary-card
                 v-else-if="modalContent.kind === 'summary'"
                 :dependency="modalContent.dependency"
-                :is-retrying="retryingPackages.has(modalContent.dependency.name)"
                 @open-source-tree="openSourceTree"
-                @retry-package="retryPackage"
             />
             <source-tree-browser
                 v-else-if="modalContent.kind === 'sourceTree'"

@@ -65,21 +65,6 @@
                         <tooltip v-if="staleNoteFor(dependency)" :text="staleNoteFor(dependency)">
                             <span class="deps-table__stale-badge">{{ t("table.stale") }}</span>
                         </tooltip>
-                        <button
-                            v-if="isRowRetryable(dependency)"
-                            type="button"
-                            class="deps-table__retry"
-                            :aria-label="t('table.retryLabel', { name: dependency.name })"
-                            :disabled="retryingPackages.has(dependency.name)"
-                            @click.stop="
-                                $emit('retry-package', {
-                                    name: dependency.name,
-                                    version: dependency.version,
-                                })
-                            "
-                        >
-                            {{ t("table.retry") }}
-                        </button>
                         <span class="deps-table__name-arrow" aria-hidden="true">→</span>
                     </span>
                 </td>

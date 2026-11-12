@@ -93,31 +93,13 @@ describe("PackageSummaryCard failed package", () => {
     });
 });
 
-describe("PackageSummaryCard retry", () => {
+describe("PackageSummaryCard failed row", () => {
     const failed = { ...fullDependency, failedLookups: { gitStars: "Failed to fetch" } };
 
-    it("emits retry-package for row with failed lookup", async () => {
+    it("shows no retry button for failed row", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: failed } });
 
-        await wrapper.find(".package-summary__retry").trigger("click");
-
-        expect(wrapper.emitted("retry-package")).toEqual([
-            [{ name: "left-pad", version: "1.2.0" }],
-        ]);
-    });
-
-    it("disables button while retrying", () => {
-        const wrapper = mount(PackageSummaryCard, {
-            props: { dependency: failed, isRetrying: true },
-        });
-
-        expect(wrapper.find(".package-summary__retry").attributes("disabled")).toBeDefined();
-    });
-
-    it("shows no button on live package", () => {
-        const wrapper = mount(PackageSummaryCard, { props: { dependency: fullDependency } });
-
-        expect(wrapper.find(".package-summary__retry").exists()).toBe(false);
+        expect(wrapper.find("button").exists()).toBe(false);
     });
 
     it("shows '?' with tooltip for failed column", () => {

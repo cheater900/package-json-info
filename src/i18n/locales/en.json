@@ -86,6 +86,7 @@
         "packageJson": "package.json",
         "loading": "(loading…)",
         "expandTable": "Expand table",
+        "retryFailed": "Retry failed fetches",
         "shrinkColumnLabels": "Shrink columns by abbreviation"
     },
     "columns": {
@@ -121,9 +122,7 @@
         "viewTree": "View tree",
         "stale": "stale",
         "staleNote": "Cached data from {date}; live lookup failed.",
-        "lookupFailed": "Lookup failed: {error}",
-        "retry": "↻",
-        "retryLabel": "Retry lookups for {name}"
+        "lookupFailed": "Lookup failed: {error}"
     },
     "cell": {
         "yes": "Yes",
