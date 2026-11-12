@@ -3,7 +3,7 @@ import { mount, flushPromises } from "@vue/test-utils";
 import App from "../../src/App.vue";
 import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
 import DependenciesTable from "../../src/components/DependenciesTable.vue";
-import ExportMenu from "../../src/components/ExportMenu.vue";
+import ExportDialog from "../../src/components/ExportDialog.vue";
 import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
 import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
 import { clearPackageInfoCache } from "../../src/api/npmPackage";
@@ -95,10 +95,28 @@ describe("App", () => {
         expect(document.body.querySelectorAll(".modal")).toHaveLength(1);
     });
 
-    it("disables export while shown column loads", async () => {
+    it("Export button opens dialog with package name, tables and visible columns", async () => {
         const wrapper = await mountApp();
-        const exportMenu = wrapper.findComponent(ExportMenu);
-        expect(exportMenu.props("disabled")).toBe(false);
+
+        await wrapper.find("button.table-export").trigger("click");
+
+        const dialog = wrapper.findComponent(ExportDialog);
+        expect(dialog.props("title")).toBe("package-json-info");
+        expect(dialog.props("tables").map((table: { id: string }) => table.id)).toEqual([
+            "deps",
+            "devDeps",
+        ]);
+        expect(dialog.props("initialColumns")).toContain("version");
+        expect(dialog.props("initialColumns")).not.toContain("vulnerabilityCount");
+        dialog.vm.$emit("close");
+        await flushPromises();
+        expect(document.body.querySelector(".modal")).toBeNull();
+    });
+
+    it("disables Export while shown column loads", async () => {
+        const wrapper = await mountApp();
+        const button = wrapper.find("button.table-export");
+        expect(button.attributes("disabled")).toBeUndefined();
         stubFetchPending();
 
         wrapper
@@ -106,29 +124,35 @@ describe("App", () => {
             .vm.$emit("toggle-column", "vulnerabilityCount");
         await flushPromises();
 
-        expect(exportMenu.props("disabled")).toBe(true);
+        expect(button.attributes("disabled")).toBeDefined();
     });
 
-    it("disables export while tables load", async () => {
+    it("disables Export while tables load", async () => {
         stubFetchPending();
 
         const wrapper = await mountApp();
 
-        expect(wrapper.findComponent(ExportMenu).props("disabled")).toBe(true);
+        expect(wrapper.find("button.table-export").attributes("disabled")).toBeDefined();
     });
 
-    it("exports searched rows under package name", async () => {
+    it("dialog column fetch leaves tables unchanged", async () => {
         const wrapper = await mountApp();
+        const tables = wrapper.findAllComponents(DependenciesTable);
+        const rowsBefore = tables.map((table) => table.props("dependencies"));
+        await wrapper.find("button.table-export").trigger("click");
+        stubFetchPending();
 
-        await wrapper.find(".search-shrink-row__search input").setValue("vue");
+        await wrapper
+            .findComponent(ExportDialog)
+            .find('input[value="vulnerabilityCount"]')
+            .setValue(true);
+        await flushPromises();
 
-        const exportMenu = wrapper.findComponent(ExportMenu);
-        const { title, sections } = exportMenu.props("document");
-        const names = sections.flatMap((s: { rows: string[][] }) => s.rows.map((row) => row[0]));
-        expect(title).toBe("package-json-info");
-        expect(exportMenu.props("fileBaseName")).toBe("package-json-info-dependencies");
-        expect(names.length).toBeGreaterThan(0);
-        expect(names.every((name: string) => name.includes("vue"))).toBe(true);
+        expect(document.body.querySelector(".export-dialog [role='status']")).not.toBeNull();
+        expect(tables[0].props("dependencies")).toBe(rowsBefore[0]);
+        expect(tables[1].props("dependencies")).toBe(rowsBefore[1]);
+        expect(tables[0].props("pendingColumns")).toEqual(new Set());
+        expect(tables[0].props("isLoading")).toBe(false);
     });
 
     it("names export after package.json for package without name", async () => {
@@ -145,10 +169,9 @@ describe("App", () => {
         await wrapper.find("#url-input").setValue("https://example.test/package.json");
         await wrapper.find("form.input-methods__url-form").trigger("submit");
         await flushPromises();
+        await wrapper.find("button.table-export").trigger("click");
 
-        const exportMenu = wrapper.findComponent(ExportMenu);
-        expect(exportMenu.props("document").title).toBe("package.json");
-        expect(exportMenu.props("fileBaseName")).toBe("package-json-dependencies");
+        expect(wrapper.findComponent(ExportDialog).props("title")).toBe("package.json");
     });
 
     describe("retry", () => {

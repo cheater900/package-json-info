@@ -1,0 +1,70 @@
+.export-dialog {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 100%;
+    /* Top padding clears Modal's floating close button. */
+    padding: calc(40px * var(--space-scale)) calc(16px * var(--space-scale))
+        calc(16px * var(--space-scale));
+    text-align: left;
+    width: 800px;
+}
+
+.export-dialog__title {
+    font-size: calc(22px * var(--font-scale));
+    margin: 0;
+}
+
+.export-dialog__section {
+    border: 1px solid var(--border);
+    margin: 0;
+    padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
+}
+
+.export-dialog__columns {
+    display: grid;
+    gap: 0 24px;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.export-dialog__option {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    padding: calc(3px * var(--space-scale)) 0;
+    white-space: nowrap;
+}
+
+.export-dialog__hint {
+    color: var(--warning);
+    font-size: 0.875em;
+    margin: 4px 0 0;
+}
+
+.export-dialog__format {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.export-dialog__format select {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text-h);
+    font-family: var(--mono);
+    padding: calc(4px * var(--space-scale)) calc(8px * var(--space-scale));
+}
+
+.export-dialog__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.export-dialog__error {
+    color: var(--error);
+}

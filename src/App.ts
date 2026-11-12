@@ -10,7 +10,7 @@ import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
 import IconUpload from "./components/IconUpload.vue";
-import ExportMenu from "./components/ExportMenu.vue";
+import ExportDialog from "./components/ExportDialog.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import appPackageJson from "../package.json";
@@ -18,13 +18,13 @@ import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
 import { isRowRetryable } from "./utils/packageJsonHistory";
-import { buildExportDocument, exportFileBaseName } from "./utils/export/buildExportDocument";
-import type { DependencyRow, PackageInfo } from "./types";
+import type { DependencyListId, DependencyRow, PackageInfo } from "./types";
 
 type ModalContent =
     | { kind: "table"; sectionId: string }
     | { kind: "sourceTree"; dependency: PackageInfo }
-    | { kind: "summary"; dependency: DependencyRow };
+    | { kind: "summary"; dependency: DependencyRow }
+    | { kind: "export" };
 
 export default defineComponent({
     components: {
@@ -35,7 +35,7 @@ export default defineComponent({
         PackageSummaryCard,
         SettingsMenu,
         IconUpload,
-        ExportMenu,
+        ExportDialog,
         VueJsonPretty,
     },
     setup() {
@@ -69,6 +69,8 @@ export default defineComponent({
             loadPackageJsonText,
             isRetrying,
             retryFailedRows,
+            fetchedColumns,
+            fetchRowsWithColumns,
         } = usePackageJsonHistory(visibleColumns);
         const {
             isLoadingInput,
@@ -104,14 +106,14 @@ export default defineComponent({
 
         const tableSections = computed(() => [
             {
-                id: "deps",
+                id: "deps" as DependencyListId,
                 title: t("sections.deps"),
                 dependencies: deps.value,
                 isLoading: isLoadingDeps.value,
                 hasRetryableRows: deps.value.some(isRowRetryable),
             },
             {
-                id: "devDeps",
+                id: "devDeps" as DependencyListId,
                 title: t("sections.devDeps"),
                 dependencies: devDeps.value,
                 isLoading: isLoadingDevDeps.value,
@@ -119,16 +121,8 @@ export default defineComponent({
             },
         ]);
 
-        const exportDocument = computed(() =>
-            buildExportDocument(
-                pkg.value?.name || t("export.untitled"),
-                tableSections.value,
-                visibleColumnKeys.value,
-                searchQuery.value,
-            ),
-        );
-        const exportFileName = computed(() => exportFileBaseName(exportDocument.value.title));
-        // Pending columns hold no data yet; an export now would write them as missing.
+        const exportTitle = computed(() => pkg.value?.name || t("export.untitled"));
+        // Export waits for tables and pending columns: the dialog reuses the rows they cache.
         const isLoadingTables = computed(
             () => pendingColumns.value.size > 0 || tableSections.value.some((s) => s.isLoading),
         );
@@ -151,6 +145,10 @@ export default defineComponent({
 
         function showPackageSummary(dependency: DependencyRow) {
             modalContent.value = { kind: "summary", dependency };
+        }
+
+        function openExport() {
+            modalContent.value = { kind: "export" };
         }
 
         function closeModal() {
@@ -198,9 +196,12 @@ export default defineComponent({
             loadFromFile,
             loadFromUrlInput,
             tableSections,
-            exportDocument,
-            exportFileName,
+            exportTitle,
             isLoadingTables,
+            visibleColumnKeys,
+            fetchedColumns,
+            fetchRowsWithColumns,
+            openExport,
             tableProps,
             tableListeners,
             modalContent,

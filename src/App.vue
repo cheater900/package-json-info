@@ -154,12 +154,9 @@
                 {{ t("sections.retryFailed") }}
             </button>
         </details>
-        <export-menu
-            class="table-export"
-            :document="exportDocument"
-            :file-base-name="exportFileName"
-            :disabled="isLoadingTables"
-        />
+        <button type="button" class="table-export" :disabled="isLoadingTables" @click="openExport">
+            {{ t("export.open") }}
+        </button>
         <details class="accordion" open>
             <summary>{{ t("sections.packageJson") }}</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
@@ -183,6 +180,16 @@
                 v-else-if="modalContent.kind === 'sourceTree'"
                 :dependency-name="modalContent.dependency.name"
                 :source-tree="modalContent.dependency.sourceTree"
+            />
+            <export-dialog
+                v-else-if="modalContent.kind === 'export'"
+                :tables="tableSections"
+                :column-order="columnOrder"
+                :initial-columns="visibleColumnKeys"
+                :fetched-columns="fetchedColumns"
+                :title="exportTitle"
+                :load-rows="fetchRowsWithColumns"
+                @close="closeModal"
             />
         </modal>
     </div>

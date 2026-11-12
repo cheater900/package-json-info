@@ -15,7 +15,7 @@ import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson"
 import type { DependencyMap, PackageJson } from "../utils/packageJson";
 import type { EntrySource, HistoryEntry } from "../utils/packageJsonHistory";
 import type { WorkspaceContext } from "../utils/workspaces";
-import type { DependencyRow, PackageInput } from "../types";
+import type { DependencyListId, DependencyRow, PackageInput } from "../types";
 import { t } from "../i18n";
 import { githubToken, settings } from "../settings";
 
@@ -69,6 +69,11 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     function isCurrentEntry(entry: HistoryEntry) {
         return history.value[historyIndex.value] === entry;
     }
+
+    // Columns the current entry's rows hold data for; empty until its first fetch ends.
+    const fetchedColumns = computed<ReadonlySet<string>>(
+        () => history.value[historyIndex.value]?.visibleColumnsSnapshot ?? new Set(),
+    );
 
     /**
      * Validates raw package.json text and, on success, records it as a new
@@ -254,6 +259,32 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     }
 
     /**
+     * Current entry's rows of `list` holding every column in `columns`; null
+     * once the entry changed. Cached rows that cover `columns` come back
+     * without a fetch; else only lookups missing from the memo caches hit the
+     * network. Leaves `deps`, `devDeps` and the entry cache untouched, so the
+     * tables neither reload nor change.
+     */
+    async function fetchRowsWithColumns(
+        list: DependencyListId,
+        columns: ReadonlySet<string>,
+    ): Promise<DependencyRow[] | null> {
+        const entry = history.value[historyIndex.value];
+        if (!entry) {
+            return null;
+        }
+        if (entryCoversColumns(entry, columns)) {
+            return entry[list];
+        }
+        const dependencies = list === "deps" ? entry.pkg.dependencies : entry.pkg.devDependencies;
+        const rows = await fetchPackagesInfo(toPackageInputs(dependencies), {
+            visibleColumns: new Set(columns),
+            isCancelled: () => !isCurrentEntry(entry),
+        });
+        return isCurrentEntry(entry) ? rows : null;
+    }
+
+    /**
      * Drops every entry's column snapshot so each one refetches when shown,
      * then refetches the current one. Cells that failed earlier (rate limit,
      * proxy) are cached as missing until then. Fetches still in flight
@@ -313,5 +344,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         loadPackageJsonText,
         isRetrying,
         retryFailedRows,
+        fetchedColumns,
+        fetchRowsWithColumns,
     };
 }

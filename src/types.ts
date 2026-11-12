@@ -53,3 +53,6 @@ export type PackageError = {
 
 /** One table row: fetched metadata, or the error that stopped the fetch. */
 export type DependencyRow = PackageInfo | PackageError;
+
+/** Which package.json dependency list a table shows. */
+export type DependencyListId = "deps" | "devDeps";

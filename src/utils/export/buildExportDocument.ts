@@ -1,7 +1,7 @@
 import { FAILED_VALUE, MISSING_VALUE } from "../../constants";
 import { t } from "../../i18n";
 import type { DependencyRow, PackageInfo } from "../../types";
-import { filterRowsByName, formatCell } from "../dependencyRowFormatting";
+import { formatCell } from "../dependencyRowFormatting";
 import { NAME_COLUMN_KEY, toggleableColumnsFor } from "../tableColumns";
 import type { ColumnDef } from "../tableColumns";
 import type { ExportDocument, ExportSection } from "./types";
@@ -38,24 +38,21 @@ function rowCells(columns: ColumnDef[], row: DependencyRow): string[] {
 }
 
 /**
- * Builds the export of what the tables show: Name, then the visible columns
- * in display order, rows filtered by `searchQuery`. Button columns carry no
- * data and are dropped; link columns export their URL.
+ * Builds the export of every row of `tables`: Name, then the `columnKeys`
+ * columns in that order. Button columns carry no data and are dropped; link
+ * columns export their URL.
  */
 export function buildExportDocument(
     title: string,
     tables: ExportTableInput[],
-    visibleColumnKeys: readonly string[],
-    searchQuery: string,
+    columnKeys: readonly string[],
 ): ExportDocument {
-    const columns = toggleableColumnsFor(visibleColumnKeys).filter((c) => c.render !== "button");
+    const columns = toggleableColumnsFor(columnKeys).filter((c) => c.render !== "button");
     const headers = [t(`columns.${NAME_COLUMN_KEY}`), ...columns.map((c) => c.label)];
     const sections: ExportSection[] = tables.map((table) => ({
         title: table.title,
         headers,
-        rows: filterRowsByName(table.dependencies, searchQuery).map((row) =>
-            rowCells(columns, row),
-        ),
+        rows: table.dependencies.map((row) => rowCells(columns, row)),
     }));
     return { title, sectionHeader: t("export.sectionHeader"), sections };
 }

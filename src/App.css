@@ -180,8 +180,10 @@ textarea {
     opacity: 0.8;
 }
 
+/* Block-level flex with auto left margin: right-aligned below the tables. */
 .table-export {
-    margin-bottom: 16px;
+    display: flex;
+    margin: 0 0 16px auto;
 }
 
 .table-retry {
