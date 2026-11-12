@@ -11,7 +11,10 @@ Condensed from git history. Newest month first.
 - **Table export** as **CSV**, **XLSX**, **Markdown**, **HTML** and
   **PDF**: one file with Deps and Dev Deps, visible columns in display
   order, search filter applied. XLSX uses `write-excel-file`, PDF uses
-  `jspdf` with `jspdf-autotable`.
+  `jspdf` with `jspdf-autotable`. Untrusted cell text is escaped per
+  format: CSV formula prefix, Markdown backslash escapes, HTML entities
+  plus a CSP meta tag. Buttons stay disabled while a shown column loads
+  and while an export runs; the download URL lives 40 s.
 
 #### Package data
 
@@ -59,7 +62,9 @@ Condensed from git history. Newest month first.
 
 - **Column toggles** keep the table on screen. Hiding a column fetches
   nothing; a newly shown column shows a **loading icon** in its cells until
-  its data arrives.
+  its data arrives. Hiding a column during a full table load, such as a
+  revisit retrying failed rows, no longer stops that load. Hiding a
+  column during **Retry failed fetches** no longer drops the retried rows.
 
 #### Input and loading
 

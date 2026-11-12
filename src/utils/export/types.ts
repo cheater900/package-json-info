@@ -22,7 +22,6 @@ export type Exporter = {
     /** Button text, already translated; the registry sets it so format files stay free of i18n. */
     label: string;
     extension: string;
-    mimeType: string;
     render(document: ExportDocument): Blob | Promise<Blob>;
 };
 

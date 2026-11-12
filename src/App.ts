@@ -128,7 +128,10 @@ export default defineComponent({
             ),
         );
         const exportFileName = computed(() => exportFileBaseName(exportDocument.value.title));
-        const isLoadingTables = computed(() => tableSections.value.some((s) => s.isLoading));
+        // Pending columns hold no data yet; an export now would write them as missing.
+        const isLoadingTables = computed(
+            () => pendingColumns.value.size > 0 || tableSections.value.some((s) => s.isLoading),
+        );
 
         const modalContent = ref<ModalContent | null>(null);
         const expandedSection = computed(() => {

@@ -1,7 +1,8 @@
 import type { ExportDocument, ExportFormat } from "../types";
 
 /** Lets Excel detect UTF-8 instead of guessing the system code page. */
-const UTF8_BOM = "﻿";
+const CSV_UTF8_BOM = "\uFEFF";
+const CSV_MIME_TYPE = "text/csv;charset=utf-8";
 const CSV_LINE_END = "\r\n";
 const CSV_NEEDS_QUOTES = /[",\r\n]/;
 /**
@@ -25,7 +26,7 @@ function csvLine(values: string[]): string {
 
 /** RFC 4180 CSV: all sections in one table, a leading column naming each row's section. */
 function renderCsv(exportDocument: ExportDocument): Blob {
-    let text = UTF8_BOM;
+    let text = CSV_UTF8_BOM;
     let previousHeaders = "";
     for (const section of exportDocument.sections) {
         const headers = csvLine([exportDocument.sectionHeader, ...section.headers]);
@@ -37,12 +38,11 @@ function renderCsv(exportDocument: ExportDocument): Blob {
             text += csvLine([section.title, ...row]);
         }
     }
-    return new Blob([text], { type: csvExporter.mimeType });
+    return new Blob([text], { type: CSV_MIME_TYPE });
 }
 
 export const csvExporter: ExportFormat = {
     id: "csv",
     extension: "csv",
-    mimeType: "text/csv;charset=utf-8",
     render: renderCsv,
 };

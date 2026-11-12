@@ -40,6 +40,5 @@ function renderXlsx(exportDocument: ExportDocument): Promise<Blob> {
 export const xlsxExporter: ExportFormat = {
     id: "xlsx",
     extension: "xlsx",
-    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     render: renderXlsx,
 };

@@ -83,6 +83,8 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
 - **CSV cells starting with `-` plus text** (a missing license with its
   `⚠`, shown as `- ⚠`) export as `'- ⚠`. The `'` stops spreadsheets running
   untrusted registry text as a formula.
+- **PDF export of a big table freezes the page** until the file is ready.
+  jsPDF renders on the main thread.
 - **Export libraries load with the app.** jsPDF, jspdf-autotable and
   write-excel-file sit in the main chunk, roughly doubling it (about
   160 KB more gzip), since the code style rules out dynamic `import()`.

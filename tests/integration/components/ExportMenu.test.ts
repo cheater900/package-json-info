@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { nextTick } from "vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import ExportMenu from "../../../src/components/ExportMenu.vue";
 import { EXPORTERS } from "../../../src/utils/export";
 import { exportDocumentFixture } from "../../fixtures/exportDocument";
+
+// Registry entries are copies of the format files; spy on the entry the menu renders.
+const csvEntry = EXPORTERS.find((e) => e.id === "csv")!;
 
 function mountMenu(disabled = false) {
     return mount(ExportMenu, {
@@ -10,10 +14,19 @@ function mountMenu(disabled = false) {
     });
 }
 
-function stubObjectUrl() {
-    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
-    return vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:export");
+/** Stubs object URLs and link clicks, so a download saves nothing. */
+function stubDownload() {
+    return {
+        createObjectURL: vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:export"),
+        revokeObjectURL: vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {}),
+        click: vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {}),
+    };
 }
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+});
 
 describe("ExportMenu", () => {
     it("renders one button per exporter, in registry order", () => {
@@ -29,14 +42,12 @@ describe("ExportMenu", () => {
     });
 
     it("click renders document and downloads file named after format", async () => {
-        const csv = EXPORTERS.find((e) => e.id === "csv")!;
-        const render = vi.spyOn(csv, "render");
-        const createObjectURL = stubObjectUrl();
-        const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+        const render = vi.spyOn(csvEntry, "render");
+        const { createObjectURL, click } = stubDownload();
         const wrapper = mountMenu();
         await wrapper
             .findAll("button")
-            .find((b) => b.text() === csv.label)!
+            .find((b) => b.text() === csvEntry.label)!
             .trigger("click");
         await flushPromises();
         expect(render).toHaveBeenCalledWith(exportDocumentFixture);
@@ -47,8 +58,7 @@ describe("ExportMenu", () => {
     });
 
     it("shows error when render throws", async () => {
-        const csv = EXPORTERS.find((e) => e.id === "csv")!;
-        vi.spyOn(csv, "render").mockImplementation(() => {
+        vi.spyOn(csvEntry, "render").mockImplementation(() => {
             throw new Error("boom");
         });
         const wrapper = mountMenu();
@@ -57,5 +67,71 @@ describe("ExportMenu", () => {
         expect(wrapper.find('[role="alert"]').text()).toBe(
             "Export failed. Try again or pick another format.",
         );
+    });
+
+    it("ignores second click while export runs, disables buttons until done", async () => {
+        let finishRender: (blob: Blob) => void = () => {};
+        const render = vi
+            .spyOn(csvEntry, "render")
+            .mockImplementation(() => new Promise((resolve) => (finishRender = resolve)));
+        const { click } = stubDownload();
+        const wrapper = mountMenu();
+        const button = wrapper.findAll("button")[0];
+
+        await button.trigger("click");
+        await button.trigger("click");
+
+        expect(render).toHaveBeenCalledTimes(1);
+        expect(button.attributes("disabled")).toBeDefined();
+        finishRender(new Blob(["x"]));
+        await flushPromises();
+        expect(click).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => expect(button.attributes("disabled")).toBeUndefined());
+    });
+
+    it("ignores click queued behind sync render, unlocks in later task", async () => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
+        const render = vi.spyOn(csvEntry, "render");
+        stubDownload();
+        const wrapper = mountMenu();
+        const button = wrapper.findAll("button")[0];
+
+        await button.trigger("click");
+        await flushPromises();
+        // Second click of a double click, dispatched once the blocking render returns.
+        await button.trigger("click");
+        expect(render).toHaveBeenCalledTimes(1);
+        vi.runAllTimers();
+        await nextTick();
+        await button.trigger("click");
+
+        expect(render).toHaveBeenCalledTimes(2);
+    });
+
+    it("enables buttons again after failed export", async () => {
+        vi.spyOn(csvEntry, "render").mockImplementation(() => {
+            throw new Error("boom");
+        });
+        const wrapper = mountMenu();
+        const button = wrapper.findAll("button")[0];
+
+        await button.trigger("click");
+        await flushPromises();
+
+        await vi.waitFor(() => expect(button.attributes("disabled")).toBeUndefined());
+    });
+
+    it("keeps object URL until download has time to read it", async () => {
+        vi.useFakeTimers();
+        const { revokeObjectURL: revoke } = stubDownload();
+        const wrapper = mountMenu();
+
+        await wrapper.findAll("button")[0].trigger("click");
+        await flushPromises();
+        vi.advanceTimersByTime(1000);
+        expect(revoke).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(60_000);
+
+        expect(revoke).toHaveBeenCalledWith("blob:export");
     });
 });

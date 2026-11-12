@@ -138,12 +138,19 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         }
         pkg.value = entry.pkg;
         workspace.value = entry.workspace;
+        // A full fetch in flight (revisit retrying failed rows) must outlive a column toggle.
+        const isFullFetchRunning = isLoadingDeps.value || isLoadingDevDeps.value;
         const isCached =
             isEntryCacheValid(entry, visibleColumns.value) ||
-            (isColumnChange && entryCoversColumns(entry, visibleColumns.value));
+            (isColumnChange &&
+                !isFullFetchRunning &&
+                entryCoversColumns(entry, visibleColumns.value));
         if (isCached) {
             // Columns toggled back mid-fetch: that fetch must not overwrite the cached rows.
-            latestFetchByEntry.delete(toRaw(entry));
+            // A finished fetch keeps its token, so a retry in flight still applies.
+            if (isFullFetchRunning || pendingColumns.value.size > 0) {
+                latestFetchByEntry.delete(toRaw(entry));
+            }
             deps.value = entry.deps;
             devDeps.value = entry.devDeps;
             isLoadingDeps.value = false;
@@ -210,28 +217,29 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
 
     /**
      * Refetches the retryable rows among `rows` (one table's rows) under the
-     * current columns and swaps them into the entry's cache and both tables
-     * (a package can be in deps and devDeps). Failed lookups were evicted
-     * from the memo caches, so the refetch goes live. Applies only while the
-     * same entry is current and no full fetch started since; else the
-     * fresher rows win. Skipped while a full fetch runs: it refetches the
-     * rows anyway.
+     * columns the entry was fetched with, and swaps them into the entry's
+     * cache and both tables (a package can be in deps and devDeps). Failed
+     * lookups were evicted from the memo caches, so the refetch goes live.
+     * Applies only while the same entry is current and no full fetch started
+     * since; else the fresher rows win. Skipped while a table or column
+     * fetch runs: it refetches the rows anyway.
      */
     async function retryFailedRows(rows: readonly DependencyRow[]): Promise<void> {
         const entry = history.value[historyIndex.value];
         const isFetching =
             isLoadingDeps.value || isLoadingDevDeps.value || pendingColumns.value.size > 0;
-        const inputs = rows.filter(isRowRetryable).map(({ name, version }) => ({ name, version }));
         if (!entry?.deps || !entry.devDeps || isFetching || isRetrying.value) {
             return;
         }
+        const inputs = rows.filter(isRowRetryable).map(({ name, version }) => ({ name, version }));
         if (inputs.length === 0) {
             return;
         }
         const fetchToken = latestFetchByEntry.get(toRaw(entry));
         isRetrying.value = true;
+        // The entry's snapshot may hold hidden columns too; retried rows must keep them.
         const retried = await fetchPackagesInfo(inputs, {
-            visibleColumns: new Set(visibleColumns.value),
+            visibleColumns: new Set(entry.visibleColumnsSnapshot ?? visibleColumns.value),
         });
         isRetrying.value = false;
         const isStillWanted =

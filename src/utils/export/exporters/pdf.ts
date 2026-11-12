@@ -60,6 +60,5 @@ function renderPdf(exportDocument: ExportDocument): Blob {
 export const pdfExporter: ExportFormat = {
     id: "pdf",
     extension: "pdf",
-    mimeType: "application/pdf",
     render: renderPdf,
 };

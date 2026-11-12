@@ -3,10 +3,10 @@ import type { PropType } from "vue";
 import { t } from "../i18n";
 import draggable from "vuedraggable";
 import {
-    TOGGLEABLE_COLUMNS,
     DEFAULT_COLUMN_ORDER,
     NAME_COLUMN_KEY,
     abbreviateLabel,
+    toggleableColumnsFor,
 } from "../utils/tableColumns";
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyRow, SortDirection } from "../types";
@@ -14,8 +14,6 @@ import { filterRowsByName, fmtStaleNote, sortDependencies } from "../utils/depen
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
-
-const COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
 
 export default defineComponent({
     components: { draggable, Tooltip, SortIndicator, DependencyCell },
@@ -63,11 +61,7 @@ export default defineComponent({
             return label !== col.label ? col.label : undefined;
         }
 
-        // Resolve the parent's ordered list of visible column keys into full
-        // ColumnDefs, dropping any key that no longer matches a real column.
-        const orderedVisibleColumns = computed(() =>
-            props.columns.map((key) => COLUMNS_BY_KEY.get(key)).filter((c) => c !== undefined),
-        );
+        const orderedVisibleColumns = computed(() => toggleableColumnsFor(props.columns));
 
         // vuedraggable needs a locally-mutable array to splice as the user drags -
         // it can't splice a computed or a prop directly. Kept in sync with the true

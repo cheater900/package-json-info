@@ -24,9 +24,23 @@ export default defineComponent({
     },
     setup(props) {
         const hasFailed = ref(false);
+        // One export at a time: a double click must not save the file twice.
+        const isExporting = ref(false);
+
+        // A sync render (PDF of a big table) blocks the page; clicks made meanwhile
+        // queue up and run after it. Unlock after them, in a later task.
+        function unlockAfterQueuedClicks() {
+            setTimeout(() => {
+                isExporting.value = false;
+            });
+        }
 
         // Format libraries can fail on input or browser limits beyond this app's control.
         async function exportAs(exporter: Exporter) {
+            if (isExporting.value) {
+                return;
+            }
+            isExporting.value = true;
             hasFailed.value = false;
             try {
                 const blob = await exporter.render(props.document);
@@ -34,8 +48,9 @@ export default defineComponent({
             } catch {
                 hasFailed.value = true;
             }
+            unlockAfterQueuedClicks();
         }
 
-        return { t, EXPORTERS, hasFailed, exportAs };
+        return { t, EXPORTERS, hasFailed, isExporting, exportAs };
     },
 });

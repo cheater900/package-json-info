@@ -147,6 +147,13 @@ textarea {
     padding: calc(8px * var(--space-scale)) calc(4px * var(--space-scale));
 }
 
+/* Floats right inside the summary; flex would drop the disclosure marker. */
+.accordion__expand {
+    float: right;
+    font-size: 0.85rem;
+    padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
+}
+
 .package-name {
     border-bottom: 1px solid var(--border);
     font-weight: 700;
@@ -171,13 +178,6 @@ textarea {
     font-size: 0.875em;
     margin: 0 0 12px;
     opacity: 0.8;
-}
-
-/* Floats right inside the summary; flex would drop the disclosure marker. */
-.accordion__expand {
-    float: right;
-    font-size: 0.85rem;
-    padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
 }
 
 .table-export {

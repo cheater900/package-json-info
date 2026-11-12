@@ -81,10 +81,10 @@ the theme to `data-color-scheme` (`light` or `dark`; System follows the OS
 `buildExportDocument` turns rows, visible column keys and the search query
 into an `ExportDocument`: a title and sections of translated headers and
 cell strings. Each file in `src/utils/export/exporters/` reads only that
-model, never rows, i18n or Vue, and returns a `Blob`. `EXPORTERS` in
-`src/utils/export/index.ts` lists the formats in button order and adds
-their labels; `ExportMenu` renders one button per entry. Add a format with
-one exporter file and one registry line.
+model, never rows, i18n or Vue, and returns a `Blob` or a promise of one.
+`EXPORTERS` in `src/utils/export/index.ts` lists the formats in button
+order and adds their labels; `ExportMenu` renders one button per entry.
+Add a format with one exporter file and one registry line.
 
 ## Translations
 

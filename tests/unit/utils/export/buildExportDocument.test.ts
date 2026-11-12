@@ -85,6 +85,11 @@ describe("buildExportDocument", () => {
         expect(doc.sections[0].rows[1]).toEqual(["broken", "Could not load package data: 404", ""]);
     });
 
+    it("keeps only name for error row without data columns", () => {
+        const doc = build(["sourceCodeTree"]);
+        expect(doc.sections[0].rows[1]).toEqual(["broken"]);
+    });
+
     it("filters rows by search query", () => {
         const doc = build(["version"], "PAD");
         expect(doc.sections[0].rows).toEqual([["left-pad", "1.2.0"]]);

@@ -188,6 +188,17 @@ test("Columns, Deps, Dev Deps collapse as accordions; Deps and Dev Deps start op
     await expect(columnsSection.locator(".column-visibility-panel")).toBeVisible();
 });
 
+test("expand button in section summary opens table modal, keeps section open", async ({ page }) => {
+    await page.goto("/");
+    const depsSection = page.locator("details.accordion").nth(1);
+    await expect(depsSection.locator("table.deps-table")).toBeVisible();
+
+    await depsSection.getByRole("button", { name: "Expand table" }).click();
+
+    await expect(page.locator(".modal .table-modal-content")).toBeVisible();
+    await expect(depsSection).toHaveJSProperty("open", true);
+});
+
 test("loads app, renders default package.json dependency table", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
@@ -1078,7 +1089,7 @@ test("CSV export downloads both tables with header row", async ({ page }) => {
     expect(download.suggestedFilename()).toBe("demo-app-dependencies.csv");
     const csv = readFileSync(await download.path(), "utf8");
     const lines = csv.split("\r\n");
-    expect(lines[0]).toMatch(/^﻿Section,Name,Version,/);
+    expect(lines[0]).toMatch(/^\uFEFFSection,Name,Version,/);
     expect(lines.slice(1, 3).map((line) => line.split(",").slice(0, 2))).toEqual([
         ["Deps", "left-pad"],
         ["Dev Deps", "right-pad"],

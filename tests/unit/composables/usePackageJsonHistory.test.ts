@@ -370,6 +370,47 @@ describe("async fetch ordering", () => {
         expect(pendingColumns.value).toEqual(new Set());
     });
 
+    it("clears pending columns on back navigation mid column fetch", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, goBack, deps, pendingColumns } = useHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("first"));
+        await release("/first", { downloads: 1 });
+        loadPackageJsonText(packageJsonWith("second"));
+        await release("/second", { downloads: 2 });
+        visibleColumns.value = new Set(["weeklyDownloads", "vulnerabilityCount"]);
+        await nextTick();
+        expect(pendingColumns.value).toEqual(new Set(["vulnerabilityCount"]));
+
+        goBack();
+        await release("api.osv.dev", { vulns: [] });
+
+        expect(pendingColumns.value).toEqual(new Set());
+        expect(deps.value.map((d) => d.name)).toEqual(["first"]);
+        expect((deps.value[0] as PackageInfo).vulnerabilityCount).toBe(0);
+    });
+
+    it("clears pending columns on proxy refetch mid column fetch", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, deps, isLoadingDeps, pendingColumns } =
+            useHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("pkg"));
+        await release("api.npmjs.org/downloads", { downloads: 5 });
+        visibleColumns.value = new Set(["weeklyDownloads", "vulnerabilityCount"]);
+        await nextTick();
+
+        settings.proxyUrl = "https://p.test/";
+        await nextTick();
+
+        expect(pendingColumns.value).toEqual(new Set());
+        expect(isLoadingDeps.value).toBe(true);
+        await release("api.npmjs.org/downloads", { downloads: 6 });
+        await release("api.osv.dev", { vulns: [] });
+        expect((deps.value[0] as PackageInfo).weeklyDownloads).toBe(6);
+        expect(isLoadingDeps.value).toBe(false);
+    });
+
     it("hides column without fetch or loading state", async () => {
         const release = deferredFetch();
         const visibleColumns = ref<ReadonlySet<string>>(
@@ -442,6 +483,45 @@ describe("async fetch ordering", () => {
 
         expect(deps.value[0]).toMatchObject({ name: "broken", error: "Failed to fetch" });
         expect(fetchMock.mock.calls.length).toBe(callsBeforeRevisit + 1);
+    });
+
+    it("keeps revisit refetch of failed rows when column hidden mid-fetch", async () => {
+        let isFailing = true;
+        const pending: Array<() => void> = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() => {
+                if (isFailing) {
+                    return Promise.reject(new TypeError("Failed to fetch"));
+                }
+                return new Promise((resolve) => {
+                    pending.push(() => resolve(jsonResponse(minimalRegistryDoc)));
+                });
+            }),
+        );
+        const visibleColumns = ref<ReadonlySet<string>>(
+            new Set(["latestVersion", "weeklyDownloads"]),
+        );
+        const { loadPackageJsonText, goBack, deps, isLoadingDeps } = useHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("broken"));
+        await flushPromises();
+        loadPackageJsonText(packageJsonWith("other"));
+        await flushPromises();
+        isFailing = false;
+        goBack();
+        await flushPromises();
+
+        visibleColumns.value = new Set(["latestVersion"]);
+        await nextTick();
+
+        expect(isLoadingDeps.value).toBe(true);
+        expect(deps.value).toEqual([]);
+        for (const resolve of pending) {
+            resolve();
+        }
+        await flushPromises();
+        expect(deps.value[0]).toMatchObject({ name: "broken", latestVersion: "1.0.0" });
+        expect(isLoadingDeps.value).toBe(false);
     });
 
     it("clears load error on back navigation", async () => {
@@ -665,6 +745,26 @@ describe("retryFailedRows", () => {
         expect(history.value[0].devDeps![0]).toMatchObject(expected);
     });
 
+    it("keeps hidden column data in retried rows", async () => {
+        const visibleColumns = ref<ReadonlySet<string>>(
+            new Set(["weeklyDownloads", "latestVersion"]),
+        );
+        const { deps, retryFailedRows, answer } = await loadWithFailedDownloads(
+            { dependencies: { pkg: "1.0.0" } },
+            visibleColumns,
+        );
+        visibleColumns.value = new Set(["weeklyDownloads"]);
+        await nextTick();
+
+        const retry = retryFailedRows(deps.value);
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
+        visibleColumns.value = new Set(["weeklyDownloads", "latestVersion"]);
+        await nextTick();
+
+        expect(deps.value[0]).toMatchObject({ weeklyDownloads: 5, latestVersion: "1.0.0" });
+    });
+
     it("refetches only retryable rows", async () => {
         const { deps, retryFailedRows, answer } = await loadWithFailedDownloads({
             dependencies: { pkg: "1.0.0" },
@@ -728,6 +828,55 @@ describe("retryFailedRows", () => {
         await retry;
 
         expect(deps.value[0]).toMatchObject({ vulnerabilityCount: 0, weeklyDownloads: null });
+    });
+
+    it("keeps result when column hidden mid-retry", async () => {
+        const visibleColumns = ref<ReadonlySet<string>>(
+            new Set(["weeklyDownloads", "latestVersion"]),
+        );
+        const { deps, history, retryFailedRows, answer } = await loadWithFailedDownloads(
+            { dependencies: { pkg: "1.0.0" } },
+            visibleColumns,
+        );
+
+        const retry = retryFailedRows(deps.value);
+        visibleColumns.value = new Set(["weeklyDownloads"]);
+        await nextTick();
+        await answer(DOWNLOADS_URL, { downloads: 5 });
+        await retry;
+
+        expect(deps.value[0]).toMatchObject({ weeklyDownloads: 5, failedLookups: null });
+        expect(history.value[0].deps![0]).toMatchObject({ weeklyDownloads: 5 });
+    });
+
+    it("skips retry while shown column loads", async () => {
+        const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+        const { deps, retryFailedRows, isRetrying, pendingColumns } = await loadWithFailedDownloads(
+            { dependencies: { pkg: "1.0.0" } },
+            visibleColumns,
+        );
+        visibleColumns.value = new Set(["weeklyDownloads", "vulnerabilityCount"]);
+        await nextTick();
+        expect(pendingColumns.value.size).toBe(1);
+        const callsBefore = vi.mocked(fetch).mock.calls.length;
+
+        await retryFailedRows(deps.value);
+
+        expect(isRetrying.value).toBe(false);
+        expect(vi.mocked(fetch).mock.calls.length).toBe(callsBefore);
+    });
+
+    it("skips fetch for rows with nothing to retry", async () => {
+        const { deps, retryFailedRows, isRetrying } = await loadWithFailedDownloads({
+            dependencies: { pkg: "1.0.0" },
+        });
+        const liveRow = { ...(deps.value[0] as PackageInfo), failedLookups: null };
+        const callsBefore = vi.mocked(fetch).mock.calls.length;
+
+        await retryFailedRows([liveRow]);
+
+        expect(isRetrying.value).toBe(false);
+        expect(vi.mocked(fetch).mock.calls.length).toBe(callsBefore);
     });
 
     it("skips retry while full fetch runs", async () => {

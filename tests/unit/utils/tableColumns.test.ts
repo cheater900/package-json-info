@@ -12,6 +12,7 @@ import {
     orderColumns,
     mergeColumnOrder,
     abbreviateLabel,
+    toggleableColumnsFor,
 } from "../../../src/utils/tableColumns";
 
 describe("TOGGLEABLE_COLUMNS", () => {
@@ -232,5 +233,12 @@ describe("abbreviateLabel", () => {
 
     it("collapses repeated whitespace between words", () => {
         expect(abbreviateLabel("Latest   release date")).toBe("LRD");
+    });
+});
+
+describe("toggleableColumnsFor", () => {
+    it("returns column defs in key order, drops unknown and Name keys", () => {
+        const keys = toggleableColumnsFor(["license", "nope", "name", "version"]).map((c) => c.key);
+        expect(keys).toEqual(["license", "version"]);
     });
 });

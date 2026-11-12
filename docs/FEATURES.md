@@ -125,17 +125,22 @@ first step that fails. Each step stops the table fetch of the step before.
 
 ## Export
 
-Export buttons below both tables save Deps and Dev Deps into one file. The file holds what the tables show: Name, then the visible
-columns in their current order, rows matching the search box. Rows keep
-`package.json` order; table sorting is not applied. Buttons stay disabled
-while a table loads. The file is named `<package name>-dependencies.<ext>`.
+Export buttons below both tables save Deps and Dev Deps into one file. The
+file holds what the tables show: Name, then the visible columns in their
+current order, rows matching the search box. Rows keep `package.json`
+order; table sorting is not applied. Buttons stay disabled while a table or
+a newly shown column loads, and while an export runs, so a double click
+saves one file. The file is named `<package name>-dependencies.<ext>`.
 
 - **CSV**: one table, UTF-8 with BOM, a leading Section column. Cells that a
-  spreadsheet would run as a formula (`=`, `+`, `@`, `-1`) get a leading `'`.
+  spreadsheet would run as a formula (starting with `=`, `+`, `@`, tab, CR,
+  or `-` plus text) get a leading `'`.
 - **XLSX**: one sheet per table, bold frozen header row.
-- **Markdown**: a heading and a GFM table per table.
+- **Markdown**: a heading and a GFM table per table. Cell text is
+  backslash-escaped, so registry text cannot inject HTML, links or images.
 - **HTML**: one standalone page with inline styles, no scripts or external
-  files, so it opens offline.
+  files, so it opens offline. A Content-Security-Policy meta tag blocks
+  scripts and remote loads.
 - **PDF**: landscape, each table on its own page. Columns past the page
   width continue on the next page, repeating Name.
 

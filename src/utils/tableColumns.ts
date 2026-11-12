@@ -56,6 +56,13 @@ export const TOGGLEABLE_COLUMNS = DEPENDENCY_TABLE_COLUMNS.filter(
     (c) => !ALWAYS_VISIBLE_COLUMNS.has(c.key),
 );
 
+const TOGGLEABLE_COLUMNS_BY_KEY = new Map(TOGGLEABLE_COLUMNS.map((c) => [c.key, c]));
+
+/** Toggleable column defs for `keys`, in that order; unknown and always-visible keys dropped. */
+export function toggleableColumnsFor(keys: readonly string[]): ColumnDef[] {
+    return keys.map((key) => TOGGLEABLE_COLUMNS_BY_KEY.get(key)).filter((c) => c !== undefined);
+}
+
 /**
  * Toggleable columns kept hidden until the user opts in: vulnerabilityCount
  * and bundleSizeGzip depend on genuinely third-party services (OSV,

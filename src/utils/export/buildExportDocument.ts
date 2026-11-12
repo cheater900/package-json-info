@@ -2,7 +2,7 @@ import { FAILED_VALUE, MISSING_VALUE } from "../../constants";
 import { t } from "../../i18n";
 import type { DependencyRow, PackageInfo } from "../../types";
 import { filterRowsByName, formatCell } from "../dependencyRowFormatting";
-import { DEPENDENCY_TABLE_COLUMNS, NAME_COLUMN_KEY } from "../tableColumns";
+import { NAME_COLUMN_KEY, toggleableColumnsFor } from "../tableColumns";
 import type { ColumnDef } from "../tableColumns";
 import type { ExportDocument, ExportSection } from "./types";
 
@@ -15,8 +15,6 @@ export type ExportTableInput = {
 const FILE_NAME_SUFFIX = "dependencies";
 const FILE_NAME_UNSAFE_RUNS = /[^a-z0-9-]+/g;
 const FILE_NAME_EDGE_DASHES = /^-+|-+$/g;
-
-const COLUMNS_BY_KEY = new Map(DEPENDENCY_TABLE_COLUMNS.map((c) => [c.key, c]));
 
 function cellText(column: ColumnDef, row: PackageInfo): string {
     if (row.failedLookups?.[column.key]) {
@@ -50,12 +48,7 @@ export function buildExportDocument(
     visibleColumnKeys: readonly string[],
     searchQuery: string,
 ): ExportDocument {
-    const columns = visibleColumnKeys
-        .map((key) => COLUMNS_BY_KEY.get(key))
-        .filter(
-            (c): c is ColumnDef =>
-                c !== undefined && c.key !== NAME_COLUMN_KEY && c.render !== "button",
-        );
+    const columns = toggleableColumnsFor(visibleColumnKeys).filter((c) => c.render !== "button");
     const headers = [t(`columns.${NAME_COLUMN_KEY}`), ...columns.map((c) => c.label)];
     const sections: ExportSection[] = tables.map((table) => ({
         title: table.title,

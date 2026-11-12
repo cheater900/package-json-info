@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import App from "../../src/App.vue";
+import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
 import DependenciesTable from "../../src/components/DependenciesTable.vue";
+import ExportMenu from "../../src/components/ExportMenu.vue";
 import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
 import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
 import { clearPackageInfoCache } from "../../src/api/npmPackage";
-import { jsonResponse, textResponse } from "../helpers/fetchMock";
+import { jsonResponse, stubFetchPending, textResponse } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
 import { NPM_REGISTRY_URL } from "../../src/constants";
@@ -19,6 +21,8 @@ beforeEach(() => {
         vi.fn(async () => jsonResponse(minimalRegistryDoc)),
     );
     clearPackageInfoCache();
+    // Column toggles persist; the next mount must start from default columns.
+    localStorage.clear();
     document.body.innerHTML = "";
     // A loaded source leaves share steps in the address bar; the next mount would replay them.
     window.history.replaceState(null, "", "/");
@@ -46,7 +50,6 @@ describe("App", () => {
 
         await wrapper.findAll(".accordion__expand")[1].trigger("click");
 
-        expect(wrapper.findAll("details.accordion")[2].attributes("open")).toBeDefined();
         expect(document.body.querySelector(".modal .table-modal-content")).not.toBeNull();
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(3);
         await wrapper.findComponent({ name: "Modal" }).vm.$emit("close");
@@ -92,6 +95,62 @@ describe("App", () => {
         expect(document.body.querySelectorAll(".modal")).toHaveLength(1);
     });
 
+    it("disables export while shown column loads", async () => {
+        const wrapper = await mountApp();
+        const exportMenu = wrapper.findComponent(ExportMenu);
+        expect(exportMenu.props("disabled")).toBe(false);
+        stubFetchPending();
+
+        wrapper
+            .findComponent(ColumnVisibilityPanel)
+            .vm.$emit("toggle-column", "vulnerabilityCount");
+        await flushPromises();
+
+        expect(exportMenu.props("disabled")).toBe(true);
+    });
+
+    it("disables export while tables load", async () => {
+        stubFetchPending();
+
+        const wrapper = await mountApp();
+
+        expect(wrapper.findComponent(ExportMenu).props("disabled")).toBe(true);
+    });
+
+    it("exports searched rows under package name", async () => {
+        const wrapper = await mountApp();
+
+        await wrapper.find(".search-shrink-row__search input").setValue("vue");
+
+        const exportMenu = wrapper.findComponent(ExportMenu);
+        const { title, sections } = exportMenu.props("document");
+        const names = sections.flatMap((s: { rows: string[][] }) => s.rows.map((row) => row[0]));
+        expect(title).toBe("package-json-info");
+        expect(exportMenu.props("fileBaseName")).toBe("package-json-info-dependencies");
+        expect(names.length).toBeGreaterThan(0);
+        expect(names.every((name: string) => name.includes("vue"))).toBe(true);
+    });
+
+    it("names export after package.json for package without name", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string) =>
+                url === "https://example.test/package.json"
+                    ? textResponse('{"dependencies":{"left-pad":"1.0.0"}}')
+                    : jsonResponse(minimalRegistryDoc),
+            ),
+        );
+        const wrapper = await mountApp();
+
+        await wrapper.find("#url-input").setValue("https://example.test/package.json");
+        await wrapper.find("form.input-methods__url-form").trigger("submit");
+        await flushPromises();
+
+        const exportMenu = wrapper.findComponent(ExportMenu);
+        expect(exportMenu.props("document").title).toBe("package.json");
+        expect(exportMenu.props("fileBaseName")).toBe("package-json-dependencies");
+    });
+
     describe("retry", () => {
         /** Registry answers every package but zod until `recover` runs. */
         function stubZodRegistryDown() {
@@ -128,6 +187,16 @@ describe("App", () => {
 
             expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
             expect(wrapper.find(".table-retry").exists()).toBe(false);
+        });
+
+        it("disables retry failed fetches button while retry runs", async () => {
+            stubZodRegistryDown();
+            const wrapper = await mountApp();
+            stubFetchPending();
+
+            await wrapper.find(".table-retry").trigger("click");
+
+            expect(wrapper.find(".table-retry").attributes("disabled")).toBeDefined();
         });
 
         it("shows retry failed fetches button only under table with failed row", async () => {

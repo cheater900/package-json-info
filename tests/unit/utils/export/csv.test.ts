@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { csvExporter } from "../../../../src/utils/export/exporters/csv";
-import { exportDocumentFixture } from "../../../fixtures/exportDocument";
+import { exportDocumentFixture, exportDocumentWith } from "../../../fixtures/exportDocument";
 import type { ExportDocument } from "../../../../src/utils/export/types";
 
 async function csvText(doc: ExportDocument) {
@@ -12,7 +12,7 @@ describe("csvExporter", () => {
     it("writes BOM, one header row, section column, RFC 4180 quoting, CRLF", async () => {
         const text = await csvText(exportDocumentFixture);
         expect(text).toBe(
-            "﻿Section,Name,Note\r\n" +
+            "\ufeffSection,Name,Note\r\n" +
                 'Deps,vue,"say ""hi"", a|b"\r\n' +
                 'Deps,zod,"line1\nline2"\r\n' +
                 "Dev Deps,vite,<b>&</b>\r\n",
@@ -20,24 +20,29 @@ describe("csvExporter", () => {
     });
 
     it("repeats header row when section headers change", async () => {
-        const text = await csvText({
-            title: "x",
-            sectionHeader: "S",
-            sections: [
+        const text = await csvText(
+            exportDocumentWith([
                 { title: "A", headers: ["Name"], rows: [["a"]] },
                 { title: "B", headers: ["Name", "Extra"], rows: [["b", "1"]] },
-            ],
-        });
-        expect(text).toBe("﻿S,Name\r\nA,a\r\nS,Name,Extra\r\nB,b,1\r\n");
+            ]),
+        );
+        expect(text).toBe("\ufeffS,Name\r\nA,a\r\nS,Name,Extra\r\nB,b,1\r\n");
     });
 
     it("neutralizes formula cells, keeps lone dash", async () => {
-        const text = await csvText({
-            title: "x",
-            sectionHeader: "S",
-            sections: [{ title: "A", headers: ["N"], rows: [["=1+1"], ["@x"], ["-1"], ["-"]] }],
-        });
-        expect(text).toBe("﻿S,N\r\nA,'=1+1\r\nA,'@x\r\nA,'-1\r\nA,-\r\n");
+        const text = await csvText(
+            exportDocumentWith([
+                { title: "A", headers: ["N"], rows: [["=1+1"], ["@x"], ["-1"], ["-"]] },
+            ]),
+        );
+        expect(text).toBe("\ufeffS,N\r\nA,'=1+1\r\nA,'@x\r\nA,'-1\r\nA,-\r\n");
+    });
+
+    it("neutralizes plus, tab and CR formula starts", async () => {
+        const text = await csvText(
+            exportDocumentWith([{ title: "A", headers: ["N"], rows: [["+1"], ["\tx"], ["\rx"]] }]),
+        );
+        expect(text).toBe("\ufeffS,N\r\nA,'+1\r\nA,'\tx\r\nA,\"'\rx\"\r\n");
     });
 
     it("sets CSV MIME type", async () => {

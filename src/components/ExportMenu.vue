@@ -5,7 +5,7 @@
             v-for="exporter in EXPORTERS"
             :key="exporter.id"
             type="button"
-            :disabled="disabled"
+            :disabled="disabled || isExporting"
             @click="exportAs(exporter)"
         >
             {{ exporter.label }}

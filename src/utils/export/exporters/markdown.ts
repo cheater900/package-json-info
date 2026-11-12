@@ -1,10 +1,17 @@
 import type { ExportDocument, ExportFormat } from "../types";
 
-const LINE_BREAKS = /\r\n|\r|\n/g;
+const MARKDOWN_MIME_TYPE = "text/markdown;charset=utf-8";
+const MARKDOWN_LINE_BREAKS = /\r\n|\r|\n/g;
+/**
+ * Backslash-escaped so untrusted cell text renders literally: no raw HTML
+ * (`<`), link or image (`[`), entity (`&`), emphasis or code span, and no
+ * `\\|` that unescapes a pipe and breaks out of the cell.
+ */
+const MARKDOWN_SPECIAL_CHARS = /[\\`*_~[\]<>|&]/g;
 
-/** Keeps a cell on one table line and inside its column. */
+/** Keeps a cell on one table line, inside its column, as plain text. */
 function markdownCell(value: string): string {
-    return value.replace(LINE_BREAKS, " ").replaceAll("|", "\\|");
+    return value.replace(MARKDOWN_LINE_BREAKS, " ").replace(MARKDOWN_SPECIAL_CHARS, "\\$&");
 }
 
 function markdownRow(values: string[]): string {
@@ -24,12 +31,11 @@ function renderMarkdown(exportDocument: ExportDocument): Blob {
             ...section.rows.map(markdownRow),
         );
     }
-    return new Blob([lines.join("\n") + "\n"], { type: markdownExporter.mimeType });
+    return new Blob([lines.join("\n") + "\n"], { type: MARKDOWN_MIME_TYPE });
 }
 
 export const markdownExporter: ExportFormat = {
     id: "markdown",
     extension: "md",
-    mimeType: "text/markdown;charset=utf-8",
     render: renderMarkdown,
 };

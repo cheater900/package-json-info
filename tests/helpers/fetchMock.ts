@@ -35,6 +35,14 @@ export function binaryResponse(body: ArrayBuffer) {
     return { ok: true, status: HTTP_STATUS.ok, body: new Response(body).body };
 }
 
+/** Stubs global `fetch` with requests that never settle, to hold a load in flight. */
+export function stubFetchPending() {
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(() => new Promise(() => {})),
+    );
+}
+
 /** Fetch mock answering the first `handlers` key contained in the URL; 404 otherwise. */
 export function mockFetchByUrl(handlers: Record<string, unknown>) {
     return vi.fn(async (url: string) => {

@@ -7,7 +7,11 @@ const HTML_ESCAPES: Record<string, string> = {
     '"': "&quot;",
     "'": "&#39;",
 };
+const HTML_SPECIAL_CHARS = /[&<>"']/g;
+const HTML_MIME_TYPE = "text/html;charset=utf-8";
 
+/** Blocks scripts and remote loads should cell text ever slip past escaping. */
+const HTML_CSP = "default-src 'none'; style-src 'unsafe-inline'";
 /** Inline so the file opens offline with no external request. */
 const HTML_STYLE = `
 body { color: #1a1a1a; font-family: system-ui, sans-serif; margin: 24px; }
@@ -18,7 +22,7 @@ tbody tr:nth-child(even) { background: #fafafa; }
 `;
 
 function escapeHtml(value: string): string {
-    return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
+    return value.replace(HTML_SPECIAL_CHARS, (char) => HTML_ESCAPES[char]);
 }
 
 function htmlCells(tag: "th" | "td", values: string[]): string {
@@ -41,6 +45,7 @@ function renderHtml(exportDocument: ExportDocument): Blob {
         "<html>",
         "<head>",
         '<meta charset="utf-8">',
+        `<meta http-equiv="Content-Security-Policy" content="${HTML_CSP}">`,
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         `<title>${title}</title>`,
         `<style>${HTML_STYLE}</style>`,
@@ -52,12 +57,11 @@ function renderHtml(exportDocument: ExportDocument): Blob {
         "</html>",
         "",
     ].join("\n");
-    return new Blob([html], { type: htmlExporter.mimeType });
+    return new Blob([html], { type: HTML_MIME_TYPE });
 }
 
 export const htmlExporter: ExportFormat = {
     id: "html",
     extension: "html",
-    mimeType: "text/html;charset=utf-8",
     render: renderHtml,
 };
