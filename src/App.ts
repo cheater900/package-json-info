@@ -10,12 +10,14 @@ import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
 import IconUpload from "./components/IconUpload.vue";
+import ExportMenu from "./components/ExportMenu.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import appPackageJson from "../package.json";
 import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
+import { buildExportDocument, exportFileBaseName } from "./utils/export/buildExportDocument";
 import type { DependencyRow, PackageInfo, PackageInput } from "./types";
 
 type ModalContent =
@@ -32,6 +34,7 @@ export default defineComponent({
         PackageSummaryCard,
         SettingsMenu,
         IconUpload,
+        ExportMenu,
         VueJsonPretty,
     },
     setup() {
@@ -112,6 +115,17 @@ export default defineComponent({
                 isLoading: isLoadingDevDeps.value,
             },
         ]);
+
+        const exportDocument = computed(() =>
+            buildExportDocument(
+                pkg.value?.name || t("export.untitled"),
+                tableSections.value,
+                visibleColumnKeys.value,
+                searchQuery.value,
+            ),
+        );
+        const exportFileName = computed(() => exportFileBaseName(exportDocument.value.title));
+        const isLoadingTables = computed(() => tableSections.value.some((s) => s.isLoading));
 
         const modalContent = ref<ModalContent | null>(null);
         const expandedSection = computed(() => {
@@ -194,6 +208,9 @@ export default defineComponent({
             loadFromFile,
             loadFromUrlInput,
             tableSections,
+            exportDocument,
+            exportFileName,
+            isLoadingTables,
             tableProps,
             tableListeners,
             modalContent,

@@ -75,5 +75,16 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
   URL whose ref holds `/`. `tree/main/packages/a` can be branch
   `main/packages/a` or folder `packages/a` on `main`; the raw host resolves
   the file, but the workspace tree needs the ref alone.
+- **PDF export shows `?` for characters outside Latin-1**, such as the
+  license warning `⚠` or CJK text. jsPDF's built-in fonts cover WinAnsi
+  only; embedding a Unicode font would add hundreds of KB.
+- **Export ignores table sorting.** Sort state lives in each table; rows
+  export in `package.json` order.
+- **CSV cells starting with `-` plus text** (a missing license with its
+  `⚠`, shown as `- ⚠`) export as `'- ⚠`. The `'` stops spreadsheets running
+  untrusted registry text as a formula.
+- **Export libraries load with the app.** jsPDF, jspdf-autotable and
+  write-excel-file sit in the main chunk, roughly doubling it (about
+  160 KB more gzip), since the code style rules out dynamic `import()`.
 - **Retry state is per package name.** A package in both Deps and Dev Deps
   with different versions disables both retry buttons while one retries.

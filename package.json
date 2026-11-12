@@ -17,9 +17,12 @@
         "typecheck": "vue-tsc --noEmit"
     },
     "dependencies": {
+        "jspdf": "^4.2.1",
+        "jspdf-autotable": "^5.0.9",
         "vue": "^3.5.44",
         "vue-json-pretty": "^2.6.0",
         "vuedraggable": "^4.1.0",
+        "write-excel-file": "^4.1.1",
         "zod": "^4.6.7"
     },
     "devDependencies": {

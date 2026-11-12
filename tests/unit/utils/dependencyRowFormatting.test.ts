@@ -9,6 +9,7 @@ import {
     formatCell,
     compareValues,
     sortDependencies,
+    filterRowsByName,
 } from "../../../src/utils/dependencyRowFormatting";
 
 describe("fmtDate", () => {
@@ -158,5 +159,17 @@ describe("sortDependencies", () => {
         const input = [c, a, b];
         sortDependencies(input, "weeklyDownloads", "asc");
         expect(input).toEqual([c, a, b]);
+    });
+});
+
+describe("filterRowsByName", () => {
+    const rows = [{ name: "Vue" }, { name: "vite" }, { name: "zod" }];
+
+    it("keeps same array for blank query", () => {
+        expect(filterRowsByName(rows, "  ")).toBe(rows);
+    });
+
+    it("matches name substring case-insensitive, trims query", () => {
+        expect(filterRowsByName(rows, " V ")).toEqual([{ name: "Vue" }, { name: "vite" }]);
     });
 });
