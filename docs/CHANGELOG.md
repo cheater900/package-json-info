@@ -63,6 +63,8 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Section headers** of Deps and Dev Deps get a border and a soft green
+  hover.
 - **Expand table** and **Retry failed fetches** buttons sit right-aligned
   below each table.
 - **Column toggles** keep the table on screen. Hiding a column fetches

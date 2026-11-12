@@ -124,7 +124,12 @@
             </div>
         </div>
 
-        <details v-for="section in tableSections" :key="section.id" class="accordion" open>
+        <details
+            v-for="section in tableSections"
+            :key="section.id"
+            class="accordion accordion--table"
+            open
+        >
             <summary>
                 {{ section.title }}
                 <span v-if="section.isLoading">{{ t("sections.loading") }}</span>
