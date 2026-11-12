@@ -9,12 +9,15 @@ Condensed from git history. Newest month first.
 #### Export
 
 - **Table export** as **CSV**, **XLSX**, **Markdown**, **HTML** and
-  **PDF**: one file with Deps and Dev Deps, visible columns in display
-  order, search filter applied. XLSX uses `write-excel-file`, PDF uses
-  `jspdf` with `jspdf-autotable`. Untrusted cell text is escaped per
-  format: CSV formula prefix, Markdown backslash escapes, HTML entities
-  plus a CSP meta tag. Buttons stay disabled while a shown column loads
-  and while an export runs; the download URL lives 40 s.
+  **PDF**: an **Export** button opens an **export form** to pick tables,
+  columns and format. Every row of each picked table is exported; the
+  search filter does not apply. Picking a column the tables never loaded
+  fetches it with a spinner and holds Download until it arrives, without
+  touching the tables. XLSX uses `write-excel-file`, PDF uses `jspdf` with
+  `jspdf-autotable`. Untrusted cell text is escaped per format: CSV
+  formula prefix, Markdown backslash escapes, HTML entities plus a CSP
+  meta tag. Export stays disabled while a shown column loads, Download
+  while an export runs; the download URL lives 40 s.
 
 #### Package data
 

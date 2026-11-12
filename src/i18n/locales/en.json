@@ -66,8 +66,14 @@
         "placeholder": "Filter by package name"
     },
     "export": {
-        "label": "Export",
-        "groupLabel": "Export both tables",
+        "open": "Export",
+        "dialogTitle": "Export dependencies",
+        "tables": "Tables",
+        "columns": "Columns",
+        "format": "Format",
+        "download": "Download",
+        "loadingColumn": "Loading column data",
+        "noTable": "Pick at least one table.",
         "formats": {
             "csv": "CSV",
             "xlsx": "XLSX",

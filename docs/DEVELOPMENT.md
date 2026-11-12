@@ -78,13 +78,19 @@ the theme to `data-color-scheme` (`light` or `dark`; System follows the OS
 
 ## Export
 
-`buildExportDocument` turns rows, visible column keys and the search query
-into an `ExportDocument`: a title and sections of translated headers and
-cell strings. Each file in `src/utils/export/exporters/` reads only that
-model, never rows, i18n or Vue, and returns a `Blob` or a promise of one.
-`EXPORTERS` in `src/utils/export/index.ts` lists the formats in button
-order and adds their labels; `ExportMenu` renders one button per entry.
-Add a format with one exporter file and one registry line.
+`buildExportDocument` turns rows and column keys into an `ExportDocument`:
+a title and sections of translated headers and cell strings. Each file in
+`src/utils/export/exporters/` reads only that model, never rows, i18n or
+Vue, and returns a `Blob` or a promise of one. `EXPORTERS` in
+`src/utils/export/index.ts` lists the formats in select order and adds
+their labels; `ExportDialog` offers one option per entry. Add a format with
+one exporter file and one registry line.
+
+`ExportDialog` gets its rows from `fetchRowsWithColumns` in
+`usePackageJsonHistory`. It returns the current entry's cached rows when
+they cover the picked columns. Otherwise it fetches them, and the memoized
+lookups send only the missing services to the network. It never writes
+`deps`, `devDeps` or the entry cache, so the tables stay as they are.
 
 ## Translations
 

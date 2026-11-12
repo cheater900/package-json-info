@@ -1070,7 +1070,7 @@ test("View tree shows error for corrupt tarball", async ({ page }) => {
     );
 });
 
-test("CSV export downloads both tables with header row", async ({ page }) => {
+test("CSV export from dialog downloads both tables with header row", async ({ page }) => {
     await page.goto("/");
     await loadJson(page, {
         name: "@demo/app",
@@ -1078,15 +1078,15 @@ test("CSV export downloads both tables with header row", async ({ page }) => {
         devDependencies: { "right-pad": "^1.0.0" },
     });
     await expect(page.getByRole("cell", { name: "right-pad", exact: true })).toBeVisible();
-    const exportGroup = page.getByRole("group", { name: "Export both tables" });
-    await expect(exportGroup.getByRole("button", { name: "CSV" })).toBeEnabled();
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    const dialog = page.locator(".export-dialog");
+    const downloadButton = dialog.getByRole("button", { name: "Download" });
+    await expect(downloadButton).toBeEnabled();
 
-    const [download] = await Promise.all([
-        page.waitForEvent("download"),
-        exportGroup.getByRole("button", { name: "CSV" }).click(),
-    ]);
+    const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
 
     expect(download.suggestedFilename()).toBe("demo-app-dependencies.csv");
+    await expect(dialog).toHaveCount(0);
     const csv = readFileSync(await download.path(), "utf8");
     const lines = csv.split("\r\n");
     expect(lines[0]).toMatch(/^\uFEFFSection,Name,Version,/);
@@ -1094,4 +1094,38 @@ test("CSV export downloads both tables with header row", async ({ page }) => {
         ["Deps", "left-pad"],
         ["Dev Deps", "right-pad"],
     ]);
+});
+
+test("export dialog fetches hidden column, blocks Download until it loads", async ({ page }) => {
+    let answerOsv: () => void = () => {};
+    const isOsvAnswered = new Promise<void>((resolve) => (answerOsv = resolve));
+    await page.route(OSV_QUERY_URL, async (route) => {
+        await isOsvAnswered;
+        await route.fulfill({ json: { vulns: [{ id: "GHSA-xxxx-xxxx-xxxx" }] } });
+    });
+    await page.goto("/");
+    await loadJson(page, { name: "demo", dependencies: { "left-pad": "^1.0.0" } });
+    await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    const dialog = page.locator(".export-dialog");
+    const downloadButton = dialog.getByRole("button", { name: "Download" });
+
+    await dialog.getByLabel("Dev Deps", { exact: true }).uncheck();
+    await dialog.getByLabel("Vulnerabilities", { exact: true }).check();
+
+    await expect(dialog.getByRole("status", { name: "Loading column data" })).toBeVisible();
+    await expect(downloadButton).toBeDisabled();
+    answerOsv();
+    await expect(dialog.getByRole("status")).toHaveCount(0);
+    const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.click()]);
+    const lines = readFileSync(await download.path(), "utf8").split("\r\n");
+    expect(lines[0]).toMatch(/,Vulnerabilities$/);
+    expect(lines[1]).toMatch(/^Deps,left-pad,.*,1$/);
+    expect(lines.filter(Boolean)).toHaveLength(2);
+    await expect(
+        page
+            .locator("table.deps-table")
+            .first()
+            .getByRole("columnheader", { name: /Vulnerab/ }),
+    ).toHaveCount(0);
 });

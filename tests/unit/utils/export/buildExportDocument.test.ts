@@ -9,7 +9,7 @@ import { fullDependency, sparseDependency } from "../../../fixtures/dependencies
 
 const errorRow = { name: "broken", version: "1.0.0", error: "404" };
 
-function build(keys: string[], query = "") {
+function build(keys: string[]) {
     return buildExportDocument(
         "my-app",
         [
@@ -17,12 +17,11 @@ function build(keys: string[], query = "") {
             { title: "Dev Deps", dependencies: [sparseDependency] },
         ],
         keys,
-        query,
     );
 }
 
 describe("buildExportDocument", () => {
-    it("puts Name first, then visible columns in given order, full labels", () => {
+    it("puts Name first, then given columns in given order, full labels", () => {
         const doc = build(["license", "versionDate", "latestReleaseDate"]);
         expect(doc.title).toBe("my-app");
         expect(doc.sectionHeader).toBe("Section");
@@ -41,7 +40,7 @@ describe("buildExportDocument", () => {
         ]);
     });
 
-    it("leaves out hidden and unknown columns", () => {
+    it("leaves out unlisted and unknown columns", () => {
         const doc = build(["version", "nope"]);
         expect(doc.sections[0].headers).toEqual(["Name", "Version"]);
         expect(doc.sections[1].rows).toEqual([["no-data-pkg", "0.0.1"]]);
@@ -75,7 +74,6 @@ describe("buildExportDocument", () => {
             "x",
             [{ title: "Deps", dependencies: [failed] }],
             ["gitStars", "version"],
-            "",
         );
         expect(doc.sections[0].rows[0]).toEqual(["left-pad", FAILED_VALUE, "1.2.0"]);
     });
@@ -90,10 +88,10 @@ describe("buildExportDocument", () => {
         expect(doc.sections[0].rows[1]).toEqual(["broken"]);
     });
 
-    it("filters rows by search query", () => {
-        const doc = build(["version"], "PAD");
-        expect(doc.sections[0].rows).toEqual([["left-pad", "1.2.0"]]);
-        expect(doc.sections[1].rows).toEqual([]);
+    it("exports every row", () => {
+        const doc = build(["version"]);
+        expect(doc.sections[0].rows.map((row) => row[0])).toEqual(["left-pad", "broken"]);
+        expect(doc.sections[1].rows.map((row) => row[0])).toEqual(["no-data-pkg"]);
     });
 });
 

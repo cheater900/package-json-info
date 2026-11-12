@@ -125,12 +125,22 @@ first step that fails. Each step stops the table fetch of the step before.
 
 ## Export
 
-Export buttons below both tables save Deps and Dev Deps into one file. The
-file holds what the tables show: Name, then the visible columns in their
-current order, rows matching the search box. Rows keep `package.json`
-order; table sorting is not applied. Buttons stay disabled while a table or
-a newly shown column loads, and while an export runs, so a double click
-saves one file. The file is named `<package name>-dependencies.<ext>`.
+An **Export** button, right-aligned below both tables, opens a form:
+
+- **Tables**: Deps and Dev Deps checkboxes, both checked. Download stays
+  disabled with none checked.
+- **Columns**: every data column in the current column order, the visible
+  ones checked. Name is always exported. Checking a column the tables never
+  loaded fetches its data, with a spinner beside it; Download waits for the
+  fetch. The tables do not change or reload.
+- **Format**: CSV (default), XLSX, Markdown, HTML or PDF.
+- **Download** saves one file and closes the form.
+
+The file holds every row of each checked table; the search box does not
+apply. Rows keep `package.json` order; table sorting is not applied. The
+Export button stays disabled while a table or a newly shown column loads.
+Download stays disabled while an export runs, so a double click saves one
+file. The file is named `<package name>-dependencies.<ext>`.
 
 - **CSV**: one table, UTF-8 with BOM, a leading Section column. Cells that a
   spreadsheet would run as a formula (starting with `=`, `+`, `@`, tab, CR,

@@ -536,6 +536,74 @@ describe("async fetch ordering", () => {
 
         expect(loadError.value).toBeNull();
     });
+
+    describe("fetchRowsWithColumns", () => {
+        const COLUMNS_WITH_VULNERABILITIES = new Set(["weeklyDownloads", "vulnerabilityCount"]);
+
+        it("returns cached rows for covered columns, no fetch", async () => {
+            const release = deferredFetch();
+            const visibleColumns = ref<ReadonlySet<string>>(COLUMNS_WITH_VULNERABILITIES);
+            const { loadPackageJsonText, deps, fetchedColumns, fetchRowsWithColumns } =
+                useHistory(visibleColumns);
+            loadPackageJsonText(packageJsonWith("pkg"));
+            expect(fetchedColumns.value).toEqual(new Set());
+            await release("api.npmjs.org/downloads", { downloads: 5 });
+            await release("api.osv.dev", { vulns: [] });
+            const callsBefore = vi.mocked(fetch).mock.calls.length;
+
+            const rows = await fetchRowsWithColumns("deps", new Set(["weeklyDownloads"]));
+
+            expect(rows).toBe(deps.value);
+            expect(fetchedColumns.value).toEqual(COLUMNS_WITH_VULNERABILITIES);
+            expect(vi.mocked(fetch).mock.calls.length).toBe(callsBefore);
+        });
+
+        it("fetches only missing column, leaves table rows and entry cache", async () => {
+            const release = deferredFetch();
+            const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+            const {
+                loadPackageJsonText,
+                deps,
+                isLoadingDeps,
+                pendingColumns,
+                fetchedColumns,
+                fetchRowsWithColumns,
+            } = useHistory(visibleColumns);
+            loadPackageJsonText(packageJsonWith("pkg"));
+            await release("api.npmjs.org/downloads", { downloads: 5 });
+            const rowsBefore = deps.value;
+            const downloadCalls = countFetchCalls(vi.mocked(fetch), "api.npmjs.org/downloads");
+
+            const result = fetchRowsWithColumns("deps", COLUMNS_WITH_VULNERABILITIES);
+            await flushPromises();
+            expect(isLoadingDeps.value).toBe(false);
+            expect(pendingColumns.value).toEqual(new Set());
+            await release("api.osv.dev", { vulns: [] });
+            const rows = (await result) as PackageInfo[];
+
+            expect(rows[0]).toMatchObject({ weeklyDownloads: 5, vulnerabilityCount: 0 });
+            expect(countFetchCalls(vi.mocked(fetch), "api.npmjs.org/downloads")).toBe(
+                downloadCalls,
+            );
+            expect(deps.value).toBe(rowsBefore);
+            expect(fetchedColumns.value).toEqual(new Set(["weeklyDownloads"]));
+        });
+
+        it("returns null once entry switched mid-fetch", async () => {
+            const release = deferredFetch();
+            const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+            const { loadPackageJsonText, fetchRowsWithColumns } = useHistory(visibleColumns);
+            loadPackageJsonText(packageJsonWith("first"));
+            await release("/first", { downloads: 1 });
+
+            const result = fetchRowsWithColumns("deps", COLUMNS_WITH_VULNERABILITIES);
+            await flushPromises();
+            loadPackageJsonText(packageJsonWith("second"));
+            await release("api.osv.dev", { vulns: [] });
+
+            expect(await result).toBeNull();
+        });
+    });
 });
 
 describe("settings refetch", () => {
