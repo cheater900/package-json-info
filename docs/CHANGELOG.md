@@ -8,6 +8,9 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Failed lookups** show `?` with the error as tooltip; `-` now means
+  only "no data". A **retry button** refetches one row that failed, is
+  stale or has a failed lookup.
 - **Health score** column, 0 to 100 with a good, fair or poor band, from
   release age, deprecation, outdated version, maintainer count, open issue
   ratio and vulnerabilities. It uses only data the row already has; a
@@ -23,6 +26,11 @@ Condensed from git history. Newest month first.
 
 #### Input and loading
 
+- **GitHub `/blob/` and `/tree/` URLs** load the file or folder
+  `package.json` at that ref instead of the repo root.
+- **Responsive layout** down to 360 px: only the table scrolls sideways,
+  with a pinned first column; inputs, modals, source tree and settings
+  menu fit phone width.
 - **Monorepo workspaces** for GitHub repo URLs: a **Workspace select**
   lists folders matched from `workspaces` or `pnpm-workspace.yaml`, and
   loads the picked workspace's `package.json`. Matching work and list

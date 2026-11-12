@@ -13,6 +13,10 @@ The app accepts a `package.json` from any of the following sources:
 - **File URL** - fetch a `package.json` from a remote URL.
 - **Repo URL** - paste a GitHub/GitLab/Codeberg repo URL directly (not just a
   raw file URL); the app finds `package.json` on the `main` or `master` branch.
+- **GitHub file and folder URL** - a `/blob/<ref>/<path>` URL loads that
+  file at that ref; a `/tree/<ref>/<path>` URL loads `package.json` in that
+  folder. Workspaces are listed only for the root `package.json` of a ref
+  without `/`.
 - **Monorepo workspaces** - a GitHub repo URL whose root declares workspaces
   (`workspaces` in `package.json`, or `packages` in `pnpm-workspace.yaml`)
   gets a Workspace select listing each workspace folder. Picking one loads
@@ -91,9 +95,12 @@ first step that fails. Each step stops the table fetch of the step before.
   JSON, missing `dependencies`/`devDependencies`) shows a clear inline error
   instead of a crash or a blank table.
 - **Graceful per-field fallback** - when a data point can't be fetched for a
-  package (e.g. no npm downloads data, no repo URL), the row still renders
-  with that cell clearly marked as unavailable, rather than breaking the row
-  or the table.
+  package, the row still renders. `-` means the service has no data (no
+  downloads, no repo URL). `?` in the error color means the lookup failed
+  with no stored value; its tooltip gives the error.
+- **Retry button** (↻) next to the name of a row that failed, is stale or
+  has a failed lookup, also in the summary card. It refetches that one
+  package.
 
 ### UX
 
@@ -110,6 +117,10 @@ first step that fails. Each step stops the table fetch of the step before.
   IndexedDB there is no fallback.
 - **Column preferences**: visibility, drag-and-drop order and abbreviated
   labels, stored in `localStorage`.
+- **Responsive layout**: the page never scrolls sideways down to 360 px;
+  only the table does, and its first column stays pinned at the left. At
+  700 px and below, the URL field takes its own line, modals fill the
+  screen and the source tree stacks the file list above the file view.
 
 ## Settings
 

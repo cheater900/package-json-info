@@ -68,3 +68,12 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
   is one user navigation, so only sustained fast clicking hits it.
 - **`workspace:` dependency ranges** (`workspace:*`) are looked up on npm
   by package name. A private workspace package shows an empty row.
+- **Blob and tree URLs only on GitHub.** GitLab `/-/blob/` and Codeberg
+  `/src/branch/` URLs still load the root `package.json` from `main` or
+  `master`.
+- **Deep GitHub blob or tree URL lists no workspaces**, nor does a root
+  URL whose ref holds `/`. `tree/main/packages/a` can be branch
+  `main/packages/a` or folder `packages/a` on `main`; the raw host resolves
+  the file, but the workspace tree needs the ref alone.
+- **Retry state is per package name.** A package in both Deps and Dev Deps
+  with different versions disables both retry buttons while one retries.

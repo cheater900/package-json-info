@@ -19,7 +19,6 @@ manager resolves it, to show the real footprint of a `package.json`.
 
 ## UX
 
-- **Responsive layout**: the table stays usable on narrow viewports.
 - **Keyboard and screen-reader support**: focus order, ARIA labels, and
   keyboard access for input controls, table rows, column drag and
   drill-down/history navigation.
@@ -28,13 +27,8 @@ manager resolves it, to show the real footprint of a `package.json`.
 
 - **Default branch for repo URL input**: only `main`/`master` are probed;
   resolve the real default branch (e.g. raw `HEAD` ref).
-- **GitHub `/blob/<ref>/<path>` URL input**: ref and path are ignored, so
-  the root `package.json` loads instead.
 - **Max satisfying version for ranges**: version data uses the range floor
   (leading semver) today.
-- **"Lookup failed" vs "no data"**: both show "-" in cells today.
-- **Retry button for failed rows**: retry happens only on history revisit
-  or column toggle.
 
 ## i18n
 
