@@ -38,9 +38,7 @@ describe("App", () => {
     it("renders Deps and Dev Deps tables", async () => {
         const wrapper = await mountApp();
 
-        const summaries = wrapper
-            .findAll("details.accordion summary")
-            .map((s) => s.text().replace("⤢", "").trim());
+        const summaries = wrapper.findAll("details.accordion summary").map((s) => s.text());
         expect(summaries).toEqual(["Columns", "Deps", "Dev Deps", "package.json"]);
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
     });
@@ -48,7 +46,7 @@ describe("App", () => {
     it("expand button opens table modal, close removes modal", async () => {
         const wrapper = await mountApp();
 
-        await wrapper.findAll(".accordion__expand")[1].trigger("click");
+        await wrapper.findAll(".table-actions__expand")[1].trigger("click");
 
         expect(document.body.querySelector(".modal .table-modal-content")).not.toBeNull();
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(3);
@@ -205,11 +203,11 @@ describe("App", () => {
             expect(zodRow(wrapper)).toMatchObject({ error: "Failed to fetch" });
             recover();
 
-            await wrapper.find(".table-retry").trigger("click");
+            await wrapper.find(".table-actions__retry").trigger("click");
             await flushPromises();
 
             expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
-            expect(wrapper.find(".table-retry").exists()).toBe(false);
+            expect(wrapper.find(".table-actions__retry").exists()).toBe(false);
         });
 
         it("disables retry failed fetches button while retry runs", async () => {
@@ -217,16 +215,16 @@ describe("App", () => {
             const wrapper = await mountApp();
             stubFetchPending();
 
-            await wrapper.find(".table-retry").trigger("click");
+            await wrapper.find(".table-actions__retry").trigger("click");
 
-            expect(wrapper.find(".table-retry").attributes("disabled")).toBeDefined();
+            expect(wrapper.find(".table-actions__retry").attributes("disabled")).toBeDefined();
         });
 
         it("shows retry failed fetches button only under table with failed row", async () => {
             stubZodRegistryDown();
             const wrapper = await mountApp();
 
-            const buttons = wrapper.findAll(".table-retry");
+            const buttons = wrapper.findAll(".table-actions__retry");
             expect(buttons).toHaveLength(1);
             expect(buttons[0].text()).toContain("Retry failed fetches");
         });

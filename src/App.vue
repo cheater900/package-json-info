@@ -128,14 +128,6 @@
             <summary>
                 {{ section.title }}
                 <span v-if="section.isLoading">{{ t("sections.loading") }}</span>
-                <button
-                    type="button"
-                    class="accordion__expand"
-                    :aria-label="t('sections.expandTable')"
-                    @click.prevent="expandTable(section.id)"
-                >
-                    ⤢
-                </button>
             </summary>
             <dependencies-table
                 v-bind="tableProps"
@@ -143,16 +135,26 @@
                 :is-loading="section.isLoading"
                 v-on="tableListeners"
             />
-            <button
-                v-if="section.hasRetryableRows && !section.isLoading"
-                type="button"
-                class="table-retry"
-                :disabled="isRetrying"
-                @click="retryFailedRows(section.dependencies)"
-            >
-                <span class="btn-icon" aria-hidden="true">↻</span>
-                {{ t("sections.retryFailed") }}
-            </button>
+            <div class="table-actions">
+                <button
+                    v-if="section.hasRetryableRows && !section.isLoading"
+                    type="button"
+                    class="table-actions__retry"
+                    :disabled="isRetrying"
+                    @click="retryFailedRows(section.dependencies)"
+                >
+                    <span class="btn-icon" aria-hidden="true">↻</span>
+                    {{ t("sections.retryFailed") }}
+                </button>
+                <button
+                    type="button"
+                    class="table-actions__expand"
+                    @click="expandTable(section.id)"
+                >
+                    <span class="btn-icon" aria-hidden="true">⤢</span>
+                    {{ t("sections.expandTable") }}
+                </button>
+            </div>
         </details>
         <button type="button" class="table-export" :disabled="isLoadingTables" @click="openExport">
             {{ t("export.open") }}

@@ -63,6 +63,8 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Expand table** and **Retry failed fetches** buttons sit right-aligned
+  below each table.
 - **Column toggles** keep the table on screen. Hiding a column fetches
   nothing; a newly shown column shows a **loading icon** in its cells until
   its data arrives. Hiding a column during a full table load, such as a

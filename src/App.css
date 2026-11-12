@@ -147,13 +147,6 @@ textarea {
     padding: calc(8px * var(--space-scale)) calc(4px * var(--space-scale));
 }
 
-/* Floats right inside the summary; flex would drop the disclosure marker. */
-.accordion__expand {
-    float: right;
-    font-size: 0.85rem;
-    padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
-}
-
 .package-name {
     border-bottom: 1px solid var(--border);
     font-weight: 700;
@@ -186,7 +179,11 @@ textarea {
     margin: 0 0 16px auto;
 }
 
-.table-retry {
+.table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
     margin-top: 8px;
 }
 

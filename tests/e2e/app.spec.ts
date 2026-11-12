@@ -188,7 +188,7 @@ test("Columns, Deps, Dev Deps collapse as accordions; Deps and Dev Deps start op
     await expect(columnsSection.locator(".column-visibility-panel")).toBeVisible();
 });
 
-test("expand button in section summary opens table modal, keeps section open", async ({ page }) => {
+test("expand button below table opens table modal, keeps section open", async ({ page }) => {
     await page.goto("/");
     const depsSection = page.locator("details.accordion").nth(1);
     await expect(depsSection.locator("table.deps-table")).toBeVisible();
