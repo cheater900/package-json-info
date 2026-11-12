@@ -125,8 +125,7 @@ first step that fails. Each step stops the table fetch of the step before.
 
 ## Export
 
-Export buttons next to the search box save both tables, Deps and Dev Deps,
-into one file. The file holds what the tables show: Name, then the visible
+Export buttons below both tables save Deps and Dev Deps into one file. The file holds what the tables show: Name, then the visible
 columns in their current order, rows matching the search box. Rows keep
 `package.json` order; table sorting is not applied. Buttons stay disabled
 while a table loads. The file is named `<package name>-dependencies.<ext>`.

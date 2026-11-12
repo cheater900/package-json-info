@@ -180,6 +180,10 @@ textarea {
     padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
 }
 
+.table-export {
+    margin-bottom: 16px;
+}
+
 .table-retry {
     margin-top: 8px;
 }

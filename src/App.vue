@@ -122,12 +122,6 @@
                     {{ t("sections.shrinkColumnLabels") }}
                 </label>
             </div>
-
-            <export-menu
-                :document="exportDocument"
-                :file-base-name="exportFileName"
-                :disabled="isLoadingTables"
-            />
         </div>
 
         <details v-for="section in tableSections" :key="section.id" class="accordion" open>
@@ -160,6 +154,12 @@
                 {{ t("sections.retryFailed") }}
             </button>
         </details>
+        <export-menu
+            class="table-export"
+            :document="exportDocument"
+            :file-base-name="exportFileName"
+            :disabled="isLoadingTables"
+        />
         <details class="accordion" open>
             <summary>{{ t("sections.packageJson") }}</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
