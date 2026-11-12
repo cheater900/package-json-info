@@ -237,6 +237,8 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         if (!token) {
             return;
         }
+        // Lookups still in flight went out without the token; the refetch must not share them.
+        clearPackageInfoCache();
         refetchAllEntries();
     });
 

@@ -101,6 +101,9 @@ Condensed from git history. Newest month first.
 
 #### Settings and token
 
+- **Token** set while GitHub lookups run, e.g. loaded after the 2 s mount
+  timeout, now applies to them: the refetch no longer reuses the
+  anonymous, rate-limited requests.
 - **Token save** waits for the IndexedDB commit, and a failed save purges
   the half-written key and ciphertext.
 - **Stored token** survives an IndexedDB failure on load; only corrupt data

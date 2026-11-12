@@ -27,12 +27,6 @@ to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas are in
   error in the source-tree modal; a `/rate_limit` answer without `rate`
   shows one in the token status. The workspace lookup takes the same
   malformed tree answer as a failed lookup and shows its notice.
-- **Token set while GitHub lookups are in flight does not apply to them.**
-  The refetch shares the pending lookups that went out without the token,
-  so a rate-limited star or issue count stays empty until the next refetch.
-  This hits a token that loads after the 2 s mount timeout. Clearing the
-  package info cache on token set, as a proxy change does, would fix it.
-  Left open: code predates the health, offline and share link work.
 - **Workspace pattern `packages/**` also lists `packages` itself** when
   `packages/package.json` exists: a trailing `**` matches zero folders.
   npm and pnpm are believed to do the same; not checked against their

@@ -512,6 +512,34 @@ describe("settings refetch", () => {
         expect((deps.value[0] as PackageInfo).gitStars).toBe(7);
     });
 
+    it("refetches GitHub lookup in flight at token set with Authorization", async () => {
+        let releaseAnonymous = () => {};
+        const gate = new Promise<void>((resolve) => {
+            releaseAnonymous = resolve;
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string, init: RequestInit = {}) => {
+                if (!url.includes(GITHUB_API_URL)) {
+                    return registryDocWithRepo("settings-repo");
+                }
+                if (!new Headers(init.headers).has("Authorization")) {
+                    await gate;
+                }
+                return githubStarsResponse(init);
+            }),
+        );
+        const { deps } = loadInScope(["gitStars"]);
+        await flushPromises();
+
+        githubToken.value = "abc";
+        await flushPromises();
+        releaseAnonymous();
+        await flushPromises();
+
+        expect((deps.value[0] as PackageInfo).gitStars).toBe(7);
+    });
+
     it("clears cache, refetches through new proxy", async () => {
         const fetchMock = stubGithubRateLimitedWithoutToken();
         loadInScope(["latestVersion"]);
