@@ -151,6 +151,16 @@
                 :is-loading="section.isLoading"
                 v-on="tableListeners"
             />
+            <button
+                v-if="section.hasRetryableRows && !section.isLoading"
+                type="button"
+                class="table-retry"
+                :disabled="isRetrying"
+                @click="retryFailedRows(section.dependencies)"
+            >
+                <span class="btn-icon" aria-hidden="true">↻</span>
+                {{ t("sections.retryFailed") }}
+            </button>
         </details>
         <details class="accordion" open>
             <summary>{{ t("sections.packageJson") }}</summary>
@@ -169,9 +179,7 @@
             <package-summary-card
                 v-else-if="modalContent.kind === 'summary'"
                 :dependency="modalContent.dependency"
-                :is-retrying="retryingPackages.has(modalContent.dependency.name)"
                 @open-source-tree="openSourceTree"
-                @retry-package="retryPackage"
             />
             <source-tree-browser
                 v-else-if="modalContent.kind === 'sourceTree'"

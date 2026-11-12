@@ -98,9 +98,8 @@ first step that fails. Each step stops the table fetch of the step before.
   package, the row still renders. `-` means the service has no data (no
   downloads, no repo URL). `?` in the error color means the lookup failed
   with no stored value; its tooltip gives the error.
-- **Retry button** (↻) next to the name of a row that failed, is stale or
-  has a failed lookup, also in the summary card. It refetches that one
-  package.
+- **Retry failed fetches** button below a table with rows that failed, are
+  stale or have a failed lookup. It refetches those rows only.
 
 ### UX
 

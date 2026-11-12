@@ -7,15 +7,6 @@
         <p v-if="dependency.staleSince" class="package-summary__stale">
             {{ fmtStaleNote(dependency.staleSince) }}
         </p>
-        <button
-            v-if="canRetry"
-            type="button"
-            class="package-summary__retry"
-            :disabled="isRetrying"
-            @click="$emit('retry-package', { name: dependency.name, version: dependency.version })"
-        >
-            {{ t("table.retry") }} {{ t("table.retryLabel", { name: dependency.name }) }}
-        </button>
         <dl class="package-summary__list">
             <template v-for="col in summaryColumns" :key="col.key">
                 <dt>{{ col.label }}</dt>

@@ -770,7 +770,7 @@ test("registry outage after reload shows stored row with stale badge and health 
     await expect(row.getByRole("cell", { name: "100 good", exact: true })).toBeVisible();
 });
 
-test("failed downloads lookup shows '?', retry button shows number", async ({ page }) => {
+test("failed downloads lookup shows '?', retry failed fetches shows number", async ({ page }) => {
     let isDownloadsDown = true;
     await page.route(`${NPM_WEEKLY_DOWNLOADS_URL}/flaky-pkg`, async (route) => {
         if (isDownloadsDown) {
@@ -791,12 +791,15 @@ test("failed downloads lookup shows '?', retry button shows number", async ({ pa
     await failedCell.hover();
     await expect(page.getByRole("tooltip")).toContainText("Lookup failed:");
 
+    const retryButton = page.getByRole("button", { name: "Retry failed fetches" });
+    await expect(row.getByRole("button")).toHaveCount(0);
+
     isDownloadsDown = false;
-    await row.getByRole("button", { name: "Retry lookups for flaky-pkg" }).click();
+    await retryButton.click();
 
     await expect(row.getByRole("cell", { name: "777", exact: true })).toBeVisible();
     await expect(failedCell).toHaveCount(0);
-    await expect(row.getByRole("button", { name: "Retry lookups for flaky-pkg" })).toHaveCount(0);
+    await expect(retryButton).toHaveCount(0);
     // Retry is not a drill-down: the loaded package.json stays.
     await expect(depsTable.getByRole("cell", { name: "flaky-pkg", exact: true })).toBeVisible();
 });

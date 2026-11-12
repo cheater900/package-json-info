@@ -17,8 +17,9 @@ import appPackageJson from "../package.json";
 import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
+import { isRowRetryable } from "./utils/packageJsonHistory";
 import { buildExportDocument, exportFileBaseName } from "./utils/export/buildExportDocument";
-import type { DependencyRow, PackageInfo, PackageInput } from "./types";
+import type { DependencyRow, PackageInfo } from "./types";
 
 type ModalContent =
     | { kind: "table"; sectionId: string }
@@ -66,8 +67,8 @@ export default defineComponent({
             goBack,
             goForward,
             loadPackageJsonText,
-            retryingPackages,
-            retryRow,
+            isRetrying,
+            retryFailedRows,
         } = usePackageJsonHistory(visibleColumns);
         const {
             isLoadingInput,
@@ -107,12 +108,14 @@ export default defineComponent({
                 title: t("sections.deps"),
                 dependencies: deps.value,
                 isLoading: isLoadingDeps.value,
+                hasRetryableRows: deps.value.some(isRowRetryable),
             },
             {
                 id: "devDeps",
                 title: t("sections.devDeps"),
                 dependencies: devDeps.value,
                 isLoading: isLoadingDevDeps.value,
+                hasRetryableRows: devDeps.value.some(isRowRetryable),
             },
         ]);
 
@@ -151,25 +154,10 @@ export default defineComponent({
             modalContent.value = null;
         }
 
-        /** Retries one row; an open summary card of that row shows the new data. */
-        async function retryPackage(input: PackageInput) {
-            const row = await retryRow(input);
-            const content = modalContent.value;
-            const isSummaryOfRow =
-                content?.kind === "summary" &&
-                content.dependency.name === input.name &&
-                content.dependency.version === input.version;
-            if (!row || !isSummaryOfRow) {
-                return;
-            }
-            modalContent.value = { kind: "summary", dependency: row };
-        }
-
         const tableProps = computed(() => ({
             columns: visibleColumnKeys.value,
             searchQuery: searchQuery.value,
             shrinkLabels: shrinkColumnLabels.value,
-            retryingPackages: retryingPackages.value,
             pendingColumns: pendingColumns.value,
         }));
         const tableListeners = {
@@ -177,7 +165,6 @@ export default defineComponent({
             reorderColumns,
             openSourceTree,
             selectPackage: showPackageSummary,
-            retryPackage,
         };
 
         return {
@@ -218,8 +205,8 @@ export default defineComponent({
             expandTable,
             openSourceTree,
             closeModal,
-            retryingPackages,
-            retryPackage,
+            isRetrying,
+            retryFailedRows,
         };
     },
 });

@@ -117,12 +117,6 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
     padding: 0 calc(4px * var(--space-scale));
 }
 
-.deps-table__retry {
-    flex-shrink: 0;
-    line-height: 1;
-    padding: 0 calc(4px * var(--space-scale));
-}
-
 .deps-table__name-arrow {
     flex-shrink: 0;
     opacity: 0.6;

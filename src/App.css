@@ -184,6 +184,10 @@ textarea {
     padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
 }
 
+.table-retry {
+    margin-top: 8px;
+}
+
 .table-modal-content {
     max-height: 100%;
     max-width: var(--content-width);

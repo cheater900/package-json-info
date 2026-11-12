@@ -86,5 +86,3 @@ Gaps that should be fixed are in [NOTES.md](NOTES.md).
 - **Export libraries load with the app.** jsPDF, jspdf-autotable and
   write-excel-file sit in the main chunk, roughly doubling it (about
   160 KB more gzip), since the code style rules out dynamic `import()`.
-- **Retry state is per package name.** A package in both Deps and Dev Deps
-  with different versions disables both retry buttons while one retries.
