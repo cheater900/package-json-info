@@ -85,6 +85,7 @@ Condensed from git history. Newest month first.
 #### Settings and token
 
 - **Settings menu** twice as wide, 720 px, capped at screen width.
+  Sections run Display, Network, GitHub token, with wider gaps between.
 - **Theme** resolves to `data-color-scheme` in `main.js`; `light-dark()` is
   dropped so themes render on browsers without it.
 - **Settings dropdown** opens with Vue state and absolute CSS instead of the

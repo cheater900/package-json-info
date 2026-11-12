@@ -162,6 +162,11 @@ URL. Error rows keep their message, failed lookups their `?`.
 A gear button at the top right opens a settings dropdown. A dot on the gear
 shows when a GitHub token is set.
 
+- **Display**: theme (Green terminal, Light, or System to follow the OS),
+  font size (87.5% to 125%) and padding (75% to 125%).
+- **Network**: CORS proxy, request timeout and parallel fetches per table.
+  A proxy containing `{url}` gets the encoded target URL there; otherwise
+  the target URL is appended. Changing the proxy refetches the tables.
 - **GitHub token**: paste a personal access token to raise the GitHub API
   rate limit from 60 to 5000 requests per hour. Save stores it encrypted
   (AES-GCM, with a non-extractable key in IndexedDB) and refetches the
@@ -171,8 +176,3 @@ shows when a GitHub token is set.
   The token is sent only to `api.github.com`, never through the proxy.
   Encryption protects it on disk, not from scripts on the page, so use a
   fine-grained token with no permissions.
-- **Network**: CORS proxy, request timeout and parallel fetches per table.
-  A proxy containing `{url}` gets the encoded target URL there; otherwise
-  the target URL is appended. Changing the proxy refetches the tables.
-- **Display**: theme (Green terminal, Light, or System to follow the OS),
-  font size (87.5% to 125%) and padding (75% to 125%).

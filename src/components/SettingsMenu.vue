@@ -21,42 +21,25 @@
             :aria-label="t('settings.title')"
         >
             <fieldset class="settings-menu__section">
-                <legend>{{ t("settings.token.legend") }}</legend>
-                <p v-if="!isTokenStorageAvailable" class="settings-menu__hint">
-                    {{ t("settings.token.unavailable") }}
-                </p>
-                <template v-else>
-                    <p class="settings-menu__status">
-                        {{ githubToken ? t("settings.token.set") : t("settings.token.notSet") }}
-                    </p>
-                    <form class="settings-menu__row" @submit.prevent="saveToken">
-                        <label :for="`${panelId}-token`" class="visually-hidden">
-                            {{ t("settings.token.label") }}
-                        </label>
-                        <input
-                            :id="`${panelId}-token`"
-                            ref="tokenInputRef"
-                            v-model="tokenDraft"
-                            type="password"
-                            autocomplete="off"
-                            spellcheck="false"
-                            :placeholder="t('settings.token.label')"
-                        />
-                        <button type="submit">{{ t("settings.token.save") }}</button>
-                    </form>
-                    <div class="settings-menu__row">
-                        <button type="button" :disabled="!githubToken" @click="verifyToken">
-                            {{ t("settings.token.verify") }}
-                        </button>
-                        <button type="button" :disabled="!githubToken" @click="purgeToken">
-                            {{ t("settings.token.purge") }}
-                        </button>
-                    </div>
-                    <p v-if="tokenMessage" role="status">
-                        {{ tokenMessage }}
-                    </p>
-                    <p class="settings-menu__hint">{{ t("settings.token.hint") }}</p>
-                </template>
+                <legend>{{ t("settings.display.legend") }}</legend>
+                <label :for="`${panelId}-theme`">{{ t("settings.display.theme") }}</label>
+                <select :id="`${panelId}-theme`" v-model="settings.theme">
+                    <option v-for="theme in themes" :key="theme" :value="theme">
+                        {{ t(`settings.display.themes.${theme}`) }}
+                    </option>
+                </select>
+                <label :for="`${panelId}-font`">{{ t("settings.display.fontSize") }}</label>
+                <select :id="`${panelId}-font`" v-model="settings.fontScale">
+                    <option v-for="scale in fontScales" :key="scale" :value="scale">
+                        {{ formatPercent(scale) }}
+                    </option>
+                </select>
+                <label :for="`${panelId}-space`">{{ t("settings.display.padding") }}</label>
+                <select :id="`${panelId}-space`" v-model="settings.spaceScale">
+                    <option v-for="scale in spaceScales" :key="scale" :value="scale">
+                        {{ formatPercent(scale) }}
+                    </option>
+                </select>
             </fieldset>
 
             <fieldset class="settings-menu__section">
@@ -105,25 +88,42 @@
             </fieldset>
 
             <fieldset class="settings-menu__section">
-                <legend>{{ t("settings.display.legend") }}</legend>
-                <label :for="`${panelId}-theme`">{{ t("settings.display.theme") }}</label>
-                <select :id="`${panelId}-theme`" v-model="settings.theme">
-                    <option v-for="theme in themes" :key="theme" :value="theme">
-                        {{ t(`settings.display.themes.${theme}`) }}
-                    </option>
-                </select>
-                <label :for="`${panelId}-font`">{{ t("settings.display.fontSize") }}</label>
-                <select :id="`${panelId}-font`" v-model="settings.fontScale">
-                    <option v-for="scale in fontScales" :key="scale" :value="scale">
-                        {{ formatPercent(scale) }}
-                    </option>
-                </select>
-                <label :for="`${panelId}-space`">{{ t("settings.display.padding") }}</label>
-                <select :id="`${panelId}-space`" v-model="settings.spaceScale">
-                    <option v-for="scale in spaceScales" :key="scale" :value="scale">
-                        {{ formatPercent(scale) }}
-                    </option>
-                </select>
+                <legend>{{ t("settings.token.legend") }}</legend>
+                <p v-if="!isTokenStorageAvailable" class="settings-menu__hint">
+                    {{ t("settings.token.unavailable") }}
+                </p>
+                <template v-else>
+                    <p class="settings-menu__status">
+                        {{ githubToken ? t("settings.token.set") : t("settings.token.notSet") }}
+                    </p>
+                    <form class="settings-menu__row" @submit.prevent="saveToken">
+                        <label :for="`${panelId}-token`" class="visually-hidden">
+                            {{ t("settings.token.label") }}
+                        </label>
+                        <input
+                            :id="`${panelId}-token`"
+                            ref="tokenInputRef"
+                            v-model="tokenDraft"
+                            type="password"
+                            autocomplete="off"
+                            spellcheck="false"
+                            :placeholder="t('settings.token.label')"
+                        />
+                        <button type="submit">{{ t("settings.token.save") }}</button>
+                    </form>
+                    <div class="settings-menu__row">
+                        <button type="button" :disabled="!githubToken" @click="verifyToken">
+                            {{ t("settings.token.verify") }}
+                        </button>
+                        <button type="button" :disabled="!githubToken" @click="purgeToken">
+                            {{ t("settings.token.purge") }}
+                        </button>
+                    </div>
+                    <p v-if="tokenMessage" role="status">
+                        {{ tokenMessage }}
+                    </p>
+                    <p class="settings-menu__hint">{{ t("settings.token.hint") }}</p>
+                </template>
             </fieldset>
         </div>
     </div>
