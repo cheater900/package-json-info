@@ -10,7 +10,7 @@ import {
 } from "../utils/tableColumns";
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyRow, SortDirection } from "../types";
-import { fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
+import { filterRowsByName, fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
 import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
@@ -57,13 +57,9 @@ export default defineComponent({
         "retry-package",
     ],
     setup(props, { emit }) {
-        const filteredDependencies = computed(() => {
-            const query = props.searchQuery.trim().toLowerCase();
-            if (!query) {
-                return props.dependencies;
-            }
-            return props.dependencies.filter((d) => d.name?.toLowerCase().includes(query));
-        });
+        const filteredDependencies = computed(() =>
+            filterRowsByName(props.dependencies, props.searchQuery),
+        );
 
         function labelFor(col: ColumnDef) {
             return props.shrinkLabels ? abbreviateLabel(col.label) : col.label;

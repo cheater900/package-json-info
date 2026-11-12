@@ -122,6 +122,26 @@ first step that fails. Each step stops the table fetch of the step before.
   700 px and below, the URL field takes its own line, modals fill the
   screen and the source tree stacks the file list above the file view.
 
+## Export
+
+Export buttons next to the search box save both tables, Deps and Dev Deps,
+into one file. The file holds what the tables show: Name, then the visible
+columns in their current order, rows matching the search box. Rows keep
+`package.json` order; table sorting is not applied. Buttons stay disabled
+while a table loads. The file is named `<package name>-dependencies.<ext>`.
+
+- **CSV**: one table, UTF-8 with BOM, a leading Section column. Cells that a
+  spreadsheet would run as a formula (`=`, `+`, `@`, `-1`) get a leading `'`.
+- **XLSX**: one sheet per table, bold frozen header row.
+- **Markdown**: a heading and a GFM table per table.
+- **HTML**: one standalone page with inline styles, no scripts or external
+  files, so it opens offline.
+- **PDF**: landscape, each table on its own page. Columns past the page
+  width continue on the next page, repeating Name.
+
+Source Code Tree buttons are left out; the Source Code link exports its
+URL. Error rows keep their message, failed lookups their `?`.
+
 ## Settings
 
 A gear button at the top right opens a settings dropdown. A dot on the gear

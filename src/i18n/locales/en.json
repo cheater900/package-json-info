@@ -65,6 +65,20 @@
         "label": "Search by name",
         "placeholder": "Filter by package name"
     },
+    "export": {
+        "label": "Export",
+        "groupLabel": "Export both tables",
+        "formats": {
+            "csv": "CSV",
+            "xlsx": "XLSX",
+            "markdown": "Markdown",
+            "html": "HTML",
+            "pdf": "PDF"
+        },
+        "sectionHeader": "Section",
+        "untitled": "package.json",
+        "failed": "Export failed. Try again or pick another format."
+    },
     "sections": {
         "columns": "Columns",
         "deps": "Deps",

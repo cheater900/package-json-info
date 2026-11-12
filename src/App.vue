@@ -122,6 +122,12 @@
                     {{ t("sections.shrinkColumnLabels") }}
                 </label>
             </div>
+
+            <export-menu
+                :document="exportDocument"
+                :file-base-name="exportFileName"
+                :disabled="isLoadingTables"
+            />
         </div>
 
         <details v-for="section in tableSections" :key="section.id" class="accordion" open>

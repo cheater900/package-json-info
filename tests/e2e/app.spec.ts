@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
 import {
     mockExternalApis,
@@ -1053,4 +1054,30 @@ test("View tree shows error for corrupt tarball", async ({ page }) => {
     await expect(page.locator(".source-tree__status--error")).toHaveText(
         "The package tarball is corrupt or incomplete.",
     );
+});
+
+test("CSV export downloads both tables with header row", async ({ page }) => {
+    await page.goto("/");
+    await loadJson(page, {
+        name: "@demo/app",
+        dependencies: { "left-pad": "^1.0.0" },
+        devDependencies: { "right-pad": "^1.0.0" },
+    });
+    await expect(page.getByRole("cell", { name: "right-pad", exact: true })).toBeVisible();
+    const exportGroup = page.getByRole("group", { name: "Export both tables" });
+    await expect(exportGroup.getByRole("button", { name: "CSV" })).toBeEnabled();
+
+    const [download] = await Promise.all([
+        page.waitForEvent("download"),
+        exportGroup.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toBe("demo-app-dependencies.csv");
+    const csv = readFileSync(await download.path(), "utf8");
+    const lines = csv.split("\r\n");
+    expect(lines[0]).toMatch(/^﻿Section,Name,Version,/);
+    expect(lines.slice(1, 3).map((line) => line.split(",").slice(0, 2))).toEqual([
+        ["Deps", "left-pad"],
+        ["Dev Deps", "right-pad"],
+    ]);
 });

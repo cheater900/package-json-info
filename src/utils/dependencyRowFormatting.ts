@@ -98,6 +98,15 @@ export function formatCell(key: string, dependency: CellSource) {
         : (dependency[key as keyof PackageInfo] ?? MISSING_VALUE);
 }
 
+/** Rows whose name contains `query`, case-insensitive; blank query keeps every row (same reference). */
+export function filterRowsByName<Row extends { name?: string }>(rows: Row[], query: string): Row[] {
+    const needle = query.trim().toLowerCase();
+    if (!needle) {
+        return rows;
+    }
+    return rows.filter((row) => row.name?.toLowerCase().includes(needle));
+}
+
 function cellValue(row: object, key: string): CellValue {
     return (row as CellSource)[key as keyof PackageInfo];
 }

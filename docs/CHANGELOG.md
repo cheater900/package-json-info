@@ -6,6 +6,13 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### Export
+
+- **Table export** as **CSV**, **XLSX**, **Markdown**, **HTML** and
+  **PDF**: one file with Deps and Dev Deps, visible columns in display
+  order, search filter applied. XLSX uses `write-excel-file`, PDF uses
+  `jspdf` with `jspdf-autotable`.
+
 #### Package data
 
 - **Failed lookups** show `?` with the error as tooltip; `-` now means

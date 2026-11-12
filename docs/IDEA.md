@@ -17,7 +17,6 @@ to [ROADMAP.md](ROADMAP.md) once planned.
 
 - **Share links for pasted or uploaded files**, and for sort, search and
   column state. Links carry only URL, dependency and workspace steps.
-- **Export** the table as CSV, JSON or Markdown.
 - **Diff view**: compare two `package.json` files side by side.
 - **Persistent metadata cache** with visible "last checked" timestamps and
   a manual refresh. Stored values are used only as fallback today.
