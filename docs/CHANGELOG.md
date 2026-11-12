@@ -63,6 +63,8 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
+- **Actions column** after Name: View, Load and Reload buttons per row.
+  Clicking a row or its Name cell no longer opens or loads anything.
 - **Section headers** of Deps and Dev Deps get a border and a soft green
   hover.
 - **Expand table** and **Retry failed fetches** buttons sit right-aligned

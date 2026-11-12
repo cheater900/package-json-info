@@ -21,6 +21,9 @@
                             </button>
                         </span>
                     </th>
+                    <th class="deps-table__centered deps-table__actions-header">
+                        {{ t("table.actions.header") }}
+                    </th>
                 </template>
                 <template #item="{ element: col }">
                     <th class="deps-table__centered">
@@ -46,26 +49,50 @@
             </draggable>
         </thead>
         <tbody v-if="!isLoading && dependencies.length > 0">
-            <tr
-                v-for="dependency in sortedDependencies"
-                :key="dependency.name"
-                @click="$emit('select-package', dependency)"
-            >
-                <td
-                    class="deps-table__name-cell"
-                    @click.stop="
-                        $emit('load-package', {
-                            name: dependency.name,
-                            version: dependency.version,
-                        })
-                    "
-                >
+            <tr v-for="dependency in sortedDependencies" :key="dependency.name">
+                <td class="deps-table__name-cell">
                     <span class="deps-table__name-inner">
                         <span class="deps-table__name-text">{{ dependency.name }}</span>
                         <tooltip v-if="staleNoteFor(dependency)" :text="staleNoteFor(dependency)">
                             <span class="deps-table__stale-badge">{{ t("table.stale") }}</span>
                         </tooltip>
-                        <span class="deps-table__name-arrow" aria-hidden="true">→</span>
+                    </span>
+                </td>
+                <td class="deps-table__actions-cell">
+                    <span class="deps-table__actions">
+                        <button
+                            type="button"
+                            class="deps-table__action"
+                            :aria-label="t('table.actions.view', { name: dependency.name })"
+                            :title="t('table.actions.view', { name: dependency.name })"
+                            @click="$emit('select-package', dependency)"
+                        >
+                            ≡
+                        </button>
+                        <button
+                            type="button"
+                            class="deps-table__action"
+                            :aria-label="t('table.actions.load', { name: dependency.name })"
+                            :title="t('table.actions.load', { name: dependency.name })"
+                            @click="
+                                $emit('load-package', {
+                                    name: dependency.name,
+                                    version: dependency.version,
+                                })
+                            "
+                        >
+                            →
+                        </button>
+                        <button
+                            type="button"
+                            class="deps-table__action"
+                            :aria-label="t('table.actions.reload', { name: dependency.name })"
+                            :title="t('table.actions.reload', { name: dependency.name })"
+                            :disabled="isRetrying || !isRowRetryable(dependency)"
+                            @click="$emit('retry-row', dependency)"
+                        >
+                            ↻
+                        </button>
                     </span>
                 </td>
                 <td
@@ -100,7 +127,7 @@
         </tbody>
         <tbody v-else>
             <tr class="deps-table__status-row">
-                <td :colspan="orderedVisibleColumns.length + 1">
+                <td :colspan="orderedVisibleColumns.length + 2">
                     <template v-if="isLoading">{{ t("table.loading") }}</template>
                     <template v-else>{{ t("table.empty") }}</template>
                 </td>

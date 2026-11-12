@@ -128,7 +128,13 @@
         "viewTree": "View tree",
         "stale": "stale",
         "staleNote": "Cached data from {date}; live lookup failed.",
-        "lookupFailed": "Lookup failed: {error}"
+        "lookupFailed": "Lookup failed: {error}",
+        "actions": {
+            "header": "Actions",
+            "view": "View {name}",
+            "load": "Load table of {name}",
+            "reload": "Retry failed lookups of {name}"
+        }
     },
     "cell": {
         "yes": "Yes",

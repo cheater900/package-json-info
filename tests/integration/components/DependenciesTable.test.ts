@@ -10,8 +10,9 @@ import type { DependencyRow } from "../../../src/types";
 import { columnKeysExcept } from "../../helpers/columns";
 import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/dependencies";
 
+/** Labels of Name and the data columns; the Actions header is left out. */
 function headerLabels(wrapper: VueWrapper) {
-    return wrapper.findAll("thead th").map((th) =>
+    return wrapper.findAll("thead th:not(.deps-table__actions-header)").map((th) =>
         th
             .text()
             .replace(/[\s▲▼]+$/, "")
@@ -62,7 +63,7 @@ describe("DependenciesTable", () => {
             props: { dependencies: [sparseDependency] },
         });
 
-        const cells = wrapper.findAll("tbody td");
+        const cells = wrapper.findAll("tbody td:not(.deps-table__actions-cell)");
         const licenseIndex = headerLabels(wrapper).indexOf("License");
 
         // name/version are always present; every other cell should fall back
@@ -128,60 +129,77 @@ describe("DependenciesTable", () => {
     });
 });
 
-describe("DependenciesTable load-as-input action", () => {
-    it("renders right arrow in Name cell as load affordance", () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency] },
+describe("DependenciesTable actions column", () => {
+    function mountRow(props: object = {}) {
+        return mount(DependenciesTable, {
+            props: { dependencies: [fullDependency], columns: ["version"], ...props },
         });
+    }
 
-        const nameCell = wrapper.find("tbody td");
-        expect(nameCell.find(".deps-table__name-arrow").text()).toBe("→");
+    function actionButton(wrapper: VueWrapper, label: string) {
+        return wrapper.find(`[aria-label="${label}"]`);
+    }
+
+    it("puts Actions header right after Name", () => {
+        const headers = mountRow().findAll("thead th");
+
+        expect(headers[1].text()).toBe("Actions");
+        expect(headers[1].classes()).toContain("deps-table__actions-header");
     });
 
-    it("emits load-package with row name and version on Name cell click", async () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency] },
-        });
+    it("view button emits select-package with row", async () => {
+        const wrapper = mountRow();
 
-        await wrapper.find("tbody td").trigger("click");
-
-        expect(wrapper.emitted("load-package")).toEqual([[{ name: "left-pad", version: "1.2.0" }]]);
-    });
-});
-
-describe("DependenciesTable row selection", () => {
-    it("emits select-package with row dependency on data cell click", async () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columns: ["version"] },
-        });
-
-        await wrapper.findAll("tbody td").at(-1)!.trigger("click");
+        await actionButton(wrapper, "View left-pad").trigger("click");
 
         expect(wrapper.emitted("select-package")).toEqual([[fullDependency]]);
+        expect(wrapper.emitted("load-package")).toBeUndefined();
     });
 
-    it("Name cell click emits load-package only, not select-package", async () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency] },
-        });
+    it("load button emits load-package with name and version", async () => {
+        const wrapper = mountRow();
 
-        await wrapper.find("tbody td").trigger("click");
+        await actionButton(wrapper, "Load table of left-pad").trigger("click");
 
-        expect(wrapper.emitted("load-package")).toBeTruthy();
-        expect(wrapper.emitted("select-package")).toBeFalsy();
+        expect(wrapper.emitted("load-package")).toEqual([[{ name: "left-pad", version: "1.2.0" }]]);
+        expect(wrapper.emitted("select-package")).toBeUndefined();
     });
 
-    it("source-code link click follows link only, not select-package", async () => {
-        const wrapper = mount(DependenciesTable, {
-            props: { dependencies: [fullDependency], columns: ["sourceCode"] },
-        });
+    it("reload button emits retry-row for row with failed lookup", async () => {
+        const failed = { ...fullDependency, failedLookups: { version: "Failed to fetch" } };
+        const wrapper = mountRow({ dependencies: [failed] });
 
-        await wrapper.find("tbody a").trigger("click");
+        await actionButton(wrapper, "Retry failed lookups of left-pad").trigger("click");
 
-        expect(wrapper.emitted("select-package")).toBeFalsy();
+        expect(wrapper.emitted("retry-row")).toEqual([[failed]]);
     });
 
-    it("View tree click emits open-source-tree only, not select-package", async () => {
+    it("disables reload for live row", () => {
+        const reload = actionButton(mountRow(), "Retry failed lookups of left-pad");
+
+        expect(reload.attributes("disabled")).toBeDefined();
+    });
+
+    it("disables reload while retry runs", () => {
+        const failed = { ...fullDependency, failedLookups: { version: "Failed to fetch" } };
+        const wrapper = mountRow({ dependencies: [failed], isRetrying: true });
+
+        expect(
+            actionButton(wrapper, "Retry failed lookups of left-pad").attributes("disabled"),
+        ).toBeDefined();
+    });
+
+    it("name and data cell clicks emit nothing", async () => {
+        const wrapper = mountRow();
+
+        await wrapper.find(".deps-table__name-cell").trigger("click");
+        await wrapper.findAll("tbody td").at(-1)!.trigger("click");
+
+        expect(wrapper.emitted("select-package")).toBeUndefined();
+        expect(wrapper.emitted("load-package")).toBeUndefined();
+    });
+
+    it("View tree click emits open-source-tree only", async () => {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [{ ...fullDependency, sourceTree: npmSourceTree }],
@@ -189,7 +207,7 @@ describe("DependenciesTable row selection", () => {
             },
         });
 
-        await wrapper.find("tbody button").trigger("click");
+        await wrapper.find("tbody td:last-child button").trigger("click");
 
         expect(wrapper.emitted("open-source-tree")).toBeTruthy();
         expect(wrapper.emitted("select-package")).toBeFalsy();
@@ -242,7 +260,9 @@ describe("DependenciesTable column visibility", () => {
         const headerCount = wrapper.findAll("thead th").length;
         const rowCellCount = wrapper.findAll("tbody td").length;
         expect(headerCount).toBe(rowCellCount);
-        expect(headerCount).toBeLessThan(20);
+        expect(headerCount).toBe(
+            columnKeysExcept("license", "maintainers", "sourceCode").length + 2,
+        );
     });
 });
 
@@ -287,7 +307,7 @@ describe("DependenciesTable column order", () => {
         // sourceCode's cell renders a link, not text - use its position to
         // cross-check header vs body order instead of comparing raw text.
         const sourceCodeIndex = headerLabels(wrapper).indexOf("Source Code link");
-        const cells = wrapper.findAll("tbody td");
+        const cells = wrapper.findAll("tbody td:not(.deps-table__actions-cell)");
         expect(cells[sourceCodeIndex].find("a").exists()).toBe(true);
     });
 
@@ -339,7 +359,7 @@ describe("DependenciesTable column changes after mount", () => {
         });
 
         expect(headerLabels(wrapper)).toEqual(["Name", "Version"]);
-        expect(wrapper.findAll("tbody tr td")).toHaveLength(2);
+        expect(wrapper.findAll("tbody tr td:not(.deps-table__actions-cell)")).toHaveLength(2);
     });
 });
 
@@ -392,13 +412,12 @@ describe("DependenciesTable truncated cells", () => {
         expect(wrapper.emitted("select-package")).toBeUndefined();
     });
 
-    it("click on fitting cell selects package, expands nothing", async () => {
-        const { wrapper, cell } = mountWithLicenseCell(false);
+    it("click on fitting cell expands nothing", async () => {
+        const { cell } = mountWithLicenseCell(false);
 
         await cell.trigger("click");
 
         expect(cell.classes()).not.toContain(EXPANDED_CLASS);
-        expect(wrapper.emitted("select-package")).toEqual([[fullDependency]]);
     });
 
     it.each([
@@ -676,22 +695,22 @@ describe("DependenciesTable source tree", () => {
     it("renders View tree button with source tree", () => {
         const wrapper = mountWithSourceTree({ ...fullDependency, sourceTree: npmSourceTree });
 
-        expect(wrapper.find("tbody button").text()).toBe("View tree");
+        expect(wrapper.find("tbody td:last-child button").text()).toBe("View tree");
     });
 
     it("renders dash instead of button without source tree", () => {
         const wrapper = mountWithSourceTree({ ...sparseDependency, sourceTree: null });
 
-        const cells = wrapper.findAll("tbody td");
-        expect(cells[1].text()).toBe("-");
-        expect(cells[1].find("button").exists()).toBe(false);
+        const treeCell = wrapper.find("tbody td:last-child");
+        expect(treeCell.text()).toBe("-");
+        expect(treeCell.find("button").exists()).toBe(false);
     });
 
     it("emits open-source-tree with clicked dependency, parent owns modal", async () => {
         const dependency = { ...fullDependency, sourceTree: npmSourceTree };
         const wrapper = mountWithSourceTree(dependency);
 
-        await wrapper.find("tbody button").trigger("click");
+        await wrapper.find("tbody td:last-child button").trigger("click");
 
         expect(wrapper.emitted("open-source-tree")).toEqual([[dependency]]);
     });
@@ -753,10 +772,13 @@ describe("DependenciesTable retryable rows", () => {
         });
     }
 
-    it("shows no retry button in rows", () => {
+    it("enables reload only for error, stale and failed-lookup rows", () => {
         const wrapper = mountTable([fullDependency, errorRow, staleRow, failedRow]);
 
-        expect(wrapper.find(".deps-table__name-cell button").exists()).toBe(false);
+        const enabled = wrapper
+            .findAll('[aria-label^="Retry failed lookups of"]')
+            .map((button) => button.attributes("disabled") === undefined);
+        expect(enabled).toEqual([false, true, true, true]);
     });
 
     it("shows '?' in failed column cell", () => {
@@ -776,7 +798,7 @@ describe("DependenciesTable pending columns", () => {
             },
         });
 
-        const cells = wrapper.findAll("tbody td").slice(1);
+        const cells = wrapper.findAll("tbody td").slice(2);
         expect(cells[0].text()).toBe(fullDependency.weeklyDownloads!.toLocaleString("en-US"));
         expect(cells[1].find(".dependency-cell--loading").exists()).toBe(true);
         expect(wrapper.findAll(".dependency-cell--loading")).toHaveLength(1);

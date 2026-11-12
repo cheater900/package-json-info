@@ -389,7 +389,7 @@ test("paste-from-clipboard button reads clipboard, replaces table", async ({ pag
     await expect(page.getByRole("cell", { name: "left-pad", exact: true })).toBeVisible();
 });
 
-test("row Name cell click loads package's package.json as input", async ({ page }) => {
+test("load button loads package's package.json as input", async ({ page }) => {
     await page.route(`${NPM_REGISTRY_URL}/left-pad`, async (route) => {
         await route.fulfill({
             json: {
@@ -419,7 +419,7 @@ test("row Name cell click loads package's package.json as input", async ({ page 
 
     const depsTable = page.locator("table.deps-table").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
-    await row.getByRole("cell", { name: "left-pad", exact: true }).click();
+    await row.getByRole("button", { name: "Load table of left-pad" }).click();
 
     // The table now reflects left-pad's own package.json: its dependency
     // shows up, and left-pad itself is no longer the input's own dependency.
@@ -427,7 +427,7 @@ test("row Name cell click loads package's package.json as input", async ({ page 
     await expect(depsTable.getByRole("cell", { name: "left-pad", exact: true })).toHaveCount(0);
 });
 
-test("row data cell click opens package summary card", async ({ page }) => {
+test("view button opens package summary card", async ({ page }) => {
     await page.goto("/");
     await expandAllSections(page);
     await loadJson(page, {
@@ -439,10 +439,10 @@ test("row data cell click opens package summary card", async ({ page }) => {
     const depsTable = page.locator("table.deps-table").first();
     const row = depsTable.locator("tbody tr").filter({ hasText: "left-pad" });
 
-    // A plain data cell (Version) opens the summary card in the modal - the
-    // Name cell has its own click behaviour (see the test above) and is
-    // deliberately excluded from this one.
+    // A plain data cell no longer opens anything; the View action does.
     await row.getByRole("cell", { name: "^1.0.0", exact: true }).click();
+    await expect(page.locator(".package-summary__name")).toHaveCount(0);
+    await row.getByRole("button", { name: "View left-pad" }).click();
     await expect(page.locator(".package-summary__name")).toHaveText("left-pad");
 
     await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -500,7 +500,7 @@ test("share link replays steps, Back and drill-down rewrite link", async ({ page
     await expect(page.getByText("2 / 3", { exact: true })).toBeVisible();
     await expect.poll(linkSteps).toEqual([urlStep]);
 
-    await depsTable.getByRole("cell", { name: "left-pad", exact: true }).click();
+    await depsTable.getByRole("button", { name: "Load table of left-pad" }).click();
     await expect(page.getByRole("heading", { name: "left-pad" })).toBeVisible();
     await expect.poll(linkSteps).toEqual([urlStep, dependencyStep]);
 });
@@ -803,7 +803,9 @@ test("failed downloads lookup shows '?', retry failed fetches shows number", asy
     await expect(page.getByRole("tooltip")).toContainText("Lookup failed:");
 
     const retryButton = page.getByRole("button", { name: "Retry failed fetches" });
-    await expect(row.getByRole("button")).toHaveCount(0);
+    await expect(
+        row.getByRole("button", { name: "Retry failed lookups of flaky-pkg" }),
+    ).toBeEnabled();
 
     isDownloadsDown = false;
     await retryButton.click();
@@ -883,7 +885,7 @@ test("column visibility panel hides/shows columns, never below floor", async ({ 
     await expect(
         depsTable.getByRole("columnheader", { name: "Version", exact: true }),
     ).toBeVisible();
-    await expect(depsTable.locator("thead th")).toHaveCount(2);
+    await expect(depsTable.locator("thead th")).toHaveCount(3);
 });
 
 test("column visibility preferences persist across reload", async ({ page }) => {
@@ -926,7 +928,8 @@ test("header reflects column order seeded in localStorage", async ({ page }) => 
     await expandAllSections(page);
     const depsTable = page.locator("table.deps-table").first();
 
-    const headerTexts = (await depsTable.locator("thead th").allTextContents()).map((t) =>
+    const dataHeaders = depsTable.locator("thead th:not(.deps-table__actions-header)");
+    const headerTexts = (await dataHeaders.allTextContents()).map((t) =>
         t.replace(/[\s▲▼]+$/, "").trim(),
     );
     const expectedLabels = [
@@ -940,7 +943,7 @@ test("header drag by handle reorders table, order persists across reload", async
     await page.goto("/");
     await expandAllSections(page);
     const depsTable = page.locator("table.deps-table").first();
-    const headerCells = depsTable.locator("thead th");
+    const headerCells = depsTable.locator("thead th:not(.deps-table__actions-header)");
 
     // With Deps, Dev Deps, and package.json all expanded by default, the
     // Deps header can sit below the fold - scroll it into view first so the
@@ -976,7 +979,10 @@ test("header drag by handle reorders table, order persists across reload", async
 
     await page.reload();
     await expandAllSections(page);
-    const reloadedHeaderCells = page.locator("table.deps-table").first().locator("thead th");
+    const reloadedHeaderCells = page
+        .locator("table.deps-table")
+        .first()
+        .locator("thead th:not(.deps-table__actions-header)");
     await expect(reloadedHeaderCells.nth(1)).toContainText(secondLabel);
     await expect(reloadedHeaderCells.nth(2)).toContainText(firstLabel);
 });
@@ -1046,7 +1052,7 @@ test("View tree downloads npm tarball, browses folder, shows file content", asyn
         ),
     );
 
-    await page.getByRole("button", { name: "View tree" }).click();
+    await page.getByRole("button", { name: "View tree", exact: true }).click();
     const sourceTree = page.locator(".source-tree");
     await expect(sourceTree).toContainText("via npm");
     await sourceTree.getByRole("button", { name: "src" }).click();
@@ -1063,7 +1069,7 @@ test("View tree downloads npm tarball, browses folder, shows file content", asyn
 test("View tree shows error for corrupt tarball", async ({ page }) => {
     await loadPackageWithTarball(page, Buffer.from("<html>not a tarball</html>"));
 
-    await page.getByRole("button", { name: "View tree" }).click();
+    await page.getByRole("button", { name: "View tree", exact: true }).click();
 
     await expect(page.locator(".source-tree__status--error")).toHaveText(
         "The package tarball is corrupt or incomplete.",

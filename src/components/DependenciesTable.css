@@ -20,15 +20,6 @@ table td button {
     font-size: inherit;
 }
 
-tbody tr:not(.deps-table__status-row) {
-    /* Clicking anywhere in a row that isn't its own interactive control
-       (Name, a link, the View tree button, or a cell mid-expand) opens the
-       package summary card - the pointer cursor signals that. cursor is
-       inherited, so .deps-table__name-cell below opts back out to the default arrow
-       since it does something else (loads that package as the new input). */
-    cursor: pointer;
-}
-
 tbody tr:not(.deps-table__status-row):hover {
     background: var(--accent-bg);
 }
@@ -64,16 +55,6 @@ tbody tr:not(.deps-table__status-row):hover {
     background: var(--accent-border);
 }
 
-.deps-table__name-cell {
-    /* A custom "→" cursor - same glyph as .deps-table__name-arrow - so hovering the
-       cell that loads this package as the new input reads distinctly from
-       the row's plain pointer cursor (which opens the summary card). */
-    cursor:
-        url("data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><text x='2' y='18' font-size='20' fill='%2333ff66'>→</text></svg>")
-            0 12,
-        pointer;
-}
-
 /* Name column stays in view while the table scrolls sideways; the opaque
    background hides the cells scrolling underneath it. */
 .deps-table thead th:first-child,
@@ -97,7 +78,7 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
 }
 
 .deps-table__name-text {
-    /* Keeps the stale badge beside the arrow instead of mid-cell. */
+    /* Keeps the stale badge at the cell's right edge instead of mid-cell. */
     margin-right: auto;
     max-width: 220px;
     overflow: hidden;
@@ -117,17 +98,15 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
     padding: 0 calc(4px * var(--space-scale));
 }
 
-.deps-table__name-arrow {
-    flex-shrink: 0;
-    opacity: 0.6;
+.deps-table__actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
 }
 
-.deps-table__name-cell:hover .deps-table__name-text {
-    text-decoration: underline;
-}
-
-.deps-table__name-cell:hover .deps-table__name-arrow {
-    opacity: 1;
+.deps-table__action {
+    line-height: 1;
+    padding: calc(2px * var(--space-scale)) calc(6px * var(--space-scale));
 }
 
 .deps-table__centered {

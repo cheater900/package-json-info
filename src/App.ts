@@ -160,12 +160,14 @@ export default defineComponent({
             searchQuery: searchQuery.value,
             shrinkLabels: shrinkColumnLabels.value,
             pendingColumns: pendingColumns.value,
+            isRetrying: isRetrying.value,
         }));
         const tableListeners = {
             loadPackage: loadDependency,
             reorderColumns,
             openSourceTree,
             selectPackage: showPackageSummary,
+            retryRow: (row: DependencyRow) => retryFailedRows([row]),
         };
 
         return {

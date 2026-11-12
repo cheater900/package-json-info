@@ -197,6 +197,17 @@ describe("App", () => {
                 .find((row: { name: string }) => row.name === "zod");
         }
 
+        it("row reload button refetches that row", async () => {
+            const recover = stubZodRegistryDown();
+            const wrapper = await mountApp();
+            recover();
+
+            await wrapper.find('[aria-label="Retry failed lookups of zod"]').trigger("click");
+            await flushPromises();
+
+            expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
+        });
+
         it("retry failed fetches button replaces failed row, then hides", async () => {
             const recover = stubZodRegistryDown();
             const wrapper = await mountApp();

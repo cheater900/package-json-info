@@ -63,8 +63,10 @@ the data is available:
 
 ## Package drill-down / history
 
-Every row has a button to load that package's own `package.json` as the new
-input for the table. Clicking it:
+Every row has an Actions column, right after Name, with three buttons:
+View (`≡`) opens the package summary card, Reload (`↻`) refetches the row's
+failed lookups, and Load (`→`) loads that package's own `package.json` as
+the new input for the table. Clicking cells does nothing. Load:
 
 - Fetches the `package.json` for that row's package.
 - Replaces the current table with a new summary table generated from it.
@@ -99,7 +101,8 @@ first step that fails. Each step stops the table fetch of the step before.
   downloads, no repo URL). `?` in the error color means the lookup failed
   with no stored value; its tooltip gives the error.
 - **Retry failed fetches** button below a table with rows that failed, are
-  stale or have a failed lookup. It refetches those rows only.
+  stale or have a failed lookup. It refetches those rows only. The row's
+  own Reload action refetches one row.
 
 ### UX
 

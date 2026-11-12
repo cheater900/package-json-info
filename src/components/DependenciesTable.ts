@@ -11,6 +11,7 @@ import {
 import type { ColumnDef } from "../utils/tableColumns";
 import type { DependencyRow, SortDirection } from "../types";
 import { filterRowsByName, fmtStaleNote, sortDependencies } from "../utils/dependencyRowFormatting";
+import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
@@ -40,13 +41,18 @@ export default defineComponent({
             type: Boolean,
             default: false,
         },
+        /** True while a retry runs; disables every row's reload button. */
+        isRetrying: {
+            type: Boolean,
+            default: false,
+        },
         /** Column keys whose data is loading; their cells show a loading icon over the old rows. */
         pendingColumns: {
             type: Set as PropType<ReadonlySet<string>>,
             default: () => new Set(),
         },
     },
-    emits: ["load-package", "reorder-columns", "open-source-tree", "select-package"],
+    emits: ["load-package", "reorder-columns", "open-source-tree", "select-package", "retry-row"],
     setup(props, { emit }) {
         const filteredDependencies = computed(() =>
             filterRowsByName(props.dependencies, props.searchQuery),
@@ -156,15 +162,11 @@ export default defineComponent({
         }
 
         // An already-expanded cell always collapses on click; a collapsed
-        // one only expands if its text is actually being clipped. When
-        // neither applies, the click is a no-op here and is left to bubble
-        // up to the row's own click handler (open the package summary card)
-        // instead of being swallowed.
+        // one only expands if its text is actually being clipped.
         function onCellClick(event: MouseEvent, name: string, key: string) {
             if (!isExpanded(name, key) && !isOverflowing(event.currentTarget as HTMLElement)) {
                 return;
             }
-            event.stopPropagation();
             toggleExpand(name, key);
         }
 
@@ -176,6 +178,7 @@ export default defineComponent({
             t,
             NAME_COLUMN_KEY,
             staleNoteFor,
+            isRowRetryable,
             labelFor,
             titleFor,
             orderedVisibleColumns,
