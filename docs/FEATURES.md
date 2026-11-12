@@ -64,8 +64,8 @@ the data is available:
 ## Package drill-down / history
 
 Every row has an Actions column, right after Name, with three buttons:
-View (`≡`) opens the package summary card, Reload (`↻`) refetches the row's
-failed lookups, and Load (`→`) loads that package's own `package.json` as
+View (eye icon) opens the package summary card, Reload (circular arrow)
+refetches the row's failed lookups, and Load (magnifier) loads that package's own `package.json` as
 the new input for the table. Clicking cells does nothing. Load:
 
 - Fetches the `package.json` for that row's package.

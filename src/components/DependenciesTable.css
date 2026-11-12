@@ -105,8 +105,10 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
 }
 
 .deps-table__action {
+    align-items: center;
+    display: inline-flex;
     line-height: 1;
-    padding: calc(2px * var(--space-scale)) calc(6px * var(--space-scale));
+    padding: calc(4px * var(--space-scale)) calc(6px * var(--space-scale));
 }
 
 .deps-table__centered {

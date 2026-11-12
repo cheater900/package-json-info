@@ -67,7 +67,7 @@
                             :title="t('table.actions.view', { name: dependency.name })"
                             @click="$emit('select-package', dependency)"
                         >
-                            ≡
+                            <icon-eye />
                         </button>
                         <button
                             type="button"
@@ -81,7 +81,7 @@
                                 })
                             "
                         >
-                            →
+                            <icon-magnifier />
                         </button>
                         <button
                             type="button"
@@ -91,7 +91,7 @@
                             :disabled="isRetrying || !isRowRetryable(dependency)"
                             @click="$emit('retry-row', dependency)"
                         >
-                            ↻
+                            <icon-reload />
                         </button>
                     </span>
                 </td>

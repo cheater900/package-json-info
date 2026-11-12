@@ -148,7 +148,7 @@
                     :disabled="isRetrying"
                     @click="retryFailedRows(section.dependencies)"
                 >
-                    <span class="btn-icon" aria-hidden="true">↻</span>
+                    <icon-reload class="btn-icon" />
                     {{ t("sections.retryFailed") }}
                 </button>
                 <button

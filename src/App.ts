@@ -10,6 +10,7 @@ import SourceTreeBrowser from "./components/SourceTreeBrowser.vue";
 import PackageSummaryCard from "./components/PackageSummaryCard.vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
 import IconUpload from "./components/IconUpload.vue";
+import IconReload from "./components/IconReload.vue";
 import ExportDialog from "./components/ExportDialog.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
@@ -35,6 +36,7 @@ export default defineComponent({
         PackageSummaryCard,
         SettingsMenu,
         IconUpload,
+        IconReload,
         ExportDialog,
         VueJsonPretty,
     },

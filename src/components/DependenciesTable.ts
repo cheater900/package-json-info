@@ -15,9 +15,20 @@ import { isRowRetryable } from "../utils/packageJsonHistory";
 import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
+import IconEye from "./IconEye.vue";
+import IconMagnifier from "./IconMagnifier.vue";
+import IconReload from "./IconReload.vue";
 
 export default defineComponent({
-    components: { draggable, Tooltip, SortIndicator, DependencyCell },
+    components: {
+        draggable,
+        Tooltip,
+        SortIndicator,
+        DependencyCell,
+        IconEye,
+        IconMagnifier,
+        IconReload,
+    },
     props: {
         dependencies: {
             type: Array as PropType<DependencyRow[]>,
