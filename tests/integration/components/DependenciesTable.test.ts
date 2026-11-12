@@ -791,3 +791,20 @@ describe("DependenciesTable retry button", () => {
         expect(wrapper.find(".dependency-cell--failed").text()).toBe("?");
     });
 });
+
+describe("DependenciesTable pending columns", () => {
+    it("shows loading icon only in pending column cells", () => {
+        const wrapper = mount(DependenciesTable, {
+            props: {
+                dependencies: [fullDependency],
+                columns: ["weeklyDownloads", "license"],
+                pendingColumns: new Set(["license"]),
+            },
+        });
+
+        const cells = wrapper.findAll("tbody td").slice(1);
+        expect(cells[0].text()).toBe(fullDependency.weeklyDownloads!.toLocaleString("en-US"));
+        expect(cells[1].find(".dependency-cell--loading").exists()).toBe(true);
+        expect(wrapper.findAll(".dependency-cell--loading")).toHaveLength(1);
+    });
+});

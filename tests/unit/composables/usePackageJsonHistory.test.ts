@@ -349,6 +349,49 @@ describe("async fetch ordering", () => {
         expect(isLoadingDeps.value).toBe(false);
     });
 
+    it("keeps rows, marks only shown column pending until its data loads", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref<ReadonlySet<string>>(new Set(["weeklyDownloads"]));
+        const { loadPackageJsonText, deps, isLoadingDeps, pendingColumns } =
+            useHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("pkg"));
+        await release("api.npmjs.org/downloads", { downloads: 5 });
+
+        visibleColumns.value = new Set(["weeklyDownloads", "vulnerabilityCount"]);
+        await nextTick();
+
+        expect((deps.value[0] as PackageInfo).weeklyDownloads).toBe(5);
+        expect(isLoadingDeps.value).toBe(false);
+        expect(pendingColumns.value).toEqual(new Set(["vulnerabilityCount"]));
+
+        await release("api.osv.dev", { vulns: [] });
+
+        expect((deps.value[0] as PackageInfo).vulnerabilityCount).toBe(0);
+        expect(pendingColumns.value).toEqual(new Set());
+    });
+
+    it("hides column without fetch or loading state", async () => {
+        const release = deferredFetch();
+        const visibleColumns = ref<ReadonlySet<string>>(
+            new Set(["weeklyDownloads", "vulnerabilityCount"]),
+        );
+        const { loadPackageJsonText, deps, isLoadingDeps, pendingColumns } =
+            useHistory(visibleColumns);
+        loadPackageJsonText(packageJsonWith("pkg"));
+        await release("api.npmjs.org/downloads", { downloads: 5 });
+        await release("api.osv.dev", { vulns: [] });
+        const rowsBefore = deps.value;
+        const callsBefore = vi.mocked(fetch).mock.calls.length;
+
+        visibleColumns.value = new Set(["weeklyDownloads"]);
+        await nextTick();
+
+        expect(deps.value).toBe(rowsBefore);
+        expect(isLoadingDeps.value).toBe(false);
+        expect(pendingColumns.value).toEqual(new Set());
+        expect(vi.mocked(fetch).mock.calls.length).toBe(callsBefore);
+    });
+
     it("stops table fetch of replaced entry, refetches on revisit", async () => {
         const release = deferredFetch();
         settings.fetchConcurrency = 1;

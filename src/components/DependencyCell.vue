@@ -1,5 +1,14 @@
 <template>
-    <tooltip v-if="failedLookupError" :text="t('table.lookupFailed', { error: failedLookupError })">
+    <span
+        v-if="isPending"
+        class="dependency-cell dependency-cell--loading"
+        role="status"
+        :aria-label="t('table.cellLoading')"
+    ></span>
+    <tooltip
+        v-else-if="failedLookupError"
+        :text="t('table.lookupFailed', { error: failedLookupError })"
+    >
         <span class="dependency-cell dependency-cell--failed" tabindex="0">
             {{ FAILED_VALUE }}
         </span>

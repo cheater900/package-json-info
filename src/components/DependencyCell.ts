@@ -8,7 +8,8 @@ import Tooltip from "./Tooltip.vue";
 /**
  * One dependency value rendered per its column's `render` kind: link,
  * button, health score, or formatted text. A failed lookup shows
- * FAILED_VALUE with the error as tooltip instead.
+ * FAILED_VALUE with the error as tooltip instead. A pending cell shows a
+ * loading icon while its column's data loads.
  */
 export default defineComponent({
     components: { Tooltip },
@@ -20,6 +21,10 @@ export default defineComponent({
         dependency: {
             type: Object,
             required: true,
+        },
+        isPending: {
+            type: Boolean,
+            default: false,
         },
     },
     emits: ["open-source-tree"],

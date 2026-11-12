@@ -51,8 +51,8 @@ the data is available:
 - Health score from 0 to 100, labelled good (70 and up), fair (40 and up)
   or poor. It averages the signals the row has: release age, deprecation,
   outdated version, maintainer count, open issue ratio and vulnerabilities.
-  Issue ratio and vulnerabilities count only while their columns are
-  visible. A tooltip lists the signals used.
+  Issue ratio and vulnerabilities count only when their columns were
+  visible at fetch time. A tooltip lists the signals used.
 - Known security advisories, via OSV
 - Bundle size (min+gzip), via Bundlephobia
 - Maintainers who publish the package on npm
@@ -116,7 +116,9 @@ first step that fails. Each step stops the table fetch of the step before.
   Returning to the table through history retries the lookup. Without
   IndexedDB there is no fallback.
 - **Column preferences**: visibility, drag-and-drop order and abbreviated
-  labels, stored in `localStorage`.
+  labels, stored in `localStorage`. Hiding a column is instant and fetches
+  nothing. Showing one keeps the rows on screen; its cells show a loading
+  icon until the data arrives.
 - **Responsive layout**: the page never scrolls sideways down to 360 px;
   only the table does, and its first column stays pinned at the left. At
   700 px and below, the URL field takes its own line, modals fill the

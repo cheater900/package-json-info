@@ -4,7 +4,8 @@ import {
     pushHistoryEntry,
     canGoBack,
     canGoForward,
-    visibleColumnsEqual,
+    columnsMissingFrom,
+    entryCoversColumns,
     isEntryCacheValid,
 } from "../../../src/utils/packageJsonHistory";
 import type { DependencyRow } from "../../../src/types";
@@ -95,23 +96,49 @@ describe("canGoBack / canGoForward", () => {
     });
 });
 
-describe("visibleColumnsEqual", () => {
-    it("returns true for sets with same members in any order", () => {
-        expect(visibleColumnsEqual(new Set(["a", "b"]), new Set(["b", "a"]))).toBe(true);
+describe("columnsMissingFrom", () => {
+    it("returns visible keys absent from snapshot", () => {
+        expect(columnsMissingFrom(new Set(["a", "b"]), new Set(["b", "c"]))).toEqual(
+            new Set(["c"]),
+        );
     });
 
-    it("returns false for sets of different sizes", () => {
-        expect(visibleColumnsEqual(new Set(["a"]), new Set(["a", "b"]))).toBe(false);
+    it("returns empty set for visible subset of snapshot", () => {
+        expect(columnsMissingFrom(new Set(["a", "b"]), new Set(["a"]))).toEqual(new Set());
     });
 
-    it("returns false for same-size sets with different members", () => {
-        expect(visibleColumnsEqual(new Set(["a"]), new Set(["b"]))).toBe(false);
+    it("returns every visible key for null snapshot", () => {
+        expect(columnsMissingFrom(null, new Set(["a", "b"]))).toEqual(new Set(["a", "b"]));
+    });
+});
+
+describe("entryCoversColumns", () => {
+    function entryFetchedWith(snapshot: ReadonlySet<string> | null) {
+        const entry = createHistoryEntry("{}", {});
+        entry.deps = [];
+        entry.devDeps = [];
+        entry.visibleColumnsSnapshot = snapshot;
+        return entry;
+    }
+
+    it("returns true for visible subset of fetch columns", () => {
+        expect(entryCoversColumns(entryFetchedWith(new Set(["a", "b"])), new Set(["a"]))).toBe(
+            true,
+        );
     });
 
-    it("returns false for null on either side", () => {
-        expect(visibleColumnsEqual(null, new Set())).toBe(false);
-        expect(visibleColumnsEqual(new Set(), null)).toBe(false);
-        expect(visibleColumnsEqual(null, null)).toBe(false);
+    it("returns false for column absent at fetch", () => {
+        expect(entryCoversColumns(entryFetchedWith(new Set(["a"])), new Set(["a", "b"]))).toBe(
+            false,
+        );
+    });
+
+    it("returns false for null snapshot", () => {
+        expect(entryCoversColumns(entryFetchedWith(null), new Set())).toBe(false);
+    });
+
+    it("returns false for never-fetched entry", () => {
+        expect(entryCoversColumns(createHistoryEntry("{}", {}), new Set())).toBe(false);
     });
 });
 
@@ -136,8 +163,12 @@ describe("isEntryCacheValid", () => {
         expect(isEntryCacheValid(fetchedEntry(), new Set(COLUMNS_AT_FETCH))).toBe(true);
     });
 
-    it("returns false for visibleColumns changed since fetch", () => {
-        expect(isEntryCacheValid(fetchedEntry(), new Set())).toBe(false);
+    it("returns false for column shown since fetch", () => {
+        expect(isEntryCacheValid(fetchedEntry(), new Set(["license"]))).toBe(false);
+    });
+
+    it("returns true for column hidden since fetch", () => {
+        expect(isEntryCacheValid(fetchedEntry(), new Set())).toBe(true);
     });
 
     it("returns false for stale row, so revisit retries", () => {

@@ -107,6 +107,7 @@
                     <dependency-cell
                         :column="col"
                         :dependency="dependency"
+                        :is-pending="pendingColumns.has(col.key)"
                         @open-source-tree="$emit('open-source-tree', $event)"
                     />
                 </td>

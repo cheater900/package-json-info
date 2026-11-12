@@ -48,6 +48,11 @@ export default defineComponent({
             type: Set as PropType<ReadonlySet<string>>,
             default: () => new Set(),
         },
+        /** Column keys whose data is loading; their cells show a loading icon over the old rows. */
+        pendingColumns: {
+            type: Set as PropType<ReadonlySet<string>>,
+            default: () => new Set(),
+        },
     },
     emits: [
         "load-package",

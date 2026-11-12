@@ -54,6 +54,7 @@ export default defineComponent({
             devDeps,
             isLoadingDeps,
             isLoadingDevDeps,
+            pendingColumns,
             loadError,
             history,
             historyIndex,
@@ -155,6 +156,7 @@ export default defineComponent({
             searchQuery: searchQuery.value,
             shrinkLabels: shrinkColumnLabels.value,
             retryingPackages: retryingPackages.value,
+            pendingColumns: pendingColumns.value,
         }));
         const tableListeners = {
             loadPackage: loadDependency,

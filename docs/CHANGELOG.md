@@ -48,6 +48,18 @@ Condensed from git history. Newest month first.
 
 ### Changes
 
+#### Package data
+
+- **Column toggles** keep the table on screen. Hiding a column fetches
+  nothing; a newly shown column shows a **loading icon** in its cells until
+  its data arrives.
+
+#### Input and loading
+
+- **Page width** follows the screen with a 10% margin each side, full
+  width at 1024 px and below. The expanded table and source tree modals
+  grow with it.
+
 #### Source tree
 
 - **Source tree** lists at most 20,000 entries and the **file viewer**

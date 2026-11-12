@@ -84,3 +84,17 @@ describe("DependencyCell failed lookup", () => {
         expect(wrapper.find("button").exists()).toBe(false);
     });
 });
+
+describe("DependencyCell pending", () => {
+    it("renders loading status instead of value for pending column", () => {
+        const column = DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === "weeklyDownloads")!;
+        const wrapper = mount(DependencyCell, {
+            props: { column, dependency: fullDependency, isPending: true },
+        });
+
+        const status = wrapper.find('[role="status"]');
+        expect(status.classes()).toContain("dependency-cell--loading");
+        expect(status.attributes("aria-label")).toBe("Loading");
+        expect(wrapper.text()).toBe("");
+    });
+});

@@ -77,23 +77,29 @@ export function canGoForward(history: HistoryEntry[], index: number): boolean {
     return index < history.length - 1;
 }
 
-/** True if two visible-column sets have exactly the same members. */
-export function visibleColumnsEqual(
-    a: ReadonlySet<string> | null,
-    b: ReadonlySet<string> | null,
-): boolean {
-    if (a == null || b == null) {
-        return false;
-    }
-    if (a.size !== b.size) {
-        return false;
-    }
-    for (const key of a) {
-        if (!b.has(key)) {
-            return false;
-        }
-    }
-    return true;
+/** Keys of `visibleColumns` missing from `snapshot`; every key when `snapshot` is null. */
+export function columnsMissingFrom(
+    snapshot: ReadonlySet<string> | null,
+    visibleColumns: ReadonlySet<string>,
+): Set<string> {
+    return new Set([...visibleColumns].filter((key) => !snapshot?.has(key)));
+}
+
+/**
+ * True if the entry's cached deps/devDeps hold data for every visible
+ * column: fetched under the same columns or a superset. Hiding a column
+ * then needs no fetch.
+ */
+export function entryCoversColumns(
+    entry: HistoryEntry,
+    visibleColumns: ReadonlySet<string>,
+): entry is FetchedHistoryEntry {
+    return (
+        entry.deps !== null &&
+        entry.devDeps !== null &&
+        entry.visibleColumnsSnapshot !== null &&
+        columnsMissingFrom(entry.visibleColumnsSnapshot, visibleColumns).size === 0
+    );
 }
 
 /** Row that failed, holds a failed lookup, or was built from stored values after one. */
@@ -107,8 +113,8 @@ function hasRowToRetry(rows: DependencyRow[]): boolean {
 
 /**
  * True if a history entry's cached deps/devDeps are still good for the
- * given visibleColumns - fetched under the same column visibility, with no
- * failed rows - so navigating to it needs no fetch. Failed rows, rows with
+ * given visibleColumns - covering every visible column, with no failed
+ * rows - so navigating to it needs no fetch. Failed rows, rows with
  * failed lookups, and rows showing stored values count as stale so
  * revisiting an entry retries them.
  */
@@ -117,10 +123,8 @@ export function isEntryCacheValid(
     visibleColumns: ReadonlySet<string>,
 ): entry is FetchedHistoryEntry {
     return (
-        entry.deps !== null &&
-        entry.devDeps !== null &&
+        entryCoversColumns(entry, visibleColumns) &&
         !hasRowToRetry(entry.deps) &&
-        !hasRowToRetry(entry.devDeps) &&
-        visibleColumnsEqual(entry.visibleColumnsSnapshot, visibleColumns)
+        !hasRowToRetry(entry.devDeps)
     );
 }

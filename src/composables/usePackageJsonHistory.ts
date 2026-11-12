@@ -6,6 +6,8 @@ import {
     pushHistoryEntry,
     canGoBack as canGoBackPure,
     canGoForward as canGoForwardPure,
+    columnsMissingFrom,
+    entryCoversColumns,
     isEntryCacheValid,
 } from "../utils/packageJsonHistory";
 import { PackageJsonSchema, formatPackageJsonError } from "../utils/packageJson";
@@ -34,9 +36,11 @@ function replaceRow(rows: DependencyRow[], replacement: DependencyRow): Dependen
  * becomes a history entry, caching its own fetched deps/devDeps; navigating
  * back/forward restores an entry's cached data directly (no request) when
  * it's still valid for the current visibleColumns - otherwise (never
- * fetched, or fetched under a different column set) it fetches, though even
+ * fetched, or fetched without some visible column) it fetches, though even
  * then npmPackage's own name/slug-level caching means only genuinely new
- * data triggers a request.
+ * data triggers a request. A column change keeps the shown rows: hiding a
+ * column needs no fetch, showing one marks it in `pendingColumns` until
+ * its data arrives.
  */
 export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) {
     const pkg = ref<PackageJson | null>(null);
@@ -45,6 +49,8 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     const devDeps = ref<DependencyRow[]>([]);
     const isLoadingDeps = ref(false);
     const isLoadingDevDeps = ref(false);
+    // Columns shown with the previous rows while their data loads.
+    const pendingColumns = ref<ReadonlySet<string>>(new Set());
     const loadError = ref<string | null>(null);
     const history = ref<HistoryEntry[]>([]);
     const historyIndex = ref(-1);
@@ -116,23 +122,32 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         applyCurrentHistoryEntry();
     }
 
-    function applyCurrentHistoryEntry() {
+    /**
+     * Shows the current entry. `isColumnChange` keeps cached rows that still
+     * cover every visible column as they are, without retrying failed rows,
+     * and keeps the shown rows during a fetch for newly visible columns.
+     */
+    function applyCurrentHistoryEntry(isColumnChange = false) {
         const entry = history.value[historyIndex.value];
         if (!entry) {
             return;
         }
         pkg.value = entry.pkg;
         workspace.value = entry.workspace;
-        if (isEntryCacheValid(entry, visibleColumns.value)) {
+        const isCached =
+            isEntryCacheValid(entry, visibleColumns.value) ||
+            (isColumnChange && entryCoversColumns(entry, visibleColumns.value));
+        if (isCached) {
             // Columns toggled back mid-fetch: that fetch must not overwrite the cached rows.
             latestFetchByEntry.delete(toRaw(entry));
             deps.value = entry.deps;
             devDeps.value = entry.devDeps;
             isLoadingDeps.value = false;
             isLoadingDevDeps.value = false;
+            pendingColumns.value = new Set();
             return;
         }
-        fetchEntryDependencies(entry);
+        fetchEntryDependencies(entry, isColumnChange);
     }
 
     /**
@@ -142,8 +157,10 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      * since loading after going back reuses the same index) or a newer fetch
      * replaces it, so share link replay cannot pile up table fetches. A
      * stopped fetch caches nothing; a revisit refetches from memoized lookups.
+     * `keepRows` leaves already fetched rows shown and marks only the columns
+     * they lack as pending.
      */
-    async function fetchEntryDependencies(entry: HistoryEntry) {
+    async function fetchEntryDependencies(entry: HistoryEntry, keepRows: boolean) {
         const fetchToken = Symbol();
         latestFetchByEntry.set(toRaw(entry), fetchToken);
         let isStopped = false;
@@ -155,12 +172,20 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         const rawDeps = toPackageInputs(entry.pkg.dependencies);
         const rawDevDeps = toPackageInputs(entry.pkg.devDependencies);
         const visibleColumnsAtFetchTime = new Set(visibleColumns.value);
-        // An empty list isn't shown as loading, so drop the previous entry's
-        // rows now instead of showing them until the other list finishes.
-        deps.value = [];
-        devDeps.value = [];
-        isLoadingDeps.value = rawDeps.length > 0;
-        isLoadingDevDeps.value = rawDevDeps.length > 0;
+        if (keepRows && entry.deps !== null && entry.devDeps !== null) {
+            pendingColumns.value = columnsMissingFrom(
+                entry.visibleColumnsSnapshot,
+                visibleColumnsAtFetchTime,
+            );
+        } else {
+            // An empty list isn't shown as loading, so drop the previous entry's
+            // rows now instead of showing them until the other list finishes.
+            deps.value = [];
+            devDeps.value = [];
+            isLoadingDeps.value = rawDeps.length > 0;
+            isLoadingDevDeps.value = rawDevDeps.length > 0;
+            pendingColumns.value = new Set();
+        }
         const fetchOptions = { visibleColumns: visibleColumnsAtFetchTime, isCancelled };
         const [depsResult, devDepsResult] = await Promise.all([
             fetchPackagesInfo(rawDeps, fetchOptions),
@@ -176,6 +201,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         devDeps.value = devDepsResult;
         isLoadingDeps.value = false;
         isLoadingDevDeps.value = false;
+        pendingColumns.value = new Set();
     }
 
     /**
@@ -190,7 +216,8 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
      */
     async function retryRow(input: PackageInput): Promise<DependencyRow | null> {
         const entry = history.value[historyIndex.value];
-        const isFetching = isLoadingDeps.value || isLoadingDevDeps.value;
+        const isFetching =
+            isLoadingDeps.value || isLoadingDevDeps.value || pendingColumns.value.size > 0;
         if (
             !entry?.deps ||
             !entry.devDeps ||
@@ -255,7 +282,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
     watch(
         visibleColumns,
         () => {
-            applyCurrentHistoryEntry();
+            applyCurrentHistoryEntry(true);
         },
         { deep: true },
     );
@@ -267,6 +294,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         devDeps,
         isLoadingDeps,
         isLoadingDevDeps,
+        pendingColumns,
         loadError,
         history,
         historyIndex,
