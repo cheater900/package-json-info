@@ -34,7 +34,9 @@ describe("App", () => {
     it("renders Deps and Dev Deps tables", async () => {
         const wrapper = await mountApp();
 
-        const summaries = wrapper.findAll("details.accordion summary").map((s) => s.text());
+        const summaries = wrapper
+            .findAll("details.accordion summary")
+            .map((s) => s.text().replace("⤢", "").trim());
         expect(summaries).toEqual(["Columns", "Deps", "Dev Deps", "package.json"]);
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(2);
     });
@@ -42,8 +44,9 @@ describe("App", () => {
     it("expand button opens table modal, close removes modal", async () => {
         const wrapper = await mountApp();
 
-        await wrapper.findAll(".table-toolbar__expand")[1].trigger("click");
+        await wrapper.findAll(".accordion__expand")[1].trigger("click");
 
+        expect(wrapper.findAll("details.accordion")[2].attributes("open")).toBeDefined();
         expect(document.body.querySelector(".modal .table-modal-content")).not.toBeNull();
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(3);
         await wrapper.findComponent({ name: "Modal" }).vm.$emit("close");

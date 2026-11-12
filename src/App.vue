@@ -134,17 +134,15 @@
             <summary>
                 {{ section.title }}
                 <span v-if="section.isLoading">{{ t("sections.loading") }}</span>
-            </summary>
-            <div class="table-toolbar">
                 <button
                     type="button"
-                    class="table-toolbar__expand"
+                    class="accordion__expand"
                     :aria-label="t('sections.expandTable')"
-                    @click="expandTable(section.id)"
+                    @click.prevent="expandTable(section.id)"
                 >
                     ⤢
                 </button>
-            </div>
+            </summary>
             <dependencies-table
                 v-bind="tableProps"
                 :dependencies="section.dependencies"

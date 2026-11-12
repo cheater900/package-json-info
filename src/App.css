@@ -173,13 +173,9 @@ textarea {
     opacity: 0.8;
 }
 
-.table-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 4px;
-}
-
-.table-toolbar__expand {
+/* Floats right inside the summary; flex would drop the disclosure marker. */
+.accordion__expand {
+    float: right;
     font-size: 0.85rem;
     padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
 }
