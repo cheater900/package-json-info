@@ -28,7 +28,9 @@
                 <template #item="{ element: col }">
                     <th class="deps-table__centered">
                         <span class="deps-table__th-inner">
-                            <span class="deps-table__drag-handle" aria-hidden="true"></span>
+                            <span class="deps-table__drag-handle" aria-hidden="true">
+                                <icon-grip />
+                            </span>
                             <button
                                 v-if="col.sortable"
                                 type="button"

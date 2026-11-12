@@ -128,13 +128,10 @@ tbody tr:not(.deps-table__status-row):hover .deps-table__name-cell {
 }
 
 .deps-table__drag-handle {
+    align-items: center;
     cursor: grab;
-    display: inline-block;
+    display: inline-flex;
     padding: 0 calc(4px * var(--space-scale));
-}
-
-.deps-table__drag-handle::before {
-    content: "⠿";
 }
 
 .deps-table__sort-trigger {

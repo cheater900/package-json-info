@@ -16,6 +16,7 @@ import Tooltip from "./Tooltip.vue";
 import SortIndicator from "./SortIndicator.vue";
 import DependencyCell from "./DependencyCell.vue";
 import IconEye from "./IconEye.vue";
+import IconGrip from "./IconGrip.vue";
 import IconMagnifier from "./IconMagnifier.vue";
 import IconReload from "./IconReload.vue";
 
@@ -26,6 +27,7 @@ export default defineComponent({
         SortIndicator,
         DependencyCell,
         IconEye,
+        IconGrip,
         IconMagnifier,
         IconReload,
     },
