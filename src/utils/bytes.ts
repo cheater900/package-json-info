@@ -14,10 +14,15 @@ export function concatBytes(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuff
     return result;
 }
 
+/** Byte count as KB, one decimal. */
+export function formatKilobytes(bytes: number): string {
+    return t("cell.kilobytes", { size: (bytes / BYTES_PER_KB).toFixed(BYTE_SIZE_DECIMALS) });
+}
+
 /** Byte count as KB below 1 MB, else as MB; one decimal. */
 export function formatByteSize(bytes: number): string {
     if (bytes < BYTES_PER_MB) {
-        return t("cell.kilobytes", { size: (bytes / BYTES_PER_KB).toFixed(BYTE_SIZE_DECIMALS) });
+        return formatKilobytes(bytes);
     }
     return t("cell.megabytes", { size: (bytes / BYTES_PER_MB).toFixed(BYTE_SIZE_DECIMALS) });
 }

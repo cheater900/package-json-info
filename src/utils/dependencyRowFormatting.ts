@@ -1,6 +1,7 @@
+import { formatKilobytes } from "./bytes";
 import { healthBand } from "./healthScore";
 import { hasLicenseWarning } from "./license";
-import { BYTES_PER_KB, MISSING_VALUE, NUMBER_LOCALE } from "../constants";
+import { MISSING_VALUE, NUMBER_LOCALE } from "../constants";
 import { t } from "../i18n";
 import type { PackageInfo, SortDirection } from "../types";
 
@@ -14,7 +15,6 @@ type CellFormatter = (dependency: CellSource) => string;
 const LICENSE_WARNING_MARK = "⚠";
 /** Drops the weekday from `Date#toDateString` ("Mon Jan 01 2024" -> "Jan 01 2024"). */
 const WEEKDAY_PREFIX_LENGTH = 4;
-const KILOBYTE_DECIMALS = 1;
 
 export function fmtDate(dateStr: string | null | undefined): string {
     const date = new Date(dateStr ?? "");
@@ -60,7 +60,7 @@ export function fmtBundleSize(gzipBytes: number | null | undefined): string {
     if (gzipBytes == null) {
         return MISSING_VALUE;
     }
-    return t("cell.kilobytes", { size: (gzipBytes / BYTES_PER_KB).toFixed(KILOBYTE_DECIMALS) });
+    return formatKilobytes(gzipBytes);
 }
 
 export function fmtNumber(n: number | null | undefined): string {
