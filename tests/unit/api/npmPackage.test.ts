@@ -5,8 +5,6 @@ import {
     fetchPackageJsonForVersion,
     clearPackageInfoCache,
 } from "../../../src/api/npmPackage";
-import { observeRequests } from "../../../src/api/http";
-import type { ObservedRequest } from "../../../src/api/http";
 import { OSV_MAX_PAGES } from "../../../src/constants";
 import { clearLookups, loadLookup, saveLookup } from "../../../src/utils/lookupStore";
 import type { LookupKind } from "../../../src/utils/lookupStore";
@@ -22,6 +20,7 @@ import { IDBObjectStore } from "fake-indexeddb";
 import { githubToken } from "../../../src/settings";
 import { resetSettings, stubIndexedDb } from "../../helpers/settings";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
+import { recordRequests, subjectOf, subjectsOf } from "../../helpers/requests";
 import { githubTokenFixture as TOKEN } from "../../fixtures/github";
 
 function visibleColumnsExcept(...excluded: string[]): Set<string> {
@@ -664,51 +663,6 @@ describe("fetchPackageInfo caching", () => {
         expect(countFetchCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
     });
 
-    it("lists both packages on shared stars request", async () => {
-        stubFetchByUrl({
-            "registry.npmjs.org": {
-                ...minimalRegistryDoc,
-                repository: "git+https://github.com/shared-org/shared-repo.git",
-            },
-            "api.github.com/repos/shared-org/shared-repo": { stargazers_count: 777 },
-        });
-        const requests: ObservedRequest[] = [];
-        const stopObserving = observeRequests((request) => {
-            requests.push(request);
-            return { respond: () => {}, fail: () => {}, measure: () => {} };
-        });
-        const options = { visibleColumns: new Set(["gitStars"]) };
-        await fetchPackageInfo("pkg-a", "1.0.0", options);
-        await fetchPackageInfo("pkg-b", "1.0.0", options);
-        stopObserving();
-
-        const starsRequests = requests.filter((r) => r.url.includes("api.github.com/repos"));
-        expect(starsRequests).toHaveLength(1);
-        expect(starsRequests[0].subject).toEqual({
-            packages: new Set(["pkg-a", "pkg-b"]),
-            columns: new Set(["gitStars"]),
-        });
-    });
-
-    it("tags registry request with row name and visible registry columns", async () => {
-        stubFetchByUrl({ "registry.npmjs.org/real-pkg": minimalRegistryDoc });
-        const requests: ObservedRequest[] = [];
-        const stopObserving = observeRequests((request) => {
-            requests.push(request);
-            return { respond: () => {}, fail: () => {}, measure: () => {} };
-        });
-        await fetchPackageInfo("alias-pkg", "npm:real-pkg@1.0.0", {
-            visibleColumns: new Set(["license", "weeklyDownloads"]),
-        });
-        stopObserving();
-
-        const registryRequest = requests.find((r) => r.url.includes("registry.npmjs.org"));
-        expect(registryRequest?.subject).toEqual({
-            packages: new Set(["alias-pkg"]),
-            columns: new Set(["license"]),
-        });
-    });
-
     it("skips caching failed lookup, next same-key call retries", async () => {
         let registryAttempts = 0;
         vi.stubGlobal(
@@ -734,6 +688,171 @@ describe("fetchPackageInfo caching", () => {
 
         expect(info.name).toBe("retry-pkg");
         expect(registryAttempts).toBe(2);
+    });
+});
+
+describe("fetchPackageInfo request subjects", () => {
+    const SHARED_REPO_URL = "git+https://github.com/shared-org/shared-repo.git";
+    let recorder = recordRequests();
+
+    beforeEach(() => {
+        recorder = recordRequests();
+    });
+
+    afterEach(() => {
+        recorder.stop();
+    });
+
+    function registryDocWith(fields: Record<string, unknown>) {
+        return { ...minimalRegistryDoc, ...fields };
+    }
+
+    it("tags registry request with row name and visible registry columns", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/real-pkg": minimalRegistryDoc });
+
+        await fetchPackageInfo("alias-pkg", "npm:real-pkg@1.0.0", {
+            visibleColumns: new Set(["license", "weeklyDownloads"]),
+        });
+
+        expect(subjectsOf(recorder.requests, "registry.npmjs.org")).toEqual([
+            subjectOf(["alias-pkg"], ["license"]),
+        ]);
+    });
+
+    it.each([
+        ["weeklyDownloads", "api.npmjs.org/downloads"],
+        ["vulnerabilityCount", "api.osv.dev"],
+        ["bundleSizeGzip", "bundlephobia.com"],
+    ])("tags %s request with row name and column", async (column, pattern) => {
+        stubFetchByUrl({
+            "registry.npmjs.org": minimalRegistryDoc,
+            "api.npmjs.org/downloads": { downloads: 1 },
+            "api.osv.dev": { vulns: [] },
+            "bundlephobia.com": { gzip: 1 },
+        });
+
+        await fetchPackageInfo("alias-pkg", "npm:real-pkg@1.0.0", {
+            visibleColumns: new Set([column]),
+        });
+
+        expect(subjectsOf(recorder.requests, pattern)).toEqual([
+            subjectOf(["alias-pkg"], [column]),
+        ]);
+    });
+
+    it("tags every OSV page with one shared subject", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string, init?: RequestInit) => {
+                if (!url.includes("api.osv.dev")) {
+                    return jsonResponse(minimalRegistryDoc);
+                }
+                const { page_token } = JSON.parse(String(init?.body));
+                return page_token === "p2"
+                    ? jsonResponse({ vulns: [] })
+                    : jsonResponse({ vulns: [{ id: "A" }], next_page_token: "p2" });
+            }),
+        );
+
+        await fetchPackageInfo("paged-pkg", "1.0.0", {
+            visibleColumns: new Set(["vulnerabilityCount"]),
+        });
+
+        const [first, second] = subjectsOf(recorder.requests, "api.osv.dev");
+        expect(first).toEqual(subjectOf(["paged-pkg"], ["vulnerabilityCount"]));
+        expect(second).toBe(first);
+    });
+
+    it("lists only own pinned version row on bundle size request", async () => {
+        stubFetchByUrl({ "bundlephobia.com": { gzip: 1 } });
+        const options = { visibleColumns: new Set(["bundleSizeGzip", "weeklyDownloads"]) };
+
+        await fetchPackageInfo("old-alias", "npm:real-pkg@1.0.0", options);
+        await fetchPackageInfo("new-alias", "npm:real-pkg@2.0.0", options);
+
+        expect(subjectsOf(recorder.requests, "bundlephobia.com")).toEqual([
+            subjectOf(["old-alias"], ["bundleSizeGzip"]),
+            subjectOf(["new-alias"], ["bundleSizeGzip"]),
+        ]);
+        expect(subjectsOf(recorder.requests, "api.npmjs.org/downloads")).toEqual([
+            subjectOf(["old-alias", "new-alias"], ["weeklyDownloads"]),
+        ]);
+    });
+
+    it("lists both packages on shared stars request", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org": registryDocWith({ repository: SHARED_REPO_URL }),
+            "api.github.com/repos/shared-org/shared-repo": { stargazers_count: 777 },
+        });
+        const options = { visibleColumns: new Set(["gitStars"]) };
+
+        await fetchPackageInfo("pkg-a", "1.0.0", options);
+        await fetchPackageInfo("pkg-b", "1.0.0", options);
+
+        expect(subjectsOf(recorder.requests, "api.github.com/repos")).toEqual([
+            subjectOf(["pkg-a", "pkg-b"], ["gitStars"]),
+        ]);
+    });
+
+    it.each([
+        ["GitLab", "git+https://gitlab.com/o/r.git", "gitlab.com/api/v4/projects"],
+        ["Codeberg", "https://codeberg.org/o/r", "codeberg.org/api/v1/repos"],
+    ])("tags %s stars request with gitStars", async (_host, repository, pattern) => {
+        stubFetchByUrl({ "registry.npmjs.org": registryDocWith({ repository }) });
+
+        await fetchPackageInfo("pkg-a", "1.0.0", { visibleColumns: new Set(["gitStars"]) });
+
+        expect(subjectsOf(recorder.requests, pattern)).toEqual([
+            subjectOf(["pkg-a"], ["gitStars"]),
+        ]);
+    });
+
+    it("tags all four issue searches with every issue column", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org": registryDocWith({ repository: SHARED_REPO_URL }),
+            "search/issues": { total_count: 1 },
+        });
+
+        await fetchPackageInfo("pkg-a", "1.0.0", { visibleColumns: new Set(["openPRs"]) });
+
+        const issueColumns = ["openPRs", "closedPRs", "openIssues", "closedIssues"];
+        expect(subjectsOf(recorder.requests, "search/issues")).toEqual(
+            Array(4).fill(subjectOf(["pkg-a"], issueColumns)),
+        );
+    });
+
+    it("tags every release tag candidate with sourceCodeTree", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org": registryDocWith({
+                repository: SHARED_REPO_URL,
+                versions: { "1.0.0": {} },
+            }),
+            "git/ref/tags/1.0.0": { ref: "refs/tags/1.0.0" },
+        });
+
+        await fetchPackageInfo("pkg-a", "1.0.0", { visibleColumns: new Set(["sourceCodeTree"]) });
+
+        expect(subjectsOf(recorder.requests, "git/ref/tags")).toEqual([
+            subjectOf(["pkg-a"], ["sourceCodeTree"]),
+            subjectOf(["pkg-a"], ["sourceCodeTree"]),
+        ]);
+    });
+
+    it("starts fresh subjects after clearPackageInfoCache", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org": registryDocWith({ repository: SHARED_REPO_URL }),
+            "api.github.com/repos": { stargazers_count: 1 },
+        });
+        const options = { visibleColumns: new Set(["gitStars"]) };
+        await fetchPackageInfo("pkg-a", "1.0.0", options);
+
+        clearPackageInfoCache();
+        await fetchPackageInfo("pkg-b", "1.0.0", options);
+
+        expect(subjectsOf(recorder.requests, "api.github.com/repos")).toEqual([
+            subjectOf(["pkg-a"], ["gitStars"]),
+            subjectOf(["pkg-b"], ["gitStars"]),
+        ]);
     });
 });
 
@@ -934,6 +1053,18 @@ describe("fetchPackageInfo column gating", () => {
 });
 
 describe("fetchPackageJsonForVersion", () => {
+    it("tags registry request with row name, no columns", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/real-pkg": minimalRegistryDoc });
+        const recorder = recordRequests();
+
+        await fetchPackageJsonForVersion("alias-pkg", "npm:real-pkg@1.0.0");
+        recorder.stop();
+
+        expect(subjectsOf(recorder.requests, "registry.npmjs.org")).toEqual([
+            subjectOf(["alias-pkg"], []),
+        ]);
+    });
+
     it("returns exact version manifest, including unparsed fields like devDependencies", async () => {
         stubFetchByUrl({
             "registry.npmjs.org/drill-pkg": {

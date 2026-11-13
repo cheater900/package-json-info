@@ -226,6 +226,9 @@ Condensed from git history. Newest month first.
 
 #### Coverage
 
+- Tests added for **network log subjects**: each lookup kind tags its
+  requests with row name and columns, and `clearPackageInfoCache` starts
+  fresh subjects.
 - Tests added for the **offline store**: stored issue counts and release
   tag, a hanging IndexedDB on read and save, and an e2e reload during a
   registry outage that shows the **stale badge** and health score. Saved
