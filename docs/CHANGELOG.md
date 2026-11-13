@@ -201,6 +201,12 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **Network log helpers** shared with existing code: `lookupKey` keys
+  request subjects and the offline store, `bearerAuthorization` and
+  `HTTP_HEADER_AUTHORIZATION` build GitHub headers and replays,
+  `formatKilobytes` formats bundle and log sizes, and
+  `--modal-content-padding` pads every modal. Network log tests share a
+  `networkLogEntry` fixture.
 - **`memoizeLookup`** and its `Lookup` helpers moved to
   `utils/memoizeLookup.ts`; each lookup passes its stored-value schema, so
   the result needs no cast. `loadFromSource` takes an options object,

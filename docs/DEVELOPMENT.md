@@ -2,28 +2,28 @@
 
 ## Code layout
 
-| Path                          | Purpose                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------- |
-| `src/main.js`                 | App entry point. Decrypts the GitHub token, then mounts `App.vue`.                    |
-| `src/App.vue`, `src/App.ts`   | Root component: input controls, tables, history controls, shared modal.               |
-| `src/constants.ts`            | API base URLs, supported repo hosts, storage keys, display constants.                 |
-| `src/config.ts`               | Developer settings read from `.env` (see Configuration below).                        |
-| `src/settings.ts`             | User settings store (Zod-validated, in `localStorage`), in-memory token.              |
-| `src/types.ts`                | Shared domain types: package input, info, error, row, source tree ref.                |
-| `src/i18n/`                   | `t()` message lookup. UI text lives in `locales/en.json`.                             |
-| `src/api/`                    | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees.              |
-| `src/composables/`            | Vue state: column preferences, package.json history, input sources.                   |
-| `src/components/`             | Vue components. Each has its own `.vue`, `.ts` and `.css` file.                       |
-| `src/utils/`                  | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.                  |
-| `src/utils/export/`           | Table export: row-to-text builder, format registry, download helper.                  |
-| `src/utils/export/exporters/` | One file per export format: CSV, XLSX, Markdown, HTML, PDF.                           |
-| `public/`                     | Static assets served as-is.                                                           |
-| `tests/unit/`                 | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.               |
-| `tests/integration/`          | Vitest component tests mounted with `@vue/test-utils`.                                |
-| `tests/e2e/`                  | Playwright end-to-end tests. `visual/` holds the screenshot run.                      |
-| `tests/helpers/`              | Helpers: fetch stubs, columns, IndexedDB, settings, share links.                      |
-| `tests/fixtures/`             | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc. |
-| `docs/`                       | Project docs: intent, features, roadmap, notes, known issues, changelog.              |
+| Path                          | Purpose                                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/main.js`                 | App entry point. Decrypts the GitHub token, then mounts `App.vue`.                                       |
+| `src/App.vue`, `src/App.ts`   | Root component: input controls, tables, history controls, shared modal.                                  |
+| `src/constants.ts`            | API base URLs, supported repo hosts, storage keys, display constants.                                    |
+| `src/config.ts`               | Developer settings read from `.env` (see Configuration below).                                           |
+| `src/settings.ts`             | User settings store (Zod-validated, in `localStorage`), in-memory token.                                 |
+| `src/types.ts`                | Shared domain types: package input, info, error, row, source tree ref.                                   |
+| `src/i18n/`                   | `t()` message lookup. UI text lives in `locales/en.json`.                                                |
+| `src/api/`                    | Network code: npm registry, repo hosts, OSV, Bundlephobia, source trees.                                 |
+| `src/composables/`            | Vue state: column preferences, package.json history, input sources.                                      |
+| `src/components/`             | Vue components. Each has its own `.vue`, `.ts` and `.css` file.                                          |
+| `src/utils/`                  | Helpers: formatting, columns, semver, tar, storage, IndexedDB, URLs.                                     |
+| `src/utils/export/`           | Table export: row-to-text builder, format registry, download helper.                                     |
+| `src/utils/export/exporters/` | One file per export format: CSV, XLSX, Markdown, HTML, PDF.                                              |
+| `public/`                     | Static assets served as-is.                                                                              |
+| `tests/unit/`                 | Vitest unit tests, mirroring `src/api`, `src/utils`, `src/composables`.                                  |
+| `tests/integration/`          | Vitest component tests mounted with `@vue/test-utils`.                                                   |
+| `tests/e2e/`                  | Playwright end-to-end tests. `visual/` holds the screenshot run.                                         |
+| `tests/helpers/`              | Helpers: fetch stubs, columns, IndexedDB, settings, share links, request recorder.                       |
+| `tests/fixtures/`             | Shared test data: dependency rows, registry docs, tarballs, GitHub token, export doc, network log entry. |
+| `docs/`                       | Project docs: intent, features, roadmap, notes, known issues, changelog.                                 |
 
 ## Stack
 
