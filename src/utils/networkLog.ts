@@ -1,0 +1,104 @@
+import { computed, reactive, shallowReactive } from "vue";
+import { observeRequests } from "../api/http";
+import type { ObservedRequest, RequestHandle, RequestSubject } from "../api/http";
+import { NETWORK_LOG_MAX_ENTRIES } from "../constants";
+import { settle } from "./settle";
+
+export type NetworkLogState = "pending" | "success" | "failure";
+
+export type NetworkLogEntry = {
+    id: number;
+    method: string;
+    /** Target URL, never the proxied one. */
+    url: string;
+    /** Epoch milliseconds. */
+    startedAt: number;
+    state: NetworkLogState;
+    /** HTTP status; null while pending or when no response arrived. */
+    status: number | null;
+    /** Decoded body size; null until the body is read, or when reading it failed. */
+    sizeBytes: number | null;
+    /** Network error or timeout message; null when a response arrived. */
+    error: string | null;
+    subject: RequestSubject | null;
+    replay: () => Promise<Response>;
+};
+
+export type NetworkLogSummary = {
+    total: number;
+    success: number;
+    failure: number;
+    pending: number;
+};
+
+/** Every logged request this page load, oldest first, at most NETWORK_LOG_MAX_ENTRIES. */
+export const networkLogEntries = shallowReactive<NetworkLogEntry[]>([]);
+
+export const networkLogSummary = computed<NetworkLogSummary>(() => {
+    const summary = { total: networkLogEntries.length, success: 0, failure: 0, pending: 0 };
+    for (const entry of networkLogEntries) {
+        summary[entry.state]++;
+    }
+    return summary;
+});
+
+let nextEntryId = 1;
+
+async function countBodyBytes(body: ReadableStream<Uint8Array> | null): Promise<number> {
+    if (!body) {
+        return 0;
+    }
+    const reader = body.getReader();
+    let total = 0;
+    for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+        total += chunk.value.length;
+    }
+    return total;
+}
+
+/** Any non-2xx answer, 404 included, counts as failure. */
+function logRequest(request: ObservedRequest): RequestHandle {
+    const entry: NetworkLogEntry = reactive({
+        id: nextEntryId++,
+        method: request.method,
+        url: request.url,
+        startedAt: Date.now(),
+        state: "pending",
+        status: null,
+        sizeBytes: null,
+        error: null,
+        subject: request.subject,
+        replay: request.replay,
+    });
+    networkLogEntries.push(entry);
+    if (networkLogEntries.length > NETWORK_LOG_MAX_ENTRIES) {
+        networkLogEntries.splice(0, networkLogEntries.length - NETWORK_LOG_MAX_ENTRIES);
+    }
+    return {
+        respond(response) {
+            entry.state = response.ok ? "success" : "failure";
+            entry.status = response.status;
+            // Cloned before the caller reads the body; a stream aborted mid-read leaves the size unknown.
+            const copy = response.clone();
+            void settle(() => countBodyBytes(copy.body)).then((result) => {
+                if (result.ok) {
+                    entry.sizeBytes = result.value;
+                }
+            });
+        },
+        fail(error) {
+            entry.state = "failure";
+            entry.error = error.message;
+        },
+    };
+}
+
+/** Starts logging every request sent through fetchWithTimeout. Returns the stop function. */
+export function startNetworkLog(): () => void {
+    return observeRequests(logRequest);
+}
+
+/** Sends `entry`'s request again; the outcome shows up as a new entry. */
+export function replayRequest(entry: NetworkLogEntry): void {
+    void settle(entry.replay);
+}

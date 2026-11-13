@@ -5,6 +5,7 @@ import { TOKEN_LOAD_TIMEOUT_MS } from "./constants";
 import { githubToken, resolveColorScheme, settings } from "./settings";
 import { delay } from "./utils/delay";
 import { loadGithubToken } from "./utils/githubTokenStorage";
+import { startNetworkLog } from "./utils/networkLog";
 
 const lightSchemeQuery = matchMedia("(prefers-color-scheme: light)");
 const prefersLight = ref(lightSchemeQuery.matches);
@@ -27,6 +28,7 @@ async function loadStoredTokenUnlessReplaced() {
 }
 
 watchEffect(mirrorDisplaySettingsOntoRoot);
+startNetworkLog();
 
 // Decrypting first authenticates the initial fetch; a token arriving after
 // the timeout refetches through its watcher.

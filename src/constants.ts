@@ -89,6 +89,9 @@ export const MAX_FILE_TREE_ENTRIES = 20_000;
 /** Largest file the source viewer shows; bigger text stalls the tab. */
 export const MAX_VIEWED_FILE_BYTES = 2 * BYTES_PER_MB;
 
+/** Most requests the network log keeps; older ones drop first. */
+export const NETWORK_LOG_MAX_ENTRIES = 1000;
+
 export const TOOLTIP_OFFSET_PX = 6;
 
 /** Average month length (365.25 days / 12). */

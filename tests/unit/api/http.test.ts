@@ -143,13 +143,13 @@ describe("fetchWithTimeout", () => {
 
     it.each(["https://a.test/x", "https://api.github.com.a.test/x", "http://api.github.com/x"])(
         "throws for authorized request to %s",
-        (url) => {
+        async (url) => {
             const fetchMock = vi.fn(async () => jsonResponse({}));
             vi.stubGlobal("fetch", fetchMock);
 
-            expect(() => fetchWithTimeout(url, { headers: { authorization: "Bearer t" } })).toThrow(
-                "GitHub token",
-            );
+            await expect(
+                fetchWithTimeout(url, { headers: { authorization: "Bearer t" } }),
+            ).rejects.toThrow("GitHub token");
             expect(fetchMock).not.toHaveBeenCalled();
         },
     );
