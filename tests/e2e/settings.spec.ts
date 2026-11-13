@@ -4,6 +4,7 @@ import { mockExternalApis, loadJson } from "./helpers";
 import {
     GITHUB_API_URL,
     GITHUB_RATE_LIMIT_URL,
+    NPM_REGISTRY_URL,
     STORAGE_KEY_GITHUB_TOKEN,
 } from "../../src/constants";
 import {
@@ -141,4 +142,37 @@ test("font size scales root font", async ({ page }) => {
 
     const fontSize = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
     expect(fontSize).toBe("22.5px");
+});
+
+test("network logs modal lists requests, retry recovers failed one", async ({ page }) => {
+    const brokenUrl = `${NPM_REGISTRY_URL}/broken-pkg`;
+    let isBrokenDown = true;
+    await page.route(brokenUrl, async (route) => {
+        if (isBrokenDown) {
+            await route.abort();
+            return;
+        }
+        await route.fallback();
+    });
+    await page.goto("/");
+    await loadJson(page, {
+        name: "demo",
+        dependencies: { "fresh-pkg": "1.0.0", "broken-pkg": "1.0.0" },
+    });
+    await gear(page).click();
+    await page.getByRole("button", { name: "View network logs" }).click();
+    const log = page.locator(".network-log");
+    const brokenRows = log.locator("tbody tr", { hasText: brokenUrl });
+    await expect(log.getByRole("heading", { name: "Network logs" })).toBeVisible();
+    await expect(
+        log.locator("tbody tr", { hasText: `${NPM_REGISTRY_URL}/fresh-pkg` }),
+    ).toContainText("fresh-pkg");
+    await expect(brokenRows.getByRole("img")).toHaveAccessibleName("Failed");
+
+    isBrokenDown = false;
+    await log.getByRole("button", { name: `Retry ${brokenUrl}` }).click();
+
+    await expect(brokenRows).toHaveCount(2);
+    await expect(brokenRows.first().getByRole("img")).toHaveAccessibleName("Succeeded");
+    await expect(log.locator(".network-log__summary")).toContainText("1 failed, 0 pending");
 });

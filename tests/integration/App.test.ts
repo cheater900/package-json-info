@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, onTestFinished } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import App from "../../src/App.vue";
 import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
@@ -17,7 +17,7 @@ import {
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
 import { NPM_REGISTRY_URL } from "../../src/constants";
-import { networkLogEntries } from "../../src/utils/networkLog";
+import { networkLogEntries, startNetworkLog } from "../../src/utils/networkLog";
 import type { NetworkLogEntry } from "../../src/utils/networkLog";
 import { openShareLink, shareSteps } from "../helpers/shareLink";
 
@@ -287,6 +287,27 @@ describe("App", () => {
             );
             expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
             expect(entry.replay).not.toHaveBeenCalled();
+        });
+
+        it("network log retry button on real failed request refetches row", async () => {
+            onTestFinished(startNetworkLog());
+            const recover = stubZodRegistryDown();
+            const wrapper = await mountApp();
+            recover();
+            await openNetworkLog(wrapper);
+
+            const retryButton = document.body.querySelector<HTMLButtonElement>(
+                `[aria-label="Retry ${NPM_REGISTRY_URL}/zod"]`,
+            );
+            retryButton?.click();
+            await flushPromises();
+
+            expect(retryButton).not.toBeNull();
+            expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
+            const zodEntries = networkLogEntries.filter(
+                (entry) => entry.url === `${NPM_REGISTRY_URL}/zod`,
+            );
+            expect(zodEntries.map((entry) => entry.state)).toEqual(["failure", "success"]);
         });
 
         it("network log retry replays entry without failed row", async () => {

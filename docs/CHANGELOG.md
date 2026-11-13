@@ -230,7 +230,9 @@ Condensed from git history. Newest month first.
   requests with row name and columns, as do the source tree download and
   its lazy file fetch; `clearPackageInfoCache` starts fresh subjects. A
   failed replay logs a new failure entry. The open **network log modal**
-  shows its headers and adds packages joining a shared lookup.
+  shows its headers and adds packages joining a shared lookup. Its
+  **retry button** on a real failed request refetches the table row, in
+  App and in e2e.
 - Tests added for the **offline store**: stored issue counts and release
   tag, a hanging IndexedDB on read and save, and an e2e reload during a
   registry outage that shows the **stale badge** and health score. Saved
