@@ -21,14 +21,16 @@ function formatTime(startedAt: number): string {
     return new Date(startedAt).toLocaleTimeString(NUMBER_LOCALE);
 }
 
+function formatList(items: readonly string[]): string {
+    return items.length > 0 ? items.join(", ") : MISSING_VALUE;
+}
+
 function formatPackages(entry: NetworkLogEntry): string {
-    const packages = [...(entry.subject?.packages ?? [])];
-    return packages.length > 0 ? packages.join(", ") : MISSING_VALUE;
+    return formatList([...(entry.subject?.packages ?? [])]);
 }
 
 function formatColumns(entry: NetworkLogEntry): string {
-    const labels = [...(entry.subject?.columns ?? [])].map((key) => t(`columns.${key}`));
-    return labels.length > 0 ? labels.join(", ") : MISSING_VALUE;
+    return formatList([...(entry.subject?.columns ?? [])].map((key) => t(`columns.${key}`)));
 }
 
 function formatSize(entry: NetworkLogEntry): string {
