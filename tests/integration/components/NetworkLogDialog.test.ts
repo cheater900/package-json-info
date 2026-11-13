@@ -1,9 +1,12 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { describe, it, expect, afterEach, onTestFinished } from "vitest";
+import { mount, flushPromises } from "@vue/test-utils";
+import { clearPackageInfoCache, fetchPackageInfo } from "../../../src/api/npmPackage";
 import NetworkLogDialog from "../../../src/components/NetworkLogDialog.vue";
 import { NPM_REGISTRY_URL, NUMBER_LOCALE } from "../../../src/constants";
-import { networkLogEntries } from "../../../src/utils/networkLog";
+import { networkLogEntries, startNetworkLog } from "../../../src/utils/networkLog";
 import type { NetworkLogEntry } from "../../../src/utils/networkLog";
+import { minimalRegistryDoc } from "../../fixtures/dependencies";
+import { stubFetchByUrl } from "../../helpers/fetchMock";
 
 const STARTED_AT = Date.UTC(2026, 10, 11, 9, 30, 0);
 
@@ -48,11 +51,29 @@ function rowCells(wrapper: ReturnType<typeof mountDialog>, index: number) {
 
 afterEach(() => {
     networkLogEntries.splice(0);
+    clearPackageInfoCache();
 });
 
 describe("NetworkLogDialog", () => {
     it("shows heading", () => {
         expect(mountDialog([]).find("h2").text()).toBe("Network logs");
+    });
+
+    it("shows column headers", () => {
+        const headers = mountDialog([])
+            .findAll("th")
+            .map((th) => th.text());
+
+        expect(headers).toEqual([
+            "State",
+            "Time",
+            "Request",
+            "Packages",
+            "Columns",
+            "Status",
+            "Size",
+            "Actions",
+        ]);
     });
 
     it("lists newest entry first", () => {
@@ -137,5 +158,27 @@ describe("NetworkLogDialog", () => {
         expect(wrapper.find(".network-log__summary").text()).toBe(
             "0 requests: 0 failed, 0 pending, 0 successful",
         );
+    });
+
+    it("adds package joining shared lookup while open", async () => {
+        onTestFinished(startNetworkLog());
+        stubFetchByUrl({
+            "registry.npmjs.org": {
+                ...minimalRegistryDoc,
+                repository: "git+https://github.com/shared-org/shared-repo.git",
+            },
+            "api.github.com/repos": { stargazers_count: 1 },
+        });
+        const options = { visibleColumns: new Set(["gitStars"]) };
+        await fetchPackageInfo("pkg-a", "1.0.0", options);
+        const wrapper = mount(NetworkLogDialog);
+
+        await fetchPackageInfo("pkg-b", "1.0.0", options);
+        await flushPromises();
+
+        const starsRow = wrapper
+            .findAll("tbody tr")
+            .find((row) => row.text().includes("api.github.com/repos"));
+        expect(starsRow?.findAll("td")[3].text()).toBe("pkg-a, pkg-b");
     });
 });
