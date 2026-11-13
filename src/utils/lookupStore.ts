@@ -38,7 +38,8 @@ function isLookupStoreAvailable(): boolean {
     return typeof indexedDB !== "undefined";
 }
 
-function recordKey(kind: LookupKind, key: string): string {
+/** Identity of lookup `kind` for `key`, shared by the store and in-memory maps. */
+export function lookupKey(kind: LookupKind, key: string): string {
     return `${kind}:${key}`;
 }
 
@@ -61,7 +62,7 @@ export async function saveLookup(
     const record = { value, savedAt: new Date().toISOString() };
     await settle(() =>
         withObjectStore(LOOKUP_DB_NAME, LOOKUP_DB_STORE, "readwrite", (store) =>
-            store.put(record, recordKey(kind, key)),
+            store.put(record, lookupKey(kind, key)),
         ),
     );
 }
@@ -95,7 +96,7 @@ export async function loadLookup<T>(
     const result = await settle(() =>
         Promise.race([
             withObjectStore(LOOKUP_DB_NAME, LOOKUP_DB_STORE, "readonly", (store) =>
-                store.get(recordKey(kind, key)),
+                store.get(lookupKey(kind, key)),
             ),
             delay(LOOKUP_READ_TIMEOUT_MS),
         ]),

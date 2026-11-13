@@ -23,6 +23,7 @@ import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
 import { fresh, memoizeLookup, oldestStaleSince } from "../utils/memoizeLookup";
 import type { Lookup } from "../utils/memoizeLookup";
+import { lookupKey } from "../utils/lookupStore";
 import type { LookupKind } from "../utils/lookupStore";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
@@ -154,7 +155,7 @@ const bundleSizeCache = new Map<string, Promise<Lookup<number | null>>>();
 const repoStarsCache = new Map<string, Promise<Lookup<number | null>>>();
 const repoIssueCountsCache = new Map<string, Promise<Lookup<RepoIssueCounts>>>();
 const githubReleaseTagCache = new Map<string, Promise<Lookup<string | null>>>();
-/** Request subject per lookup, keyed `${kind}:${key}`; callers sharing a request share its subject. */
+/** Request subject per lookupKey; callers sharing a request share its subject. */
 const subjectsByLookup = new Map<string, RequestSubject>();
 
 /** Clears every in-memory metadata cache, e.g. after the proxy changes. */
@@ -179,11 +180,11 @@ function subjectFor(
     packageName: string,
     columns: readonly string[],
 ): RequestSubject {
-    const lookupKey = `${kind}:${key}`;
-    let subject = subjectsByLookup.get(lookupKey);
+    const subjectKey = lookupKey(kind, key);
+    let subject = subjectsByLookup.get(subjectKey);
     if (!subject) {
         subject = reactive({ packages: new Set<string>(), columns: new Set<string>() });
-        subjectsByLookup.set(lookupKey, subject);
+        subjectsByLookup.set(subjectKey, subject);
     }
     subject.packages.add(packageName);
     for (const column of columns) {
