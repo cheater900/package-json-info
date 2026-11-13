@@ -9,6 +9,7 @@ import {
     statusResponse,
     textResponse,
 } from "../../helpers/fetchMock";
+import { recordRequests, subjectOf, subjectsOf } from "../../helpers/requests";
 import { resetSettings } from "../../helpers/settings";
 import { githubTokenFixture } from "../../fixtures/github";
 import { MAX_FILE_TREE_ENTRIES, MAX_VIEWED_FILE_BYTES } from "../../../src/constants";
@@ -333,5 +334,34 @@ describe("fetchSourceTree - github provider", () => {
         );
 
         await expect(fetchSourceTree(GITHUB_TREE_REF)).rejects.toThrow(/404/);
+    });
+});
+
+describe("fetchSourceTree request subjects", () => {
+    const SUBJECT = subjectOf(["x"], ["sourceCodeTree"]);
+
+    it("tags tarball download with subject", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => binaryResponse(buildNpmTarball({ "index.js": "x" }))),
+        );
+        const recorder = recordRequests();
+
+        await fetchSourceTree(NPM_TREE_REF, SUBJECT);
+        recorder.stop();
+
+        expect(subjectsOf(recorder.requests, NPM_TREE_REF.tarballUrl)).toEqual([SUBJECT]);
+    });
+
+    it("tags tree request and lazy file fetch with subject", async () => {
+        stubGithubFetch({ tree: [{ path: "index.js", type: "blob", size: 1 }] });
+        const recorder = recordRequests();
+
+        const { readFile } = await fetchSourceTree(GITHUB_TREE_REF, SUBJECT);
+        await readFile("index.js");
+        recorder.stop();
+
+        expect(subjectsOf(recorder.requests, "api.github.com")).toEqual([SUBJECT]);
+        expect(subjectsOf(recorder.requests, "raw.githubusercontent.com")).toEqual([SUBJECT]);
     });
 });
