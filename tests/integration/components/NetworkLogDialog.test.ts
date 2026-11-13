@@ -6,28 +6,11 @@ import { NPM_REGISTRY_URL, NUMBER_LOCALE } from "../../../src/constants";
 import { networkLogEntries, startNetworkLog } from "../../../src/utils/networkLog";
 import type { NetworkLogEntry } from "../../../src/utils/networkLog";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
+import { LOG_ENTRY_STARTED_AT, networkLogEntry } from "../../fixtures/networkLog";
 import { stubFetchByUrl } from "../../helpers/fetchMock";
 
-const STARTED_AT = Date.UTC(2026, 10, 11, 9, 30, 0);
-
-function logEntry(overrides: Partial<NetworkLogEntry>): NetworkLogEntry {
-    return {
-        id: 1,
-        method: "GET",
-        url: `${NPM_REGISTRY_URL}/zod`,
-        startedAt: STARTED_AT,
-        state: "success",
-        status: 200,
-        sizeBytes: 1536,
-        error: null,
-        subject: { packages: new Set(["zod"]), columns: new Set(["latestVersion", "license"]) },
-        replay: async () => new Response(),
-        ...overrides,
-    };
-}
-
-const successEntry = logEntry({ id: 1 });
-const failureEntry = logEntry({
+const successEntry = networkLogEntry({ id: 1 });
+const failureEntry = networkLogEntry({
     id: 2,
     method: "POST",
     url: "https://api.osv.dev/v1/query",
@@ -37,8 +20,8 @@ const failureEntry = logEntry({
     error: "Failed to fetch",
     subject: null,
 });
-const pendingEntry = logEntry({ id: 3, state: "pending", status: null, sizeBytes: null });
-const notFoundEntry = logEntry({ id: 4, state: "failure", status: 404, sizeBytes: 0 });
+const pendingEntry = networkLogEntry({ id: 3, state: "pending", status: null, sizeBytes: null });
+const notFoundEntry = networkLogEntry({ id: 4, state: "failure", status: 404, sizeBytes: 0 });
 
 function mountDialog(entries: NetworkLogEntry[]) {
     networkLogEntries.push(...entries);
@@ -96,7 +79,9 @@ describe("NetworkLogDialog", () => {
         const wrapper = mountDialog([successEntry]);
 
         const cells = rowCells(wrapper, 0);
-        expect(cells[1].text()).toBe(new Date(STARTED_AT).toLocaleTimeString(NUMBER_LOCALE));
+        expect(cells[1].text()).toBe(
+            new Date(LOG_ENTRY_STARTED_AT).toLocaleTimeString(NUMBER_LOCALE),
+        );
         expect(cells[2].find(".network-log__badge").text()).toBe("GET");
         expect(cells[2].find("[title]").text()).toBe(`${NPM_REGISTRY_URL}/zod`);
         expect(cells[2].find("[title]").attributes("title")).toBe(`${NPM_REGISTRY_URL}/zod`);

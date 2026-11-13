@@ -18,25 +18,23 @@ import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/d
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
 import { NPM_REGISTRY_URL } from "../../src/constants";
 import { networkLogEntries, startNetworkLog } from "../../src/utils/networkLog";
-import type { NetworkLogEntry } from "../../src/utils/networkLog";
 import { openShareLink, shareSteps } from "../helpers/shareLink";
+import { subjectOf } from "../helpers/requests";
+import { networkLogEntry } from "../fixtures/networkLog";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
 
 /** Failed registry request whose subject lists `packageName`. */
 function failedLogEntry(packageName: string, replay = vi.fn(async () => new Response())) {
-    return {
-        id: 1,
-        method: "GET",
+    return networkLogEntry({
         url: `${NPM_REGISTRY_URL}/${packageName}`,
-        startedAt: Date.now(),
         state: "failure",
         status: null,
         sizeBytes: null,
         error: "Failed to fetch",
-        subject: { packages: new Set([packageName]), columns: new Set<string>() },
+        subject: subjectOf([packageName], []),
         replay,
-    } satisfies NetworkLogEntry;
+    });
 }
 
 beforeEach(() => {

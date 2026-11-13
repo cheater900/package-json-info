@@ -6,6 +6,7 @@ import type { SourceTree } from "../../../src/api/sourceTree";
 import type { FileTreeNode } from "../../../src/utils/fileTree";
 import type { SourceTreeRef } from "../../../src/types";
 import { npmSourceTree } from "../../fixtures/dependencies";
+import { subjectOf } from "../../helpers/requests";
 
 vi.mock("../../../src/api/sourceTree", () => ({
     fetchSourceTree: vi.fn(),
@@ -229,10 +230,10 @@ describe("SourceTreeBrowser", () => {
         await wrapper.setProps({ dependencyName: "other-pkg", sourceTree: otherSourceTree });
         await flushPromises();
 
-        expect(fetchSourceTree).toHaveBeenCalledWith(otherSourceTree, {
-            packages: new Set(["other-pkg"]),
-            columns: new Set(["sourceCodeTree"]),
-        });
+        expect(fetchSourceTree).toHaveBeenCalledWith(
+            otherSourceTree,
+            subjectOf(["other-pkg"], ["sourceCodeTree"]),
+        );
         expect(fetchSourceTree).toHaveBeenCalledTimes(2);
     });
 

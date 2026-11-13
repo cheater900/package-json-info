@@ -9,6 +9,7 @@ import {
 import { settle } from "../../../src/utils/settle";
 import { HTTP_STATUS } from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
+import { subjectOf } from "../../helpers/requests";
 
 const NETWORK_LOG_MAX_ENTRIES_STUB = vi.hoisted(() => 3);
 
@@ -17,7 +18,7 @@ vi.mock("../../../src/constants", async (importOriginal) => ({
     NETWORK_LOG_MAX_ENTRIES: NETWORK_LOG_MAX_ENTRIES_STUB,
 }));
 
-const SUBJECT = { packages: new Set(["left-pad"]), columns: new Set(["gitStars"]) };
+const SUBJECT = subjectOf(["left-pad"], ["gitStars"]);
 
 let stopNetworkLog = () => {};
 

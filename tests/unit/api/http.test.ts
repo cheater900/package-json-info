@@ -12,6 +12,7 @@ import { githubToken, settings } from "../../../src/settings";
 import { settle } from "../../../src/utils/settle";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
+import { subjectOf } from "../../helpers/requests";
 
 afterEach(resetSettings);
 
@@ -158,7 +159,7 @@ describe("fetchWithTimeout", () => {
 });
 
 describe("observeRequests", () => {
-    const SUBJECT = { packages: new Set(["left-pad"]), columns: new Set(["gitStars"]) };
+    const SUBJECT = subjectOf(["left-pad"], ["gitStars"]);
     let requests: ObservedRequest[] = [];
     let handle = { respond: vi.fn(), fail: vi.fn(), measure: vi.fn() };
     let stopObserving = () => {};
