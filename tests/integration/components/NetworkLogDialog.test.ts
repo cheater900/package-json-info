@@ -94,7 +94,7 @@ describe("NetworkLogDialog", () => {
         const cells = rowCells(wrapper, 0);
         expect(cells[2].find(".network-log__badge").text()).toBe("POST");
         expect(cells.slice(3, 7).map((cell) => cell.text())).toEqual(["-", "-", "-", "-"]);
-        expect(cells[5].find("[title]").attributes("title")).toBe("Failed to fetch");
+        expect(cells[5].attributes("title")).toBe("Failed to fetch");
     });
 
     it("shows 404 status badge on failed row", () => {

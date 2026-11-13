@@ -37,10 +37,8 @@
                         </td>
                         <td>{{ formatPackages(entry) }}</td>
                         <td>{{ formatColumns(entry) }}</td>
-                        <td>
-                            <span v-if="entry.status === null" :title="entry.error ?? undefined">
-                                {{ MISSING_VALUE }}
-                            </span>
+                        <td :title="entry.error ?? undefined">
+                            <span v-if="entry.status === null">{{ MISSING_VALUE }}</span>
                             <span v-else class="network-log__badge">{{ entry.status }}</span>
                         </td>
                         <td>{{ formatSize(entry) }}</td>

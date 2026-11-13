@@ -252,6 +252,32 @@ describe("observeRequests", () => {
         expect(handle.measure).not.toHaveBeenCalled();
     });
 
+    it("calls fail when body breaks off mid-read", async () => {
+        const error = new Error("connection reset");
+        let pulls = 0;
+        const source = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                pulls++;
+                if (pulls > 1) {
+                    controller.error(error);
+                    return;
+                }
+                controller.enqueue(new Uint8Array(8));
+            },
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(source)),
+        );
+
+        const response = await fetchWithTimeout("https://a.test/x");
+
+        await expect(response.text()).rejects.toThrow("connection reset");
+        expect(handle.respond).toHaveBeenCalled();
+        expect(handle.fail).toHaveBeenCalledWith(error);
+        expect(handle.measure).not.toHaveBeenCalled();
+    });
+
     it("calls fail with error on network failure", async () => {
         const error = new Error("network down");
         vi.stubGlobal(

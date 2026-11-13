@@ -187,12 +187,13 @@ modal listing every request the app sent this page load, newest first:
 
 - **State**: green check for success, red cross for failure, yellow
   question mark while pending. Any non-2xx answer, 404 included, counts
-  as failure.
+  as failure, as does a body that breaks off mid-download (timeout,
+  dropped connection).
 - **Time** the request started, **method** badge and target **URL** (never
   the proxied one).
 - **Packages** and **columns** the request fetched data for.
 - **Status** badge, or `-` without a response; hover shows the network
-  error. **Size** of the decoded body, `-` until the app reads all of
+  or body error. **Size** of the decoded body, `-` until the app reads all of
   it; bodies the app never reads, such as most 404 answers, stay `-`.
 
 A summary line below the table counts total, failed, pending and

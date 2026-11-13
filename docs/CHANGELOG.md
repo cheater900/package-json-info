@@ -13,6 +13,7 @@ Condensed from git history. Newest month first.
   method, URL, packages, columns, status and size, plus a summary of
   failed, pending and successful requests. A **retry** button on failed
   rows refetches the matching failed table rows, or resends the request.
+  A body that breaks off mid-download marks its request failed.
   The log stays in memory, capped at 1000 requests; replays never keep
   the GitHub token. **Size** counts only body bytes the app reads, so
   download size limits still stop the transfer.

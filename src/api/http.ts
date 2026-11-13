@@ -30,6 +30,7 @@ export type ObservedRequest = {
 /** Observer callbacks for one request's outcome. */
 export type RequestHandle = {
     respond: (response: Response) => void;
+    /** Called when no response arrives, or when its body breaks off after `respond`. */
     fail: (error: Error) => void;
     /** Called once the caller has read the whole body; never when it cancels or stops reading. */
     measure: (sizeBytes: number) => void;
@@ -94,26 +95,48 @@ function replayOf(
 }
 
 /**
- * Same response, its body passed through a byte counter that reports the
- * total once the caller has read it all. Counts only what the caller reads,
- * so size limits that cancel the body still stop the download.
+ * Same response, its body passed through a byte counter. Tells `handles`
+ * the total once the caller has read it all, or the error when the body
+ * breaks off (timeout, dropped connection). Reads only on demand, so size
+ * limits that cancel the body still stop the download.
  */
-function measuredResponse(response: Response, report: (sizeBytes: number) => void): Response {
+function measuredResponse(response: Response, handles: readonly RequestHandle[]): Response {
     if (!response.body) {
-        report(0);
+        for (const handle of handles) {
+            handle.measure(0);
+        }
         return response;
     }
+    const reader = response.body.getReader();
     let total = 0;
-    const counter = new TransformStream<Uint8Array, Uint8Array>({
-        transform(chunk, controller) {
-            total += chunk.length;
-            controller.enqueue(chunk);
+    const counted = new ReadableStream<Uint8Array>(
+        {
+            async pull(controller) {
+                const result = await settle(() => reader.read());
+                if (!result.ok) {
+                    for (const handle of handles) {
+                        handle.fail(result.error);
+                    }
+                    controller.error(result.error);
+                    return;
+                }
+                if (result.value.done) {
+                    for (const handle of handles) {
+                        handle.measure(total);
+                    }
+                    controller.close();
+                    return;
+                }
+                total += result.value.value.length;
+                controller.enqueue(result.value.value);
+            },
+            cancel(reason) {
+                return reader.cancel(reason);
+            },
         },
-        flush() {
-            report(total);
-        },
-    });
-    return new Response(response.body.pipeThrough(counter), response);
+        { highWaterMark: 0 },
+    );
+    return new Response(counted, response);
 }
 
 /**
@@ -151,11 +174,7 @@ export async function fetchWithTimeout(
         }
         throw result.error;
     }
-    const response = measuredResponse(result.value, (sizeBytes) => {
-        for (const handle of handles) {
-            handle.measure(sizeBytes);
-        }
-    });
+    const response = measuredResponse(result.value, handles);
     for (const handle of handles) {
         handle.respond(response);
     }

@@ -109,6 +109,28 @@ describe("networkLog", () => {
         });
     });
 
+    it("logs body broken off mid-read as failure, keeps status", async () => {
+        const source = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                controller.error(new Error("connection reset"));
+            },
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(source, { status: HTTP_STATUS.ok })),
+        );
+
+        const response = await fetchWithTimeout("https://a.test/x");
+        await settle(() => response.text());
+
+        expect(networkLogEntries[0]).toMatchObject({
+            state: "failure",
+            status: HTTP_STATUS.ok,
+            sizeBytes: null,
+            error: "connection reset",
+        });
+    });
+
     it("drops oldest entries past NETWORK_LOG_MAX_ENTRIES", async () => {
         stubFetchStatus(HTTP_STATUS.ok);
 

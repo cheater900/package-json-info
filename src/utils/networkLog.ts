@@ -18,7 +18,7 @@ export type NetworkLogEntry = {
     status: number | null;
     /** Decoded body size; null until the app reads the whole body, or when it never does. */
     sizeBytes: number | null;
-    /** Network error or timeout message; null when a response arrived. */
+    /** Network error or timeout message, also when the body breaks off; null otherwise. */
     error: string | null;
     subject: RequestSubject | null;
     replay: () => Promise<Response>;
