@@ -8,6 +8,7 @@ import {
     githubRawFileUrl,
 } from "./github";
 import { fetchWithTimeout } from "./http";
+import type { RequestSubject } from "./http";
 import { BYTES_PER_MB, MAX_FILE_TREE_ENTRIES, MAX_VIEWED_FILE_BYTES } from "../constants";
 import { t } from "../i18n";
 import type { SourceTreeRef } from "../types";
@@ -31,14 +32,21 @@ function assertViewableSize(bytes: number): void {
     }
 }
 
-export async function fetchSourceTree(ref: SourceTreeRef): Promise<SourceTree> {
+/** `subject` tags the tree download and each lazy file fetch. */
+export async function fetchSourceTree(
+    ref: SourceTreeRef,
+    subject: RequestSubject | null = null,
+): Promise<SourceTree> {
     return ref.provider === "npm"
-        ? fetchNpmSourceTree(ref.tarballUrl)
-        : fetchGithubSourceTree(ref.owner, ref.repo, ref.tag);
+        ? fetchNpmSourceTree(ref.tarballUrl, subject)
+        : fetchGithubSourceTree(ref.owner, ref.repo, ref.tag, subject);
 }
 
-async function fetchNpmSourceTree(tarballUrl: string): Promise<SourceTree> {
-    const response = await fetchWithTimeout(tarballUrl);
+async function fetchNpmSourceTree(
+    tarballUrl: string,
+    subject: RequestSubject | null,
+): Promise<SourceTree> {
+    const response = await fetchWithTimeout(tarballUrl, {}, subject);
     if (!response.ok) {
         throw new Error(t("errors.tarballDownload", { status: response.status }));
     }
@@ -75,9 +83,10 @@ async function fetchGithubSourceTree(
     owner: string,
     repo: string,
     tag: string,
+    subject: RequestSubject | null,
 ): Promise<SourceTree> {
     const encodedTag = encodeURIComponent(tag);
-    const githubTree = await fetchGithubTree(owner, repo, tag);
+    const githubTree = await fetchGithubTree(owner, repo, tag, subject);
     const allEntries = githubTree.entries
         .filter((entry) => entry.type !== GITHUB_ENTRY_SUBMODULE)
         .map((entry) => ({
@@ -94,6 +103,8 @@ async function fetchGithubSourceTree(
             assertViewableSize(sizeByPath.get(path) ?? 0);
             const fileResponse = await fetchWithTimeout(
                 githubRawFileUrl(owner, repo, encodedTag, path),
+                {},
+                subject,
             );
             if (!fileResponse.ok) {
                 throw new Error(t("errors.fileContentFetch", { status: fileResponse.status }));

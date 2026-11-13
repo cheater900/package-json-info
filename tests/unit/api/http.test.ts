@@ -1,12 +1,14 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import {
     fetchJson,
     fetchWithTimeout,
     findFirstFound,
     HttpError,
+    observeRequests,
     proxiedUrl,
 } from "../../../src/api/http";
-import { settings } from "../../../src/settings";
+import type { ObservedRequest } from "../../../src/api/http";
+import { githubToken, settings } from "../../../src/settings";
 import { settle } from "../../../src/utils/settle";
 import { HTTP_STATUS, jsonResponse, statusResponse } from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
@@ -153,4 +155,195 @@ describe("fetchWithTimeout", () => {
             expect(fetchMock).not.toHaveBeenCalled();
         },
     );
+});
+
+describe("observeRequests", () => {
+    const SUBJECT = { packages: new Set(["left-pad"]), columns: new Set(["gitStars"]) };
+    let requests: ObservedRequest[] = [];
+    let handle = { respond: vi.fn(), fail: vi.fn() };
+    let stopObserving = () => {};
+
+    beforeEach(() => {
+        requests = [];
+        handle = { respond: vi.fn(), fail: vi.fn() };
+        stopObserving = observeRequests((request) => {
+            requests.push(request);
+            return handle;
+        });
+    });
+
+    afterEach(() => {
+        stopObserving();
+    });
+
+    it("passes method, url, subject to observer", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => jsonResponse({})),
+        );
+
+        await fetchWithTimeout("https://a.test/x", { method: "POST" }, SUBJECT);
+
+        expect(requests).toHaveLength(1);
+        expect(requests[0]).toMatchObject({
+            method: "POST",
+            url: "https://a.test/x",
+            subject: SUBJECT,
+        });
+    });
+
+    it("defaults method to GET, subject to null", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => jsonResponse({})),
+        );
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(requests[0]).toMatchObject({ method: "GET", subject: null });
+    });
+
+    it("calls respond with response", async () => {
+        const response = jsonResponse({});
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(handle.respond).toHaveBeenCalledWith(response);
+        expect(handle.fail).not.toHaveBeenCalled();
+    });
+
+    it("calls fail with error on network failure", async () => {
+        const error = new Error("network down");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                throw error;
+            }),
+        );
+
+        await expect(fetchWithTimeout("https://a.test/x")).rejects.toThrow("network down");
+        expect(handle.fail).toHaveBeenCalledWith(error);
+        expect(handle.respond).not.toHaveBeenCalled();
+    });
+
+    it("reports target url, not proxied one", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => jsonResponse({})),
+        );
+        settings.proxyUrl = "https://p.test/";
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(requests[0].url).toBe("https://a.test/x");
+    });
+
+    it("receives subject from fetchJson", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => jsonResponse({})),
+        );
+
+        await fetchJson("https://a.test/x", {}, SUBJECT);
+
+        expect(requests[0].subject).toBe(SUBJECT);
+    });
+
+    it("receives subject from findFirstFound for every candidate", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string) => jsonResponse({}, url.endsWith("/b"))),
+        );
+
+        await findFirstFound(["a", "b"], (c) => `https://x/${c}`, {}, SUBJECT);
+
+        expect(requests.map((r) => r.subject)).toEqual([SUBJECT, SUBJECT]);
+    });
+
+    it("calls no observer when token host guard throws", async () => {
+        await expect(
+            fetchWithTimeout("https://a.test/x", { headers: { Authorization: "Bearer t" } }),
+        ).rejects.toThrow("GitHub token");
+        expect(requests).toHaveLength(0);
+    });
+
+    it("stops notifying after unsubscribe", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => jsonResponse({})),
+        );
+        stopObserving();
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(requests).toHaveLength(0);
+    });
+
+    describe("replay", () => {
+        const URL_GITHUB = "https://api.github.com/x";
+
+        async function sendAuthorized(fetchMock: ReturnType<typeof vi.fn>) {
+            vi.stubGlobal("fetch", fetchMock);
+            githubToken.value = "old";
+            await fetchWithTimeout(URL_GITHUB, {
+                headers: { Accept: "json", Authorization: "Bearer old" },
+            });
+            fetchMock.mockClear();
+        }
+
+        function replayedHeaders(fetchMock: ReturnType<typeof vi.fn>): Headers {
+            const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+            return new Headers(init.headers);
+        }
+
+        it("sends no Authorization once token purged", async () => {
+            const fetchMock = vi.fn(async () => jsonResponse({}));
+            await sendAuthorized(fetchMock);
+            githubToken.value = undefined;
+
+            await requests[0].replay();
+
+            expect(replayedHeaders(fetchMock).has("Authorization")).toBe(false);
+            expect(replayedHeaders(fetchMock).get("Accept")).toBe("json");
+        });
+
+        it("sends current token", async () => {
+            const fetchMock = vi.fn(async () => jsonResponse({}));
+            await sendAuthorized(fetchMock);
+            githubToken.value = "new";
+
+            await requests[0].replay();
+
+            expect(replayedHeaders(fetchMock).get("Authorization")).toBe("Bearer new");
+        });
+
+        it("adds no token to originally anonymous request", async () => {
+            const fetchMock = vi.fn(async () => jsonResponse({}));
+            vi.stubGlobal("fetch", fetchMock);
+            await fetchWithTimeout(URL_GITHUB);
+            githubToken.value = "new";
+            fetchMock.mockClear();
+
+            await requests[0].replay();
+
+            expect(replayedHeaders(fetchMock).has("Authorization")).toBe(false);
+        });
+
+        it("reports replayed request with same subject", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => jsonResponse({})),
+            );
+            await fetchWithTimeout("https://a.test/x", {}, SUBJECT);
+
+            await requests[0].replay();
+
+            expect(requests).toHaveLength(2);
+            expect(requests[1]).toMatchObject({ url: "https://a.test/x", subject: SUBJECT });
+        });
+    });
 });

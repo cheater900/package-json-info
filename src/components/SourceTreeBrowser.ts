@@ -52,7 +52,11 @@ export default defineComponent({
                     return;
                 }
                 loading.value = true;
-                const result = await settle(() => fetchSourceTree(sourceTreeRef));
+                const subject = {
+                    packages: new Set(props.dependencyName ? [props.dependencyName] : []),
+                    columns: new Set(["sourceCodeTree"]),
+                };
+                const result = await settle(() => fetchSourceTree(sourceTreeRef, subject));
                 if (isStale) {
                     return;
                 }

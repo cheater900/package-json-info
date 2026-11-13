@@ -8,7 +8,7 @@ import {
 import { t } from "../i18n";
 import { githubToken } from "../settings";
 import { fetchWithTimeout, findFirstFound, HttpError } from "./http";
-import type { HttpHeaders } from "./http";
+import type { HttpHeaders, RequestSubject } from "./http";
 
 export type GithubRateLimit = {
     limit: number;
@@ -90,12 +90,14 @@ export async function findGithubReleaseTag(
     repo: string,
     version: string,
     headers: HttpHeaders = githubHeaders(),
+    subject: RequestSubject | null = null,
 ): Promise<string | null> {
     const found = await findFirstFound(
         [`v${version}`, version],
         (candidate) =>
             `${githubRepoApiUrl(owner, repo)}/git/ref/tags/${encodeURIComponent(candidate)}`,
         { headers },
+        subject,
     );
     return found?.candidate ?? null;
 }
@@ -105,10 +107,12 @@ export async function fetchGithubTree(
     owner: string,
     repo: string,
     ref: string,
+    subject: RequestSubject | null = null,
 ): Promise<GithubTree> {
     const response = await fetchWithTimeout(
         `${githubRepoApiUrl(owner, repo)}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
         { headers: githubHeaders() },
+        subject,
     );
     if (!response.ok) {
         throw new Error(t("errors.repoTreeFetch", { status: response.status }));

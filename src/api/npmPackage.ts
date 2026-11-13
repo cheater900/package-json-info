@@ -1,3 +1,4 @@
+import { reactive } from "vue";
 import { z } from "zod";
 import type {
     DependencyRow,
@@ -22,6 +23,7 @@ import { isColumnVisible, TOGGLEABLE_COLUMNS } from "../utils/tableColumns";
 import { extractLicense, NpmLicenseSchema } from "../utils/license";
 import { fresh, memoizeLookup, oldestStaleSince } from "../utils/memoizeLookup";
 import type { Lookup } from "../utils/memoizeLookup";
+import type { LookupKind } from "../utils/lookupStore";
 import { resolveRegistrySpec } from "../utils/npmSpec";
 import { settle } from "../utils/settle";
 import { isHttpUrl } from "../utils/url";
@@ -29,7 +31,7 @@ import { normaliseRepoUrl, parseRepoSlug, repoSlugKey, repoWebUrl } from "../uti
 import type { RepoSlug } from "../utils/repoUrl";
 import { settings } from "../settings";
 import { fetchJson } from "./http";
-import type { HttpHeaders } from "./http";
+import type { HttpHeaders, RequestSubject } from "./http";
 import { findGithubReleaseTag, githubHeaders } from "./github";
 import { EMPTY_ISSUE_COUNTS, fetchRepoIssueCounts, fetchRepoStars } from "./repoMetadata";
 import type { RepoIssueCounts } from "./repoMetadata";
@@ -152,6 +154,8 @@ const bundleSizeCache = new Map<string, Promise<Lookup<number | null>>>();
 const repoStarsCache = new Map<string, Promise<Lookup<number | null>>>();
 const repoIssueCountsCache = new Map<string, Promise<Lookup<RepoIssueCounts>>>();
 const githubReleaseTagCache = new Map<string, Promise<Lookup<string | null>>>();
+/** Request subject per lookup, keyed `${kind}:${key}`; callers sharing a request share its subject. */
+const subjectsByLookup = new Map<string, RequestSubject>();
 
 /** Clears every in-memory metadata cache, e.g. after the proxy changes. */
 export function clearPackageInfoCache(): void {
@@ -162,6 +166,30 @@ export function clearPackageInfoCache(): void {
     repoStarsCache.clear();
     repoIssueCountsCache.clear();
     githubReleaseTagCache.clear();
+    subjectsByLookup.clear();
+}
+
+/**
+ * Subject of lookup `kind`/`key`, with `packageName` and `columns` added.
+ * Called on cache hits too, so a shared request lists every package using it.
+ */
+function subjectFor(
+    kind: LookupKind,
+    key: string,
+    packageName: string,
+    columns: readonly string[],
+): RequestSubject {
+    const lookupKey = `${kind}:${key}`;
+    let subject = subjectsByLookup.get(lookupKey);
+    if (!subject) {
+        subject = reactive({ packages: new Set<string>(), columns: new Set<string>() });
+        subjectsByLookup.set(lookupKey, subject);
+    }
+    subject.packages.add(packageName);
+    for (const column of columns) {
+        subject.columns.add(column);
+    }
+    return subject;
 }
 
 /**
@@ -234,16 +262,16 @@ export async function fetchPackageInfo(
     const noData = fresh(null);
     const [registry, weeklyDownloads, vulnerabilityCount, bundleSizeGzip] = await Promise.all([
         anyColumnVisible(visibleColumns, COLUMNS_FROM_REGISTRY)
-            ? fetchRegistryData(registryName)
+            ? fetchRegistryData(registryName, name, COLUMNS_FROM_REGISTRY.filter(isVisible))
             : noData,
         isVisible("weeklyDownloads")
-            ? withFallback(() => fetchWeeklyDownloads(registryName), null)
+            ? withFallback(() => fetchWeeklyDownloads(registryName, name), null)
             : noData,
         isVisible("vulnerabilityCount")
-            ? withFallback(() => fetchVulnerabilityCount(registryName), null)
+            ? withFallback(() => fetchVulnerabilityCount(registryName, name), null)
             : noData,
         isVisible("bundleSizeGzip")
-            ? withFallback(() => fetchBundleGzipSize(registryName, range), null)
+            ? withFallback(() => fetchBundleGzipSize(registryName, range, name), null)
             : noData,
     ]);
     const npmData = registry.value;
@@ -253,13 +281,13 @@ export async function fetchPackageInfo(
     const slug = parseRepoSlug(repositoryUrl(npmData) ?? "");
     const [gitStars, issueCounts, sourceTree] = await Promise.all([
         slug != null && isVisible("gitStars")
-            ? withFallback(() => fetchCachedRepoStars(slug, headers), null)
+            ? withFallback(() => fetchCachedRepoStars(slug, headers, name), null)
             : noData,
         slug != null && anyColumnVisible(visibleColumns, COLUMNS_FROM_ISSUE_SEARCH)
-            ? withFallback(() => fetchCachedIssueCounts(slug, headers), EMPTY_ISSUE_COUNTS)
+            ? withFallback(() => fetchCachedIssueCounts(slug, headers, name), EMPTY_ISSUE_COUNTS)
             : fresh(EMPTY_ISSUE_COUNTS),
         isVisible("sourceCodeTree")
-            ? withFallback(() => resolveSourceTree(versionData, slug, range, headers), null)
+            ? withFallback(() => resolveSourceTree(versionData, slug, range, headers, name), null)
             : noData,
     ]);
     const sourceCode =
@@ -336,7 +364,8 @@ export async function fetchPackageJsonForVersion(
     version: string,
 ): Promise<string | null> {
     const { registryName, range } = resolveRegistrySpec(name, version);
-    const versionData = resolveVersionData((await fetchRegistryData(registryName)).value, range);
+    const registry = await fetchRegistryData(registryName, name, []);
+    const versionData = resolveVersionData(registry.value, range);
     if (!versionData) {
         return null;
     }
@@ -378,18 +407,31 @@ export async function fetchPackagesInfo(
     return wasCancelled ? null : results;
 }
 
-function fetchRegistryData(name: string): Promise<Lookup<NpmRegistryData | null>> {
+/** `name` is the registry name; `packageName` the row name aliasing it (often the same). */
+function fetchRegistryData(
+    name: string,
+    packageName: string,
+    columns: readonly string[],
+): Promise<Lookup<NpmRegistryData | null>> {
+    const subject = subjectFor("registry", name, packageName, columns);
     return memoizeLookup(registryDataCache, "registry", name, StoredRegistrySchema, async () => {
-        const data = await fetchJson(`${NPM_REGISTRY_URL}/${encodeURIComponent(name)}`);
+        const data = await fetchJson(
+            `${NPM_REGISTRY_URL}/${encodeURIComponent(name)}`,
+            {},
+            subject,
+        );
         return data == null ? null : NpmRegistrySchema.parse(data);
     });
 }
 
-function fetchWeeklyDownloads(name: string): Promise<Lookup<number | null>> {
+function fetchWeeklyDownloads(name: string, packageName: string): Promise<Lookup<number | null>> {
+    const subject = subjectFor("weeklyDownloads", name, packageName, ["weeklyDownloads"]);
     return memoizeLookup(weeklyDownloadsCache, "weeklyDownloads", name, StoredCountSchema, () =>
-        fetchJson<NpmDownloadsData>(`${NPM_WEEKLY_DOWNLOADS_URL}/${encodeURIComponent(name)}`).then(
-            (d) => d?.downloads ?? null,
-        ),
+        fetchJson<NpmDownloadsData>(
+            `${NPM_WEEKLY_DOWNLOADS_URL}/${encodeURIComponent(name)}`,
+            {},
+            subject,
+        ).then((d) => d?.downloads ?? null),
     );
 }
 
@@ -398,7 +440,11 @@ function fetchWeeklyDownloads(name: string): Promise<Lookup<number | null>> {
  * result pages. Throws on failure; OSV may block browser requests (CORS,
  * rate limits).
  */
-function fetchVulnerabilityCount(name: string): Promise<Lookup<number | null>> {
+function fetchVulnerabilityCount(
+    name: string,
+    packageName: string,
+): Promise<Lookup<number | null>> {
+    const subject = subjectFor("vulnerabilityCount", name, packageName, ["vulnerabilityCount"]);
     return memoizeLookup(
         vulnerabilityCountCache,
         "vulnerabilityCount",
@@ -409,14 +455,18 @@ function fetchVulnerabilityCount(name: string): Promise<Lookup<number | null>> {
             let count = 0;
             let pageToken: string | undefined;
             for (let page = 1; page <= OSV_MAX_PAGES; page++) {
-                const data = await fetchJson<OsvQueryResponse>(OSV_QUERY_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        package: { name, ecosystem: OSV_NPM_ECOSYSTEM },
-                        page_token: pageToken,
-                    }),
-                });
+                const data = await fetchJson<OsvQueryResponse>(
+                    OSV_QUERY_URL,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            package: { name, ecosystem: OSV_NPM_ECOSYSTEM },
+                            page_token: pageToken,
+                        }),
+                    },
+                    subject,
+                );
                 if (!data) {
                     return null;
                 }
@@ -435,12 +485,19 @@ function fetchVulnerabilityCount(name: string): Promise<Lookup<number | null>> {
 }
 
 /** Min+gzip size via Bundlephobia. Version-scoped, since size differs across versions. Throws on failure. */
-function fetchBundleGzipSize(name: string, range: string): Promise<Lookup<number | null>> {
+function fetchBundleGzipSize(
+    name: string,
+    range: string,
+    packageName: string,
+): Promise<Lookup<number | null>> {
     const pinnedVersion = pinnedVersionOf(range);
     const packageSpec = pinnedVersion ? `${name}@${pinnedVersion}` : name;
+    const subject = subjectFor("bundleSize", packageSpec, packageName, ["bundleSizeGzip"]);
     return memoizeLookup(bundleSizeCache, "bundleSize", packageSpec, StoredCountSchema, () =>
         fetchJson<BundlephobiaData>(
             `${BUNDLEPHOBIA_SIZE_URL}?package=${encodeURIComponent(packageSpec)}`,
+            {},
+            subject,
         ).then((data) => data?.gzip ?? null),
     );
 }
@@ -448,22 +505,28 @@ function fetchBundleGzipSize(name: string, range: string): Promise<Lookup<number
 function fetchCachedRepoStars(
     slug: RepoSlug,
     headers: HttpHeaders,
+    packageName: string,
 ): Promise<Lookup<number | null>> {
-    return memoizeLookup(repoStarsCache, "repoStars", repoSlugKey(slug), StoredCountSchema, () =>
-        fetchRepoStars(slug, headers),
+    const key = repoSlugKey(slug);
+    const subject = subjectFor("repoStars", key, packageName, ["gitStars"]);
+    return memoizeLookup(repoStarsCache, "repoStars", key, StoredCountSchema, () =>
+        fetchRepoStars(slug, headers, subject),
     );
 }
 
 function fetchCachedIssueCounts(
     slug: RepoSlug,
     headers: HttpHeaders,
+    packageName: string,
 ): Promise<Lookup<RepoIssueCounts>> {
+    const key = repoSlugKey(slug);
+    const subject = subjectFor("repoIssueCounts", key, packageName, COLUMNS_FROM_ISSUE_SEARCH);
     return memoizeLookup(
         repoIssueCountsCache,
         "repoIssueCounts",
-        repoSlugKey(slug),
+        key,
         StoredIssueCountsSchema,
-        () => fetchRepoIssueCounts(slug, headers),
+        () => fetchRepoIssueCounts(slug, headers, subject),
     );
 }
 
@@ -477,6 +540,7 @@ async function resolveSourceTree(
     slug: RepoSlug | null,
     range: string,
     headers: HttpHeaders,
+    packageName: string,
 ): Promise<Lookup<SourceTreeRef | null>> {
     // Registry data picks the URL; only http(s) may be fetched, never data: or blob:.
     const tarballUrl = versionData.dist?.tarball;
@@ -487,12 +551,14 @@ async function resolveSourceTree(
     if (slug?.host !== GITHUB_HOST || !pinnedVersion) {
         return fresh(null);
     }
+    const key = `${repoSlugKey(slug)}@${pinnedVersion}`;
+    const subject = subjectFor("githubReleaseTag", key, packageName, ["sourceCodeTree"]);
     const { value: tag, staleSince } = await memoizeLookup(
         githubReleaseTagCache,
         "githubReleaseTag",
-        `${repoSlugKey(slug)}@${pinnedVersion}`,
+        key,
         StoredReleaseTagSchema,
-        () => findGithubReleaseTag(slug.owner, slug.repo, pinnedVersion, headers),
+        () => findGithubReleaseTag(slug.owner, slug.repo, pinnedVersion, headers, subject),
     );
     if (!tag) {
         return { value: null, staleSince };

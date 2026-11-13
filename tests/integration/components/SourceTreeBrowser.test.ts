@@ -229,7 +229,10 @@ describe("SourceTreeBrowser", () => {
         await wrapper.setProps({ dependencyName: "other-pkg", sourceTree: otherSourceTree });
         await flushPromises();
 
-        expect(fetchSourceTree).toHaveBeenCalledWith(otherSourceTree);
+        expect(fetchSourceTree).toHaveBeenCalledWith(otherSourceTree, {
+            packages: new Set(["other-pkg"]),
+            columns: new Set(["sourceCodeTree"]),
+        });
         expect(fetchSourceTree).toHaveBeenCalledTimes(2);
     });
 

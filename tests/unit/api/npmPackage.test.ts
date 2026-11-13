@@ -5,6 +5,8 @@ import {
     fetchPackageJsonForVersion,
     clearPackageInfoCache,
 } from "../../../src/api/npmPackage";
+import { observeRequests } from "../../../src/api/http";
+import type { ObservedRequest } from "../../../src/api/http";
 import { OSV_MAX_PAGES } from "../../../src/constants";
 import { clearLookups, loadLookup, saveLookup } from "../../../src/utils/lookupStore";
 import type { LookupKind } from "../../../src/utils/lookupStore";
@@ -660,6 +662,51 @@ describe("fetchPackageInfo caching", () => {
         expect(a.gitStars).toBe(777);
         expect(b.gitStars).toBe(777);
         expect(countFetchCalls(fetchMock, "api.github.com/repos/shared-org/shared-repo")).toBe(1);
+    });
+
+    it("lists both packages on shared stars request", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org": {
+                ...minimalRegistryDoc,
+                repository: "git+https://github.com/shared-org/shared-repo.git",
+            },
+            "api.github.com/repos/shared-org/shared-repo": { stargazers_count: 777 },
+        });
+        const requests: ObservedRequest[] = [];
+        const stopObserving = observeRequests((request) => {
+            requests.push(request);
+            return { respond: () => {}, fail: () => {} };
+        });
+        const options = { visibleColumns: new Set(["gitStars"]) };
+        await fetchPackageInfo("pkg-a", "1.0.0", options);
+        await fetchPackageInfo("pkg-b", "1.0.0", options);
+        stopObserving();
+
+        const starsRequests = requests.filter((r) => r.url.includes("api.github.com/repos"));
+        expect(starsRequests).toHaveLength(1);
+        expect(starsRequests[0].subject).toEqual({
+            packages: new Set(["pkg-a", "pkg-b"]),
+            columns: new Set(["gitStars"]),
+        });
+    });
+
+    it("tags registry request with row name and visible registry columns", async () => {
+        stubFetchByUrl({ "registry.npmjs.org/real-pkg": minimalRegistryDoc });
+        const requests: ObservedRequest[] = [];
+        const stopObserving = observeRequests((request) => {
+            requests.push(request);
+            return { respond: () => {}, fail: () => {} };
+        });
+        await fetchPackageInfo("alias-pkg", "npm:real-pkg@1.0.0", {
+            visibleColumns: new Set(["license", "weeklyDownloads"]),
+        });
+        stopObserving();
+
+        const registryRequest = requests.find((r) => r.url.includes("registry.npmjs.org"));
+        expect(registryRequest?.subject).toEqual({
+            packages: new Set(["alias-pkg"]),
+            columns: new Set(["license"]),
+        });
     });
 
     it("skips caching failed lookup, next same-key call retries", async () => {
