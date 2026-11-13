@@ -1,4 +1,9 @@
-import { GITHUB_API_URL, HTTP_NOT_FOUND, PROXY_URL_PLACEHOLDER } from "../constants";
+import {
+    GITHUB_API_URL,
+    HTTP_HEADER_AUTHORIZATION,
+    HTTP_NOT_FOUND,
+    PROXY_URL_PLACEHOLDER,
+} from "../constants";
 import { t } from "../i18n";
 import { githubToken, settings } from "../settings";
 import { settle } from "../utils/settle";
@@ -63,6 +68,11 @@ export function proxiedUrl(url: string, proxy: string = settings.proxyUrl): stri
     return proxy.replace(PROXY_URL_PLACEHOLDER, encodeURIComponent(url));
 }
 
+/** Authorization header value carrying `token`. */
+export function bearerAuthorization(token: string): string {
+    return `Bearer ${token}`;
+}
+
 /** Registers `observer` for every request sent from now on. Returns the unsubscribe. */
 export function observeRequests(observer: RequestObserver): () => void {
     requestObservers.add(observer);
@@ -82,13 +92,13 @@ function replayOf(
     subject: RequestSubject | null,
 ): () => Promise<Response> {
     const headers = new Headers(init.headers);
-    const wasAuthorized = headers.has("Authorization");
-    headers.delete("Authorization");
+    const wasAuthorized = headers.has(HTTP_HEADER_AUTHORIZATION);
+    headers.delete(HTTP_HEADER_AUTHORIZATION);
     const anonymousInit = { ...init, headers };
     return () => {
         const replayHeaders = new Headers(anonymousInit.headers);
         if (wasAuthorized && githubToken.value) {
-            replayHeaders.set("Authorization", `Bearer ${githubToken.value}`);
+            replayHeaders.set(HTTP_HEADER_AUTHORIZATION, bearerAuthorization(githubToken.value));
         }
         return fetchWithTimeout(url, { ...anonymousInit, headers: replayHeaders }, subject);
     };
@@ -151,7 +161,7 @@ export async function fetchWithTimeout(
     init: RequestInit = {},
     subject: RequestSubject | null = null,
 ): Promise<Response> {
-    const isAuthorized = new Headers(init.headers).has("Authorization");
+    const isAuthorized = new Headers(init.headers).has(HTTP_HEADER_AUTHORIZATION);
     if (isAuthorized && new URL(url).origin !== GITHUB_API_URL) {
         throw new Error(t("errors.tokenHostBlocked"));
     }

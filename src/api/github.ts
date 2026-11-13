@@ -3,11 +3,12 @@ import {
     GITHUB_API_URL,
     GITHUB_RATE_LIMIT_URL,
     GITHUB_RAW_URL,
+    HTTP_HEADER_AUTHORIZATION,
     HTTP_UNAUTHORIZED,
 } from "../constants";
 import { t } from "../i18n";
 import { githubToken } from "../settings";
-import { fetchWithTimeout, findFirstFound, HttpError } from "./http";
+import { bearerAuthorization, fetchWithTimeout, findFirstFound, HttpError } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 
 export type GithubRateLimit = {
@@ -45,7 +46,10 @@ export function githubHeaders(token: string | undefined = githubToken.value): Ht
     if (!token) {
         return { Accept: GITHUB_ACCEPT_HEADER };
     }
-    return { Accept: GITHUB_ACCEPT_HEADER, Authorization: `Bearer ${token}` };
+    return {
+        Accept: GITHUB_ACCEPT_HEADER,
+        [HTTP_HEADER_AUTHORIZATION]: bearerAuthorization(token),
+    };
 }
 
 /**
