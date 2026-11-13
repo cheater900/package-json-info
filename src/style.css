@@ -11,6 +11,9 @@
     --font-scale: 1;
     --glow: currentColor;
     --heading: var(--mono);
+    /* Modal content: top padding clears Modal's floating close button. */
+    --modal-content-padding: calc(40px * var(--space-scale)) calc(16px * var(--space-scale))
+        calc(16px * var(--space-scale));
     --mono: "Courier New", ui-monospace, Consolas, monospace;
     --sans: var(--mono);
     --scanline: rgba(0, 0, 0, 0.15);

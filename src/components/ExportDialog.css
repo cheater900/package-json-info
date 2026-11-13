@@ -4,9 +4,7 @@
     flex-direction: column;
     gap: 12px;
     max-width: 100%;
-    /* Top padding clears Modal's floating close button. */
-    padding: calc(40px * var(--space-scale)) calc(16px * var(--space-scale))
-        calc(16px * var(--space-scale));
+    padding: var(--modal-content-padding);
     text-align: left;
     width: 800px;
 }

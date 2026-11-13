@@ -202,10 +202,7 @@ textarea {
     max-width: var(--content-width);
     min-height: min(320px, 70vh);
     overflow: auto;
-    /* Top padding clears Modal's floating close button, which otherwise
-       sits directly over the table's top-right corner. */
-    padding: calc(40px * var(--space-scale)) calc(16px * var(--space-scale))
-        calc(16px * var(--space-scale));
+    padding: var(--modal-content-padding);
 
     /* Phones: the modal panel already spans the screen. */
     @media (max-width: 700px) {
