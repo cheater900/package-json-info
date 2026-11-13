@@ -675,7 +675,7 @@ describe("fetchPackageInfo caching", () => {
         const requests: ObservedRequest[] = [];
         const stopObserving = observeRequests((request) => {
             requests.push(request);
-            return { respond: () => {}, fail: () => {} };
+            return { respond: () => {}, fail: () => {}, measure: () => {} };
         });
         const options = { visibleColumns: new Set(["gitStars"]) };
         await fetchPackageInfo("pkg-a", "1.0.0", options);
@@ -695,7 +695,7 @@ describe("fetchPackageInfo caching", () => {
         const requests: ObservedRequest[] = [];
         const stopObserving = observeRequests((request) => {
             requests.push(request);
-            return { respond: () => {}, fail: () => {} };
+            return { respond: () => {}, fail: () => {}, measure: () => {} };
         });
         await fetchPackageInfo("alias-pkg", "npm:real-pkg@1.0.0", {
             visibleColumns: new Set(["license", "weeklyDownloads"]),

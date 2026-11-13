@@ -16,7 +16,7 @@ export type NetworkLogEntry = {
     state: NetworkLogState;
     /** HTTP status; null while pending or when no response arrived. */
     status: number | null;
-    /** Decoded body size; null until the body is read, or when reading it failed. */
+    /** Decoded body size; null until the app reads the whole body, or when it never does. */
     sizeBytes: number | null;
     /** Network error or timeout message; null when a response arrived. */
     error: string | null;
@@ -44,18 +44,6 @@ export const networkLogSummary = computed<NetworkLogSummary>(() => {
 
 let nextEntryId = 1;
 
-async function countBodyBytes(body: ReadableStream<Uint8Array> | null): Promise<number> {
-    if (!body) {
-        return 0;
-    }
-    const reader = body.getReader();
-    let total = 0;
-    for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
-        total += chunk.value.length;
-    }
-    return total;
-}
-
 /** Any non-2xx answer, 404 included, counts as failure. */
 function logRequest(request: ObservedRequest): RequestHandle {
     const entry: NetworkLogEntry = reactive({
@@ -78,17 +66,13 @@ function logRequest(request: ObservedRequest): RequestHandle {
         respond(response) {
             entry.state = response.ok ? "success" : "failure";
             entry.status = response.status;
-            // Cloned before the caller reads the body; a stream aborted mid-read leaves the size unknown.
-            const copy = response.clone();
-            void settle(() => countBodyBytes(copy.body)).then((result) => {
-                if (result.ok) {
-                    entry.sizeBytes = result.value;
-                }
-            });
         },
         fail(error) {
             entry.state = "failure";
             entry.error = error.message;
+        },
+        measure(sizeBytes) {
+            entry.sizeBytes = sizeBytes;
         },
     };
 }
@@ -98,7 +82,13 @@ export function startNetworkLog(): () => void {
     return observeRequests(logRequest);
 }
 
-/** Sends `entry`'s request again; the outcome shows up as a new entry. */
+/**
+ * Sends `entry`'s request again; the outcome shows up as a new entry. The
+ * body is drained without keeping it, so the new entry gets its size.
+ */
 export function replayRequest(entry: NetworkLogEntry): void {
-    void settle(entry.replay);
+    void settle(async () => {
+        const response = await entry.replay();
+        await response.body?.pipeTo(new WritableStream());
+    });
 }

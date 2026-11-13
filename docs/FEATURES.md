@@ -192,7 +192,8 @@ modal listing every request the app sent this page load, newest first:
   the proxied one).
 - **Packages** and **columns** the request fetched data for.
 - **Status** badge, or `-` without a response; hover shows the network
-  error. **Size** of the decoded body, `-` until it is read.
+  error. **Size** of the decoded body, `-` until the app reads all of
+  it; bodies the app never reads, such as most 404 answers, stay `-`.
 
 A summary line below the table counts total, failed, pending and
 successful requests. Failed rows get a **retry** button: when a table row

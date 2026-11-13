@@ -160,12 +160,12 @@ describe("fetchWithTimeout", () => {
 describe("observeRequests", () => {
     const SUBJECT = { packages: new Set(["left-pad"]), columns: new Set(["gitStars"]) };
     let requests: ObservedRequest[] = [];
-    let handle = { respond: vi.fn(), fail: vi.fn() };
+    let handle = { respond: vi.fn(), fail: vi.fn(), measure: vi.fn() };
     let stopObserving = () => {};
 
     beforeEach(() => {
         requests = [];
-        handle = { respond: vi.fn(), fail: vi.fn() };
+        handle = { respond: vi.fn(), fail: vi.fn(), measure: vi.fn() };
         stopObserving = observeRequests((request) => {
             requests.push(request);
             return handle;
@@ -203,17 +203,53 @@ describe("observeRequests", () => {
         expect(requests[0]).toMatchObject({ method: "GET", subject: null });
     });
 
-    it("calls respond with response", async () => {
-        const response = jsonResponse({});
+    it("calls respond with returned response", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () => response),
+            vi.fn(async () => jsonResponse({})),
         );
 
-        await fetchWithTimeout("https://a.test/x");
+        const response = await fetchWithTimeout("https://a.test/x");
 
         expect(handle.respond).toHaveBeenCalledWith(response);
         expect(handle.fail).not.toHaveBeenCalled();
+    });
+
+    it("calls measure with body size once caller reads body", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response("hello")),
+        );
+
+        const response = await fetchWithTimeout("https://a.test/x");
+
+        expect(handle.measure).not.toHaveBeenCalled();
+        expect(await response.text()).toBe("hello");
+        expect(handle.measure).toHaveBeenCalledWith(5);
+    });
+
+    it("forwards body cancel to source, skips measure", async () => {
+        const cancelSource = vi.fn();
+        const source = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                controller.enqueue(new Uint8Array(1024));
+            },
+            cancel: cancelSource,
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(source)),
+        );
+
+        const response = await fetchWithTimeout("https://a.test/x");
+        const reader = response.body!.getReader();
+        await reader.read();
+        await reader.cancel();
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
+        });
+        expect(handle.measure).not.toHaveBeenCalled();
     });
 
     it("calls fail with error on network failure", async () => {

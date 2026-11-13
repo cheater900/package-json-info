@@ -31,6 +31,8 @@ export type ObservedRequest = {
 export type RequestHandle = {
     respond: (response: Response) => void;
     fail: (error: Error) => void;
+    /** Called once the caller has read the whole body; never when it cancels or stops reading. */
+    measure: (sizeBytes: number) => void;
 };
 
 export type RequestObserver = (request: ObservedRequest) => RequestHandle;
@@ -92,6 +94,29 @@ function replayOf(
 }
 
 /**
+ * Same response, its body passed through a byte counter that reports the
+ * total once the caller has read it all. Counts only what the caller reads,
+ * so size limits that cancel the body still stop the download.
+ */
+function measuredResponse(response: Response, report: (sizeBytes: number) => void): Response {
+    if (!response.body) {
+        report(0);
+        return response;
+    }
+    let total = 0;
+    const counter = new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+            total += chunk.length;
+            controller.enqueue(chunk);
+        },
+        flush() {
+            report(total);
+        },
+    });
+    return new Response(response.body.pipeThrough(counter), response);
+}
+
+/**
  * `fetch` aborted after `settings.fetchTimeoutMs`, so a stalled server can't
  * hang the app. Goes through the proxy unless it carries an Authorization
  * header: a token must only ever reach its own API host. Throws when such
@@ -126,10 +151,15 @@ export async function fetchWithTimeout(
         }
         throw result.error;
     }
+    const response = measuredResponse(result.value, (sizeBytes) => {
+        for (const handle of handles) {
+            handle.measure(sizeBytes);
+        }
+    });
     for (const handle of handles) {
-        handle.respond(result.value);
+        handle.respond(response);
     }
-    return result.value;
+    return response;
 }
 
 /**

@@ -14,7 +14,8 @@ Condensed from git history. Newest month first.
   failed, pending and successful requests. A **retry** button on failed
   rows refetches the matching failed table rows, or resends the request.
   The log stays in memory, capped at 1000 requests; replays never keep
-  the GitHub token.
+  the GitHub token. **Size** counts only body bytes the app reads, so
+  download size limits still stop the transfer.
 
 #### Export
 

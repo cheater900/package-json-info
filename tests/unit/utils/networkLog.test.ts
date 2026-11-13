@@ -62,11 +62,22 @@ describe("networkLog", () => {
             subject: SUBJECT,
         });
         resolveFetch(new Response("hello", { status: HTTP_STATUS.ok }));
-        await request;
-        expect(networkLogEntries[0]).toMatchObject({ state: "success", status: HTTP_STATUS.ok });
-        await vi.waitFor(() => {
-            expect(networkLogEntries[0].sizeBytes).toBe(5);
+        const response = await request;
+        expect(networkLogEntries[0]).toMatchObject({
+            state: "success",
+            status: HTTP_STATUS.ok,
+            sizeBytes: null,
         });
+        await response.text();
+        expect(networkLogEntries[0].sizeBytes).toBe(5);
+    });
+
+    it("leaves size unknown when body stays unread", async () => {
+        stubFetchStatus(HTTP_STATUS.serverError);
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(networkLogEntries[0].sizeBytes).toBeNull();
     });
 
     it("logs 404 as failure with status", async () => {
@@ -139,6 +150,7 @@ describe("networkLog", () => {
                 url: "https://a.test/x",
                 state: "success",
                 subject: SUBJECT,
+                sizeBytes: 5,
             });
         });
         expect(networkLogEntries[1].id).toBeGreaterThan(networkLogEntries[0].id);
