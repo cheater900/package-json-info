@@ -85,6 +85,9 @@
                 >
                     {{ error }}
                 </p>
+                <button type="button" class="settings-menu__logs" @click="openNetworkLog">
+                    {{ t("settings.network.viewLogs") }}
+                </button>
             </fieldset>
 
             <fieldset class="settings-menu__section">

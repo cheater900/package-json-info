@@ -27,11 +27,13 @@ type SettingsIntKey = "fetchTimeoutMs" | "fetchConcurrency";
  * Gear button opening a dropdown with the GitHub token, network and
  * display settings. Escape closes it and refocuses the gear; a click
  * outside closes it. Network inputs commit on change, only when valid;
- * display selects write straight to `settings`.
+ * display selects write straight to `settings`. View network logs closes
+ * the panel and emits `open-network-log`.
  */
 export default defineComponent({
     components: { IconGear },
-    setup() {
+    emits: ["open-network-log"],
+    setup(_props, { emit }) {
         const panelId = useId();
         const isOpen = ref(false);
         const rootRef = ref<HTMLElement | null>(null);
@@ -145,6 +147,11 @@ export default defineComponent({
             settings[key] = value;
         }
 
+        function openNetworkLog() {
+            isOpen.value = false;
+            emit("open-network-log");
+        }
+
         return {
             t,
             panelId,
@@ -167,6 +174,7 @@ export default defineComponent({
             purgeToken,
             commitProxy,
             commitInt,
+            openNetworkLog,
         };
     },
 });

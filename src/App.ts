@@ -12,6 +12,7 @@ import SettingsMenu from "./components/SettingsMenu.vue";
 import IconUpload from "./components/IconUpload.vue";
 import IconReload from "./components/IconReload.vue";
 import ExportDialog from "./components/ExportDialog.vue";
+import NetworkLogDialog from "./components/NetworkLogDialog.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import appPackageJson from "../package.json";
@@ -19,13 +20,16 @@ import { JSON_INDENT } from "./constants";
 import { t } from "./i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "./utils/workspaces";
 import { isRowRetryable } from "./utils/packageJsonHistory";
+import { replayRequest } from "./utils/networkLog";
+import type { NetworkLogEntry } from "./utils/networkLog";
 import type { DependencyListId, DependencyRow, PackageInfo } from "./types";
 
 type ModalContent =
     | { kind: "table"; sectionId: string }
     | { kind: "sourceTree"; dependency: PackageInfo }
     | { kind: "summary"; dependency: DependencyRow }
-    | { kind: "export" };
+    | { kind: "export" }
+    | { kind: "networkLog" };
 
 export default defineComponent({
     components: {
@@ -38,6 +42,7 @@ export default defineComponent({
         IconUpload,
         IconReload,
         ExportDialog,
+        NetworkLogDialog,
         VueJsonPretty,
     },
     setup() {
@@ -153,6 +158,22 @@ export default defineComponent({
             modalContent.value = { kind: "export" };
         }
 
+        function openNetworkLog() {
+            modalContent.value = { kind: "networkLog" };
+        }
+
+        /** Retries the table rows a failed request fed; without such rows, resends the request. */
+        function retryNetworkRequest(entry: NetworkLogEntry) {
+            const rows = [...deps.value, ...devDeps.value].filter(
+                (row) => entry.subject?.packages.has(row.name) && isRowRetryable(row),
+            );
+            if (rows.length === 0) {
+                replayRequest(entry);
+                return;
+            }
+            void retryFailedRows(rows);
+        }
+
         function closeModal() {
             modalContent.value = null;
         }
@@ -212,6 +233,8 @@ export default defineComponent({
             expandedSection,
             expandTable,
             openSourceTree,
+            openNetworkLog,
+            retryNetworkRequest,
             closeModal,
             isRetrying,
             retryFailedRows,

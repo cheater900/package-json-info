@@ -4,16 +4,40 @@ import App from "../../src/App.vue";
 import ColumnVisibilityPanel from "../../src/components/ColumnVisibilityPanel.vue";
 import DependenciesTable from "../../src/components/DependenciesTable.vue";
 import ExportDialog from "../../src/components/ExportDialog.vue";
+import NetworkLogDialog from "../../src/components/NetworkLogDialog.vue";
 import PackageSummaryCard from "../../src/components/PackageSummaryCard.vue";
 import SourceTreeBrowser from "../../src/components/SourceTreeBrowser.vue";
 import { clearPackageInfoCache } from "../../src/api/npmPackage";
-import { jsonResponse, stubFetchPending, textResponse } from "../helpers/fetchMock";
+import {
+    countFetchCalls,
+    jsonResponse,
+    stubFetchPending,
+    textResponse,
+} from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
 import { githubTreeBody, monorepoRootJson } from "../fixtures/workspaces";
 import { NPM_REGISTRY_URL } from "../../src/constants";
+import { networkLogEntries } from "../../src/utils/networkLog";
+import type { NetworkLogEntry } from "../../src/utils/networkLog";
 import { openShareLink, shareSteps } from "../helpers/shareLink";
 
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
+
+/** Failed registry request whose subject lists `packageName`. */
+function failedLogEntry(packageName: string, replay = vi.fn(async () => new Response())) {
+    return {
+        id: 1,
+        method: "GET",
+        url: `${NPM_REGISTRY_URL}/${packageName}`,
+        startedAt: Date.now(),
+        state: "failure",
+        status: null,
+        sizeBytes: null,
+        error: "Failed to fetch",
+        subject: { packages: new Set([packageName]), columns: new Set<string>() },
+        replay,
+    } satisfies NetworkLogEntry;
+}
 
 beforeEach(() => {
     vi.stubGlobal(
@@ -26,12 +50,18 @@ beforeEach(() => {
     document.body.innerHTML = "";
     // A loaded source leaves share steps in the address bar; the next mount would replay them.
     window.history.replaceState(null, "", "/");
+    networkLogEntries.splice(0);
 });
 
 async function mountApp() {
     const wrapper = mount(App, { attachTo: document.body });
     await flushPromises();
     return wrapper;
+}
+
+async function openNetworkLog(wrapper: Awaited<ReturnType<typeof mountApp>>) {
+    await wrapper.find(".settings-menu__gear").trigger("click");
+    await wrapper.find(".settings-menu__logs").trigger("click");
 }
 
 describe("App", () => {
@@ -239,6 +269,46 @@ describe("App", () => {
             expect(buttons).toHaveLength(1);
             expect(buttons[0].text()).toContain("Retry failed fetches");
         });
+
+        it("network log retry refetches failed row of entry package", async () => {
+            const recover = stubZodRegistryDown();
+            const wrapper = await mountApp();
+            recover();
+            const entry = failedLogEntry("zod");
+            networkLogEntries.push(entry);
+            await openNetworkLog(wrapper);
+            const zodFetchesBefore = countFetchCalls(vi.mocked(fetch), `${NPM_REGISTRY_URL}/zod`);
+
+            wrapper.findComponent(NetworkLogDialog).vm.$emit("retry", entry);
+            await flushPromises();
+
+            expect(countFetchCalls(vi.mocked(fetch), `${NPM_REGISTRY_URL}/zod`)).toBeGreaterThan(
+                zodFetchesBefore,
+            );
+            expect(zodRow(wrapper)).toMatchObject({ name: "zod", latestVersion: "1.0.0" });
+            expect(entry.replay).not.toHaveBeenCalled();
+        });
+
+        it("network log retry replays entry without failed row", async () => {
+            const wrapper = await mountApp();
+            const entry = failedLogEntry("zod");
+            networkLogEntries.push(entry);
+            await openNetworkLog(wrapper);
+
+            wrapper.findComponent(NetworkLogDialog).vm.$emit("retry", entry);
+            await flushPromises();
+
+            expect(entry.replay).toHaveBeenCalledOnce();
+        });
+    });
+
+    it("settings menu opens network log dialog", async () => {
+        const wrapper = await mountApp();
+
+        await openNetworkLog(wrapper);
+
+        expect(wrapper.findComponent(NetworkLogDialog).exists()).toBe(true);
+        expect(document.body.querySelector(".modal .network-log")).not.toBeNull();
     });
 
     it("shows error banner for URL without scheme, keeps loaded package", async () => {

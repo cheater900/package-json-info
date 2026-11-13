@@ -1,0 +1,68 @@
+<template>
+    <div class="network-log">
+        <h2 class="network-log__title">{{ t("networkLog.title") }}</h2>
+        <div class="network-log__scroll">
+            <table class="network-log__table">
+                <thead>
+                    <tr>
+                        <th v-for="header in headers" :key="header" scope="col">
+                            {{ t(`networkLog.headers.${header}`) }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="entries.length === 0">
+                        <td :colspan="headers.length" class="network-log__empty">
+                            {{ t("networkLog.empty") }}
+                        </td>
+                    </tr>
+                    <tr v-for="entry in entries" :key="entry.id">
+                        <td>
+                            <span
+                                :class="[
+                                    'network-log__state',
+                                    `network-log__state--${entry.state}`,
+                                ]"
+                                role="img"
+                                :aria-label="t(`networkLog.states.${entry.state}`)"
+                                :title="t(`networkLog.states.${entry.state}`)"
+                            >
+                                <component :is="STATE_ICONS[entry.state]" />
+                            </span>
+                        </td>
+                        <td>{{ formatTime(entry.startedAt) }}</td>
+                        <td class="network-log__request">
+                            <span class="network-log__badge">{{ entry.method }}</span>
+                            <span :title="entry.url">{{ entry.url }}</span>
+                        </td>
+                        <td>{{ formatPackages(entry) }}</td>
+                        <td>{{ formatColumns(entry) }}</td>
+                        <td>
+                            <span v-if="entry.status === null" :title="entry.error ?? undefined">
+                                {{ MISSING_VALUE }}
+                            </span>
+                            <span v-else class="network-log__badge">{{ entry.status }}</span>
+                        </td>
+                        <td>{{ formatSize(entry) }}</td>
+                        <td>
+                            <button
+                                v-if="entry.state === 'failure'"
+                                type="button"
+                                class="network-log__retry"
+                                :aria-label="t('networkLog.retry', { url: entry.url })"
+                                @click="$emit('retry', entry)"
+                            >
+                                <icon-reload />
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="network-log__summary">{{ summary }}</p>
+    </div>
+</template>
+
+<script lang="ts" src="./NetworkLogDialog.ts"></script>
+
+<style src="./NetworkLogDialog.css"></style>

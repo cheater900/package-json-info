@@ -314,4 +314,14 @@ describe("SettingsMenu network", () => {
         expect(concurrency.attributes("aria-invalid")).toBe("true");
         expect(wrapper.text()).toContain("Enter a whole number");
     });
+
+    it("view network logs closes panel, emits open-network-log", async () => {
+        const wrapper = mountMenu();
+        await wrapper.find(".settings-menu__gear").trigger("click");
+
+        await button(wrapper, "View network logs").trigger("click");
+
+        expect(wrapper.find('[role="dialog"]').isVisible()).toBe(false);
+        expect(wrapper.emitted("open-network-log")).toHaveLength(1);
+    });
 });

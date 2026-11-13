@@ -34,7 +34,8 @@
             "timeout": "Timeout (ms)",
             "concurrency": "Parallel fetches per table",
             "invalidProxy": "Enter an http(s) URL without user:password, or leave empty.",
-            "invalidInt": "Enter a whole number from 1 to {max}."
+            "invalidInt": "Enter a whole number from 1 to {max}.",
+            "viewLogs": "View network logs"
         },
         "display": {
             "legend": "Display",
@@ -139,7 +140,8 @@
     "cell": {
         "yes": "Yes",
         "no": "No",
-        "kilobytes": "{size} KB"
+        "kilobytes": "{size} KB",
+        "megabytes": "{size} MB"
     },
     "health": {
         "tooltip": "Health score out of 100, from: {signals}",
@@ -159,6 +161,27 @@
     },
     "modal": {
         "close": "Close"
+    },
+    "networkLog": {
+        "title": "Network logs",
+        "empty": "No requests yet.",
+        "retry": "Retry {url}",
+        "states": {
+            "pending": "Pending",
+            "success": "Succeeded",
+            "failure": "Failed"
+        },
+        "headers": {
+            "state": "State",
+            "time": "Time",
+            "request": "Request",
+            "packages": "Packages",
+            "columns": "Columns",
+            "status": "Status",
+            "size": "Size",
+            "actions": "Actions"
+        },
+        "summary": "{total} requests: {failure} failed, {pending} pending, {success} successful"
     },
     "sourceTree": {
         "via": "via {provider}",

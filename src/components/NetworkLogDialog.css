@@ -1,0 +1,81 @@
+.network-log {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: var(--content-width);
+    /* Top padding clears Modal's floating close button. */
+    padding: calc(40px * var(--space-scale)) calc(16px * var(--space-scale))
+        calc(16px * var(--space-scale));
+    text-align: left;
+
+    /* Phones: the modal panel already spans the screen. */
+    @media (max-width: 700px) {
+        max-width: none;
+    }
+}
+
+.network-log__title {
+    font-size: calc(22px * var(--font-scale));
+    margin: 0;
+}
+
+/* Narrow screens scroll the table sideways instead of the modal. */
+.network-log__scroll {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.network-log__table {
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.network-log__empty {
+    text-align: center;
+}
+
+.network-log__state {
+    display: inline-flex;
+    font-size: 1.2em;
+}
+
+.network-log__state--failure {
+    color: var(--error);
+}
+
+.network-log__state--pending {
+    color: var(--warning);
+}
+
+.network-log__state--success {
+    color: var(--accent);
+}
+
+.network-log__request {
+    min-width: 240px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.network-log__badge {
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    border-radius: 999px;
+    color: var(--text-h);
+    font-size: 0.85em;
+    padding: 0 calc(6px * var(--space-scale));
+    white-space: nowrap;
+}
+
+.network-log__request .network-log__badge {
+    margin-right: 8px;
+}
+
+.network-log__retry {
+    padding: calc(2px * var(--space-scale)) calc(6px * var(--space-scale));
+}
+
+.network-log__summary {
+    font-size: 0.9em;
+}

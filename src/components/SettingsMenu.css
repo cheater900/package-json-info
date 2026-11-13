@@ -98,3 +98,7 @@
 .settings-menu__error {
     color: var(--error);
 }
+
+.settings-menu__logs {
+    align-self: flex-start;
+}

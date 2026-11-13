@@ -179,3 +179,27 @@ shows when a GitHub token is set.
   The token is sent only to `api.github.com`, never through the proxy.
   Encryption protects it on disk, not from scripts on the page, so use a
   fine-grained token with no permissions.
+
+## Network logs
+
+**View network logs** at the end of the settings Network section opens a
+modal listing every request the app sent this page load, newest first:
+
+- **State**: green check for success, red cross for failure, yellow
+  question mark while pending. Any non-2xx answer, 404 included, counts
+  as failure.
+- **Time** the request started, **method** badge and target **URL** (never
+  the proxied one).
+- **Packages** and **columns** the request fetched data for.
+- **Status** badge, or `-` without a response; hover shows the network
+  error. **Size** of the decoded body, `-` until it is read.
+
+A summary line below the table counts total, failed, pending and
+successful requests. Failed rows get a **retry** button: when a table row
+of the request's packages failed, is stale or has a failed lookup, those
+rows refetch as with Retry failed fetches; otherwise the request is sent
+again and its outcome shows up as a new entry.
+
+The log lives in memory only and keeps the latest 1000 requests. A replay
+never stores the GitHub token: it adds the token current at retry time, so
+a purged token is not sent again.

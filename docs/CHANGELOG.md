@@ -6,6 +6,16 @@ Condensed from git history. Newest month first.
 
 ### Features
 
+#### Network
+
+- **Network log**: **View network logs** in the settings menu opens a
+  modal listing every request newest first, with state icon, time,
+  method, URL, packages, columns, status and size, plus a summary of
+  failed, pending and successful requests. A **retry** button on failed
+  rows refetches the matching failed table rows, or resends the request.
+  The log stays in memory, capped at 1000 requests; replays never keep
+  the GitHub token.
+
 #### Export
 
 - **Table export** as **CSV**, **XLSX**, **Markdown**, **HTML** and

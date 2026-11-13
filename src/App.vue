@@ -5,7 +5,7 @@
             <span class="terminal-titlebar__dot"></span>
             <span class="terminal-titlebar__dot"></span>
             <span class="terminal-titlebar__path">{{ t("app.titlebarPath") }}</span>
-            <settings-menu />
+            <settings-menu @open-network-log="openNetworkLog" />
         </div>
 
         <h1 class="title">
@@ -197,6 +197,10 @@
                 :title="exportTitle"
                 :load-rows="fetchRowsWithColumns"
                 @close="closeModal"
+            />
+            <network-log-dialog
+                v-else-if="modalContent.kind === 'networkLog'"
+                @retry="retryNetworkRequest"
             />
         </modal>
     </div>
