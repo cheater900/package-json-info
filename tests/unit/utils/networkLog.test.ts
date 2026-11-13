@@ -178,6 +178,23 @@ describe("networkLog", () => {
         expect(networkLogEntries[1].id).toBeGreaterThan(networkLogEntries[0].id);
     });
 
+    it("logs failed replay as new failure entry", async () => {
+        stubFetchStatus(HTTP_STATUS.serverError);
+        await fetchWithTimeout("https://a.test/x");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                throw new Error("network down");
+            }),
+        );
+
+        replayRequest(networkLogEntries[0]);
+
+        await vi.waitFor(() => {
+            expect(networkLogEntries[1]).toMatchObject({ state: "failure", error: "network down" });
+        });
+    });
+
     it("stops logging after stop function", async () => {
         stubFetchStatus(HTTP_STATUS.ok);
         stopNetworkLog();

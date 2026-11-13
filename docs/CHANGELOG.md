@@ -228,7 +228,8 @@ Condensed from git history. Newest month first.
 
 - Tests added for **network log subjects**: each lookup kind tags its
   requests with row name and columns, as do the source tree download and
-  its lazy file fetch; `clearPackageInfoCache` starts fresh subjects.
+  its lazy file fetch; `clearPackageInfoCache` starts fresh subjects. A
+  failed replay logs a new failure entry.
 - Tests added for the **offline store**: stored issue counts and release
   tag, a hanging IndexedDB on read and save, and an e2e reload during a
   registry outage that shows the **stale badge** and health score. Saved
