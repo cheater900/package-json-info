@@ -87,4 +87,10 @@ describe("defaultLookupCacheDir", () => {
     it("falls back to home .cache", () => {
         expect(defaultLookupCacheDir({})).toBe(join(homedir(), ".cache", "package-json-info"));
     });
+
+    it("ignores relative XDG_CACHE_HOME", () => {
+        expect(defaultLookupCacheDir({ XDG_CACHE_HOME: "cache" })).toBe(
+            join(homedir(), ".cache", "package-json-info"),
+        );
+    });
 });

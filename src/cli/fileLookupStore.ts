@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { lookupKey, StoredLookupSchema } from "../core/utils/memoizeLookup";
 import type { LookupKind, LookupStore, StoredLookup } from "../core/utils/memoizeLookup";
 import { settle } from "../core/utils/settle";
@@ -11,9 +11,15 @@ const CACHE_DIR_NAME = "package-json-info";
 const CACHE_DIR_MODE = 0o700;
 const CACHE_FILE_MODE = 0o600;
 
-/** `$XDG_CACHE_HOME/package-json-info`, else `~/.cache/package-json-info`. */
+/**
+ * `$XDG_CACHE_HOME/package-json-info`, else `~/.cache/package-json-info`. A
+ * relative XDG_CACHE_HOME counts as unset, as the XDG spec says: it would
+ * scatter caches across working dirs.
+ */
 export function defaultLookupCacheDir(env: NodeJS.ProcessEnv): string {
-    const base = env.XDG_CACHE_HOME || join(homedir(), ".cache");
+    const xdgCacheHome = env.XDG_CACHE_HOME;
+    const base =
+        xdgCacheHome && isAbsolute(xdgCacheHome) ? xdgCacheHome : join(homedir(), ".cache");
     return join(base, CACHE_DIR_NAME);
 }
 
