@@ -7,6 +7,7 @@ import { CORE_SETTINGS_DEFAULTS, coreRuntime } from "../../../src/core/runtime";
 import { createTempDir, runCli } from "../../helpers/cli";
 
 const TOKEN = "ghp_secretToken123";
+const PROXY_URL_WITH_CREDENTIALS = "https://u:p@p.test/";
 
 describe("bindCore", () => {
     it("uses defaults without flags or env", () => {
@@ -53,10 +54,6 @@ describe("bindCore", () => {
         expect(warn).toHaveBeenCalledOnce();
     });
 
-    it("returns error for env proxy URL with credentials", () => {
-        expect(typeof bindCore({}, { PJI_PROXY_URL: "https://u:p@p.test/" })).toBe("string");
-    });
-
     it("treats empty GITHUB_TOKEN as unset", () => {
         expect(bindCore({}, { GITHUB_TOKEN: "" })).toMatchObject({ githubToken: undefined });
     });
@@ -70,8 +67,11 @@ describe("bindCore", () => {
         expect(warn.mock.calls[0][0]).toContain("PJI_FETCH_CONCURRENCY");
     });
 
-    it("returns error for proxy URL with credentials", () => {
-        expect(typeof bindCore({ proxyUrl: "https://u:p@p.test/" }, {})).toBe("string");
+    it.each([
+        ["flag", { proxyUrl: PROXY_URL_WITH_CREDENTIALS }, {}],
+        ["env", {}, { PJI_PROXY_URL: PROXY_URL_WITH_CREDENTIALS }],
+    ])("returns error for %s proxy URL with credentials", (_source, input, env) => {
+        expect(typeof bindCore(input, env)).toBe("string");
     });
 
     it("plugs settings into core", () => {
@@ -102,7 +102,10 @@ describe("run binding", () => {
     });
 
     it("exits 2 for proxy URL with user:pass@", async () => {
-        const { code, stderr } = await runCli([source, "--proxy-url", "https://u:p@p.test/"], {});
+        const { code, stderr } = await runCli(
+            [source, "--proxy-url", PROXY_URL_WITH_CREDENTIALS],
+            {},
+        );
 
         expect(code).toBe(EXIT_BAD_ARGUMENTS);
         expect(stderr).not.toContain("u:p");

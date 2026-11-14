@@ -256,6 +256,7 @@ describe("table output", () => {
 });
 
 describe("lookup cache", () => {
+    const PACKAGE_JSON = JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } });
     const cacheDir = () => defaultLookupCacheDir(process.env);
 
     // Core saves lookups without awaiting them, so files land after run resolves.
@@ -264,9 +265,7 @@ describe("lookup cache", () => {
 
     it("stores lookups in XDG cache dir", async () => {
         stubFetchByUrl(leftPadRegistryRoute);
-        const path = await writePackageJson(
-            JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } }),
-        );
+        const path = await writePackageJson(PACKAGE_JSON);
 
         await runCli([path]);
 
@@ -275,9 +274,7 @@ describe("lookup cache", () => {
 
     it("plugs no lookup store for --no-cache", async () => {
         stubFetchByUrl(leftPadRegistryRoute);
-        const path = await writePackageJson(
-            JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } }),
-        );
+        const path = await writePackageJson(PACKAGE_JSON);
 
         await runCli([path, "--no-cache"]);
 
@@ -286,9 +283,7 @@ describe("lookup cache", () => {
 
     it("serves stored lookup when network fails", async () => {
         stubFetchByUrl(leftPadRegistryRoute);
-        const path = await writePackageJson(
-            JSON.stringify({ dependencies: { "left-pad": "^1.2.0" } }),
-        );
+        const path = await writePackageJson(PACKAGE_JSON);
         await runCli([path]);
         await waitForStoredLookups();
         clearPackageInfoCache();

@@ -7,6 +7,9 @@ import { leftPadRegistryRoute } from "../../fixtures/dependencies";
 import { createTempDir, runCli } from "../../helpers/cli";
 import { stubFetchByUrl } from "../../helpers/fetchMock";
 
+const PACKAGE = { name: "app", dependencies: { "left-pad": "1.3.0" } };
+const PACKAGE_WITH_DEV_DEPS = { ...PACKAGE, devDependencies: { "dev-tool": "1.0.0" } };
+
 let tempDir: string;
 let sourcePath: string;
 const originalCwd = process.cwd();
@@ -15,10 +18,7 @@ beforeEach(async () => {
     stubFetchByUrl(leftPadRegistryRoute);
     tempDir = await createTempDir();
     sourcePath = join(tempDir, "source.json");
-    await writeFile(
-        sourcePath,
-        JSON.stringify({ name: "app", dependencies: { "left-pad": "1.3.0" } }),
-    );
+    await writeFile(sourcePath, JSON.stringify(PACKAGE));
     process.chdir(tempDir);
 });
 
@@ -91,14 +91,7 @@ describe("--format", () => {
     });
 
     it("skips devDependencies for --no-dev", async () => {
-        await writeFile(
-            sourcePath,
-            JSON.stringify({
-                name: "app",
-                dependencies: { "left-pad": "1.3.0" },
-                devDependencies: { "dev-tool": "1.0.0" },
-            }),
-        );
+        await writeFile(sourcePath, JSON.stringify(PACKAGE_WITH_DEV_DEPS));
         const withDev = join(tempDir, "with.csv");
         const withoutDev = join(tempDir, "without.csv");
 
@@ -157,14 +150,7 @@ describe("--report", () => {
     });
 
     it("skips devDependencies of Markdown report for --no-dev", async () => {
-        await writeFile(
-            sourcePath,
-            JSON.stringify({
-                name: "app",
-                dependencies: { "left-pad": "1.3.0" },
-                devDependencies: { "dev-tool": "1.0.0" },
-            }),
-        );
+        await writeFile(sourcePath, JSON.stringify(PACKAGE_WITH_DEV_DEPS));
 
         const withDev = await runCli([sourcePath, "--report", "md"]);
         const withoutDev = await runCli([sourcePath, "--report", "md", "--no-dev"]);
