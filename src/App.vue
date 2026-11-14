@@ -127,7 +127,7 @@
         <details
             v-for="section in tableSections"
             :key="section.id"
-            class="accordion accordion--table"
+            class="accordion accordion--boxed"
             open
         >
             <summary>
@@ -164,7 +164,7 @@
         <button type="button" class="table-export" :disabled="isLoadingTables" @click="openExport">
             {{ t("export.open") }}
         </button>
-        <details class="accordion" open>
+        <details class="accordion accordion--boxed" open>
             <summary>{{ t("sections.packageJson") }}</summary>
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
