@@ -230,7 +230,8 @@ Markdown to stdout, with default visible columns.
 - **`--no-dev`** skips devDependencies.
 - **Export**: `--format <csv|xlsx|markdown|html|pdf>` writes export file
   instead of printing. `--output <file>` names it; default
-  `<package>-dependencies.<ext>` in current dir.
+  `<package>-dependencies.<ext>` in current dir. Default name that is
+  symlink is refused (exit 1); `--output` follows symlinks.
 - **Report**: `--report md` prints dependency report to stdout,
   `--report pdf` writes `<package>-report.pdf` (or `--output`). Report
   covers all rows: no search, no filters.

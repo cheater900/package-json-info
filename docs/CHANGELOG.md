@@ -296,6 +296,10 @@ Condensed from git history. Newest month first.
 - **Lookup cache** is owner-only (dir 0700, files 0600), since token
   lookups can hold private repo metadata. Tmp file opens with `wx`, so
   planted symlink is never followed; failed write removes it.
+- **Default export file name** (`<package>-dependencies.<ext>`,
+  `<package>-report.pdf`) opens with `O_NOFOLLOW`. Repo with planted
+  symlink at that name cannot redirect write to another user file; CLI
+  exits 1. `--output` still follows symlinks, so `/dev/stdout` works.
 
 #### Export
 
