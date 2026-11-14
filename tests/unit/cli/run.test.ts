@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -91,6 +92,21 @@ describe("source dispatch", () => {
 
         expect(result.code).toBe(EXIT_LOAD_FAILURE);
         expect(result.stderr).toContain("ENOENT");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("reads named pipe path", async () => {
+        const fetchMock = stubFetchByUrl({});
+        const fifo = join(tempDir, "pipe");
+        execFileSync("mkfifo", [fifo]);
+
+        const [result] = await Promise.all([
+            runCli([fifo]),
+            writeFile(fifo, '{"name":"pipe-app"}'),
+        ]);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(result.stdout).toMatch(/^# pipe-app\n/);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 

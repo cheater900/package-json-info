@@ -62,17 +62,18 @@ async function readTextFile(path: string): Promise<string> {
 }
 
 /**
- * Existing file path -> file, existing dir -> its package.json, http(s) URL
- * -> URL, anything else -> npm spec. A dir never falls through to the npm
- * spec: `my-app/` would load an unrelated registry package of that name.
+ * Existing dir -> its package.json, other existing path -> file, http(s) URL
+ * -> URL, anything else -> npm spec. An existing path never falls through to
+ * the npm spec: `my-app/` would load an unrelated registry package of that
+ * name, and a pipe (`/dev/stdin`, `<(cat package.json)`) is no regular file.
  */
 function readSource(source: string): Promise<string> {
     const stats = statSync(source, { throwIfNoEntry: false });
-    if (stats?.isFile()) {
-        return readTextFile(source);
-    }
     if (stats?.isDirectory()) {
         return readTextFile(join(source, "package.json"));
+    }
+    if (stats) {
+        return readTextFile(source);
     }
     if (isHttpUrl(source)) {
         return textOf(fetchUrlSource(source), t("errors.urlNotFound"));
