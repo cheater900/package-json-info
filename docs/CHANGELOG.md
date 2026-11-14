@@ -351,6 +351,9 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
+- **CLI exporter** resolved once in `parseOutputOptions`
+  (`src/cli/options.ts`); `run.ts` drops second `EXPORTERS` lookup. CLI
+  tests share package.json + credential proxy URL constants.
 - **Settings validation** shared by app and CLI: `isConfigInt` +
   `readPositiveInt` in `src/core/utils/configInt.ts`, `isProxyUrl` in
   `src/core/utils/url.ts`, `StoredLookupSchema` in
