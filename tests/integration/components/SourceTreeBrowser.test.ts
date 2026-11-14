@@ -160,7 +160,7 @@ describe("SourceTreeBrowser", () => {
         expect(wrapper.find(".source-tree__content").text()).toBe("helper");
     });
 
-    it("names dependency and provider in header", async () => {
+    it("names provider in header", async () => {
         vi.mocked(fetchSourceTree).mockResolvedValue({
             tree: sampleTree,
             truncated: false,
@@ -175,7 +175,6 @@ describe("SourceTreeBrowser", () => {
         });
         await flushPromises();
 
-        expect(wrapper.find(".source-tree__title").text()).toBe("left-pad");
         expect(wrapper.find(".source-tree__provider").text()).toBe("via GitHub");
         expect(wrapper.find('[role="status"]').exists()).toBe(false);
     });

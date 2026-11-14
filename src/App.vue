@@ -169,7 +169,7 @@
             <vue-json-pretty :data="pkg" show-icon show-line-number show-length />
         </details>
 
-        <modal v-if="modalContent" @close="closeModal">
+        <modal v-if="modalContent" :title="modalTitle" @close="closeModal">
             <div v-if="expandedSection" class="table-modal-content">
                 <dependencies-table
                     v-bind="tableProps"

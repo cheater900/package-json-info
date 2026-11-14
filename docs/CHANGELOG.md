@@ -75,6 +75,13 @@ Condensed from git history. Newest month first.
 
 ### Changes
 
+#### Modals
+
+- Every **modal** has a centered **title** on top, close button on the
+  right: package name for View, "Source of" a package for its tree, "Deps
+  of" or "Dev Deps of" the package for an expanded table, plus Export and
+  Network logs. Dialogs drop their own headings.
+
 #### Package data
 
 - **Actions column** after Name: View, Load and Reload buttons per row,

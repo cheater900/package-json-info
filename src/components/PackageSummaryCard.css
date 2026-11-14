@@ -4,14 +4,6 @@
     width: min(480px, 100%);
 }
 
-.package-summary__name {
-    margin: 0 0 16px;
-    overflow: hidden;
-    padding-right: calc(32px * var(--space-scale));
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .package-summary__error {
     color: var(--error);
     margin: 0 0 16px;

@@ -9,11 +9,6 @@
     width: 800px;
 }
 
-.export-dialog__title {
-    font-size: calc(22px * var(--font-scale));
-    margin: 0;
-}
-
 .export-dialog__section {
     border: 1px solid var(--border);
     margin: 0;

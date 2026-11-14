@@ -163,7 +163,7 @@ test("network logs modal lists requests, retry recovers failed one", async ({ pa
     await page.getByRole("button", { name: "View network logs" }).click();
     const log = page.locator(".network-log");
     const brokenRows = log.locator("tbody tr", { hasText: brokenUrl });
-    await expect(log.getByRole("heading", { name: "Network logs" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Network logs" })).toBeVisible();
     await expect(
         log.locator("tbody tr", { hasText: `${NPM_REGISTRY_URL}/fresh-pkg` }),
     ).toContainText("fresh-pkg");

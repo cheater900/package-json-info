@@ -142,6 +142,29 @@ export default defineComponent({
                 : null;
         });
 
+        function tableModalTitle(section: string): string {
+            const name = pkg.value?.name;
+            return name ? t("modal.tableTitle", { section, name }) : section;
+        }
+
+        const modalTitle = computed(() => {
+            const content = modalContent.value;
+            switch (content?.kind) {
+                case "table":
+                    return tableModalTitle(expandedSection.value?.title ?? "");
+                case "summary":
+                    return content.dependency.name;
+                case "sourceTree":
+                    return t("sourceTree.title", { name: content.dependency.name });
+                case "export":
+                    return t("export.dialogTitle");
+                case "networkLog":
+                    return t("networkLog.title");
+                default:
+                    return "";
+            }
+        });
+
         function expandTable(sectionId: string) {
             modalContent.value = { kind: "table", sectionId };
         }
@@ -231,6 +254,7 @@ export default defineComponent({
             tableListeners,
             modalContent,
             expandedSection,
+            modalTitle,
             expandTable,
             openSourceTree,
             openNetworkLog,

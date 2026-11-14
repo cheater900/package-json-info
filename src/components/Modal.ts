@@ -1,11 +1,23 @@
-import { onMounted, onUnmounted, defineComponent } from "vue";
+import { onMounted, onUnmounted, defineComponent, useId } from "vue";
 import { t } from "../i18n";
 import { lockBodyScroll, unlockBodyScroll } from "../utils/scrollLock";
 
-/** Open while mounted: callers toggle it with v-if. Owns Escape, backdrop click and scroll lock. */
+/**
+ * Open while mounted: callers toggle it with v-if. Owns Escape, backdrop
+ * click and scroll lock. Shows `title` centered on top, close button on the
+ * right, and its slot below.
+ */
 export default defineComponent({
+    props: {
+        title: {
+            type: String,
+            required: true,
+        },
+    },
     emits: ["close"],
     setup(_props, { emit }) {
+        const titleId = useId();
+
         function close() {
             emit("close");
         }
@@ -31,6 +43,6 @@ export default defineComponent({
             unlockBodyScroll();
         });
 
-        return { t, close, onOverlayClick };
+        return { t, titleId, close, onOverlayClick };
     },
 });

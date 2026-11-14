@@ -18,6 +18,8 @@
     border: 1px solid var(--accent);
     border-radius: 8px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
     max-height: 100%;
     max-width: 100%;
     overflow: auto;
@@ -31,11 +33,29 @@
     }
 }
 
+/* Stays on top while the panel scrolls; side padding keeps a long title
+   clear of the close button. */
+.modal__header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: calc(12px * var(--space-scale)) calc(48px * var(--space-scale));
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.modal__title {
+    font-size: calc(20px * var(--font-scale));
+    margin: 0;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+
 .modal__close {
     font-size: 0.85rem;
     padding: calc(4px * var(--space-scale)) calc(10px * var(--space-scale));
     position: absolute;
     right: 8px;
-    top: 8px;
-    z-index: 1;
+    top: 50%;
+    transform: translateY(-50%);
 }

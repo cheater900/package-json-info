@@ -38,10 +38,6 @@ afterEach(() => {
 });
 
 describe("NetworkLogDialog", () => {
-    it("shows heading", () => {
-        expect(mountDialog([]).find("h2").text()).toBe("Network logs");
-    });
-
     it("shows column headers", () => {
         const headers = mountDialog([])
             .findAll("th")

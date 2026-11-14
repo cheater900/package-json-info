@@ -441,12 +441,12 @@ test("view button opens package summary card", async ({ page }) => {
 
     // A plain data cell no longer opens anything; the View action does.
     await row.getByRole("cell", { name: "^1.0.0", exact: true }).click();
-    await expect(page.locator(".package-summary__name")).toHaveCount(0);
+    await expect(page.locator(".package-summary")).toHaveCount(0);
     await row.getByRole("button", { name: "View left-pad" }).click();
-    await expect(page.locator(".package-summary__name")).toHaveText("left-pad");
+    await expect(page.getByRole("dialog", { name: "left-pad" })).toBeVisible();
 
     await page.getByRole("button", { name: "Close", exact: true }).click();
-    await expect(page.locator(".package-summary__name")).toHaveCount(0);
+    await expect(page.locator(".package-summary")).toHaveCount(0);
 });
 
 test("share link replays steps, Back and drill-down rewrite link", async ({ page }) => {

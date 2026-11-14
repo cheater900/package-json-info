@@ -62,6 +62,10 @@ async function openNetworkLog(wrapper: Awaited<ReturnType<typeof mountApp>>) {
     await wrapper.find(".settings-menu__logs").trigger("click");
 }
 
+function modalTitle(): string | null | undefined {
+    return document.body.querySelector(".modal__title")?.textContent;
+}
+
 describe("App", () => {
     it("renders Deps and Dev Deps tables", async () => {
         const wrapper = await mountApp();
@@ -77,6 +81,7 @@ describe("App", () => {
         await wrapper.findAll(".table-actions__expand")[1].trigger("click");
 
         expect(document.body.querySelector(".modal .table-modal-content")).not.toBeNull();
+        expect(modalTitle()).toBe("Dev Deps of package-json-info");
         expect(wrapper.findAllComponents(DependenciesTable)).toHaveLength(3);
         await wrapper.findComponent({ name: "Modal" }).vm.$emit("close");
         expect(document.body.querySelector(".modal")).toBeNull();
@@ -90,6 +95,7 @@ describe("App", () => {
         await flushPromises();
 
         expect(wrapper.findComponent(PackageSummaryCard).props("dependency")).toEqual(dependency);
+        expect(modalTitle()).toBe("left-pad");
     });
 
     it("open-source-tree from table opens source tree browser for that dependency", async () => {
@@ -104,6 +110,7 @@ describe("App", () => {
             dependencyName: "left-pad",
             sourceTree: npmSourceTree,
         });
+        expect(modalTitle()).toBe("Source of left-pad");
     });
 
     it("View tree in summary card swaps card for source tree browser", async () => {
@@ -128,6 +135,7 @@ describe("App", () => {
 
         const dialog = wrapper.findComponent(ExportDialog);
         expect(dialog.props("title")).toBe("package-json-info");
+        expect(modalTitle()).toBe("Export dependencies");
         expect(dialog.props("tables").map((table: { id: string }) => table.id)).toEqual([
             "deps",
             "devDeps",
@@ -328,6 +336,7 @@ describe("App", () => {
 
         expect(wrapper.findComponent(NetworkLogDialog).exists()).toBe(true);
         expect(document.body.querySelector(".modal .network-log")).not.toBeNull();
+        expect(modalTitle()).toBe("Network logs");
     });
 
     it("shows error banner for URL without scheme, keeps loaded package", async () => {

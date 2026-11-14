@@ -1,6 +1,5 @@
 <template>
     <div class="package-summary">
-        <h3 class="package-summary__name">{{ dependency.name }}</h3>
         <p v-if="dependency.error" class="package-summary__error" role="alert">
             {{ t("table.rowError", { error: dependency.error }) }}
         </p>

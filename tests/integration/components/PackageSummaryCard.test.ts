@@ -7,12 +7,6 @@ import { fullDependency, npmSourceTree, sparseDependency } from "../../fixtures/
 const dependencyWithTree = { ...fullDependency, sourceTree: npmSourceTree };
 
 describe("PackageSummaryCard", () => {
-    it("shows dependency name as title", () => {
-        const wrapper = mount(PackageSummaryCard, { props: { dependency: dependencyWithTree } });
-
-        expect(wrapper.find(".package-summary__name").text()).toBe("left-pad");
-    });
-
     it("renders label/value row per toggleable column", () => {
         const wrapper = mount(PackageSummaryCard, { props: { dependency: dependencyWithTree } });
 

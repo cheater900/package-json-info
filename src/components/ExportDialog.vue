@@ -1,6 +1,5 @@
 <template>
     <form class="export-dialog" @submit.prevent="download">
-        <h2 class="export-dialog__title">{{ t("export.dialogTitle") }}</h2>
         <fieldset class="export-dialog__section">
             <legend>{{ t("export.tables") }}</legend>
             <label v-for="table in tables" :key="table.id" class="export-dialog__option">

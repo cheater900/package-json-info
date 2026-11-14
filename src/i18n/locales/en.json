@@ -160,7 +160,8 @@
         }
     },
     "modal": {
-        "close": "Close"
+        "close": "Close",
+        "tableTitle": "{section} of {name}"
     },
     "networkLog": {
         "title": "Network logs",
@@ -184,6 +185,7 @@
         "summary": "{total} requests: {failure} failed, {pending} pending, {success} successful"
     },
     "sourceTree": {
+        "title": "Source of {name}",
         "via": "via {provider}",
         "providers": {
             "npm": "npm",

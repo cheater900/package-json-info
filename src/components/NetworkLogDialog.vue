@@ -1,6 +1,5 @@
 <template>
     <div class="network-log">
-        <h2 class="network-log__title">{{ t("networkLog.title") }}</h2>
         <div class="network-log__scroll">
             <table class="network-log__table">
                 <thead>

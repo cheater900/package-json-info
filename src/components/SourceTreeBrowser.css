@@ -5,8 +5,11 @@
     overflow: hidden;
     width: min(var(--content-width), 100%);
 
+    /* Phones: fill the panel below its title. */
     @media (max-width: 700px) {
-        height: 100%;
+        flex: 1;
+        height: auto;
+        min-height: 0;
     }
 }
 
@@ -15,18 +18,7 @@
     border-bottom: 1px solid var(--border);
     display: flex;
     gap: 8px;
-    /* Extra right padding keeps the title/provider text clear of Modal's
-       floating close button in the corner. */
-    padding: calc(12px * var(--space-scale)) calc(48px * var(--space-scale))
-        calc(12px * var(--space-scale)) calc(16px * var(--space-scale));
-}
-
-.source-tree__title {
-    font-size: 1rem;
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    padding: calc(12px * var(--space-scale)) calc(16px * var(--space-scale));
 }
 
 .source-tree__provider {

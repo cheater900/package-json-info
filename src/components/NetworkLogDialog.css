@@ -13,11 +13,6 @@
     }
 }
 
-.network-log__title {
-    font-size: calc(22px * var(--font-scale));
-    margin: 0;
-}
-
 /* Narrow screens scroll the table sideways instead of the modal. */
 .network-log__scroll {
     max-width: 100%;

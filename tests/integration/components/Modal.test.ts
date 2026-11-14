@@ -10,6 +10,7 @@ let wrapper: ReturnType<typeof mount> | null = null;
 function mountModal() {
     wrapper = mount(Modal, {
         attachTo: document.body,
+        props: { title: "Panel title" },
         slots: { default: "<p>panel content</p>" },
     });
     return wrapper;
@@ -33,6 +34,16 @@ describe("Modal", () => {
         mountModal();
 
         expect(document.body.textContent).toContain("panel content");
+    });
+
+    it("shows title as heading labelling dialog", () => {
+        mountModal();
+
+        const title = bodyFind(".modal__title")!;
+        expect(title.text()).toBe("Panel title");
+        expect(bodyFind('[role="dialog"]')!.attributes("aria-labelledby")).toBe(
+            title.attributes("id"),
+        );
     });
 
     it("locks body scroll while mounted, unlocks on unmount", () => {
@@ -71,8 +82,8 @@ describe("Modal", () => {
     });
 
     it("keeps body scroll locked until last of two modals unmounts", () => {
-        const first = mount(Modal, { attachTo: document.body });
-        const second = mount(Modal, { attachTo: document.body });
+        const first = mount(Modal, { attachTo: document.body, props: { title: "First" } });
+        const second = mount(Modal, { attachTo: document.body, props: { title: "Second" } });
 
         second.unmount();
         expect(document.body.style.overflow).toBe("hidden");

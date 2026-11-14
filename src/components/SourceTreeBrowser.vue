@@ -1,7 +1,6 @@
 <template>
     <div class="source-tree">
-        <div class="source-tree__header">
-            <h3 class="source-tree__title">{{ dependencyName }}</h3>
+        <div v-if="sourceTree || truncated" class="source-tree__header">
             <span v-if="sourceTree" class="source-tree__provider">
                 {{
                     t("sourceTree.via", {

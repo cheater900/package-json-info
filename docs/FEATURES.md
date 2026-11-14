@@ -125,6 +125,8 @@ first step that fails. Each step stops the table fetch of the step before.
   only the table does, and its first column stays pinned at the left. At
   700 px and below, the URL field takes its own line, modals fill the
   screen and the source tree stacks the file list above the file view.
+- **Modals** show a centered title on top and a close button on the right.
+  Escape or a click outside closes them too.
 
 ## Export
 
