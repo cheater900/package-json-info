@@ -31,6 +31,12 @@ fixing live in [NOTES.md](NOTES.md).
   `@vue/test-utils` -> js-beautify -> editorconfig/minimatch/glob chain.
   Not in bundle. `npm audit fix --force` downgrades `@vue/test-utils`;
   wait for upstream fix or add `overrides`.
+- **Existing CLI cache dir keeps its permissions.** Owner and mode are not
+  checked; matters only when `XDG_CACHE_HOME` points at shared location,
+  which is user's own config.
+- **CLI `--timeout` + `--concurrency` warnings skip terminal
+  sanitizer.** Core prints them with `console.warn`; input is user's own
+  argv or env.
 
 ## Reliability
 

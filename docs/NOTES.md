@@ -12,6 +12,9 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   base-uri 'none'; frame-ancestors 'none'`. `connect-src` must stay open
   (`https: http:`): URL input, tarball URLs and CORS proxy can be any URL.
   Without CSP, XSS could use decrypted GitHub token.
+- **CLI keeps bidi and zero-width characters** (U+202A-202E,
+  U+2066-2069) from package data, so hostile text can spoof terminal
+  output (Trojan Source). Stripping changes output.
 
 ## Reliability
 
@@ -36,12 +39,21 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **GitLab subgroup repos** (`group/sub/project`) parse as `group/sub`,
   so stars and source link point at wrong project. Fix needs slugs with
   more than two segments.
+- **CLI stdout error other than broken pipe** (e.g. ENOSPC on
+  `> /dev/full`) crashes with stack trace. Exit code stays 1.
+- **FIFO at default CLI export name blocks write forever.** `O_NONBLOCK`
+  on open fixes it.
+- **Long package name breaks default CLI export name.**
+  `exportFileBaseName` in `src/core/export/buildExportDocument.ts` has no
+  length cap; name over about 235 characters fails with ENAMETOOLONG.
 
 ## Behavior to know
 
 - **CLI output marks no stale rows.** Offline, CLI tables show stored
   values like live ones; export documents carry no stale note.
   Report data coverage still counts rows using stored values.
+- **`--output -` writes file named `-`**, not stdout. Use
+  `--output /dev/stdout`.
 
 - **Health column starts hidden for existing users.** Saved column
   preferences lack new key, so column is hidden and last in order. New
