@@ -221,7 +221,8 @@ portrait; long lists and tables flow onto next pages.
 `package-json-info <source>` prints dependency tables of package.json as
 Markdown to stdout, with default visible columns.
 
-- **Source**: existing file path, directory (reads its `package.json`),
+- **Source**: existing file path (also pipe or device, e.g. `/dev/stdin`),
+  directory (reads its `package.json`),
   http(s) URL (repo URLs resolve to their package.json, as in web app) or
   npm spec (`name` or `name@version`). UTF-8 BOM in file is dropped.
 - **Pipe-safe output**: control characters from registry data and
@@ -240,7 +241,8 @@ Markdown to stdout, with default visible columns.
   `PJI_FETCH_CONCURRENCY`. Flag wins over env. `GITHUB_TOKEN` env raises
   GitHub rate limit; no flag, so token stays out of shell history.
 - **Offline cache**: last good lookups go to
-  `$XDG_CACHE_HOME/package-json-info` (else `~/.cache/package-json-info`),
+  `$XDG_CACHE_HOME/package-json-info` (else `~/.cache/package-json-info`;
+  relative `XDG_CACHE_HOME` ignored),
   owner-only (dir 0700, files 0600). Failed fetch serves stored value.
   `--no-cache` skips cache.
 - **Exit codes**: 0 success, 1 load, parse or write failure (message on

@@ -286,6 +286,13 @@ Condensed from git history. Newest month first.
   purged or saved mid-row applies. Purged token no longer reaches stars,
   commits or issues lookups, nor leaves private repo data in store.
 
+#### CLI
+
+- **Pipe or device source** (`/dev/stdin`, `<(...)`) read as file, no
+  longer looked up as npm package.
+- **Relative `XDG_CACHE_HOME`** ignored per XDG spec, so cache never lands
+  under working dir.
+
 ### Security
 
 #### CLI
