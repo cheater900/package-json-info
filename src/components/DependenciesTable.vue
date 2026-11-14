@@ -110,20 +110,15 @@
                     v-else
                     :key="col.key"
                     class="deps-table__centered"
-                    :class="{
-                        'deps-table__truncate-cell': col.truncatable,
-                        'deps-table__truncate-cell--expanded':
-                            col.truncatable && isExpanded(dependency.name, col.key),
-                    }"
-                    @mouseenter="col.truncatable && onCellMouseEnter($event)"
-                    @click="col.truncatable && onCellClick($event, dependency.name, col.key)"
                 >
-                    <dependency-cell
-                        :column="col"
-                        :dependency="dependency"
-                        :is-pending="pendingColumns.has(col.key)"
-                        @open-source-tree="$emit('open-source-tree', $event)"
-                    />
+                    <component :is="col.truncatable ? 'text-wrapped' : 'span'">
+                        <dependency-cell
+                            :column="col"
+                            :dependency="dependency"
+                            :is-pending="pendingColumns.has(col.key)"
+                            @open-source-tree="$emit('open-source-tree', $event)"
+                        />
+                    </component>
                 </td>
             </tr>
         </tbody>

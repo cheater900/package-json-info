@@ -19,6 +19,7 @@ import IconEye from "./IconEye.vue";
 import IconGrip from "./IconGrip.vue";
 import IconMagnifier from "./IconMagnifier.vue";
 import IconReload from "./IconReload.vue";
+import TextWrapped from "./TextWrapped.vue";
 
 export default defineComponent({
     components: {
@@ -30,6 +31,7 @@ export default defineComponent({
         IconGrip,
         IconMagnifier,
         IconReload,
+        TextWrapped,
     },
     props: {
         dependencies: {
@@ -137,52 +139,6 @@ export default defineComponent({
             sortDependencies(filteredDependencies.value, sortKey.value, sortDir.value),
         );
 
-        // Cells expanded via click-to-expand (see deps-table__truncate-cell in the
-        // template), keyed by "<dependency name>:<column key>" so expansion
-        // state is per-cell rather than per-column or per-row.
-        const expandedCells = ref(new Set<string>());
-
-        function cellKey(name: string, key: string) {
-            return `${name}:${key}`;
-        }
-
-        function isExpanded(name: string, key: string) {
-            return expandedCells.value.has(cellKey(name, key));
-        }
-
-        function toggleExpand(name: string, key: string) {
-            const k = cellKey(name, key);
-            if (expandedCells.value.has(k)) {
-                expandedCells.value.delete(k);
-                return;
-            }
-            expandedCells.value.add(k);
-        }
-
-        // Whether a deps-table__truncate-cell <td> is actually clipping its text right
-        // now - false once its content fits within the max-width, at which
-        // point there's nothing to expand and the hover/cursor affordance
-        // should disappear.
-        function isOverflowing(el: Element) {
-            return el.scrollWidth > el.clientWidth;
-        }
-
-        // Recomputed on hover (cheap, and avoids tracking overflow state for
-        // every cell up front - most never get hovered).
-        function onCellMouseEnter(event: MouseEvent) {
-            const el = event.currentTarget as HTMLElement;
-            el.classList.toggle("deps-table__truncate-cell--overflowing", isOverflowing(el));
-        }
-
-        // An already-expanded cell always collapses on click; a collapsed
-        // one only expands if its text is actually being clipped.
-        function onCellClick(event: MouseEvent, name: string, key: string) {
-            if (!isExpanded(name, key) && !isOverflowing(event.currentTarget as HTMLElement)) {
-                return;
-            }
-            toggleExpand(name, key);
-        }
-
         function staleNoteFor(row: DependencyRow) {
             return "error" in row ? "" : fmtStaleNote(row.staleSince);
         }
@@ -199,9 +155,6 @@ export default defineComponent({
             toggleSort,
             sortDirectionFor,
             sortedDependencies,
-            isExpanded,
-            onCellMouseEnter,
-            onCellClick,
         };
     },
 });

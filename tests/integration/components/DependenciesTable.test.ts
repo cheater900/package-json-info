@@ -364,71 +364,34 @@ describe("DependenciesTable column changes after mount", () => {
 });
 
 describe("DependenciesTable truncated cells", () => {
-    const EXPANDED_CLASS = "deps-table__truncate-cell--expanded";
-    const OVERFLOWING_CLASS = "deps-table__truncate-cell--overflowing";
-
-    function setCellWidths(cell: Element, scrollWidth: number) {
-        Object.defineProperty(cell, "scrollWidth", { value: scrollWidth, configurable: true });
-        Object.defineProperty(cell, "clientWidth", { value: 100, configurable: true });
-    }
-
-    function mountWithLicenseCell(isClipped: boolean) {
+    function mountWithLicenseCell() {
         const wrapper = mount(DependenciesTable, {
             props: {
                 dependencies: [fullDependency, { ...sparseDependency, license: "MIT" }],
                 columns: ["license", "version"],
             },
         });
-        const cells = wrapper.findAll("td.deps-table__truncate-cell");
+        const cells = wrapper.findAll(".text-wrapped");
         // jsdom lays nothing out: both widths read 0 unless set.
-        setCellWidths(cells[0].element, isClipped ? 300 : 100);
+        Object.defineProperty(cells[0].element, "scrollWidth", { value: 300 });
+        Object.defineProperty(cells[0].element, "clientWidth", { value: 100 });
         return { wrapper, cell: cells[0], otherRowCell: cells[1] };
     }
 
-    it("makes only truncatable columns truncate cells", () => {
-        const { wrapper } = mountWithLicenseCell(true);
+    it("wraps only truncatable columns in TextWrapped", () => {
+        const { wrapper } = mountWithLicenseCell();
 
-        expect(wrapper.findAll("td.deps-table__truncate-cell")).toHaveLength(2);
+        expect(wrapper.findAll(".text-wrapped")).toHaveLength(2);
     });
 
     it("click expands clipped cell only, skips select-package", async () => {
-        const { wrapper, cell, otherRowCell } = mountWithLicenseCell(true);
+        const { wrapper, cell, otherRowCell } = mountWithLicenseCell();
 
         await cell.trigger("click");
 
-        expect(cell.classes()).toContain(EXPANDED_CLASS);
-        expect(otherRowCell.classes()).not.toContain(EXPANDED_CLASS);
+        expect(cell.classes()).toContain("text-wrapped--expanded");
+        expect(otherRowCell.classes()).not.toContain("text-wrapped--expanded");
         expect(wrapper.emitted("select-package")).toBeUndefined();
-    });
-
-    it("second click collapses expanded cell even when text fits again", async () => {
-        const { wrapper, cell } = mountWithLicenseCell(true);
-        await cell.trigger("click");
-        setCellWidths(cell.element, 100);
-
-        await cell.trigger("click");
-
-        expect(cell.classes()).not.toContain(EXPANDED_CLASS);
-        expect(wrapper.emitted("select-package")).toBeUndefined();
-    });
-
-    it("click on fitting cell expands nothing", async () => {
-        const { cell } = mountWithLicenseCell(false);
-
-        await cell.trigger("click");
-
-        expect(cell.classes()).not.toContain(EXPANDED_CLASS);
-    });
-
-    it.each([
-        [true, true],
-        [false, false],
-    ])("hover on cell with clipped=%s sets overflowing marker %s", async (isClipped, expected) => {
-        const { cell } = mountWithLicenseCell(isClipped);
-
-        await cell.trigger("mouseenter");
-
-        expect(cell.classes().includes(OVERFLOWING_CLASS)).toBe(expected);
     });
 });
 

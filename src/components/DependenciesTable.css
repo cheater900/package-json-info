@@ -24,37 +24,6 @@ tbody tr:not(.deps-table__status-row):hover {
     background: var(--accent-bg);
 }
 
-.deps-table__truncate-cell {
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.deps-table__truncate-cell--expanded {
-    max-width: none;
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-    word-break: break-word;
-}
-
-/* Only cells actually clipping their text (or already expanded, so they can
-   be collapsed again) get the click affordance - a cell whose content
-   already fits has nothing to expand. */
-.deps-table__truncate-cell--overflowing,
-.deps-table__truncate-cell--expanded {
-    cursor: zoom-in;
-}
-
-.deps-table__truncate-cell--expanded {
-    cursor: zoom-out;
-}
-
-.deps-table__truncate-cell--overflowing:hover,
-.deps-table__truncate-cell--expanded:hover {
-    background: var(--accent-border);
-}
-
 /* Name column stays in view while the table scrolls sideways; the opaque
    background hides the cells scrolling underneath it. */
 .deps-table thead th:first-child,

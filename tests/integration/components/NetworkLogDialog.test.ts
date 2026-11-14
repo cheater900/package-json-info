@@ -83,8 +83,7 @@ describe("NetworkLogDialog", () => {
             new Date(LOG_ENTRY_STARTED_AT).toLocaleTimeString(NUMBER_LOCALE),
         );
         expect(cells[2].find(".network-log__badge").text()).toBe("GET");
-        expect(cells[2].find("[title]").text()).toBe(`${NPM_REGISTRY_URL}/zod`);
-        expect(cells[2].find("[title]").attributes("title")).toBe(`${NPM_REGISTRY_URL}/zod`);
+        expect(cells[2].text()).toBe(`GET ${NPM_REGISTRY_URL}/zod`);
         expect(cells.slice(3, 7).map((cell) => cell.text())).toEqual([
             "zod",
             "Latest version, License",
@@ -165,5 +164,15 @@ describe("NetworkLogDialog", () => {
             .findAll("tbody tr")
             .find((row) => row.text().includes("api.github.com/repos"));
         expect(starsRow?.findAll("td")[3].text()).toBe("pkg-a, pkg-b");
+    });
+});
+
+describe("NetworkLogDialog long text", () => {
+    it("wraps request, packages and columns in TextWrapped", () => {
+        const wrapper = mountDialog([successEntry]);
+
+        const cells = rowCells(wrapper, 0);
+        const wrapped = [2, 3, 4].map((i) => cells[i].find(".text-wrapped").exists());
+        expect(wrapped).toEqual([true, true, true]);
     });
 });

@@ -1,0 +1,27 @@
+.text-wrapped {
+    display: block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Only clipped content (or expanded content, so it can collapse again) gets
+   the click affordance: content that fits has nothing to expand. */
+.text-wrapped--overflowing {
+    cursor: zoom-in;
+}
+
+.text-wrapped--expanded {
+    cursor: zoom-out;
+    max-width: none;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+.text-wrapped--overflowing:hover,
+.text-wrapped--expanded:hover {
+    background: var(--accent-border);
+}

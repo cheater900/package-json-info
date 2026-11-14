@@ -8,6 +8,7 @@ import IconCheck from "./IconCheck.vue";
 import IconCross from "./IconCross.vue";
 import IconQuestion from "./IconQuestion.vue";
 import IconReload from "./IconReload.vue";
+import TextWrapped from "./TextWrapped.vue";
 
 const HEADERS = ["state", "time", "request", "packages", "columns", "status", "size", "actions"];
 
@@ -42,7 +43,7 @@ function formatSize(entry: NetworkLogEntry): string {
  * summary line. Failed rows get a retry button emitting `retry`.
  */
 export default defineComponent({
-    components: { IconReload },
+    components: { IconReload, TextWrapped },
     emits: ["retry"],
     setup() {
         const entries = computed(() => [...networkLogEntries].reverse());

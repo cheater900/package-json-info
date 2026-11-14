@@ -50,12 +50,6 @@
     color: var(--accent);
 }
 
-.network-log__request {
-    min-width: 240px;
-    overflow-wrap: anywhere;
-    white-space: normal;
-}
-
 .network-log__badge {
     background: var(--accent-bg);
     border: 1px solid var(--accent-border);
@@ -64,10 +58,6 @@
     font-size: 0.85em;
     padding: 0 calc(6px * var(--space-scale));
     white-space: nowrap;
-}
-
-.network-log__request .network-log__badge {
-    margin-right: 8px;
 }
 
 .network-log__retry {

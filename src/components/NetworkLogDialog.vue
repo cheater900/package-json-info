@@ -31,12 +31,18 @@
                             </span>
                         </td>
                         <td>{{ formatTime(entry.startedAt) }}</td>
-                        <td class="network-log__request">
-                            <span class="network-log__badge">{{ entry.method }}</span>
-                            <span :title="entry.url">{{ entry.url }}</span>
+                        <td>
+                            <text-wrapped>
+                                <span class="network-log__badge">{{ entry.method }}</span>
+                                {{ entry.url }}
+                            </text-wrapped>
                         </td>
-                        <td>{{ formatPackages(entry) }}</td>
-                        <td>{{ formatColumns(entry) }}</td>
+                        <td>
+                            <text-wrapped>{{ formatPackages(entry) }}</text-wrapped>
+                        </td>
+                        <td>
+                            <text-wrapped>{{ formatColumns(entry) }}</text-wrapped>
+                        </td>
                         <td :title="entry.error ?? undefined">
                             <span v-if="entry.status === null">{{ MISSING_VALUE }}</span>
                             <span v-else class="network-log__badge">{{ entry.status }}</span>
