@@ -11,8 +11,8 @@ function setWidths(el: Element, scrollWidth: number) {
 }
 
 // jsdom lays nothing out: both widths read 0 unless set.
-function mountWrapped(isClipped: boolean) {
-    const wrapper = mount(TextWrapped, { slots: { default: "long text" } });
+function mountWrapped(isClipped: boolean, props: { maxLength?: number } = {}) {
+    const wrapper = mount(TextWrapped, { props, slots: { default: "long text" } });
     setWidths(wrapper.element, isClipped ? 300 : 100);
     return wrapper;
 }
@@ -57,5 +57,18 @@ describe("TextWrapped", () => {
         await wrapper.trigger("mouseenter");
 
         expect(wrapper.classes().includes(CLASS_OVERFLOWING)).toBe(expected);
+    });
+
+    it("keeps CSS default width without maxLength", () => {
+        expect(mountWrapped(false).attributes("style")).toBeUndefined();
+    });
+
+    it("caps width at maxLength characters while collapsed only", async () => {
+        const wrapper = mountWrapped(true, { maxLength: 80 });
+        expect(wrapper.element.style.maxWidth).toBe("80ch");
+
+        await wrapper.trigger("click");
+
+        expect(wrapper.element.style.maxWidth).toBe("");
     });
 });

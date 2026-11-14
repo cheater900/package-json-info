@@ -22,6 +22,9 @@ const HEADERS = [
     "actions",
 ];
 
+/** Characters of method and URL shown before the request cell clips. */
+const URL_MAX_LENGTH = 80;
+
 const STATE_ICONS: Record<NetworkLogState, typeof IconCheck> = {
     pending: IconQuestion,
     success: IconCheck,
@@ -63,6 +66,7 @@ export default defineComponent({
             MISSING_VALUE,
             headers: HEADERS,
             STATE_ICONS,
+            URL_MAX_LENGTH,
             entries,
             summary,
             formatTime,

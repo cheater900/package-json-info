@@ -17,9 +17,9 @@ Condensed from git history. Newest month first.
   A body that breaks off mid-download marks its request failed.
   The log stays in memory, capped at 1000 requests; replays never keep
   the GitHub token. **Size** counts only body bytes the app reads, so
-  download size limits still stop the transfer. Long **URL**, package,
-  dependency and column text clips with an ellipsis; click expands and
-  collapses it, as in the dependency tables.
+  download size limits still stop the transfer. Long **URL** (after 80
+  characters), package, dependency and column text clips with an
+  ellipsis; click expands and collapses it, as in the dependency tables.
 
 #### Export
 
@@ -212,8 +212,9 @@ Condensed from git history. Newest month first.
 #### Code structure
 
 - **`TextWrapped`** component holds click-to-expand for long text:
-  ellipsis, zoom-in cursor when clipped, zoom-out when expanded. Both the
-  dependency tables and the network log use it.
+  ellipsis, zoom-in cursor when clipped, zoom-out when expanded.
+  `maxLength` prop sets clip width in characters. Both the dependency
+  tables and the network log use it.
 - **Network log helpers** shared with existing code: `lookupKey` keys
   request subjects and the offline store, `bearerAuthorization` and
   `HTTP_HEADER_AUTHORIZATION` build GitHub headers and replays,

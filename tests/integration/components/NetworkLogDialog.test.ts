@@ -175,4 +175,13 @@ describe("NetworkLogDialog long text", () => {
         const wrapped = [2, 3, 4, 5].map((i) => cells[i].find(".text-wrapped").exists());
         expect(wrapped).toEqual([true, true, true, true]);
     });
+
+    it("caps request at 80 characters, other cells at default", () => {
+        const wrapper = mountDialog([successEntry]);
+
+        const widths = rowCells(wrapper, 0)
+            .slice(2, 6)
+            .map((cell) => (cell.find(".text-wrapped").element as HTMLElement).style.maxWidth);
+        expect(widths).toEqual(["80ch", "", "", ""]);
+    });
 });

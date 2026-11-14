@@ -1,4 +1,4 @@
-import { defineComponent, ref } from "vue";
+import { computed, defineComponent, ref } from "vue";
 
 /**
  * Clips its content to one line with an ellipsis. Clipped content shows a
@@ -6,10 +6,23 @@ import { defineComponent, ref } from "vue";
  * zoom-out cursor and collapses on click. Content that fits gets neither.
  */
 export default defineComponent({
-    setup() {
+    props: {
+        /** Characters shown before clipping; null keeps the CSS default width. */
+        maxLength: {
+            type: Number,
+            default: null,
+        },
+    },
+    setup(props) {
         const rootRef = ref<HTMLElement | null>(null);
         const isExpanded = ref(false);
         const isOverflowing = ref(false);
+        // Inline, so only while collapsed: expanded content drops the cap.
+        const clipStyle = computed(() =>
+            props.maxLength == null || isExpanded.value
+                ? undefined
+                : { maxWidth: `${props.maxLength}ch` },
+        );
 
         function isClipped(): boolean {
             const el = rootRef.value;
@@ -29,6 +42,6 @@ export default defineComponent({
             isExpanded.value = !isExpanded.value;
         }
 
-        return { rootRef, isExpanded, isOverflowing, onMouseEnter, onClick };
+        return { rootRef, isExpanded, isOverflowing, clipStyle, onMouseEnter, onClick };
     },
 });

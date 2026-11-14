@@ -31,7 +31,7 @@
                         </td>
                         <td>{{ formatTime(entry.startedAt) }}</td>
                         <td>
-                            <text-wrapped>
+                            <text-wrapped :max-length="URL_MAX_LENGTH">
                                 <span class="network-log__badge">{{ entry.method }}</span>
                                 {{ entry.url }}
                             </text-wrapped>

@@ -197,7 +197,8 @@ modal listing every request the app sent this page load, newest first:
   request was sent for, `-` outside the tables.
 - **Dependencies** and **columns** the request fetched data for. A request
   shared by several dependencies lists them all.
-- Long URL, package, dependency and column text clips with an ellipsis.
+- Long text clips with an ellipsis: method and URL after 80 characters,
+  package, dependency and column text at the table's default width.
   Hover shows a zoom-in cursor; click expands it, click again collapses it.
 - **Status** badge, or `-` without a response; hover shows the network
   or body error. **Size** of the decoded body, `-` until the app reads all of

@@ -6,6 +6,7 @@
             'text-wrapped--overflowing': isOverflowing,
             'text-wrapped--expanded': isExpanded,
         }"
+        :style="clipStyle"
         @mouseenter="onMouseEnter"
         @click="onClick"
     >
