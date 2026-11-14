@@ -11,9 +11,16 @@ const CSV_NEEDS_QUOTES = /[",\r\n]/;
  * stays as is: no formula can follow it.
  */
 const CSV_FORMULA_START = /^([=+@\t\r]|-.)/s;
+/**
+ * Excel in locales whose list separator is ";" (de, fr, nl, ...) splits
+ * lines at every ";", quoted or not, so a formula start after ";" opens a
+ * cell too: "x;=HYPERLINK(...);" would run.
+ */
+const CSV_SEMICOLON_FORMULA_START = /;(?=[=+@\t\r]|-.)/gs;
 
 function csvField(value: string): string {
-    const safe = CSV_FORMULA_START.test(value) ? `'${value}` : value;
+    const prefixed = CSV_FORMULA_START.test(value) ? `'${value}` : value;
+    const safe = prefixed.replace(CSV_SEMICOLON_FORMULA_START, ";'");
     if (!CSV_NEEDS_QUOTES.test(safe)) {
         return safe;
     }

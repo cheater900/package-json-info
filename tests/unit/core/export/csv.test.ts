@@ -45,6 +45,15 @@ describe("csvExporter", () => {
         expect(text).toBe("\ufeffS,N\r\nA,'+1\r\nA,'\tx\r\nA,\"'\rx\"\r\n");
     });
 
+    it("neutralizes formula starts after semicolons", async () => {
+        const text = await csvText(
+            exportDocumentWith([
+                { title: "A", headers: ["N"], rows: [["x;=1+1;y"], ["a;@b;-c;+d"], ["a;-"]] },
+            ]),
+        );
+        expect(text).toBe("\ufeffS,N\r\nA,x;'=1+1;y\r\nA,a;'@b;'-c;'+d\r\nA,a;-\r\n");
+    });
+
     it("sets CSV MIME type", async () => {
         const blob = await csvExporter.render(exportDocumentFixture);
         expect(blob.type).toBe("text/csv;charset=utf-8");
