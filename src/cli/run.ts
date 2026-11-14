@@ -30,6 +30,16 @@ export type CliIo = {
 
 type CliTable = ExportTableInput & { id: DependencyListId };
 
+/** Id, section title + entries of one package.json dependency list. */
+type DependencyList = [
+    id: DependencyListId,
+    title: string,
+    dependencies: DependencyMap | undefined,
+];
+
+/** Text to print on stdout and stderr. */
+type CliOutput = { stdout: string; stderr: string };
+
 export const EXIT_OK = 0;
 export const EXIT_LOAD_FAILURE = 1;
 export const EXIT_BAD_ARGUMENTS = 2;
@@ -90,9 +100,7 @@ async function fetchTables(
     options: CliOptions,
     visibleColumns: ReadonlySet<string>,
 ): Promise<CliTable[]> {
-    const lists: [DependencyListId, string, DependencyMap | undefined][] = [
-        ["deps", t("sections.deps"), pkg.dependencies],
-    ];
+    const lists: DependencyList[] = [["deps", t("sections.deps"), pkg.dependencies]];
     if (options.includeDev) {
         lists.push(["devDeps", t("sections.devDeps"), pkg.devDependencies]);
     }
@@ -132,7 +140,7 @@ async function writeOutput(blob: Blob, output: string | undefined, defaultName: 
 }
 
 /** Performs the requested action; resolves to what to print on stdout and stderr. */
-async function execute(options: CliOptions): Promise<{ stdout: string; stderr: string }> {
+async function execute(options: CliOptions): Promise<CliOutput> {
     const parsed = parsePackageJsonText(await readSource(options.source));
     if (!parsed.ok) {
         throw parsed.error;
