@@ -1,87 +1,84 @@
 # Notes
 
-Gaps and decisions left open by the audits. Not planned yet; an item moves
-to [ROADMAP.md](ROADMAP.md) once planned. Feature ideas are in
-[IDEA.md](IDEA.md). Issues that stay as they are go in
+Gaps and decisions audits left open. Not planned yet; item moves to
+[ROADMAP.md](ROADMAP.md) once planned. Feature ideas live in
+[IDEA.md](IDEA.md). Issues staying as is go in
 [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Security
 
-- **No CSP.** The repo has no hosting config, and a `<meta>` CSP breaks
-  Vite's dev server. On the deploy host, set `script-src 'self';
-  object-src 'none'; base-uri 'none'; frame-ancestors 'none'`.
-  `connect-src` must stay open (`https: http:`): the URL input, tarball
-  URLs and the CORS proxy can be any URL. Without a CSP, an XSS could use
-  the decrypted GitHub token.
+- **No CSP.** Repo has no hosting config, and `<meta>` CSP breaks Vite dev
+  server. On deploy host, set `script-src 'self'; object-src 'none';
+  base-uri 'none'; frame-ancestors 'none'`. `connect-src` must stay open
+  (`https: http:`): URL input, tarball URLs and CORS proxy can be any URL.
+  Without CSP, XSS could use decrypted GitHub token.
 
 ## Reliability
 
-- **Two open tabs overwrite each other's settings.** Each tab writes its
-  whole settings object. See tab sync in [IDEA.md](IDEA.md).
-- **Tarball download keeps running after the source-tree modal closes.**
-  Bounded by the fetch timeout and the unpacked size cap. Cancelling needs
+- **Two open tabs overwrite each other's settings.** Each tab writes whole
+  settings object. See tab sync in [IDEA.md](IDEA.md).
+- **Tarball download keeps running after source-tree modal closes.** Fetch
+  timeout and unpacked size cap bound it. Cancelling needs
   `AbortSignal.any`.
-- **Only the registry document is schema-checked at runtime.** A wrong
-  type from the downloads, stars, issue-count, bundle-size or OSV services
-  shows as odd cell text. A malformed GitHub tree answer shows a raw engine
-  error in the source-tree modal; a `/rate_limit` answer without `rate`
-  shows one in the token status. The workspace lookup takes the same
-  malformed tree answer as a failed lookup and shows its notice.
+- **Only registry document gets schema-checked at runtime.** Wrong type
+  from downloads, stars, issue-count, bundle-size or OSV services shows as
+  odd cell text. Malformed GitHub tree answer shows raw engine error in
+  source-tree modal. `/rate_limit` answer without `rate` shows one in token
+  status. Workspace lookup treats same malformed tree answer as failed
+  lookup and shows its notice.
 - **Workspace pattern `packages/**` also lists `packages` itself** when
-  `packages/package.json` exists: a trailing `**` matches zero folders.
-  npm and pnpm are believed to do the same; not checked against their
-  source.
+  `packages/package.json` exists: trailing `**` matches zero folders. npm
+  and pnpm likely do same; not checked against their source.
 
 ## Behavior to know
 
 - **Health column starts hidden for existing users.** Saved column
-  preferences lack the new key, so the column is hidden and last in order.
-  New users see it after Outdated.
+  preferences lack new key, so column is hidden and last in order. New
+  users see it after Outdated.
 - **Health score varies with visible columns.** Issue ratio and
-  vulnerabilities count only while their columns are shown.
-- **Reload replays the share link.** A page reload refetches the `?step=`
-  chain instead of returning to the built-in view.
-- **Share link fetches on open.** A `step=url:` link fetches that URL
-  without a click. Capped at 20 steps of 2,000 characters, http(s) only.
-- **Fallback store never evicts.** It keeps whole registry documents,
-  several MB for popular packages. With a GitHub token, star and issue
-  counts of private repos are stored unencrypted until token purge; the
-  token is never stored.
-- **Not in a share link**: pasted and uploaded files, sort, search and
+  vulnerabilities count only while their columns show.
+- **Reload replays share link.** Page reload refetches `?step=` chain
+  instead of returning to built-in view.
+- **Share link fetches on open.** `step=url:` link fetches that URL without
+  click. Capped at 20 steps of 2,000 characters, http(s) only.
+- **Fallback store never evicts.** Keeps whole registry documents, several
+  MB for popular packages. With GitHub token, star and issue counts of
+  private repos stay stored unencrypted until token purge. Token itself
+  never gets stored.
+- **Not in share link**: pasted and uploaded files, sort, search and
   column state.
 
 ## Display
 
-- **Light theme contrast**: vue-json-pretty string values keep the
-  library's bright green, and the name-cell cursor SVG (a data URL, so no
-  CSS variable) stays green.
+- **Light theme contrast**: vue-json-pretty string values keep library's
+  bright green. Name-cell cursor SVG (data URL, so no CSS variable) stays
+  green.
 - **Light theme may flash dark** for one frame on load: CSS paints before
-  `main.js` sets `data-color-scheme`. An inline script in `index.html`
-  reading the stored settings would fix it.
+  `main.js` sets `data-color-scheme`. Fix: inline script in `index.html`
+  reading stored settings.
 
 ## Code
 
-- **`npmPackage.ts` imports `tableColumns`**: the api layer picks lookups
-  by UI column keys. Works because the keys equal `PackageInfo` fields.
-- **`DependencyCell.vue`**: column key `sourceCodeTree` does not match the
+- **`npmPackage.ts` imports `tableColumns`**: api layer picks lookups by
+  UI column keys. Works because keys equal `PackageInfo` fields.
+- **`DependencyCell.vue`**: column key `sourceCodeTree` does not match
   field name `sourceTree`.
-- **`npmPackage.ts` does several jobs**: registry document, downloads, OSV,
-  Bundlephobia, repo lookups and their caches. One `clearPackageInfoCache`
-  ties the caches together; a split needs a shared cache registry first.
-  The offline store fallback lives in `utils/memoizeLookup.ts`.
-- **`fetchRepoStars` guards an unknown host** although `parseRepoSlug`
-  yields only `SUPPORTED_REPO_HOSTS`. Kept: it covers a host added to that
-  list before it gets a stars fetcher.
+- **`npmPackage.ts` does several jobs**: registry document, downloads,
+  OSV, Bundlephobia, repo lookups and their caches. One
+  `clearPackageInfoCache` ties caches together; split needs shared cache
+  registry first. Offline store fallback lives in
+  `utils/memoizeLookup.ts`.
+- **`fetchRepoStars` guards unknown host** although `parseRepoSlug`
+  yields only `SUPPORTED_REPO_HOSTS`. Kept: covers host added to that list
+  before it gets stars fetcher.
 
 ## Verification
 
-- **Untested on purpose**: the `isStillCached` check in `memoizeLookup`
-  and the cancel latch in `fetchEntryDependencies`. Breaking the first
-  costs at most one extra fetch after a cache clear mid-lookup; the second
-  guards a state no navigation reaches, since a revisit always replaces
-  the fetch token.
+- **Untested on purpose**: `isStillCached` check in `memoizeLookup` and
+  cancel latch in `fetchEntryDependencies`. Breaking first costs at most
+  one extra fetch after cache clear mid-lookup. Second guards state no
+  navigation reaches, since revisit always replaces fetch token.
 
-- **Manual check with a real fine-grained PAT** not done yet: save, Verify
-  shows 5000, reload keeps it, Purge clears it. Also set a proxy and check
-  that the user-URL fetch goes through it while `api.github.com` calls
-  don't.
+- **Manual check with real fine-grained PAT** not done yet: save, Verify
+  shows 5000, reload keeps it, Purge clears it. Also set proxy, check
+  user-URL fetch goes through it while `api.github.com` calls do not.

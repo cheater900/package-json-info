@@ -5,36 +5,36 @@ Planned work, by area, highest priority first. Finished items move to
 
 ## Transitive dependency resolution
 
-The app should walk each package's own dependency tree, the way a package
-manager resolves it, to show the real footprint of a `package.json`.
+Walk each package's own dependency tree, as package manager resolves it,
+to show real footprint of `package.json`.
 
-- **Deduplicate** shared dependencies met several times across the tree, so
+- **Deduplicate** shared dependencies met several times across tree, so
   each counts once.
-- **Cap recursion depth and detect cycles** so a malformed or circular graph
-  can't cause runaway fetching.
-- **Tolerate partial failures**: skip a nested package whose metadata can't
-  be fetched and continue.
-- **Show the total resolved dependency count** (direct + transitive) as a
+- **Cap recursion depth and detect cycles** so malformed or circular graph
+  cannot cause runaway fetching.
+- **Tolerate partial failures**: skip nested package whose metadata fetch
+  fails, continue.
+- **Show total resolved dependency count** (direct + transitive) as
   summary figure.
 
 ## UX
 
-- **Keyboard and screen-reader support**: focus order, ARIA labels, and
+- **Keyboard and screen-reader support**: focus order, ARIA labels,
   keyboard access for input controls, table rows, column drag and
   drill-down/history navigation.
 
 ## Reliability
 
-- **Default branch for repo URL input**: only `main`/`master` are probed;
-  resolve the real default branch (e.g. raw `HEAD` ref).
-- **Max satisfying version for ranges**: version data uses the range floor
+- **Default branch for repo URL input**: app probes only `main`/`master`;
+  resolve real default branch (e.g. raw `HEAD` ref).
+- **Max satisfying version for ranges**: version data uses range floor
   (leading semver) today.
 
 ## i18n
 
 - **Second locale** plus runtime language switch (needs reactive locale or
-  a move to vue-i18n).
+  move to vue-i18n).
 - **Locale-aware number and date formatting**: `en-US` and
   `toDateString()` are hard-coded.
-- **Browser-originated error text** (network failure, timeout) is not
-  translated.
+- **Browser-originated error text** (network failure, timeout) stays
+  untranslated.

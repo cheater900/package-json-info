@@ -1,68 +1,66 @@
 # Intent
 
-This file explains why the project exists, who it is for, and which
-principles guide its design. [FEATURES.md](FEATURES.md) lists what the app
-does. [DEVELOPMENT.md](DEVELOPMENT.md) explains how the code is built.
+Why project exists, who it serves, which principles guide design.
+[FEATURES.md](FEATURES.md) lists what app does.
+[DEVELOPMENT.md](DEVELOPMENT.md) explains how code gets built.
 
 ## Problem
 
-A `package.json` names its dependencies but says nothing about their
-health. To judge a dependency, a developer opens npm, then the repository,
-then the issue tracker, then an advisory database, one package at a time.
-For a project with fifty dependencies, that takes an afternoon, so it
-rarely happens.
+`package.json` names dependencies but says nothing about their health. To
+judge one dependency, developer opens npm, then repository, then issue
+tracker, then advisory database, one package at a time. Project with fifty
+dependencies takes afternoon, so check rarely happens.
 
 ## Purpose
 
-Give one table that answers "how healthy and active is each dependency?"
-for any `package.json`, in the time it takes to paste it. The table should
-support these decisions:
+One table answers "how healthy and active is each dependency?" for any
+`package.json`, in time it takes to paste it. Table supports these
+decisions:
 
-- Which dependencies are stale, deprecated, or abandoned.
-- Which ones carry known vulnerabilities or a license worth reviewing.
-- Which ones are heavy for what they do.
-- Where to look next. The user can drill into a dependency's own
-  `package.json` or browse its published source.
+- Which dependencies are stale, deprecated or abandoned.
+- Which carry known vulnerabilities or license worth review.
+- Which are heavy for what they do.
+- Where to look next. User drills into dependency's own `package.json` or
+  browses its published source.
 
 ## Audience
 
-Developers who review, audit, or inherit a JavaScript project. Typical
-moments are before a dependency upgrade, during a code review that adds a
-package, or when someone takes over an unfamiliar codebase.
+Developers who review, audit or inherit JavaScript project. Typical
+moments: before dependency upgrade, during code review adding package, or
+when taking over unfamiliar codebase.
 
 ## Principles
 
-- **Browser only.** The app is a static page that calls public APIs
-  directly. It has no backend, no accounts, and stores nothing on a server.
-  The `package.json` a user loads never leaves their browser, except for
-  the package names sent to the public lookup services.
-- **A partial row beats a failed row.** Each column comes from a separate
-  service. When one service fails or has no data, that cell shows "-" and
-  the rest of the row still renders.
-- **Respect rate limits.** The app never fetches data for hidden columns.
-  Lookups are shared between rows that use the same package or repository.
-  Failed lookups are retried instead of being cached as "no data".
+- **Browser only.** App is static page calling public APIs directly. No
+  backend, no accounts, nothing stored on server. Loaded `package.json`
+  never leaves browser, except package names sent to public lookup
+  services.
+- **Partial row beats failed row.** Each column comes from separate
+  service. Service fails or has no data -> that cell shows "-", rest of row
+  still renders.
+- **Respect rate limits.** App never fetches data for hidden columns. Rows
+  using same package or repository share lookups. Failed lookups get
+  retried, not cached as "no data".
 - **Treat third-party data as untrusted.** Registry metadata, repository
-  URLs and tarballs come from package authors. The app validates them
-  before they become links, API paths or downloads.
-- **Fail visibly.** Every failed load tells the user what went wrong, in
-  words they can act on.
-- **Stay small.** The app uses native browser features (fetch, Compression
+  URLs and tarballs come from package authors. App validates them before
+  they become links, API paths or downloads.
+- **Fail visibly.** Every failed load tells user what went wrong, in words
+  they can act on.
+- **Stay small.** App uses native browser features (fetch, Compression
   Streams, localStorage) and few dependencies.
 
 ## Non-goals
 
-- **Not a package manager.** The app does not install packages or edit the
-  `package.json`. It also does not fully resolve semver ranges. A range is
-  read as its lowest version, which is good enough for a health overview.
-- **Not a security scanner.** The vulnerability count is a pointer to look
-  closer. It does not replace `npm audit` or a dedicated scanner.
-- **Not a hosted service.** The app has no server of its own. It can be
-  deployed as a public static site: the bundle carries no token, and each
-  user enters their own GitHub token, kept encrypted in their browser.
+- **Not package manager.** App does not install packages or edit
+  `package.json`. It does not fully resolve semver ranges either. Range
+  reads as its lowest version, good enough for health overview.
+- **Not security scanner.** Vulnerability count is pointer to look closer.
+  It does not replace `npm audit` or dedicated scanner.
+- **Not hosted service.** App has no server of own. Deploy as public static
+  site works: bundle carries no token, each user enters own GitHub token,
+  kept encrypted in their browser.
 
 ## Success
 
-The project succeeds when a developer can load an unfamiliar
-`package.json` and, within a minute, name the dependencies that need
-attention and say why.
+Project succeeds when developer loads unfamiliar `package.json` and,
+within one minute, names dependencies needing attention and says why.

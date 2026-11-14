@@ -1,90 +1,88 @@
 # Known issues
 
-Issues left as they are, each with its reason. They may never be fixed.
-Gaps that should be fixed are in [NOTES.md](NOTES.md).
+Issues left as is, each with reason. May never get fixed. Gaps worth
+fixing live in [NOTES.md](NOTES.md).
 
 ## Security
 
-- **Proxy may be `http:`.** Request URLs then reach the proxy in
-  cleartext. Allowed so a localhost proxy works.
-- **Proxy fetches any URL it is given.** A crafted `?inputUrl=` link or a
-  registry `dist.tarball` URL makes the user's proxy fetch that URL; the
-  response goes only to that user. Comes with having a proxy at all.
-- **Share link fetches on open.** A `?step=url:` link makes the browser
-  (or proxy) fetch that URL without a click, and its dependency steps
-  query npm. Needed for a link to reopen a view; step count and length are
-  capped, and only http(s) URLs pass.
-- **Stored lookups are not encrypted.** With a GitHub token, star and
-  issue counts of private repos land in IndexedDB as plain values until
-  token purge clears them. The token is never stored there.
-- **History entries keep rows fetched with a purged token.** Star and
-  issue counts of private repos stay in memory and show again on back
-  navigation until a column or proxy change refetches. Memory only, gone
-  on reload; a refetch on every purge would spend quota for little gain.
-- **Share link carries the entered URL verbatim.** A raw URL with a secret
-  query (`?token=`) lands in the address bar and in shared links. The
-  step needs the URL to reload it, and `?inputUrl=` already mirrors it.
+- **Proxy may be `http:`.** Request URLs then reach proxy in cleartext.
+  Allowed so localhost proxy works.
+- **Proxy fetches any URL given.** Crafted `?inputUrl=` link or registry
+  `dist.tarball` URL makes user's proxy fetch that URL; response goes only
+  to that user. Comes with having proxy at all.
+- **Share link fetches on open.** `?step=url:` link makes browser (or
+  proxy) fetch that URL without click; its dependency steps query npm.
+  Needed for link to reopen view. Step count and length are capped; only
+  http(s) URLs pass.
+- **Stored lookups are not encrypted.** With GitHub token, star and issue
+  counts of private repos land in IndexedDB as plain values until token
+  purge clears them. Token itself never gets stored there.
+- **History entries keep rows fetched with purged token.** Star and issue
+  counts of private repos stay in memory and show again on back navigation
+  until column or proxy change refetches. Memory only, gone on reload.
+  Refetch on every purge would spend quota for little gain.
+- **Share link carries entered URL verbatim.** Raw URL with secret query
+  (`?token=`) lands in address bar and in shared links. Step needs URL to
+  reload it; `?inputUrl=` already mirrors it.
 - **Proxy prefix without trailing `/`** (`https://p.example` + target)
-  builds a broken host such as `p.examplehttps`. The requests fail; no real
-  TLD matches.
-- **Dev-only `npm audit` findings**: moderate advisories in the
+  builds broken host such as `p.examplehttps`. Requests fail; no real TLD
+  matches.
+- **Dev-only `npm audit` findings**: moderate advisories in
   `@vue/test-utils` -> js-beautify -> editorconfig/minimatch/glob chain.
-  Not in the bundle. `npm audit fix --force` downgrades `@vue/test-utils`;
-  wait for an upstream fix or add `overrides`.
+  Not in bundle. `npm audit fix --force` downgrades `@vue/test-utils`;
+  wait for upstream fix or add `overrides`.
 
 ## Reliability
 
-- **Late token load can purge a newer token.** Only when IndexedDB hangs
-  past `TOKEN_LOAD_TIMEOUT_MS`, a token is saved meanwhile, and the late
-  decrypt then fails. The save waits behind the same stuck IndexedDB, so
-  this is very unlikely.
-- **No size cap on the user-URL `package.json` fetch** (`fetchText`). The
-  user picks that URL.
+- **Late token load can purge newer token.** Needs all three: IndexedDB
+  hangs past `TOKEN_LOAD_TIMEOUT_MS`, token gets saved meanwhile, late
+  decrypt then fails. Save waits behind same stuck IndexedDB, so very
+  unlikely.
+- **No size cap on user-URL `package.json` fetch** (`fetchText`). User
+  picks that URL.
 - **Malformed tarball with both file `a` and directory `a/...`** gives
-  duplicate Vue keys in the file tree. Cosmetic.
+  duplicate Vue keys in file tree. Cosmetic.
 - **`URL.canParse`** needs Safari 17+.
-- **Brace sets in workspace patterns** (`packages/{a,b}`) are not
-  expanded, so those workspaces are not listed. Rare in practice.
-- **`pnpm-workspace.yaml`** is read by a small line parser that takes only
-  the top-level `packages` list. Anchors, multi-document files and
-  `catalog:` entries are ignored; a full YAML parser is not worth the
-  dependency.
+- **Brace sets in workspace patterns** (`packages/{a,b}`) stay unexpanded,
+  so those workspaces are not listed. Rare in practice.
+- **`pnpm-workspace.yaml`** goes through small line parser taking only
+  top-level `packages` list. Anchors, multi-document files and `catalog:`
+  entries are ignored. Full YAML parser not worth dependency.
 - **Health score varies with visible columns.** Issue ratio and
-  vulnerabilities count only while their columns are shown, so the same
-  package can score differently. Fetching them always would spend the
-  GitHub search quota. The vulnerability count covers every version, not
-  the declared one.
-- **Share link stores ranges**, not resolved versions, and workspace steps
-  follow the repo's current branch. An old link can open newer data.
+  vulnerabilities count only while their columns show, so same package can
+  score differently. Always fetching them would spend GitHub search quota.
+  Vulnerability count covers every version, not declared one.
+- **Share link stores ranges**, not resolved versions. Workspace steps
+  follow repo's current branch. Old link can open newer data.
 - **Fallback store keeps whole registry documents** and never evicts.
   Popular packages take several MB each. See cleanup in
   [IDEA.md](IDEA.md).
-- **Back or Forward during share link replay** does not stop it. The next
-  replayed step loads on top of the entry picked and drops the forward
-  history. Only during the first seconds after opening a link.
-- **Rapid navigation can hit the `replaceState` limit.** Some browsers
-  throw past about 100 calls in a short window; share link sync then logs
-  an error and the address bar lags until the next navigation. Each sync
-  is one user navigation, so only sustained fast clicking hits it.
-- **`workspace:` dependency ranges** (`workspace:*`) are looked up on npm
-  by package name. A private workspace package shows an empty row.
+- **Back or Forward during share link replay** does not stop replay. Next
+  replayed step loads on top of picked entry, drops forward history. Only
+  during first seconds after opening link.
+- **Rapid navigation can hit `replaceState` limit.** Some browsers throw
+  past about 100 calls in short window. Share link sync then logs error;
+  address bar lags until next navigation. Each sync is one user
+  navigation, so only sustained fast clicking hits it.
+- **`workspace:` dependency ranges** (`workspace:*`) get looked up on npm
+  by package name. Private workspace package shows empty row.
 - **Blob and tree URLs only on GitHub.** GitLab `/-/blob/` and Codeberg
-  `/src/branch/` URLs still load the root `package.json` from `main` or
+  `/src/branch/` URLs still load root `package.json` from `main` or
   `master`.
-- **Deep GitHub blob or tree URL lists no workspaces**, nor does a root
-  URL whose ref holds `/`. `tree/main/packages/a` can be branch
-  `main/packages/a` or folder `packages/a` on `main`; the raw host resolves
-  the file, but the workspace tree needs the ref alone.
-- **PDF export shows `?` for characters outside Latin-1**, such as the
-  license warning `⚠` or CJK text. jsPDF's built-in fonts cover WinAnsi
-  only; embedding a Unicode font would add hundreds of KB.
+- **Deep GitHub blob or tree URL lists no workspaces**, nor does root URL
+  whose ref holds `/`. `tree/main/packages/a` can be branch
+  `main/packages/a` or folder `packages/a` on `main`. Raw host resolves
+  file, but workspace tree needs ref alone.
+- **PDF export shows `?` for characters outside Latin-1**, such as license
+  warning `⚠` or CJK text. jsPDF built-in fonts cover WinAnsi only.
+  Embedding Unicode font would add hundreds of KB.
 - **Export ignores table sorting.** Sort state lives in each table; rows
   export in `package.json` order.
-- **CSV cells starting with `-` plus text** (a missing license with its
-  `⚠`, shown as `- ⚠`) export as `'- ⚠`. The `'` stops spreadsheets running
-  untrusted registry text as a formula.
-- **PDF export of a big table freezes the page** until the file is ready.
-  jsPDF renders on the main thread.
-- **Export libraries load with the app.** jsPDF, jspdf-autotable and
-  write-excel-file sit in the main chunk, roughly doubling it (about
-  160 KB more gzip), since the code style rules out dynamic `import()`.
+- **CSV cells starting with `-` plus text** (missing license with its
+  `⚠`, shown as `- ⚠`) export as `'- ⚠`. `'` stops spreadsheets running
+  untrusted registry text as formula.
+- **PDF export of big table freezes page** until file is ready. jsPDF
+  renders on main thread.
+- **Export libraries load with app.** jsPDF, jspdf-autotable and
+  write-excel-file sit in main chunk, roughly doubling it (about 160 KB
+  more gzip). Code style rules out dynamic `import()`.

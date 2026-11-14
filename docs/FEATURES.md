@@ -5,34 +5,33 @@ Implemented features. Planned work lives in [ROADMAP.md](ROADMAP.md), untried id
 
 ## Input methods
 
-The app accepts a `package.json` from any of the following sources:
+App accepts `package.json` from these sources:
 
-- **Clipboard content** - paste the raw JSON directly.
-- **Git URL** - point at a repository containing a `package.json`.
-- **File upload** - pick a local `package.json` file.
-- **File URL** - fetch a `package.json` from a remote URL.
-- **Repo URL** - paste a GitHub/GitLab/Codeberg repo URL directly (not just a
-  raw file URL); the app finds `package.json` on the `main` or `master` branch.
-- **GitHub file and folder URL** - a `/blob/<ref>/<path>` URL loads that
-  file at that ref; a `/tree/<ref>/<path>` URL loads `package.json` in that
-  folder. Workspaces are listed only for the root `package.json` of a ref
-  without `/`.
-- **Monorepo workspaces** - a GitHub repo URL whose root declares workspaces
+- **Clipboard content** - paste raw JSON.
+- **Git URL** - point at repository containing `package.json`.
+- **File upload** - pick local `package.json` file.
+- **File URL** - fetch `package.json` from remote URL.
+- **Repo URL** - paste GitHub/GitLab/Codeberg repo URL, not only raw file
+  URL. App finds `package.json` on `main` or `master` branch.
+- **GitHub file and folder URL** - `/blob/<ref>/<path>` URL loads that file
+  at that ref. `/tree/<ref>/<path>` URL loads `package.json` in that folder.
+  Workspaces list only for root `package.json` of ref without `/`.
+- **Monorepo workspaces** - GitHub repo URL whose root declares workspaces
   (`workspaces` in `package.json`, or `packages` in `pnpm-workspace.yaml`)
-  gets a Workspace select listing each workspace folder. Picking one loads
-  its `package.json` as a new history entry; `(root)` returns to the root.
-  Listing costs one GitHub API request. When it fails, the root table still
-  loads and a notice says so. Any other source that declares workspaces
-  shows a hint to load the repo by GitHub URL.
-- Workspace select lists at most 5,000 folders, from the first 100
-  patterns of up to 200 characters each; a repo past a cap, or cut short
-  by GitHub, shows a notice.
+  gets Workspace select listing each workspace folder. Picking one loads its
+  `package.json` as new history entry; `(root)` returns to root. Listing
+  costs one GitHub API request. On failure, root table still loads and
+  notice says so. Other sources that declare workspaces show hint to load
+  repo by GitHub URL.
+- Workspace select lists at most 5,000 folders, from first 100 patterns of
+  up to 200 characters each. Repo past cap, or cut short by GitHub, shows
+  notice.
 
 ## Output: the dependency summary table
 
-Once a `package.json` is loaded, the app parses its `dependencies` and
+After `package.json` loads, app parses its `dependencies` and
 `devDependencies` and renders one row per package. Each row includes, when
-the data is available:
+data exists:
 
 - Source code URL (repository link)
 - Last updated date
@@ -40,51 +39,55 @@ the data is available:
 - Open PR count
 - Closed PR count
 - npm weekly downloads
-- Stars (GitHub / GitLab / Codeberg, whichever hosts the source)
+- Stars (GitHub / GitLab / Codeberg, whichever hosts source)
 - Open issues count
 - Closed issues count
-- List of the package's own dependencies
-- A "load this package's table" button (see below)
-- License, with a warning badge for copyleft or missing licenses
-- Outdated version indicator: the declared version or range against the
-  latest published version
+- List of package's own dependencies
+- "Load this package's table" button (see below)
+- License, with warning badge for copyleft or missing licenses
+- Outdated version indicator: declared version or range against latest
+  published version
 - Health score from 0 to 100, labelled good (70 and up), fair (40 and up)
-  or poor. It averages the signals the row has: release age, deprecation,
+  or poor. Score averages signals row has: release age, deprecation,
   outdated version, maintainer count, open issue ratio and vulnerabilities.
-  Issue ratio and vulnerabilities count only when their columns were
-  visible at fetch time. A tooltip lists the signals used.
+  Issue ratio and vulnerabilities count only when their columns were visible
+  at fetch time. Tooltip lists signals used.
 - Known security advisories, via OSV
 - Bundle size (min+gzip), via Bundlephobia
-- Maintainers who publish the package on npm
-- Deprecation notice, when npm marks the package deprecated
-- Published source tree browser, from the npm tarball or a GitHub release tag
-- Source tree lists at most 20,000 entries and shows files up to 2 MB; a
-  larger tree shows a notice, a larger file an error
+- Maintainers who publish package on npm
+- Deprecation notice, when npm marks package deprecated
+- Published source tree browser, from npm tarball or GitHub release tag
+- Source tree lists at most 20,000 entries and shows files up to 2 MB.
+  Larger tree shows notice, larger file shows error.
 
 ## Package drill-down / history
 
-Every row has an Actions column, right after Name, with three buttons:
-View (eye icon) opens the package summary card, Reload (circular arrow)
-refetches the row's failed lookups, and Load (magnifier) loads that package's own `package.json` as
-the new input for the table. Clicking cells does nothing. Load:
+Every row has Actions column, right after Name, with three buttons:
 
-- Fetches the `package.json` for that row's package.
-- Replaces the current table with a new summary table generated from it.
-- Records the navigation in a history stack, so the user can move back and
-  forth between previously loaded tables (similar to browser back/forward)
-  without re-fetching or losing earlier results.
+- View (eye icon) opens package summary card.
+- Reload (circular arrow) refetches row's failed lookups.
+- Load (magnifier) loads that package's own `package.json` as new table
+  input.
+
+Clicking cells does nothing. Load:
+
+- Fetches `package.json` for row's package.
+- Replaces current table with new summary table generated from it.
+- Records navigation in history stack. User moves back and forth between
+  loaded tables (like browser back/forward) without re-fetch or lost
+  results.
 
 ### Share links
 
-The address bar always holds a link to the current view. Each history
-entry up to the current position becomes one `?step=` param: `url:<url>`,
-`dep:<name>@<range>` or `ws:<workspace path>`. Opening the link replays the
-steps in order, on top of the built-in `package.json`, and stops at the
-first step that fails. Each step stops the table fetch of the step before.
+Address bar always holds link to current view. Each history entry up to
+current position becomes one `?step=` param: `url:<url>`,
+`dep:<name>@<range>` or `ws:<workspace path>`. Opening link replays steps in
+order, on top of built-in `package.json`, and stops at first failing step.
+Each step stops table fetch of step before.
 
-- Pasted and uploaded files are not part of the link.
-- A link holds at most 20 steps of up to 2,000 characters each.
-- `?inputUrl=` still only fills the URL box.
+- Pasted and uploaded files are not part of link.
+- Link holds at most 20 steps of up to 2,000 characters each.
+- `?inputUrl=` still only fills URL box.
 
 ## Table and UX
 
@@ -92,124 +95,122 @@ first step that fails. Each step stops the table fetch of the step before.
 
 - **Sorting and filtering** on any column (e.g. sort by weekly downloads,
   filter to packages not updated in over a year).
-- **Search box** to jump to a specific package by name within a large table.
-- **Validation of malformed/invalid input** - a broken `package.json` (bad
-  JSON, missing `dependencies`/`devDependencies`) shows a clear inline error
-  instead of a crash or a blank table.
-- **Graceful per-field fallback** - when a data point can't be fetched for a
-  package, the row still renders. `-` means the service has no data (no
-  downloads, no repo URL). `?` in the error color means the lookup failed
-  with no stored value; its tooltip gives the error.
-- **Retry failed fetches** button below a table with rows that failed, are
-  stale or have a failed lookup. It refetches those rows only. The row's
-  own Reload action refetches one row.
+- **Search box** jumps to package by name in large table.
+- **Validation of malformed/invalid input** - broken `package.json` (bad
+  JSON, missing `dependencies`/`devDependencies`) shows inline error, not
+  crash or blank table.
+- **Graceful per-field fallback** - when data point fetch fails, row still
+  renders. `-` means service has no data (no downloads, no repo URL). `?` in
+  error color means lookup failed with no stored value; its tooltip gives
+  error.
+- **Retry failed fetches** button below table with rows that failed, are
+  stale or have failed lookup. Button refetches those rows only. Row's own
+  Reload action refetches one row.
 
 ### UX
 
-- **Loading states** while data is being fetched, both for the initial table
-  and for per-row/per-field lookups that resolve asynchronously.
-- **Clear error messaging** for failed input loads (bad git URL, unreachable
-  file URL, invalid upload) and for failed per-package metadata lookups.
-- **In-memory metadata cache**: rows that share a package or repository
-  share one request, and failed lookups are retried instead of cached.
-- **Offline fallback**: each successful lookup is stored in IndexedDB. When
-  a live lookup fails (offline, rate limit, outage), the row shows the
-  stored value, and a "stale" badge next to the name gives its date.
-  Returning to the table through history retries the lookup. Without
-  IndexedDB there is no fallback.
+- **Loading states** during fetch, for initial table and for per-row/
+  per-field lookups that resolve asynchronously.
+- **Error messages** for failed input loads (bad git URL, unreachable file
+  URL, invalid upload) and failed per-package metadata lookups.
+- **In-memory metadata cache**: rows sharing package or repository share one
+  request. Failed lookups retry, not cached.
+- **Offline fallback**: IndexedDB stores each successful lookup. When live
+  lookup fails (offline, rate limit, outage), row shows stored value, and
+  "stale" badge next to name gives its date. Return to table through history
+  retries lookup. No IndexedDB -> no fallback.
 - **Column preferences**: visibility, drag-and-drop order and abbreviated
-  labels, stored in `localStorage`. Hiding a column is instant and fetches
-  nothing. Showing one keeps the rows on screen; its cells show a loading
-  icon until the data arrives.
-- **Responsive layout**: the page never scrolls sideways down to 360 px;
-  only the table does, and its first column stays pinned at the left. At
-  700 px and below, the URL field takes its own line, modals fill the
-  screen and the source tree stacks the file list above the file view.
-- **Modals** show a centered title on top and a close button on the right.
-  Escape or a click outside closes them too.
+  labels, stored in `localStorage`. Hiding column is instant, fetches
+  nothing. Showing column keeps rows on screen; its cells show loading icon
+  until data arrives.
+- **Responsive layout**: page never scrolls sideways down to 360 px. Only
+  table scrolls, first column pinned left. At 700 px and below, URL field
+  takes own line, modals fill screen, source tree stacks file list above
+  file view.
+- **Modals** show centered title on top, close button on right. Escape or
+  click outside also closes them.
 
 ## Export
 
-An **Export** button, right-aligned below both tables, opens a form:
+**Export** button, right-aligned below both tables, opens form:
 
 - **Tables**: Deps and Dev Deps checkboxes, both checked. Download stays
   disabled with none checked.
-- **Columns**: every data column in the current column order, the visible
-  ones checked. Name is always exported. Checking a column the tables never
-  loaded fetches its data, with a spinner beside it; Download waits for the
-  fetch. The tables do not change or reload.
+- **Columns**: every data column in current column order, visible ones
+  checked. Name always exports. Checking column tables never loaded fetches
+  its data, with spinner beside it; Download waits for fetch. Tables do not
+  change or reload.
 - **Format**: CSV (default), XLSX, Markdown, HTML or PDF.
-- **Download** saves one file and closes the form.
+- **Download** saves one file, closes form.
 
-The file holds every row of each checked table; the search box does not
-apply. Rows keep `package.json` order; table sorting is not applied. The
-Export button stays disabled while a table or a newly shown column loads.
-Download stays disabled while an export runs, so a double click saves one
-file. The file is named `<package name>-dependencies.<ext>`.
+File holds every row of each checked table; search box does not apply. Rows
+keep `package.json` order; table sorting does not apply. Export button stays
+disabled while table or newly shown column loads. Download stays disabled
+while export runs, so double click saves one file. File name:
+`<package name>-dependencies.<ext>`.
 
-- **CSV**: one table, UTF-8 with BOM, a leading Section column. Cells that a
-  spreadsheet would run as a formula (starting with `=`, `+`, `@`, tab, CR,
-  or `-` plus text) get a leading `'`.
+- **CSV**: one table, UTF-8 with BOM, leading Section column. Cells
+  spreadsheet would run as formula (starting with `=`, `+`, `@`, tab, CR, or
+  `-` plus text) get leading `'`.
 - **XLSX**: one sheet per table, bold frozen header row.
-- **Markdown**: a heading and a GFM table per table. Cell text is
+- **Markdown**: heading and GFM table per table. Cell text is
   backslash-escaped, so registry text cannot inject HTML, links or images.
-- **HTML**: one standalone page with inline styles, no scripts or external
-  files, so it opens offline. A Content-Security-Policy meta tag blocks
+- **HTML**: one standalone page, inline styles, no scripts or external
+  files, so it opens offline. Content-Security-Policy meta tag blocks
   scripts and remote loads.
-- **PDF**: landscape, each table on its own page. Columns past the page
-  width continue on the next page, repeating Name.
+- **PDF**: landscape, each table on own page. Columns past page width
+  continue on next page, repeating Name.
 
-Source Code Tree buttons are left out; the Source Code link exports its
-URL. Error rows keep their message, failed lookups their `?`.
+Export leaves out Source Code Tree buttons; Source Code link exports its
+URL. Error rows keep message, failed lookups keep `?`.
 
 ## Settings
 
-A gear button at the top right opens a settings dropdown. A dot on the gear
-shows when a GitHub token is set.
+Gear button at top right opens settings dropdown. Dot on gear shows when
+GitHub token is set.
 
-- **Display**: theme (Green terminal, Light, or System to follow the OS),
-  font size (87.5% to 125%) and padding (75% to 125%).
+- **Display**: theme (Green terminal, Light, or System to follow OS), font
+  size (87.5% to 125%) and padding (75% to 125%).
 - **Network**: CORS proxy, request timeout and parallel fetches per table.
-  A proxy containing `{url}` gets the encoded target URL there; otherwise
-  the target URL is appended. Changing the proxy refetches the tables.
-- **GitHub token**: paste a personal access token to raise the GitHub API
-  rate limit from 60 to 5000 requests per hour. Save stores it encrypted
-  (AES-GCM, with a non-extractable key in IndexedDB) and refetches the
-  tables. A failed save removes any stored token. Verify shows the
-  remaining quota, or says GitHub rejected the token. Purge deletes it
-  and clears cached and stored lookups.
-  The token is sent only to `api.github.com`, never through the proxy.
-  Encryption protects it on disk, not from scripts on the page, so use a
-  fine-grained token with no permissions.
+  Proxy containing `{url}` gets encoded target URL there; else target URL is
+  appended. Proxy change refetches tables.
+- **GitHub token**: paste personal access token to raise GitHub API rate
+  limit 60 -> 5000 requests per hour. Save stores token encrypted (AES-GCM,
+  non-extractable key in IndexedDB) and refetches tables. Failed save
+  removes any stored token. Verify shows remaining quota, or says GitHub
+  rejected token. Purge deletes token, clears cached and stored lookups.
+  Token goes only to `api.github.com`, never through proxy. Encryption
+  protects token on disk, not from scripts on page. Use fine-grained token
+  with no permissions.
 
 ## Network logs
 
-**View network logs** at the end of the settings Network section opens a
-modal listing every request the app sent this page load, newest first:
+**View network logs** at end of settings Network section opens modal. Modal
+lists every request app sent this page load, newest first:
 
 - **State**: green check for success, red cross for failure, yellow
-  question mark while pending. Any non-2xx answer, 404 included, counts
-  as failure, as does a body that breaks off mid-download (timeout,
-  dropped connection).
-- **Time** the request started, **method** badge and target **URL** (never
-  the proxied one).
-- **Package**: name of the loaded package.json whose dependencies the
-  request was sent for, `-` outside the tables.
-- **Dependencies** and **columns** the request fetched data for. A request
-  shared by several dependencies lists them all.
-- Long text clips with an ellipsis: method and URL after 80 characters,
-  package, dependency and column text at the table's default width.
-  Hover shows a zoom-in cursor; click expands it, click again collapses it.
-- **Status** badge, or `-` without a response; hover shows the network
-  or body error. **Size** of the decoded body, `-` until the app reads all of
-  it; bodies the app never reads, such as most 404 answers, stay `-`.
+  question mark while pending. Any non-2xx answer, 404 included, counts as
+  failure. Body that breaks off mid-download (timeout, dropped connection)
+  also counts as failure.
+- **Time** request started, **method** badge and target **URL** (never
+  proxied one).
+- **Package**: name of loaded package.json whose dependencies request
+  served. `-` outside tables.
+- **Dependencies** and **columns** request fetched data for. Request shared
+  by several dependencies lists them all.
+- Long text clips with ellipsis: method and URL after 80 characters,
+  package, dependency and column text at table's default width. Hover shows
+  zoom-in cursor. Click expands text, second click collapses it.
+- **Status** badge, or `-` without response; hover shows network or body
+  error. **Size** of decoded body, `-` until app reads all of it. Bodies app
+  never reads, such as most 404 answers, stay `-`.
 
-A summary line below the table counts total, failed, pending and
-successful requests. Failed rows get a **retry** button: when a table row
-of the request's dependencies failed, is stale or has a failed lookup, those
-rows refetch as with Retry failed fetches; otherwise the request is sent
-again and its outcome shows up as a new entry.
+Summary line below table counts total, failed, pending and successful
+requests. Failed rows get **retry** button. Table rows of request's
+dependencies that failed, are stale or have failed lookup refetch as with
+Retry failed fetches. Without such rows, request resends and outcome shows
+as new entry.
 
-The log lives in memory only and keeps the latest 1000 requests. A replay
-never stores the GitHub token: it adds the token current at retry time, so
-a purged token is not sent again.
+Log lives in memory only, keeps latest 1000 requests. Replay never stores
+GitHub token. Replay adds token current at retry time, so purged token is
+not sent again.

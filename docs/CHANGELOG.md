@@ -8,204 +8,201 @@ Condensed from git history. Newest month first.
 
 #### Network
 
-- **Network log**: **View network logs** in the settings menu opens a
-  modal listing every request newest first, with state icon, time,
-  method, URL, **package** (loaded package.json the request served),
-  **dependencies**, columns, status and size, plus a summary of
-  failed, pending and successful requests. A **retry** button on failed
-  rows refetches the matching failed table rows, or resends the request.
-  A body that breaks off mid-download marks its request failed.
-  The log stays in memory, capped at 1000 requests; replays never keep
-  the GitHub token. **Size** counts only body bytes the app reads, so
-  download size limits still stop the transfer. Long **URL** (after 80
-  characters), package, dependency and column text clips with an
-  ellipsis; click expands and collapses it, as in the dependency tables.
+- **Network log**: **View network logs** in settings menu opens modal
+  listing every request, newest first. Columns: state icon, time, method,
+  URL, **package** (loaded package.json request served),
+  **dependencies**, columns, status, size. Summary counts failed, pending
+  and successful requests. **Retry** button on failed row refetches
+  matching failed table rows, or resends request. Body breaking off
+  mid-download marks request failed. Log stays in memory, capped at 1000
+  requests. Replays never keep GitHub token. **Size** counts only body
+  bytes app reads, so download size limits still stop transfer. Long
+  **URL** (after 80 characters), package, dependency and column text clips
+  with ellipsis. Click expands and collapses it, as in dependency tables.
 
 #### Export
 
 - **Table export** as **CSV**, **XLSX**, **Markdown**, **HTML** and
-  **PDF**: an **Export** button opens an **export form** to pick tables,
-  columns and format. Every row of each picked table is exported; the
-  search filter does not apply. Picking a column the tables never loaded
-  fetches it with a spinner and holds Download until it arrives, without
-  touching the tables. XLSX uses `write-excel-file`, PDF uses `jspdf` with
-  `jspdf-autotable`. Untrusted cell text is escaped per format: CSV
-  formula prefix, Markdown backslash escapes, HTML entities plus a CSP
-  meta tag. Export stays disabled while a shown column loads, Download
-  while an export runs; the download URL lives 40 s.
+  **PDF**: **Export** button opens **export form** to pick tables, columns
+  and format. Export takes every row of each picked table; search filter
+  does not apply. Picking column tables never loaded fetches it with
+  spinner, holding Download until it arrives, without touching tables.
+  XLSX uses `write-excel-file`, PDF uses `jspdf` with `jspdf-autotable`.
+  Untrusted cell text escaped per format: CSV formula prefix, Markdown
+  backslash escapes, HTML entities plus CSP meta tag. Export disabled
+  while shown column loads, Download while export runs. Download URL
+  lives 40 s.
 
 #### Package data
 
-- **Failed lookups** show `?` with the error as tooltip; `-` now means
-  only "no data". A **Retry failed fetches** button below each table
-  refetches its rows that failed, are stale or have a failed lookup.
-- **Health score** column, 0 to 100 with a good, fair or poor band, from
+- **Failed lookups** show `?` with error as tooltip; `-` now means only
+  "no data". **Retry failed fetches** button below each table refetches
+  rows that failed, are stale or have failed lookup.
+- **Health score** column, 0 to 100 with good, fair or poor band. Inputs:
   release age, deprecation, outdated version, maintainer count, open issue
-  ratio and vulnerabilities. It uses only data the row already has; a
-  tooltip lists the signals used.
-- **Offline fallback**: when a live lookup fails, the row shows the last
-  value stored in IndexedDB, with a **stale badge** and its date. A stale
-  row refetches on history revisit.
+  ratio, vulnerabilities. Uses only data row already has; tooltip lists
+  signals used.
+- **Offline fallback**: failed live lookup -> row shows last value stored
+  in IndexedDB, with **stale badge** and its date. Stale row refetches on
+  history revisit.
 
 #### Drill-down and history
 
-- **Share links**: the address bar carries the loaded URL, drill-down and
-  workspace chain as `?step=` params, and the page replays them on open.
+- **Share links**: address bar carries loaded URL, drill-down and
+  workspace chain as `?step=` params. Page replays them on open.
 
 #### Input and loading
 
-- **GitHub `/blob/` and `/tree/` URLs** load the file or folder
-  `package.json` at that ref instead of the repo root.
-- **Responsive layout** down to 360 px: only the table scrolls sideways,
-  with a pinned first column; inputs, modals, source tree and settings
-  menu fit phone width.
-- **Monorepo workspaces** for GitHub repo URLs: a **Workspace select**
-  lists folders matched from `workspaces` or `pnpm-workspace.yaml`, and
-  loads the picked workspace's `package.json`. Matching work and list
-  length are capped, so a crafted repo cannot stall the tab.
+- **GitHub `/blob/` and `/tree/` URLs** load file or folder
+  `package.json` at that ref, not repo root.
+- **Responsive layout** down to 360 px: only table scrolls sideways, with
+  pinned first column. Inputs, modals, source tree and settings menu fit
+  phone width.
+- **Monorepo workspaces** for GitHub repo URLs: **Workspace select** lists
+  folders matched from `workspaces` or `pnpm-workspace.yaml`, loads picked
+  workspace's `package.json`. Matching work and list length capped, so
+  crafted repo cannot stall tab.
 
 #### Settings and token
 
 - **Themes** Green, Light and System, plus **font and padding scales** in
-  the settings menu.
-- **GitHub token** stored AES-GCM encrypted under a non-extractable
-  IndexedDB key, with a **rate limit check**. Build-time
-  `VITE_GITHUB_TOKEN` is gone, so the bundle never carries a token.
-- **Settings menu** behind a gear icon: GitHub token, fetch timeout,
-  concurrency and CORS proxy, kept in a persisted settings store.
+  settings menu.
+- **GitHub token** stored AES-GCM encrypted under non-extractable
+  IndexedDB key, with **rate limit check**. Build-time
+  `VITE_GITHUB_TOKEN` gone, so bundle never carries token.
+- **Settings menu** behind gear icon: GitHub token, fetch timeout,
+  concurrency, CORS proxy. Persisted settings store keeps them.
 
 ### Changes
 
 #### Modals
 
-- Every **modal** has a centered **title** on top, close button on the
-  right: package name for View, "Source of" a package for its tree, "Deps
-  of" or "Dev Deps of" the package for an expanded table, plus Export and
-  Network logs. Dialogs drop their own headings.
+- Every **modal** has centered **title** on top, close button on right.
+  Titles: package name for View, "Source of" package for its tree, "Deps
+  of" or "Dev Deps of" package for expanded table, plus Export and Network
+  logs. Dialogs drop own headings.
 
 #### Package data
 
 - **Actions column** after Name: View, Load and Reload buttons per row,
-  drawn as SVG icon components. Column drag handle is an SVG grip, centered
-  on the column name.
-  Clicking a row or its Name cell no longer opens or loads anything.
-- **Section headers** of Deps, Dev Deps and package.json get a border and
-  a soft green hover.
+  drawn as SVG icon components. Column drag handle is SVG grip, centered
+  on column name. Clicking row or Name cell no longer opens or loads
+  anything.
+- **Section headers** of Deps, Dev Deps and package.json get border and
+  soft green hover.
 - **Expand table** and **Retry failed fetches** buttons sit right-aligned
   below each table.
-- **Column toggles** keep the table on screen. Hiding a column fetches
-  nothing; a newly shown column shows a **loading icon** in its cells until
-  its data arrives. Hiding a column during a full table load, such as a
-  revisit retrying failed rows, no longer stops that load. Hiding a
-  column during **Retry failed fetches** no longer drops the retried rows.
+- **Column toggles** keep table on screen. Hiding column fetches nothing.
+  Newly shown column shows **loading icon** in its cells until data
+  arrives. Hiding column during full table load, e.g. revisit retrying
+  failed rows, no longer stops load. Hiding column during **Retry failed
+  fetches** no longer drops retried rows.
 
 #### Input and loading
 
-- **Page width** follows the screen with a 10% margin each side, full
-  width at 1024 px and below. The expanded table and source tree modals
-  grow with it.
+- **Page width** follows screen with 10% margin each side, full width at
+  1024 px and below. Expanded table and source tree modals grow with it.
 
 #### Source tree
 
-- **Source tree** lists at most 20,000 entries and the **file viewer**
-  shows files up to 2 MB. The truncated notice now covers npm tarballs too.
-- **Tarball download** streams into gunzip, so an oversized or endless body
+- **Source tree** lists max 20,000 entries; **file viewer** shows files up
+  to 2 MB. Truncated notice now covers npm tarballs too.
+- **Tarball download** streams into gunzip, so oversized or endless body
   cannot exhaust memory.
 
 #### Settings and token
 
-- **Settings menu** twice as wide, 720 px, capped at screen width.
-  Sections run Display, Network, GitHub token, with wider gaps between.
-- **Theme** resolves to `data-color-scheme` in `main.js`; `light-dark()` is
+- **Settings menu** width doubled -> 720 px, capped at screen width.
+  Section order: Display, Network, GitHub token, with wider gaps.
+- **Theme** resolves to `data-color-scheme` in `main.js`; `light-dark()`
   dropped so themes render on browsers without it.
-- **Settings dropdown** opens with Vue state and absolute CSS instead of the
-  Popover API, so older Safari and Firefox can close it.
-- App mounts after 2 s even when the IndexedDB **token load** hangs; a late
-  token applies through a refetch.
+- **Settings dropdown** opens with Vue state and absolute CSS, not Popover
+  API, so older Safari and Firefox can close it.
+- App mounts after 2 s even when IndexedDB **token load** hangs. Late
+  token applies through refetch.
 
 ### Fixes
 
 #### Package data
 
-- **Stored lookups** of the wrong shape or with a malformed save time are
-  ignored, so a corrupt record shows the live error, not odd cell text.
-- **npm registry documents** are validated with zod: a field of the wrong
-  type reads as missing instead of failing the whole row.
-- **OSV paging** is capped and stops on any repeated page token.
-- **Repo slug** is parsed from the URL path only, so query or hash cannot
-  swap the repo.
+- **Stored lookups** with wrong shape or malformed save time ignored, so
+  corrupt record shows live error, not odd cell text.
+- **npm registry documents** validated with zod: field of wrong type reads
+  as missing, not failing whole row.
+- **OSV paging** capped, stops on any repeated page token.
+- **Repo slug** parsed from URL path only, so query or hash cannot swap
+  repo.
 
 #### Source tree
 
-- **PAX global header** `g` is skipped and no longer drops a pending long
-  path; tar typeflag `X` is named Solaris extended header.
-- **Tarball response** without a body reports a corrupt tarball instead of
-  a raw `TypeError`.
-- **File tree paths** deeper than `MAX_FILE_TREE_DEPTH` get a translated
-  error, so a crafted tarball cannot overflow the call stack.
+- **PAX global header** `g` skipped, no longer drops pending long path.
+  Tar typeflag `X` named Solaris extended header.
+- **Tarball response** without body reports corrupt tarball, not raw
+  `TypeError`.
+- **File tree paths** deeper than `MAX_FILE_TREE_DEPTH` get translated
+  error, so crafted tarball cannot overflow call stack.
 
 #### Input and loading
 
-- **URL input sync** passes an absolute URL to `history.replaceState`, so
-  it works when the app is served under a path starting with `//`.
+- **URL input sync** passes absolute URL to `history.replaceState`, so it
+  works when app is served under path starting with `//`.
 
 #### Drill-down and history
 
-- Toggling **columns** back mid-fetch keeps the cached rows; the abandoned
-  fetch stops and no longer overwrites them.
-- **In-flight entry fetches** are discarded on token or proxy change, so
-  back navigation cannot restore stale rows.
-- A fetch start clears the **previous entry's rows**, so an empty list
-  does not show stale dependencies.
+- Toggling **columns** back mid-fetch keeps cached rows. Abandoned fetch
+  stops, no longer overwrites them.
+- **In-flight entry fetches** discarded on token or proxy change, so back
+  navigation cannot restore stale rows.
+- Fetch start clears **previous entry's rows**, so empty list does not
+  show stale dependencies.
 
 #### Settings and token
 
-- **Token** set while GitHub lookups run, e.g. loaded after the 2 s mount
-  timeout, now applies to them: the refetch no longer reuses the
-  anonymous, rate-limited requests.
-- **Token save** waits for the IndexedDB commit, and a failed save purges
-  the half-written key and ciphertext.
-- **Stored token** survives an IndexedDB failure on load; only corrupt data
-  or a lost key purges it.
-- **Verify result** is dropped when the token changed meanwhile, so a
-  purged token never shows a stale quota.
-- **Config integers** above 2^31-1 are rejected, so a huge timeout cannot
-  overflow the timer and abort every fetch.
+- **Token** set while GitHub lookups run, e.g. loaded after 2 s mount
+  timeout, now applies to them. Refetch no longer reuses anonymous,
+  rate-limited requests.
+- **Token save** waits for IndexedDB commit. Failed save purges
+  half-written key and ciphertext.
+- **Stored token** survives IndexedDB failure on load; only corrupt data
+  or lost key purges it.
+- **Verify result** dropped when token changed meanwhile, so purged token
+  never shows stale quota.
+- **Config integers** above 2^31-1 rejected, so huge timeout cannot
+  overflow timer and abort every fetch.
 
 ### Security
 
 #### Network
 
-- **`Authorization` requests** go only to `api.github.com`;
-  `fetchWithTimeout` refuses any other origin, so the GitHub token cannot
+- **`Authorization` requests** go only to `api.github.com`.
+  `fetchWithTimeout` refuses any other origin, so GitHub token cannot
   reach another host.
-- **CORS proxy URL** with `user:password` is rejected, so credentials are
-  never stored or echoed in fetch errors.
+- **CORS proxy URL** with `user:password` rejected, so credentials never
+  stored or echoed in fetch errors.
 
 #### Source tree
 
-- **PAX `=` search** is bound to its record and **tree paths** are
-  normalized by split, which stops quadratic parsing and a slash-run ReDoS.
+- **PAX `=` search** bound to its record; **tree paths** normalized by
+  split. Stops quadratic parsing and slash-run ReDoS.
 
 #### Package data
 
-- **Semver regex** is anchored at the digit-run start to stop a quadratic
-  scan.
+- **Semver regex** anchored at digit-run start to stop quadratic scan.
 
 #### Drill-down and history
 
-- **Share link replay** stops the **table fetch** of each entry it passes,
-  so a long link cannot multiply requests or burn the GitHub quota.
+- **Share link replay** stops **table fetch** of each entry it passes, so
+  long link cannot multiply requests or burn GitHub quota.
 
 #### Settings and token
 
 - **Token purge** also clears **cached and stored lookups**, so private
-  repo data does not outlive the token. The in-memory token goes first,
-  and a lookup still in flight at purge saves nothing.
+  repo data does not outlive token. In-memory token goes first. Lookup
+  still in flight at purge saves nothing.
 
 #### Tooling
 
-- **`.env` files** are ignored by git.
+- **`.env` files** ignored by git.
 
 ### Refactors
 
@@ -213,53 +210,51 @@ Condensed from git history. Newest month first.
 
 - **`TextWrapped`** component holds click-to-expand for long text:
   ellipsis, zoom-in cursor when clipped, zoom-out when expanded.
-  `maxLength` prop sets clip width in characters. Both the dependency
-  tables and the network log use it.
+  `maxLength` prop sets clip width in characters. Dependency tables and
+  network log both use it.
 - **Network log helpers** shared with existing code: `lookupKey` keys
-  request subjects and the offline store, `bearerAuthorization` and
-  `HTTP_HEADER_AUTHORIZATION` build GitHub headers and replays,
-  `formatKilobytes` formats bundle and log sizes, and
-  `--modal-content-padding` pads every modal. Network log tests share a
+  request subjects and offline store. `bearerAuthorization` and
+  `HTTP_HEADER_AUTHORIZATION` build GitHub headers and replays.
+  `formatKilobytes` formats bundle and log sizes.
+  `--modal-content-padding` pads every modal. Network log tests share
   `networkLogEntry` fixture.
-- **`memoizeLookup`** and its `Lookup` helpers moved to
-  `utils/memoizeLookup.ts`; each lookup passes its stored-value schema, so
-  the result needs no cast. `loadFromSource` takes an options object,
-  **`--warning`** color joins `style.css`, and share link and history
-  tests share helpers.
+- **`memoizeLookup`** and its `Lookup` helpers -> `utils/memoizeLookup.ts`.
+  Each lookup passes its stored-value schema, so result needs no cast.
+  `loadFromSource` takes options object, **`--warning`** color joins
+  `style.css`, share link and history tests share helpers.
 - **`var()` fallback colors** removed from component CSS; `style.css`
   defines every variable for both themes.
-- **Inline SVG icons** moved into `IconUpload.vue` and `IconGear.vue`.
-- **npm license schema** moved to `utils/license.ts`; `NpmLicenseField` is
-  inferred from it.
+- **Inline SVG icons** -> `IconUpload.vue` and `IconGear.vue`.
+- **npm license schema** -> `utils/license.ts`; `NpmLicenseField` inferred
+  from it.
 - **Named constants** replace literals: Playwright dev server settings,
-  `GITHUB_HOST` in the `github:` shorthand URL, OSV page cap, config
-  integer limit, shared-prefix names for storage keys and tar bytes.
+  `GITHUB_HOST` in `github:` shorthand URL, OSV page cap, config integer
+  limit, shared-prefix names for storage keys and tar bytes.
 - **Shared helpers**: `settle` for package fetches, IndexedDB promisify
   helpers, percent formatter, `isConfigInt`, `isRepoHostUrl` in repo URL
   utils.
-- **`SourceTreeRef`** and **`DependencyRow`** moved to `types.ts`, so
-  domain types do not import from the api layer.
-- **`main.js` startup steps** are named functions; modal content has a
+- **`SourceTreeRef`** and **`DependencyRow`** -> `types.ts`, so domain
+  types do not import from api layer.
+- **`main.js` startup steps** are named functions; modal content has
   `ModalContent` type.
 
 ### Tests
 
 #### Coverage
 
-- Tests added for **network log subjects**: each lookup kind tags its
-  requests with row name and columns, as do the source tree download and
-  its lazy file fetch; `clearPackageInfoCache` starts fresh subjects. A
-  failed replay logs a new failure entry. The open **network log modal**
-  shows its headers and adds packages joining a shared lookup. Its
-  **retry button** on a real failed request refetches the table row, in
-  App and in e2e.
-- Tests added for the **offline store**: stored issue counts and release
-  tag, a hanging IndexedDB on read and save, and an e2e reload during a
-  registry outage that shows the **stale badge** and health score. Saved
-  column preferences keep the **health column** hidden and last.
-- Tests added for **tar edge cases**, the **source tree viewer**, URL sync
-  under a `//` path, tooltip, file tree item and truncated table cells.
-  Tests that only restated a constant are gone.
+- Tests for **network log subjects**: each lookup kind tags its requests
+  with row name and columns. Source tree download and its lazy file fetch
+  do too. `clearPackageInfoCache` starts fresh subjects. Failed replay
+  logs new failure entry. Open **network log modal** shows its headers and
+  adds packages joining shared lookup. Its **retry button** on real failed
+  request refetches table row, in App and in e2e.
+- Tests for **offline store**: stored issue counts and release tag,
+  hanging IndexedDB on read and save. E2e reload during registry outage
+  shows **stale badge** and health score. Saved column preferences keep
+  **health column** hidden and last.
+- Tests for **tar edge cases**, **source tree viewer**, URL sync under
+  `//` path, tooltip, file tree item, truncated table cells. Tests only
+  restating constant removed.
 - **History tests** stop their watchers after each test.
 
 #### Tooling
@@ -267,27 +262,29 @@ Condensed from git history. Newest month first.
 - **Shared test helpers**: IndexedDB stub, settings reset, token and rate
   limit fixtures, `stubFetchByUrl`, `fetchCallsTo`, minimal registry
   document.
-- **Vitest config** restores spies and stubbed globals; e2e mock routes are
+- **Vitest config** restores spies and stubbed globals; e2e mock routes
   built from API constants.
 
 ### Build and tooling
 
 #### Tooling
 
+- **Commit bodies** dropped from `main` history with `git filter-repo`.
+  Each commit keeps only subject, so this changelog holds detail.
 - **`npm run typecheck`** runs vue-tsc in strict mode over sources, tests
-  and config files, with a new `tsconfig.json`.
-- `en.json` is imported with a type attribute so Playwright can load specs
-  that pull in i18n.
+  and config files, with new `tsconfig.json`.
+- `en.json` imported with type attribute so Playwright can load specs
+  pulling in i18n.
 
 ### Docs and licensing
 
 #### Docs
 
-- Docs follow the standard layout: **`KNOWN_ISSUES.md`** split from
+- Docs follow standard layout: **`KNOWN_ISSUES.md`** split from
   `NOTES.md`, changelog grouped by month, scope and area.
-- Planned work moved out of `FEATURES.md` into **`ROADMAP.md`** and
-  **`IDEA.md`**; open audit gaps recorded in `NOTES.md`.
-- `DEVELOPMENT.md` documents test helper layout, shared types and the docs
+- Planned work moved out of `FEATURES.md` -> **`ROADMAP.md`** and
+  **`IDEA.md`**. Open audit gaps recorded in `NOTES.md`.
+- `DEVELOPMENT.md` documents test helper layout, shared types and docs
   folder.
 
 ## 2026-10
@@ -296,35 +293,34 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
-- **OSV result pages** are followed for the full vulnerability count.
-- **npm alias specs** resolve to the real registry package.
+- **OSV result pages** followed for full vulnerability count.
+- **npm alias specs** resolve to real registry package.
 
 #### Source tree
 
-- **GNU long-name tar entries** are read for paths over 100 characters.
-- A **notice** shows when GitHub lists the source tree only in part.
+- **GNU long-name tar entries** read for paths over 100 characters.
+- **Notice** shows when GitHub lists source tree only in part.
 
 #### Network
 
-- **Network requests** abort after a configurable timeout; numeric env
-  settings are validated at startup.
+- **Network requests** abort after configurable timeout. Numeric env
+  settings validated at startup.
 
 ### Changes
 
 #### Package data
 
-- **Version data and date** resolve from the leading semver of a range.
-- **GitHub release tag** lookup uses the pinned version and an exact ref,
-  not the raw range or a prefix match.
-- An optional lookup that fails falls back **per field**; rate limits and
-  outages are no longer cached as missing data.
+- **Version data and date** resolve from leading semver of range.
+- **GitHub release tag** lookup uses pinned version and exact ref, not
+  raw range or prefix match.
+- Failed optional lookup falls back **per field**. Rate limits and
+  outages no longer cached as missing data.
 
 #### Input and loading
 
-- **Repo URLs** accept a `.git` suffix, a query and any host case.
-- **URL input** rejects a value without an http(s) scheme, and a blank
-  value.
-- **Address bar sync** of the URL input is debounced.
+- **Repo URLs** accept `.git` suffix, query and any host case.
+- **URL input** rejects blank value and value without http(s) scheme.
+- **Address bar sync** of URL input debounced.
 
 #### UI and theme
 
@@ -334,37 +330,37 @@ Condensed from git history. Newest month first.
 
 #### Package data
 
-- **Failed package rows** show their error and are refetched.
+- **Failed package rows** show their error and get refetched.
 - **Async memo cache** evicts only its own failed request.
 
 #### Source tree
 
-- A truncated or corrupt **tarball** fails instead of showing a partial
-  tree; an undecodable one reports as corrupt instead of a blank error.
-- **PAX tar records** are parsed as bytes, so non-ASCII paths work.
-- **Submodule entries** are left out of the GitHub source tree.
-- **Stale results** are ignored in the source tree browser; the same file
-  can be selected again.
-- **Duplicate tree nodes** and invalid dates are fixed.
+- Truncated or corrupt **tarball** fails instead of showing partial tree.
+  Undecodable one reports as corrupt, not blank error.
+- **PAX tar records** parsed as bytes, so non-ASCII paths work.
+- **Submodule entries** left out of GitHub source tree.
+- **Stale results** ignored in source tree browser; same file selectable
+  again.
+- **Duplicate tree nodes** and invalid dates fixed.
 
 #### Drill-down and history
 
-- Only the most recent **`package.json` load** applies, and a dependency
-  fetch applies only to the entry that started it.
-- **Stale error banner** is cleared.
+- Only latest **`package.json` load** applies. Dependency fetch applies
+  only to entry that started it.
+- **Stale error banner** cleared.
 
 ### Security
 
 #### Source tree
 
-- **Unpacked tarball size** is capped to stop gzip bombs.
-- **npm tarball** is fetched only from http(s) URLs.
+- **Unpacked tarball size** capped to stop gzip bombs.
+- **npm tarball** fetched only from http(s) URLs.
 
 #### Package data
 
-- **Repo host** matches only as a whole hostname; owner and repo are
-  limited to host name characters.
-- **Source links** from npm data are shown only for http(s) URLs.
+- **Repo host** matches only as whole hostname. Owner and repo limited to
+  host name characters.
+- **Source links** from npm data shown only for http(s) URLs.
 
 #### Tooling
 
@@ -374,21 +370,21 @@ Condensed from git history. Newest month first.
 
 #### Code structure
 
-- **Network code** split into an api layer; components and tests
+- **Network code** split into api layer; components and tests
   deduplicated.
-- **Loaded `package.json`** is validated with a zod schema, and its types
-  derive from that schema.
+- **Loaded `package.json`** validated with zod schema; its types derive
+  from that schema.
 - **Shared helpers**: `settle` for load-then-check-staleness flows,
-  first-found URL probing, `parseRepoSlug` for repo URL input, byte concat,
-  `pinnedVersionOf` in semver utils.
+  first-found URL probing, `parseRepoSlug` for repo URL input, byte
+  concat, `pinnedVersionOf` in semver utils.
 - **Code style pass** over `src` and tests: braces on all conditionals,
-  early returns, named checks in place of comments, sorted CSS properties.
+  early returns, named checks replacing comments, sorted CSS properties.
 - **History entry rows** typed as `PackageInfo` or `PackageError`;
   composable parameters typed.
 
 #### i18n
 
-- **User-facing text** moved into an i18n message catalog.
+- **User-facing text** moved into i18n message catalog.
 
 ### Tests
 
@@ -401,8 +397,8 @@ Condensed from git history. Newest month first.
 
 #### Docs
 
-- **`INTENT.md`** added: purpose, principles and non-goals.
-- Docs reworded; non-ASCII dashes in README replaced with hyphens.
+- **`INTENT.md`** added: purpose, principles, non-goals.
+- Docs reworded; non-ASCII dashes in README -> hyphens.
 
 ## 2026-09
 
@@ -410,27 +406,25 @@ Condensed from git history. Newest month first.
 
 #### Dependencies table
 
-- **Package summary card** opens in the modal when a row is clicked.
-- **Clickable Name cell** replaces the Actions column.
-- **Long text cells** truncate with click to expand; version columns are
-  excluded.
-- **Fullscreen expand modal** for the dependencies table.
+- **Package summary card** opens in modal on row click.
+- **Clickable Name cell** replaces Actions column.
+- **Long text cells** truncate, click expands; version columns excluded.
+- **Fullscreen expand modal** for dependencies table.
 - **Drag to reorder** table columns.
 - **Shrink columns** preference abbreviates column labels.
 - **Column visibility** persists in `localStorage`.
-- One shared **search box** replaces the search box of each table.
-- **Loading row** shows while a `package.json` swap is in flight.
+- One shared **search box** replaces per-table search boxes.
+- **Loading row** shows while `package.json` swap is in flight.
 
 #### Source tree
 
-- **Source Code Tree column** opens a browsable source tree.
+- **Source Code Tree column** opens browsable source tree.
 
 #### Input and loading
 
-- **URL input** syncs with the `?inputUrl=` query parameter.
-- **`package.json` viewer** uses vue-json-pretty instead of raw `<pre>`
-  text.
-- Current **package name** shows above the tables.
+- **URL input** syncs with `?inputUrl=` query parameter.
+- **`package.json` viewer**: raw `<pre>` text -> vue-json-pretty.
+- Current **package name** shows above tables.
 
 #### UI and theme
 
@@ -442,38 +436,36 @@ Condensed from git history. Newest month first.
 
 #### Dependencies table
 
-- **Numeric columns** use comma-separated thousands; dates drop the
-  weekday.
-- **Table layout**: every column but Name is centered, a green grid, a
-  status row inside the table, centered loading and empty messages.
-- **Table headers** do not wrap; the sort trigger is plain text with its
-  icon on the right.
-- **Columns panel** uses a responsive grid.
+- **Numeric columns** use comma-separated thousands; dates drop weekday.
+- **Table layout**: every column but Name centered, green grid, status
+  row inside table, centered loading and empty messages.
+- **Table headers** do not wrap. Sort trigger is plain text, icon on
+  right.
+- **Columns panel** uses responsive grid.
 
 #### UI and theme
 
-- **Accordions** for Deps, Dev Deps and `package.json` are open by default.
-- **Toolbar rows** use flex layouts; the search row sits below the package
-  name and the search input is wider.
-- The expanded table is bound to the screen size; the source tree modal
-  has a green border.
+- **Accordions** for Deps, Dev Deps and `package.json` open by default.
+- **Toolbar rows** use flex layouts. Search row sits below package name;
+  search input wider.
+- Expanded table bound to screen size; source tree modal has green
+  border.
 
 ### Fixes
 
 #### Dependencies table
 
-- Comma-formatted numbers and weekday-free dates, lost in a merge, are
-  restored.
+- Comma-formatted numbers and weekday-free dates, lost in merge, restored.
 
 ### Refactors
 
 #### Code structure
 
 - **Vue components** split into separate `.vue`, `.ts` and `.css` files.
-- **Composables** and pure row logic extracted from the app component.
-- **Modal component** is reusable and owned by `App`; `DependenciesTable`
-  owns its column knowledge.
-- `hiddenColumns` replaced with `visibleColumns`.
+- **Composables** and pure row logic extracted from app component.
+- **Modal component** reusable, owned by `App`. `DependenciesTable` owns
+  its column knowledge.
+- `hiddenColumns` -> `visibleColumns`.
 
 ### Build and tooling
 
@@ -493,30 +485,30 @@ Condensed from git history. Newest month first.
 
 #### Dependencies table
 
-- **Search box** filters the table by package name.
-- **Column visibility panel** with a floor of two columns; hidden columns
+- **Search box** filters table by package name.
+- **Column visibility panel** with floor of two columns. Hidden columns
   make no network requests.
 - **Click to sort** on numeric and date columns.
 - **Accordions** for Columns, Deps and Dev Deps.
 
 #### Package data
 
-- **Enrichment columns**: closed PR and issue counts, dependency list and
-  the other nice-to-have data.
+- **Enrichment columns**: closed PR and issue counts, dependency list,
+  other nice-to-have data.
 - **Star counts** from GitLab and Codeberg next to GitHub.
 - **In-memory cache** for package metadata lookups.
 
 #### Drill-down and history
 
-- **Load column** drills into a row's own `package.json`.
-- **History navigation** with back and forward buttons, shown once there
-  is more than one entry.
+- **Load column** drills into row's own `package.json`.
+- **History navigation** with back and forward buttons, shown once more
+  than one entry exists.
 
 ### Changes
 
 #### Dependencies table
 
-- Columns backed by third-party services are hidden by default.
+- Columns backed by third-party services hidden by default.
 
 ### Fixes
 
@@ -534,14 +526,14 @@ Condensed from git history. Newest month first.
 
 #### Coverage
 
-- **Unit tests** for the npm and GitHub metadata fetcher and for parsing
-  and caching helpers; **component tests** for `DependenciesTable`.
+- **Unit tests** for npm and GitHub metadata fetcher, parsing and caching
+  helpers. **Component tests** for `DependenciesTable`.
 - **Playwright e2e tests**, including horizontal table scrolling.
 
 #### Tooling
 
-- Tests live in one `tests/` tree; a **screenshot script** captures the UI
-  for visual review.
+- Tests live in one `tests/` tree. **Screenshot script** captures UI for
+  visual review.
 
 ### Build and tooling
 
