@@ -422,6 +422,9 @@ Condensed from git history. Newest month first.
 
 #### Coverage
 
+- Tests for **CLI export file name**: dangling symlink and pdf report
+  symlink refused, hostile package name stays in working dir, unnamed
+  package default name, `--no-dev` in export file.
 - Tests for **network log subjects**: each lookup kind tags its requests
   with row name and columns. Source tree download and its lazy file fetch
   do too. `clearPackageInfoCache` starts fresh subjects. Failed replay
