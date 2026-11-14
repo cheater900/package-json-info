@@ -1,4 +1,4 @@
-import { readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { readFile, readdir, stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EXIT_BAD_ARGUMENTS, EXIT_LOAD_FAILURE, EXIT_OK } from "../../../src/cli/run";
@@ -42,6 +42,38 @@ describe("--format", () => {
         expect(result.code).toBe(EXIT_OK);
         expect(result.stderr).toBe("app-dependencies.csv\n");
         expect(await readdir(tempDir)).toContain("app-dependencies.csv");
+    });
+
+    it("refuses symlink at default file name", async () => {
+        const victim = join(tempDir, "victim.txt");
+        await writeFile(victim, "keep");
+        await symlink(victim, join(tempDir, "app-dependencies.csv"));
+
+        const result = await runCli([sourcePath, "--format", "csv"]);
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(await readFile(victim, "utf8")).toBe("keep");
+    });
+
+    it("overwrites existing default file", async () => {
+        await writeFile(join(tempDir, "app-dependencies.csv"), "old");
+
+        const result = await runCli([sourcePath, "--format", "csv"]);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(await readFile(join(tempDir, "app-dependencies.csv"), "utf8")).toContain("left-pad");
+    });
+
+    it("follows symlink given as --output", async () => {
+        const target = join(tempDir, "target.csv");
+        const link = join(tempDir, "link.csv");
+        await writeFile(target, "");
+        await symlink(target, link);
+
+        const result = await runCli([sourcePath, "--format", "csv", "--output", link]);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(await readFile(target, "utf8")).toContain("left-pad");
     });
 
     it("exits 2 for unknown format listing valid ids", async () => {

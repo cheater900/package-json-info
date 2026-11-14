@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { statSync } from "node:fs";
+import { constants, statSync } from "node:fs";
 import { join } from "node:path";
 import { bindCore } from "./coreBinding";
 import { USAGE, parseOptions } from "./options";
@@ -108,11 +108,27 @@ async function fetchTables(
     return tables;
 }
 
-/** Writes `blob` to `output`, or to `defaultName` in the working directory; returns the path. */
+/**
+ * "w" that refuses a symlink as last path part. The default name derives from
+ * the untrusted package name, so a hostile repo can plant a symlink under it
+ * in the working directory (`app-dependencies.csv -> ~/.ssh/authorized_keys`).
+ * Windows lacks O_NOFOLLOW; there 0 keeps plain "w".
+ */
+const WRITE_NO_FOLLOW_FLAGS =
+    constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | (constants.O_NOFOLLOW ?? 0);
+
+/**
+ * Writes `blob` to `output`, or to `defaultName` in the working directory;
+ * returns the path. Only `output`, chosen by the user, may be a symlink.
+ */
 async function writeOutput(blob: Blob, output: string | undefined, defaultName: string) {
-    const path = output ?? defaultName;
-    await writeFile(path, Buffer.from(await blob.arrayBuffer()));
-    return path;
+    const data = Buffer.from(await blob.arrayBuffer());
+    if (output !== undefined) {
+        await writeFile(output, data);
+        return output;
+    }
+    await writeFile(defaultName, data, { flag: WRITE_NO_FOLLOW_FLAGS });
+    return defaultName;
 }
 
 /** Performs the requested action; resolves to what to print on stdout and stderr. */
