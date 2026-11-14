@@ -12,8 +12,11 @@ import {
 
 // Wall-clock bounds are loose: the suite runs in parallel workers. Unbudgeted
 // matching of these inputs takes minutes, so the bounds still catch it.
-const BUDGET_STOP_MAX_MS = 10_000;
-const BUDGET_STOP_TEST_TIMEOUT_MS = 15_000;
+// TEST_TIME_SCALE stretches them for instrumented runs (npm run test:coverage).
+const TIME_SCALE = Number(process.env.TEST_TIME_SCALE ?? 1);
+const BUDGET_STOP_MAX_MS = 10_000 * TIME_SCALE;
+const BUDGET_STOP_TEST_TIMEOUT_MS = 15_000 * TIME_SCALE;
+const STAR_PATTERN_MAX_MS = 1000 * TIME_SCALE;
 
 function matchDirs(patterns: string[], filePaths: string[]) {
     return matchWorkspaceDirs(patterns, filePaths).dirs;
@@ -176,7 +179,7 @@ describe("matchWorkspaceDirs", () => {
         const dir = "a".repeat(5000);
         const start = performance.now();
         expect(matchDirs([pattern], packageJsonPaths([dir]))).toEqual([]);
-        expect(performance.now() - start).toBeLessThan(1000);
+        expect(performance.now() - start).toBeLessThan(STAR_PATTERN_MAX_MS);
     });
 
     it(

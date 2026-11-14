@@ -460,6 +460,9 @@ Condensed from git history. Newest month first.
 
 #### Tooling
 
+- **`npm run test:coverage`** reports coverage with `@vitest/coverage-v8`
+  into `tests/coverage/`. `TEST_TIME_SCALE` env stretches timing-test
+  bounds under instrumentation.
 - **Commit bodies** dropped from `main` history with `git filter-repo`.
   Each commit keeps only subject, so this changelog holds detail.
 - **`npm run typecheck`** runs vue-tsc in strict mode over sources, tests

@@ -16,6 +16,7 @@
         "preview": "vite preview",
         "screenshots": "playwright test --project=screenshots",
         "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run",
+        "test:coverage": "NODE_OPTIONS=--no-experimental-webstorage TEST_TIME_SCALE=10 vitest run --coverage",
         "test:e2e": "playwright test --project=chromium",
         "test:watch": "NODE_OPTIONS=--no-experimental-webstorage vitest",
         "typecheck": "vue-tsc --noEmit && tsc --noEmit -p src/core && tsc --noEmit -p src/cli"
@@ -33,6 +34,7 @@
         "@playwright/test": "^1.62.1",
         "@types/node": "^26.6.6",
         "@vitejs/plugin-vue": "^6.0.6",
+        "@vitest/coverage-v8": "^4.1.12",
         "@vue/test-utils": "^2.5.0",
         "fake-indexeddb": "^6.2.7",
         "jsdom": "^30.0.1",

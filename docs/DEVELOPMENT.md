@@ -78,6 +78,8 @@ clean:
 - Vitest in three projects: `core` and `cli` in Node, `app` with jsdom for
   unit and component tests; fake-indexeddb stands in for IndexedDB, which
   none has
+- `@vitest/coverage-v8` for coverage of `src/`, HTML report in
+  `tests/coverage/`
 - Playwright for end-to-end tests
 - TypeScript, checked by vue-tsc (strict mode), `tsc -p src/core` and
   `tsc -p src/cli`; Vite only strips types
@@ -222,6 +224,20 @@ Run unit and component tests in watch mode:
 ```sh
 npm run test:watch
 ```
+
+### Coverage
+
+Report covers `src/` and goes to `tests/coverage/` (open `index.html`).
+Instrumentation slows timing tests, so script sets `TEST_TIME_SCALE=10` to
+stretch their wall-clock bounds.
+
+Run unit and component tests with coverage:
+
+```sh
+npm run test:coverage
+```
+
+### End-to-end
 
 Run end-to-end tests (needs `npx playwright install chromium` once):
 

@@ -25,6 +25,11 @@ export default defineConfig({
     test: {
         restoreMocks: true,
         unstubGlobals: true,
+        coverage: {
+            provider: "v8",
+            include: ["src/**"],
+            reportsDirectory: "tests/coverage",
+        },
         projects: [
             {
                 // Node, not jsdom: proves core runs outside the browser.

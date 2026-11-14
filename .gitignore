@@ -17,6 +17,9 @@ dist-cli
 .env.*
 !.env.example
 
+# Vitest coverage report (npm run test:coverage)
+/tests/coverage/
+
 # Playwright
 /test-results/
 /playwright-report/
