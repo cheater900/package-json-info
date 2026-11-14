@@ -37,7 +37,10 @@
                             </text-wrapped>
                         </td>
                         <td>
-                            <text-wrapped>{{ formatPackages(entry) }}</text-wrapped>
+                            <text-wrapped>{{ entry.package ?? MISSING_VALUE }}</text-wrapped>
+                        </td>
+                        <td>
+                            <text-wrapped>{{ formatDependencies(entry) }}</text-wrapped>
                         </td>
                         <td>
                             <text-wrapped>{{ formatColumns(entry) }}</text-wrapped>

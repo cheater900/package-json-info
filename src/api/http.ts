@@ -17,10 +17,12 @@ export type FoundCandidate<T> = {
 
 /**
  * What a request fetches data for. One subject is shared by every caller
- * of the same lookup, so packages and columns added later show up too.
+ * of the same lookup, so dependencies and columns added later show up too.
  */
 export type RequestSubject = {
-    packages: Set<string>;
+    /** Name of the package.json whose dependencies the latest caller fetched; null outside the tables. */
+    package: string | null;
+    dependencies: Set<string>;
     columns: Set<string>;
 };
 

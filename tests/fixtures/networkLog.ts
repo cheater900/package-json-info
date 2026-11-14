@@ -15,7 +15,8 @@ export function networkLogEntry(overrides: Partial<NetworkLogEntry> = {}): Netwo
         status: 200,
         sizeBytes: 1536,
         error: null,
-        subject: subjectOf(["zod"], ["latestVersion", "license"]),
+        package: "demo-app",
+        subject: subjectOf(["zod"], ["latestVersion", "license"], "demo-app"),
         replay: async () => new Response(),
         ...overrides,
     };

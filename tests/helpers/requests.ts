@@ -19,7 +19,11 @@ export function subjectsOf(
     return requests.filter((request) => request.url.includes(pattern)).map((r) => r.subject);
 }
 
-/** Subject listing `packages` and `columns`, for `toEqual` checks. */
-export function subjectOf(packages: string[], columns: string[]): RequestSubject {
-    return { packages: new Set(packages), columns: new Set(columns) };
+/** Subject listing `dependencies` and `columns` under `rootPackage`, for `toEqual` checks. */
+export function subjectOf(
+    dependencies: string[],
+    columns: string[],
+    rootPackage: string | null = null,
+): RequestSubject {
+    return { package: rootPackage, dependencies: new Set(dependencies), columns: new Set(columns) };
 }

@@ -188,7 +188,7 @@ export default defineComponent({
         /** Retries the table rows a failed request fed; without such rows, resends the request. */
         function retryNetworkRequest(entry: NetworkLogEntry) {
             const rows = [...deps.value, ...devDeps.value].filter(
-                (row) => entry.subject?.packages.has(row.name) && isRowRetryable(row),
+                (row) => entry.subject?.dependencies.has(row.name) && isRowRetryable(row),
             );
             if (rows.length === 0) {
                 replayRequest(entry);

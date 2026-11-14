@@ -53,7 +53,8 @@ export default defineComponent({
                 }
                 loading.value = true;
                 const subject = {
-                    packages: new Set(props.dependencyName ? [props.dependencyName] : []),
+                    package: null,
+                    dependencies: new Set(props.dependencyName ? [props.dependencyName] : []),
                     columns: new Set(["sourceCodeTree"]),
                 };
                 const result = await settle(() => fetchSourceTree(sourceTreeRef, subject));

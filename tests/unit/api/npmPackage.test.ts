@@ -794,6 +794,21 @@ describe("fetchPackageInfo request subjects", () => {
         ]);
     });
 
+    it("sets package to root package of latest caller", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org": registryDocWith({ repository: SHARED_REPO_URL }),
+            "api.github.com/repos/shared-org/shared-repo": { stargazers_count: 777 },
+        });
+        const visibleColumns = new Set(["gitStars"]);
+
+        await fetchPackageInfo("pkg-a", "1.0.0", { visibleColumns, rootPackage: "app-a" });
+        const [subject] = subjectsOf(recorder.requests, "api.github.com/repos");
+        expect(subject?.package).toBe("app-a");
+        await fetchPackageInfo("pkg-b", "1.0.0", { visibleColumns, rootPackage: "app-b" });
+
+        expect(subject?.package).toBe("app-b");
+    });
+
     it.each([
         ["GitLab", "git+https://gitlab.com/o/r.git", "gitlab.com/api/v4/projects"],
         ["Codeberg", "https://codeberg.org/o/r", "codeberg.org/api/v1/repos"],

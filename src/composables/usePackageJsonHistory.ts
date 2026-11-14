@@ -202,7 +202,11 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
             isLoadingDevDeps.value = rawDevDeps.length > 0;
             pendingColumns.value = new Set();
         }
-        const fetchOptions = { visibleColumns: visibleColumnsAtFetchTime, isCancelled };
+        const fetchOptions = {
+            visibleColumns: visibleColumnsAtFetchTime,
+            rootPackage: entry.pkg.name ?? null,
+            isCancelled,
+        };
         const [depsResult, devDepsResult] = await Promise.all([
             fetchPackagesInfo(rawDeps, fetchOptions),
             fetchPackagesInfo(rawDevDeps, fetchOptions),
@@ -245,6 +249,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         // The entry's snapshot may hold hidden columns too; retried rows must keep them.
         const retried = await fetchPackagesInfo(inputs, {
             visibleColumns: new Set(entry.visibleColumnsSnapshot ?? visibleColumns.value),
+            rootPackage: entry.pkg.name ?? null,
         });
         isRetrying.value = false;
         const isStillWanted =
@@ -279,6 +284,7 @@ export function usePackageJsonHistory(visibleColumns: Ref<ReadonlySet<string>>) 
         const dependencies = list === "deps" ? entry.pkg.dependencies : entry.pkg.devDependencies;
         const rows = await fetchPackagesInfo(toPackageInputs(dependencies), {
             visibleColumns: new Set(columns),
+            rootPackage: entry.pkg.name ?? null,
             isCancelled: () => !isCurrentEntry(entry),
         });
         return isCurrentEntry(entry) ? rows : null;

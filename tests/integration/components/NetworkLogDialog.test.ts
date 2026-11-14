@@ -18,6 +18,7 @@ const failureEntry = networkLogEntry({
     status: null,
     sizeBytes: null,
     error: "Failed to fetch",
+    package: null,
     subject: null,
 });
 const pendingEntry = networkLogEntry({ id: 3, state: "pending", status: null, sizeBytes: null });
@@ -47,7 +48,8 @@ describe("NetworkLogDialog", () => {
             "State",
             "Time",
             "Request",
-            "Packages",
+            "Package",
+            "Dependencies",
             "Columns",
             "Status",
             "Size",
@@ -71,7 +73,7 @@ describe("NetworkLogDialog", () => {
         expect(classes[2]).toContain("network-log__state--success");
     });
 
-    it("shows time, method badge, URL, packages, column labels, status and size", () => {
+    it("shows time, method badge, URL, package, dependencies, column labels, status and size", () => {
         const wrapper = mountDialog([successEntry]);
 
         const cells = rowCells(wrapper, 0);
@@ -80,29 +82,30 @@ describe("NetworkLogDialog", () => {
         );
         expect(cells[2].find(".network-log__badge").text()).toBe("GET");
         expect(cells[2].text()).toBe(`GET ${NPM_REGISTRY_URL}/zod`);
-        expect(cells.slice(3, 7).map((cell) => cell.text())).toEqual([
+        expect(cells.slice(3, 8).map((cell) => cell.text())).toEqual([
+            "demo-app",
             "zod",
             "Latest version, License",
             "200",
             "1.5 KB",
         ]);
-        expect(cells[5].find(".network-log__badge").exists()).toBe(true);
+        expect(cells[6].find(".network-log__badge").exists()).toBe(true);
     });
 
-    it("shows missing value for no subject, status or size, error as status title", () => {
+    it("shows missing value for no package, subject, status or size, error as status title", () => {
         const wrapper = mountDialog([failureEntry]);
 
         const cells = rowCells(wrapper, 0);
         expect(cells[2].find(".network-log__badge").text()).toBe("POST");
-        expect(cells.slice(3, 7).map((cell) => cell.text())).toEqual(["-", "-", "-", "-"]);
-        expect(cells[5].attributes("title")).toBe("Failed to fetch");
+        expect(cells.slice(3, 8).map((cell) => cell.text())).toEqual(["-", "-", "-", "-", "-"]);
+        expect(cells[6].attributes("title")).toBe("Failed to fetch");
     });
 
     it("shows 404 status badge on failed row", () => {
         const wrapper = mountDialog([notFoundEntry]);
 
         expect(rowCells(wrapper, 0)[0].find("[role=img]").attributes("aria-label")).toBe("Failed");
-        expect(rowCells(wrapper, 0)[5].text()).toBe("404");
+        expect(rowCells(wrapper, 0)[6].text()).toBe("404");
     });
 
     it("shows retry button on failed rows only", () => {
@@ -140,7 +143,7 @@ describe("NetworkLogDialog", () => {
         );
     });
 
-    it("adds package joining shared lookup while open", async () => {
+    it("adds dependency joining shared lookup while open, keeps package sent with", async () => {
         onTestFinished(startNetworkLog());
         stubFetchByUrl({
             "registry.npmjs.org": {
@@ -149,26 +152,27 @@ describe("NetworkLogDialog", () => {
             },
             "api.github.com/repos": { stargazers_count: 1 },
         });
-        const options = { visibleColumns: new Set(["gitStars"]) };
-        await fetchPackageInfo("pkg-a", "1.0.0", options);
+        const visibleColumns = new Set(["gitStars"]);
+        await fetchPackageInfo("pkg-a", "1.0.0", { visibleColumns, rootPackage: "app-a" });
         const wrapper = mount(NetworkLogDialog);
 
-        await fetchPackageInfo("pkg-b", "1.0.0", options);
+        await fetchPackageInfo("pkg-b", "1.0.0", { visibleColumns, rootPackage: "app-b" });
         await flushPromises();
 
         const starsRow = wrapper
             .findAll("tbody tr")
             .find((row) => row.text().includes("api.github.com/repos"));
-        expect(starsRow?.findAll("td")[3].text()).toBe("pkg-a, pkg-b");
+        const cells = starsRow?.findAll("td").map((cell) => cell.text());
+        expect(cells?.slice(3, 5)).toEqual(["app-a", "pkg-a, pkg-b"]);
     });
 });
 
 describe("NetworkLogDialog long text", () => {
-    it("wraps request, packages and columns in TextWrapped", () => {
+    it("wraps request, package, dependencies and columns in TextWrapped", () => {
         const wrapper = mountDialog([successEntry]);
 
         const cells = rowCells(wrapper, 0);
-        const wrapped = [2, 3, 4].map((i) => cells[i].find(".text-wrapped").exists());
-        expect(wrapped).toEqual([true, true, true]);
+        const wrapped = [2, 3, 4, 5].map((i) => cells[i].find(".text-wrapped").exists());
+        expect(wrapped).toEqual([true, true, true, true]);
     });
 });

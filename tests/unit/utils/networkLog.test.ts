@@ -73,6 +73,24 @@ describe("networkLog", () => {
         expect(networkLogEntries[0].sizeBytes).toBe(5);
     });
 
+    it("keeps root package subject had when sent", async () => {
+        stubFetchStatus(HTTP_STATUS.ok);
+        const subject = subjectOf(["left-pad"], ["gitStars"], "app-a");
+
+        await fetchWithTimeout("https://a.test/x", {}, subject);
+        subject.package = "app-b";
+
+        expect(networkLogEntries[0].package).toBe("app-a");
+    });
+
+    it("logs null package without subject", async () => {
+        stubFetchStatus(HTTP_STATUS.ok);
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(networkLogEntries[0].package).toBeNull();
+    });
+
     it("leaves size unknown when body stays unread", async () => {
         stubFetchStatus(HTTP_STATUS.serverError);
 

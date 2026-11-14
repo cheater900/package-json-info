@@ -10,7 +10,17 @@ import IconQuestion from "./IconQuestion.vue";
 import IconReload from "./IconReload.vue";
 import TextWrapped from "./TextWrapped.vue";
 
-const HEADERS = ["state", "time", "request", "packages", "columns", "status", "size", "actions"];
+const HEADERS = [
+    "state",
+    "time",
+    "request",
+    "package",
+    "dependencies",
+    "columns",
+    "status",
+    "size",
+    "actions",
+];
 
 const STATE_ICONS: Record<NetworkLogState, typeof IconCheck> = {
     pending: IconQuestion,
@@ -26,8 +36,8 @@ function formatList(items: readonly string[]): string {
     return items.length > 0 ? items.join(", ") : MISSING_VALUE;
 }
 
-function formatPackages(entry: NetworkLogEntry): string {
-    return formatList([...(entry.subject?.packages ?? [])]);
+function formatDependencies(entry: NetworkLogEntry): string {
+    return formatList([...(entry.subject?.dependencies ?? [])]);
 }
 
 function formatColumns(entry: NetworkLogEntry): string {
@@ -56,7 +66,7 @@ export default defineComponent({
             entries,
             summary,
             formatTime,
-            formatPackages,
+            formatDependencies,
             formatColumns,
             formatSize,
         };

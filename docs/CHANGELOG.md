@@ -10,15 +10,16 @@ Condensed from git history. Newest month first.
 
 - **Network log**: **View network logs** in the settings menu opens a
   modal listing every request newest first, with state icon, time,
-  method, URL, packages, columns, status and size, plus a summary of
+  method, URL, **package** (loaded package.json the request served),
+  **dependencies**, columns, status and size, plus a summary of
   failed, pending and successful requests. A **retry** button on failed
   rows refetches the matching failed table rows, or resends the request.
   A body that breaks off mid-download marks its request failed.
   The log stays in memory, capped at 1000 requests; replays never keep
   the GitHub token. **Size** counts only body bytes the app reads, so
-  download size limits still stop the transfer. Long **URL**, package and
-  column text clips with an ellipsis; click expands and collapses it, as
-  in the dependency tables.
+  download size limits still stop the transfer. Long **URL**, package,
+  dependency and column text clips with an ellipsis; click expands and
+  collapses it, as in the dependency tables.
 
 #### Export
 

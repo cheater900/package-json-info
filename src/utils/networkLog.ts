@@ -20,6 +20,8 @@ export type NetworkLogEntry = {
     sizeBytes: number | null;
     /** Network error or timeout message, also when the body breaks off; null otherwise. */
     error: string | null;
+    /** Subject's root package when sent: later callers of a shared lookup change the subject's. */
+    package: string | null;
     subject: RequestSubject | null;
     replay: () => Promise<Response>;
 };
@@ -55,6 +57,7 @@ function logRequest(request: ObservedRequest): RequestHandle {
         status: null,
         sizeBytes: null,
         error: null,
+        package: request.subject?.package ?? null,
         subject: request.subject,
         replay: request.replay,
     });

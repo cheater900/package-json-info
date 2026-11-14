@@ -17,6 +17,7 @@ import { GITHUB_API_URL, NPM_REGISTRY_URL } from "../../../src/constants";
 import type { PackageInfo } from "../../../src/types";
 import { minimalRegistryDoc } from "../../fixtures/dependencies";
 import { rootWorkspaceContext } from "../../fixtures/workspaces";
+import { recordRequests } from "../../helpers/requests";
 
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
  * for fetchPackageInfo to complete without needing per-package data. */
@@ -123,6 +124,22 @@ describe("loadPackageJsonText", () => {
         await vi.waitFor(() => expect(isLoadingDeps.value).toBe(false));
         expect(deps.value).toHaveLength(1);
         expect(deps.value[0].name).toBe("left-pad");
+    });
+});
+
+describe("request subjects", () => {
+    it("tags table requests with loaded package.json name", async () => {
+        stubFetchResolvesEmpty();
+        const recorder = recordRequests();
+        const { loadPackageJsonText } = useHistory(ref(new Set(["license"])));
+
+        loadPackageJsonText(validPackageJson);
+        await flushPromises();
+        recorder.stop();
+
+        const subjects = recorder.requests.map((request) => request.subject);
+        expect(subjects.length).toBeGreaterThan(0);
+        expect(subjects.every((subject) => subject?.package === "demo")).toBe(true);
     });
 });
 

@@ -193,16 +193,19 @@ modal listing every request the app sent this page load, newest first:
   dropped connection).
 - **Time** the request started, **method** badge and target **URL** (never
   the proxied one).
-- **Packages** and **columns** the request fetched data for.
-- Long URL, package and column text clips with an ellipsis. Hover shows a
-  zoom-in cursor; click expands it, click again collapses it.
+- **Package**: name of the loaded package.json whose dependencies the
+  request was sent for, `-` outside the tables.
+- **Dependencies** and **columns** the request fetched data for. A request
+  shared by several dependencies lists them all.
+- Long URL, package, dependency and column text clips with an ellipsis.
+  Hover shows a zoom-in cursor; click expands it, click again collapses it.
 - **Status** badge, or `-` without a response; hover shows the network
   or body error. **Size** of the decoded body, `-` until the app reads all of
   it; bodies the app never reads, such as most 404 answers, stay `-`.
 
 A summary line below the table counts total, failed, pending and
 successful requests. Failed rows get a **retry** button: when a table row
-of the request's packages failed, is stale or has a failed lookup, those
+of the request's dependencies failed, is stale or has a failed lookup, those
 rows refetch as with Retry failed fetches; otherwise the request is sent
 again and its outcome shows up as a new entry.
 
