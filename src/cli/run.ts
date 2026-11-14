@@ -9,7 +9,6 @@ import { fetchDependencySource, fetchUrlSource } from "../core/api/packageJsonSo
 import type { LoadedSource } from "../core/api/packageJsonSource";
 import { buildExportDocument, exportFileBaseName } from "../core/export/buildExportDocument";
 import type { ExportTableInput } from "../core/export/buildExportDocument";
-import { EXPORTERS } from "../core/export";
 import { markdownExporter } from "../core/export/exporters/markdown";
 import { t } from "../core/i18n";
 import { REPORT_COLUMN_KEYS, buildReport, reportFileBaseName } from "../core/report/buildReport";
@@ -158,10 +157,10 @@ async function execute(options: CliOptions): Promise<{ stdout: string; stderr: s
     }
     const tables = await fetchTables(pkg, options, DEFAULT_VISIBLE_COLUMNS);
     const document = buildExportDocument(title, tables, COLUMN_KEYS);
-    if (options.format === undefined) {
+    const { exporter } = options;
+    if (exporter === undefined) {
         return { stdout: await (await markdownExporter.render(document)).text(), stderr: "" };
     }
-    const exporter = EXPORTERS.find((candidate) => candidate.id === options.format)!;
     const path = await writeOutput(
         await exporter.render(document),
         options.output,

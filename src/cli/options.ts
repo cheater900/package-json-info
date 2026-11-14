@@ -1,18 +1,21 @@
 import { parseArgs } from "node:util";
 import type { CoreSettingsInput } from "./coreBinding";
 import { EXPORTERS } from "../core/export";
+import type { Exporter } from "../core/export/types";
 
 /** Parsed command line. */
 export type CliOptions = CoreSettingsInput & {
     source: string;
     includeDev: boolean;
-    /** Exporter id; export to a file instead of printing. */
-    format?: string;
+    /** Export to a file instead of printing. */
+    exporter?: Exporter;
     /** Report kind. */
     report?: string;
-    /** Target file of `format` or a pdf `report`. */
+    /** Target file of `exporter` or a pdf `report`. */
     output?: string;
 };
+
+type OutputOptions = Pick<CliOptions, "exporter" | "report" | "output">;
 
 const ARGS_CONFIG = {
     allowPositionals: true,
@@ -78,16 +81,14 @@ export function parseOptions(argv: string[]): CliOptions | string | null {
         return "Expected exactly one <source>.";
     }
     const { format, report, output, dev } = parsed.values;
-    const problem = validateOutputOptions(format, report, output);
-    if (problem) {
-        return problem;
+    const outputOptions = parseOutputOptions(format, report, output);
+    if (typeof outputOptions === "string") {
+        return outputOptions;
     }
     return {
         source: parsed.positionals[0],
         includeDev: dev,
-        format,
-        report,
-        output,
+        ...outputOptions,
         proxyUrl: parsed.values["proxy-url"],
         timeout: parsed.values.timeout,
         concurrency: parsed.values.concurrency,
@@ -95,23 +96,25 @@ export function parseOptions(argv: string[]): CliOptions | string | null {
     };
 }
 
-/** Message why the export flags conflict or hold an unknown value; undefined when valid. */
-function validateOutputOptions(
+/** Export options, or the message why the export flags conflict or hold an unknown value. */
+function parseOutputOptions(
     format: string | undefined,
     report: string | undefined,
     output: string | undefined,
-): string | undefined {
+): OutputOptions | string {
     if (format !== undefined && report !== undefined) {
         return "--format and --report cannot be combined.";
     }
-    if (format !== undefined && !EXPORTERS.some((exporter) => exporter.id === format)) {
+    const exporter = EXPORTERS.find((candidate) => candidate.id === format);
+    if (format !== undefined && exporter === undefined) {
         return `Unknown format "${format}". Valid formats: ${EXPORTER_IDS}.`;
     }
     if (report !== undefined && !REPORT_KINDS.includes(report)) {
         return `Unknown report "${report}". Valid reports: ${REPORT_KINDS.join(", ")}.`;
     }
-    const writesFile = format !== undefined || report === "pdf";
+    const writesFile = exporter !== undefined || report === "pdf";
     if (output !== undefined && !writesFile) {
         return "--output needs --format or --report pdf.";
     }
+    return { exporter, report, output };
 }
