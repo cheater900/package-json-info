@@ -32,7 +32,11 @@ describe("--format", () => {
 
         const result = await runCli([sourcePath, "--format", id, "--output", target]);
 
-        expect(result).toEqual({ code: EXIT_OK, stdout: "", stderr: `${target}\n` });
+        expect(result).toEqual({
+            code: EXIT_OK,
+            stdout: "",
+            stderr: `${target}\n`,
+        });
         expect((await stat(target)).size).toBeGreaterThan(0);
     });
 
@@ -53,6 +57,56 @@ describe("--format", () => {
 
         expect(result.code).toBe(EXIT_LOAD_FAILURE);
         expect(await readFile(victim, "utf8")).toBe("keep");
+    });
+
+    it("refuses dangling symlink at default file name", async () => {
+        const victim = join(tempDir, "victim.txt");
+        await symlink(victim, join(tempDir, "app-dependencies.csv"));
+
+        const result = await runCli([sourcePath, "--format", "csv"]);
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(await readdir(tempDir)).not.toContain("victim.txt");
+    });
+
+    it("keeps hostile package name inside cwd", async () => {
+        await writeFile(sourcePath, JSON.stringify({ name: "../../evil/name", dependencies: {} }));
+
+        const result = await runCli([sourcePath, "--format", "csv"]);
+
+        expect(result).toEqual({
+            code: EXIT_OK,
+            stdout: "",
+            stderr: "evil-name-dependencies.csv\n",
+        });
+        expect(await readdir(tempDir)).toContain("evil-name-dependencies.csv");
+    });
+
+    it("names default file by package.json for unnamed package", async () => {
+        await writeFile(sourcePath, JSON.stringify({ dependencies: {} }));
+
+        const result = await runCli([sourcePath, "--format", "csv"]);
+
+        expect(result.stderr).toBe("package-json-dependencies.csv\n");
+    });
+
+    it("skips devDependencies for --no-dev", async () => {
+        await writeFile(
+            sourcePath,
+            JSON.stringify({
+                name: "app",
+                dependencies: { "left-pad": "1.3.0" },
+                devDependencies: { "dev-tool": "1.0.0" },
+            }),
+        );
+        const withDev = join(tempDir, "with.csv");
+        const withoutDev = join(tempDir, "without.csv");
+
+        await runCli([sourcePath, "--format", "csv", "--output", withDev]);
+        await runCli([sourcePath, "--format", "csv", "--no-dev", "--output", withoutDev]);
+
+        expect(await readFile(withDev, "utf8")).toContain("dev-tool");
+        expect(await readFile(withoutDev, "utf8")).not.toContain("dev-tool");
     });
 
     it("overwrites existing default file", async () => {
@@ -127,6 +181,17 @@ describe("--report", () => {
 
         expect(result.code).toBe(EXIT_OK);
         expect((await readFile(target)).subarray(0, 4).toString()).toBe("%PDF");
+    });
+
+    it("refuses symlink at default pdf report name", async () => {
+        const victim = join(tempDir, "victim.txt");
+        await writeFile(victim, "keep");
+        await symlink(victim, join(tempDir, "app-report.pdf"));
+
+        const result = await runCli([sourcePath, "--report", "pdf"]);
+
+        expect(result.code).toBe(EXIT_LOAD_FAILURE);
+        expect(await readFile(victim, "utf8")).toBe("keep");
     });
 
     it("writes pdf report default file name", async () => {
