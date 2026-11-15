@@ -260,6 +260,14 @@ function resolveVersionData(npmData: NpmRegistryData | null, range: string): unk
     return key ? npmData?.versions?.[key] : undefined;
 }
 
+/** Publish time of registry key `key`; own keys only, so "constructor" can't read Object.prototype. */
+function publishTime(
+    times: Record<string, string | undefined>,
+    key: string | null | undefined,
+): string | null {
+    return key != null && Object.hasOwn(times, key) ? (times[key] ?? null) : null;
+}
+
 function repositoryUrl(npmData: NpmRegistryData | null): string | undefined {
     const repository = npmData?.repository;
     return typeof repository === "string" ? repository : repository?.url;
@@ -334,7 +342,7 @@ export async function fetchPackageInfo(
         slug != null
             ? repoWebUrl(slug)
             : (normaliseRepoUrl(repositoryUrl(npmData)) ?? npmData?.homepage);
-    const latestReleaseDate = latestVersion ? (times[latestVersion] ?? null) : null;
+    const latestReleaseDate = publishTime(times, latestVersion);
     const isOutdated = isVersionOutdated(range, latestVersion);
     const deprecated = versionData.deprecated ?? null;
     const maintainers = maintainerNames(npmData);
@@ -354,10 +362,10 @@ export async function fetchPackageInfo(
     return {
         name,
         version,
-        versionDate: times[range] ?? times[pinnedVersionOf(range) ?? ""] ?? null,
+        versionDate: publishTime(times, range) ?? publishTime(times, pinnedVersionOf(range)),
         latestVersion,
         latestReleaseDate,
-        latestUpdateDate: times.modified ?? null,
+        latestUpdateDate: publishTime(times, "modified"),
         weeklyDownloads: weeklyDownloads.value,
         sourceCode: isHttpUrl(sourceCode) ? sourceCode : null,
         gitStars: gitStars.value,

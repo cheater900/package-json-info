@@ -1897,6 +1897,22 @@ describe("fetchPackageInfo malformed registry data", () => {
         expect(info.latestUpdateDate).toBe("2022-02-02T00:00:00.000Z");
     });
 
+    it("reads inherited time keys as missing", async () => {
+        stubFetchByUrl({
+            "registry.npmjs.org/odd": {
+                "dist-tags": { latest: "toString" },
+                time: {},
+                versions: {},
+            },
+        });
+
+        const info = await fetchPackageInfo("odd", "constructor");
+
+        expect(info.versionDate).toBeNull();
+        expect(info.latestReleaseDate).toBeNull();
+        expect(info.latestUpdateDate).toBeNull();
+    });
+
     it("reads malformed version fields as missing", async () => {
         stubFetchByUrl({
             "registry.npmjs.org/odd": {
