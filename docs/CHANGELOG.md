@@ -310,6 +310,9 @@ Condensed from git history. Newest month first.
 
 #### Export
 
+- **CSV** also prefixes `'` to formula starts after `;`, so Excel in
+  `;`-separator locales (de, fr, nl) cannot split registry text into own
+  cell and run it as formula.
 - **Markdown** escapes `$` in cells and leading block markers in report
   lines, so registry text cannot render as math, headings or lists.
 - **File name** slug collapses dash runs: long dash names no longer freeze

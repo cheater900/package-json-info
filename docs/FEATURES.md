@@ -178,7 +178,8 @@ while export runs, so double click saves one file. File name:
 
 - **CSV**: one table, UTF-8 with BOM, leading Section column. Cells
   spreadsheet would run as formula (starting with `=`, `+`, `@`, tab, CR, or
-  `-` plus text) get leading `'`.
+  `-` plus text) get leading `'`. Same starts after `;` get `'` too, since
+  Excel in `;`-separator locales splits lines at `;` even inside quotes.
 - **XLSX**: one sheet per table, bold frozen header row.
 - **Markdown**: heading and GFM table per table. Cell text is
   backslash-escaped, so registry text cannot inject HTML, links, images or
