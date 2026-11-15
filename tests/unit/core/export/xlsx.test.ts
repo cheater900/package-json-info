@@ -46,6 +46,13 @@ describe("xlsxExporter", () => {
         expect(sheet.columns).toEqual([{ width: 8 }, { width: 12 }, { width: 60 }]);
     });
 
+    it("keeps cell of exactly 32767 chars whole", async () => {
+        const [sheet] = await sheetsFor([
+            { title: "s", headers: ["N"], rows: [["x".repeat(32_767)]] },
+        ]);
+        expect(sheet.data[1][0]).toBe("x".repeat(32_767));
+    });
+
     it("cuts cells to Excel limit of 32767 chars", async () => {
         const [sheet] = await sheetsFor([
             { title: "s", headers: ["N"], rows: [["x".repeat(40_000)]] },

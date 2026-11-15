@@ -54,6 +54,22 @@ describe("csvExporter", () => {
         expect(text).toBe("\ufeffS,N\r\nA,x;'=1+1;y\r\nA,a;'@b;'-c;'+d\r\nA,a;-\r\n");
     });
 
+    it("neutralizes tab, CR and dash-newline starts after semicolons", async () => {
+        const text = await csvText(
+            exportDocumentWith([
+                { title: "A", headers: ["N"], rows: [["a;\tb"], ["a;\rb"], ["a;-\n"]] },
+            ]),
+        );
+        expect(text).toBe('\ufeffS,N\r\nA,a;\'\tb\r\nA,"a;\'\rb"\r\nA,"a;\'-\n"\r\n');
+    });
+
+    it("neutralizes semicolon formula inside quoted cell", async () => {
+        const text = await csvText(
+            exportDocumentWith([{ title: "A", headers: ["N"], rows: [['say "hi";=1,2']] }]),
+        );
+        expect(text).toBe('\ufeffS,N\r\nA,"say ""hi"";\'=1,2"\r\n');
+    });
+
     it("sets CSV MIME type", async () => {
         const blob = await csvExporter.render(exportDocumentFixture);
         expect(blob.type).toBe("text/csv;charset=utf-8");

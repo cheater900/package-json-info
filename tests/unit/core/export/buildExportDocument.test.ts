@@ -104,6 +104,11 @@ describe("exportFileBaseName", () => {
         expect(exportFileBaseName("@@@")).toBe("dependencies");
     });
 
+    it("keeps 200-char slug whole, cuts 201st char", () => {
+        expect(exportFileBaseName("a".repeat(200))).toBe(`${"a".repeat(200)}-dependencies`);
+        expect(exportFileBaseName("a".repeat(201))).toBe(`${"a".repeat(200)}-dependencies`);
+    });
+
     it("cuts long name to 200-char slug without trailing dash", () => {
         const name = `${"a".repeat(199)} ${"b".repeat(300)}`;
 
