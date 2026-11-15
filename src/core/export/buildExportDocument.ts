@@ -19,6 +19,8 @@ const FILE_NAME_SUFFIX = "dependencies";
  */
 const FILE_NAME_UNSAFE_RUNS = /[^a-z0-9]+/g;
 const FILE_NAME_EDGE_DASHES = /^-|-$/g;
+/** Slug length cap: slug, suffix and extension stay under the 255-byte file name limit. */
+const FILE_NAME_SLUG_MAX_LENGTH = 200;
 
 function cellText(column: ColumnDef, row: PackageInfo): string {
     if (row.failedLookups?.[column.key]) {
@@ -66,6 +68,7 @@ export function exportFileBaseName(title: string, suffix = FILE_NAME_SUFFIX): st
     const slug = title
         .toLowerCase()
         .replace(FILE_NAME_UNSAFE_RUNS, "-")
+        .slice(0, FILE_NAME_SLUG_MAX_LENGTH)
         .replace(FILE_NAME_EDGE_DASHES, "");
     return slug ? `${slug}-${suffix}` : suffix;
 }

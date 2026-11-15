@@ -104,6 +104,12 @@ describe("exportFileBaseName", () => {
         expect(exportFileBaseName("@@@")).toBe("dependencies");
     });
 
+    it("cuts long name to 200-char slug without trailing dash", () => {
+        const name = `${"a".repeat(199)} ${"b".repeat(300)}`;
+
+        expect(exportFileBaseName(name)).toBe(`${"a".repeat(199)}-dependencies`);
+    });
+
     it("collapses dash runs in linear time", () => {
         const dashes = "-".repeat(200_000);
         expect(exportFileBaseName(`${dashes}a${dashes}b${dashes}`)).toBe("a-b-dependencies");
