@@ -8,7 +8,8 @@ import {
     HTTP_STATUS,
     jsonResponse,
     statusResponse,
-    streamedResponse,
+    stubFetchStreamed,
+    expectBodyCancelled,
 } from "../../../helpers/fetchMock";
 
 const GITHUB_SLUG = { host: "github.com", owner: "o", repo: "r" };
@@ -77,17 +78,11 @@ describe("fetchRepoCommitActivity", () => {
         ["409", HTTP_STATUS.conflict],
         ["500", HTTP_STATUS.serverError],
     ])("cancels unread body on %s", async (_label, status) => {
-        const { response, cancelSource } = streamedResponse(status);
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => response),
-        );
+        const cancelSource = stubFetchStreamed(status);
 
         await fetchRepoCommitActivity(GITHUB_SLUG, {}).catch(() => null);
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
     });
 
     it("leaves body of 200 answer uncancelled", async () => {

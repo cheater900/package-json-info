@@ -11,7 +11,13 @@ import {
 import type { ObservedRequest } from "../../../../src/core/api/http";
 import { settle } from "../../../../src/core/utils/settle";
 import { coreSettings } from "../../../helpers/core";
-import { HTTP_STATUS, jsonResponse, statusResponse } from "../../../helpers/fetchMock";
+import {
+    expectBodyCancelled,
+    HTTP_STATUS,
+    jsonResponse,
+    statusResponse,
+    stubFetchStreamed,
+} from "../../../helpers/fetchMock";
 import { subjectOf } from "../../../helpers/requests";
 
 describe("findFirstFound", () => {
@@ -72,16 +78,6 @@ describe("fetchJson", () => {
 });
 
 describe("unread body", () => {
-    function stubStatusWithBody(status: number) {
-        const cancelSource = vi.fn();
-        const body = new ReadableStream<Uint8Array>({ cancel: cancelSource });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => new Response(body, { status })),
-        );
-        return cancelSource;
-    }
-
     it.each([
         ["fetchJson 404", HTTP_STATUS.notFound, () => fetchJson("https://a.test/x")],
         ["fetchJson 500", HTTP_STATUS.serverError, () => fetchJson("https://a.test/x")],
@@ -97,13 +93,11 @@ describe("unread body", () => {
             () => findFirstFound(["a"], (c) => `https://a.test/${c}`),
         ],
     ])("gets cancelled on %s", async (_label, status, request) => {
-        const cancelSource = stubStatusWithBody(status);
+        const cancelSource = stubFetchStreamed(status);
 
         await settle(request);
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
     });
 });
 
@@ -281,9 +275,7 @@ describe("observeRequests", () => {
         await reader.read();
         await reader.cancel();
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
         expect(handle.measure).not.toHaveBeenCalled();
     });
 

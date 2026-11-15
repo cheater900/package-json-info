@@ -1,4 +1,5 @@
-import { vi } from "vitest";
+import { expect, vi } from "vitest";
+import type { Mock } from "vitest";
 
 export const HTTP_STATUS = {
     ok: 200,
@@ -41,6 +42,23 @@ export function streamedResponse(status: number) {
     const cancelSource = vi.fn();
     const body = new ReadableStream<Uint8Array>({ cancel: cancelSource });
     return { response: new Response(body, { status }), cancelSource };
+}
+
+/** Stubs global `fetch` with a `streamedResponse(status)`. Returns its `cancelSource`. */
+export function stubFetchStreamed(status: number) {
+    const { response, cancelSource } = streamedResponse(status);
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => response),
+    );
+    return cancelSource;
+}
+
+/** Waits for the body cancel; `discardBody` fires it without awaiting. */
+export async function expectBodyCancelled(cancelSource: Mock) {
+    await vi.waitFor(() => {
+        expect(cancelSource).toHaveBeenCalled();
+    });
 }
 
 /** Stubs global `fetch` with requests that never settle, to hold a load in flight. */

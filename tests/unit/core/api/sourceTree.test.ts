@@ -8,6 +8,8 @@ import {
     jsonResponse,
     statusResponse,
     streamedResponse,
+    stubFetchStreamed,
+    expectBodyCancelled,
     textResponse,
 } from "../../../helpers/fetchMock";
 import { recordRequests, subjectOf, subjectsOf } from "../../../helpers/requests";
@@ -86,17 +88,11 @@ describe("fetchSourceTree - npm provider", () => {
     });
 
     it("cancels unread body on tarball download failure", async () => {
-        const { response, cancelSource } = streamedResponse(HTTP_STATUS.notFound);
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => response),
-        );
+        const cancelSource = stubFetchStreamed(HTTP_STATUS.notFound);
 
         await fetchSourceTree(NPM_TREE_REF).catch(() => null);
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
     });
 
     it("throws corrupt-tarball error for 2xx response without body", async () => {
@@ -346,9 +342,7 @@ describe("fetchSourceTree - github provider", () => {
         const { readFile } = await fetchSourceTree(GITHUB_TREE_REF);
         await readFile("a.js").catch(() => null);
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
     });
 
     it("throws on tree request failure", async () => {

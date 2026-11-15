@@ -11,7 +11,8 @@ import {
     jsonResponse,
     HTTP_STATUS,
     statusResponse,
-    streamedResponse,
+    stubFetchStreamed,
+    expectBodyCancelled,
 } from "../../../helpers/fetchMock";
 import { githubRateLimit, githubRateLimitBody } from "../../../fixtures/github";
 
@@ -116,17 +117,11 @@ describe("fetchGithubRateLimit", () => {
         ["401", HTTP_STATUS.unauthorized],
         ["500", HTTP_STATUS.serverError],
     ])("cancels unread body on %s", async (_label, status) => {
-        const { response, cancelSource } = streamedResponse(status);
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => response),
-        );
+        const cancelSource = stubFetchStreamed(status);
 
         await fetchGithubRateLimit("abc").catch(() => null);
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
     });
 });
 
@@ -167,17 +162,11 @@ describe("fetchGithubTree", () => {
     });
 
     it("cancels unread body on failure", async () => {
-        const { response, cancelSource } = streamedResponse(HTTP_STATUS.forbidden);
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => response),
-        );
+        const cancelSource = stubFetchStreamed(HTTP_STATUS.forbidden);
 
         await fetchGithubTree("o", "r", "main").catch(() => null);
 
-        await vi.waitFor(() => {
-            expect(cancelSource).toHaveBeenCalled();
-        });
+        await expectBodyCancelled(cancelSource);
     });
 
     it("rejects on malformed JSON body", async () => {
