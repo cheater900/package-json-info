@@ -7,6 +7,7 @@ import {
     binaryResponse,
     jsonResponse,
     statusResponse,
+    streamedResponse,
     textResponse,
 } from "../../../helpers/fetchMock";
 import { recordRequests, subjectOf, subjectsOf } from "../../../helpers/requests";
@@ -82,6 +83,20 @@ describe("fetchSourceTree - npm provider", () => {
         await expect(
             fetchSourceTree({ provider: "npm", tarballUrl: "https://example.com/missing.tgz" }),
         ).rejects.toThrow(/404/);
+    });
+
+    it("cancels unread body on tarball download failure", async () => {
+        const { response, cancelSource } = streamedResponse(HTTP_STATUS.notFound);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+
+        await fetchSourceTree(NPM_TREE_REF).catch(() => null);
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
+        });
     });
 
     it("throws corrupt-tarball error for 2xx response without body", async () => {
@@ -322,6 +337,18 @@ describe("fetchSourceTree - github provider", () => {
         await expect(readFile("a.js")).rejects.toThrow(
             "Could not fetch file contents (status 404).",
         );
+    });
+
+    it("readFile cancels unread body on raw file failure", async () => {
+        const { response, cancelSource } = streamedResponse(HTTP_STATUS.notFound);
+        stubGithubFetch({ tree: [{ path: "a.js", type: "blob" }] }, response);
+
+        const { readFile } = await fetchSourceTree(GITHUB_TREE_REF);
+        await readFile("a.js").catch(() => null);
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
+        });
     });
 
     it("throws on tree request failure", async () => {

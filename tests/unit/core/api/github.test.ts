@@ -7,7 +7,12 @@ import {
 } from "../../../../src/core/api/github";
 import { GITHUB_RATE_LIMIT_URL } from "../../../../src/core/constants";
 import { coreSettings } from "../../../helpers/core";
-import { jsonResponse, HTTP_STATUS, statusResponse } from "../../../helpers/fetchMock";
+import {
+    jsonResponse,
+    HTTP_STATUS,
+    statusResponse,
+    streamedResponse,
+} from "../../../helpers/fetchMock";
 import { githubRateLimit, githubRateLimitBody } from "../../../fixtures/github";
 
 describe("findGithubReleaseTag", () => {
@@ -106,6 +111,23 @@ describe("fetchGithubRateLimit", () => {
 
         await expect(fetchGithubRateLimit("abc")).rejects.toThrow("500");
     });
+
+    it.each([
+        ["401", HTTP_STATUS.unauthorized],
+        ["500", HTTP_STATUS.serverError],
+    ])("cancels unread body on %s", async (_label, status) => {
+        const { response, cancelSource } = streamedResponse(status);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+
+        await fetchGithubRateLimit("abc").catch(() => null);
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
+        });
+    });
 });
 
 describe("fetchGithubTree", () => {
@@ -142,6 +164,20 @@ describe("fetchGithubTree", () => {
         );
 
         await expect(fetchGithubTree("o", "r", "main")).rejects.toThrow("403");
+    });
+
+    it("cancels unread body on failure", async () => {
+        const { response, cancelSource } = streamedResponse(HTTP_STATUS.forbidden);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+
+        await fetchGithubTree("o", "r", "main").catch(() => null);
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
+        });
     });
 
     it("rejects on malformed JSON body", async () => {

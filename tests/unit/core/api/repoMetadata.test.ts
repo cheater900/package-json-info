@@ -4,7 +4,12 @@ import {
     fetchRepoCommitActivity,
 } from "../../../../src/core/api/repoMetadata";
 import { HttpError } from "../../../../src/core/api/http";
-import { HTTP_STATUS, jsonResponse, statusResponse } from "../../../helpers/fetchMock";
+import {
+    HTTP_STATUS,
+    jsonResponse,
+    statusResponse,
+    streamedResponse,
+} from "../../../helpers/fetchMock";
 
 const GITHUB_SLUG = { host: "github.com", owner: "o", repo: "r" };
 const NOW = new Date("2025-06-15T12:00:00Z");
@@ -65,6 +70,43 @@ describe("fetchRepoCommitActivity", () => {
         );
 
         await expect(fetchRepoCommitActivity(GITHUB_SLUG, {})).rejects.toBeInstanceOf(HttpError);
+    });
+
+    it.each([
+        ["404", HTTP_STATUS.notFound],
+        ["409", HTTP_STATUS.conflict],
+        ["500", HTTP_STATUS.serverError],
+    ])("cancels unread body on %s", async (_label, status) => {
+        const { response, cancelSource } = streamedResponse(status);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => response),
+        );
+
+        await fetchRepoCommitActivity(GITHUB_SLUG, {}).catch(() => null);
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
+        });
+    });
+
+    it("leaves body of 200 answer uncancelled", async () => {
+        const cancelSource = vi.fn();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode("[]"));
+                controller.close();
+            },
+            cancel: cancelSource,
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(body, { status: HTTP_STATUS.ok })),
+        );
+
+        await fetchRepoCommitActivity(GITHUB_SLUG, {});
+
+        expect(cancelSource).not.toHaveBeenCalled();
     });
 
     it("throws on malformed body", async () => {

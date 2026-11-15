@@ -36,6 +36,13 @@ export function binaryResponse(body: ArrayBuffer) {
     return { ok: true, status: HTTP_STATUS.ok, body: new Response(body).body };
 }
 
+/** Real `Response` with a streamed body; `cancelSource` fires when the body gets cancelled. */
+export function streamedResponse(status: number) {
+    const cancelSource = vi.fn();
+    const body = new ReadableStream<Uint8Array>({ cancel: cancelSource });
+    return { response: new Response(body, { status }), cancelSource };
+}
+
 /** Stubs global `fetch` with requests that never settle, to hold a load in flight. */
 export function stubFetchPending() {
     vi.stubGlobal(
