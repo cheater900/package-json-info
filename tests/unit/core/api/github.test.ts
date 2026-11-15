@@ -63,6 +63,14 @@ describe("findGithubReleaseTag", () => {
 
         await expect(findGithubReleaseTag("o", "r", "1.2.3")).rejects.toThrow("403");
     });
+
+    it("cancels unread body of found tag", async () => {
+        const cancelSource = stubFetchStreamed(HTTP_STATUS.ok);
+
+        expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBe("v1.2.3");
+
+        await expectBodyCancelled(cancelSource);
+    });
 });
 
 describe("githubHeaders", () => {

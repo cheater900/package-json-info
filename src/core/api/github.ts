@@ -97,7 +97,7 @@ export function githubRawFileUrl(owner: string, repo: string, ref: string, path:
  * The plural `git/refs` endpoint is avoided: for a missing ref it returns
  * 200 with every ref sharing the prefix (v1.2.3 -> v1.2.30).
  * Throws on other failures (rate limit, network) so they aren't mistaken
- * for "no such tag".
+ * for "no such tag". The found ref's body goes unread, so it gets discarded.
  */
 export async function findGithubReleaseTag(
     owner: string,
@@ -113,7 +113,11 @@ export async function findGithubReleaseTag(
         { headers },
         subject,
     );
-    return found?.candidate ?? null;
+    if (!found) {
+        return null;
+    }
+    discardBody(found.response);
+    return found.candidate;
 }
 
 /** Every file and folder of a repo at `ref` (branch, tag or commit), in one request. */
