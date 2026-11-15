@@ -461,53 +461,39 @@ describe("fetchPackageInfo", () => {
         expect(info.sourceCode).toBe("https://example.com/homepage-only");
     });
 
-    it("sends token saved during registry fetch to GitHub", async () => {
-        coreSettings.githubToken = undefined;
-        let releaseRegistry: (response: unknown) => void = () => {};
-        const fetchMock = vi.fn(async (url: string, _init?: RequestInit) =>
-            url.includes("registry.npmjs.org")
-                ? new Promise((resolve) => {
-                      releaseRegistry = resolve;
-                  })
-                : jsonResponse({ stargazers_count: 1 }),
-        );
-        vi.stubGlobal("fetch", fetchMock);
+    it.each([
+        ["sends token saved", undefined, TOKEN, `Bearer ${TOKEN}`],
+        ["sends no token purged", TOKEN, undefined, null],
+    ])(
+        "%s during registry fetch to GitHub",
+        async (_label, tokenBefore, tokenDuring, authorization) => {
+            coreSettings.githubToken = tokenBefore;
+            let releaseRegistry: (response: unknown) => void = () => {};
+            const fetchMock = vi.fn(async (url: string, _init?: RequestInit) =>
+                url.includes("registry.npmjs.org")
+                    ? new Promise((resolve) => {
+                          releaseRegistry = resolve;
+                      })
+                    : jsonResponse({ stargazers_count: 1 }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
 
-        const request = fetchPackageInfo("pkg", "1.0.0", {
-            visibleColumns: new Set(["gitStars"]),
-        });
-        coreSettings.githubToken = TOKEN;
-        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
-        releaseRegistry(jsonResponse({ repository: "https://github.com/owner/pkg", versions: {} }));
-        await request;
+            const request = fetchPackageInfo("pkg", "1.0.0", {
+                visibleColumns: new Set(["gitStars"]),
+            });
+            coreSettings.githubToken = tokenDuring;
+            await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+            releaseRegistry(
+                jsonResponse({ repository: "https://github.com/owner/pkg", versions: {} }),
+            );
+            await request;
 
-        const [[, init]] = fetchMock.mock.calls.filter(([url]) => url.includes("api.github.com"));
-        expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${TOKEN}`);
-    });
-
-    it("sends no token purged during registry fetch to GitHub", async () => {
-        coreSettings.githubToken = TOKEN;
-        let releaseRegistry: (response: unknown) => void = () => {};
-        const fetchMock = vi.fn(async (url: string, _init?: RequestInit) =>
-            url.includes("registry.npmjs.org")
-                ? new Promise((resolve) => {
-                      releaseRegistry = resolve;
-                  })
-                : jsonResponse({ stargazers_count: 1 }),
-        );
-        vi.stubGlobal("fetch", fetchMock);
-
-        const request = fetchPackageInfo("pkg", "1.0.0", {
-            visibleColumns: new Set(["gitStars"]),
-        });
-        coreSettings.githubToken = undefined;
-        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
-        releaseRegistry(jsonResponse({ repository: "https://github.com/owner/pkg", versions: {} }));
-        await request;
-
-        const [[, init]] = fetchMock.mock.calls.filter(([url]) => url.includes("api.github.com"));
-        expect(new Headers(init?.headers).has("Authorization")).toBe(false);
-    });
+            const [[, init]] = fetchMock.mock.calls.filter(([url]) =>
+                url.includes("api.github.com"),
+            );
+            expect(new Headers(init?.headers).get("Authorization")).toBe(authorization);
+        },
+    );
 });
 
 describe("fetchPackageInfo sourceTree", () => {
