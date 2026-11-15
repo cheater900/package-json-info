@@ -15,6 +15,9 @@ Gaps and decisions audits left open. Not planned yet; item moves to
 - **CLI keeps bidi and zero-width characters** (U+202A-202E,
   U+2066-2069) from package data, so hostile text can spoof terminal
   output (Trojan Source). Stripping changes output.
+- **CSV skips full-width formula starts** (`＝＋－＠`). Unclear whether
+  Excel runs them as formulas in CSV import; prefix would be defense in
+  depth only.
 
 ## Reliability
 

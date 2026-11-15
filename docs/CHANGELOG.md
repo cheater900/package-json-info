@@ -255,8 +255,9 @@ Condensed from git history. Newest month first.
 
 #### Export
 
-- **XLSX cells** cut to Excel's 32,767-character limit, so long
-  dependency list or deprecation notice no longer makes Excel repair file.
+- **XLSX cells** cut to Excel's 32,767-character limit, header cells
+  too, so long dependency list or deprecation notice no longer makes Excel
+  repair file.
 - **Export file name** slug capped at 200 characters, so long package
   name no longer fails default CLI export with ENAMETOOLONG.
 
