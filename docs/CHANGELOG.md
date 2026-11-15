@@ -337,6 +337,10 @@ Condensed from git history. Newest month first.
   reach another host.
 - **CORS proxy URL** with `user:password` rejected, so credentials never
   stored or echoed in fetch errors.
+- **Origin-only `Referer`** (`strict-origin`) on every fetch and on
+  dependency source link. Share link steps and `inputUrl` secrets no
+  longer reach API, tarball or repo hosts, even when host asks for full
+  referrer.
 
 #### Source tree
 
