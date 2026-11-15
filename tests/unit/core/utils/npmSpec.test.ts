@@ -30,12 +30,17 @@ describe("resolveRegistrySpec", () => {
         });
     });
 
+    it.each(["a.b", "..a", "a..", "..."])("accepts dotted name %j", (name) => {
+        expect(resolveRegistrySpec(name, "1.0.0").registryName).toBe(name);
+    });
+
     it.each([
         ["", "1.0.0"],
         [".", "1.0.0"],
         ["..", "1.0.0"],
         ["a", "npm:"],
         ["a", "npm:.@1.0.0"],
+        ["a", "npm:..@1.0.0"],
     ])("throws for root-path registry name %j %j", (name, spec) => {
         expect(() => resolveRegistrySpec(name, spec)).toThrow("not a valid npm package name");
     });
