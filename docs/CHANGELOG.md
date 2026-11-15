@@ -252,6 +252,11 @@ Condensed from git history. Newest month first.
   works when app is served under path starting with `//`.
 - **Workspace raw file URLs** encode branch, so ref holding `#` or `%`
   lists and loads workspaces.
+- **10 MB cap** on package.json and pnpm-workspace.yaml reads from URL,
+  repo raw files and workspaces. Share link to endless or huge file no
+  longer exhausts tab memory; it shows "This package.json is larger than
+  10 MB, too large to load." Oversized pnpm-workspace.yaml shows existing
+  workspace check notice.
 
 #### Export
 
@@ -298,12 +303,16 @@ Condensed from git history. Newest month first.
   longer looked up as npm package.
 - **Relative `XDG_CACHE_HOME`** ignored per XDG spec, so cache never lands
   under working dir.
+- **package.json file read** capped at 10 MB, so file symlinked to
+  `/dev/zero` exits 1 instead of hanging.
 
 #### Network
 
 - **Unread bodies** of 404 and error responses cancelled, so Node fetch
   frees their connections; run of registry 404s in CLI no longer exhausts
   sockets.
+- **Found GitHub release tag** body cancelled too, so Node fetch frees
+  its socket before garbage collection.
 
 ### Security
 

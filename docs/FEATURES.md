@@ -26,6 +26,8 @@ App accepts `package.json` from these sources:
 - Workspace select lists at most 5,000 folders, from first 100 patterns of
   up to 200 characters each. Repo past cap, or cut short by GitHub, shows
   notice.
+- package.json and pnpm-workspace.yaml load up to 10 MB, from URL, repo,
+  workspace or CLI file. Larger file shows error.
 
 ## Output: the dependency summary table
 

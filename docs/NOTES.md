@@ -22,13 +22,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   stack in vue-json-pretty, since its clone and flatten recurse and viewer
   opens by default. Not checked in browser. Nesting cap would reject valid
   JSON.
-- **Share link fetches unbounded text on open.** `step=url:`, repo raw and
-  workspace fetches have no size cap, so victim did not pick URL. Cap adds
-  new error; huge file with many keys still freezes viewer, so real limit
-  is rendering.
-- **CLI reads symlinked `package.json` forever.** Cloned repo can point
-  `package.json` at `/dev/zero`, so `package-json-info .` hangs (local
-  DoS).
 
 ## Reliability
 

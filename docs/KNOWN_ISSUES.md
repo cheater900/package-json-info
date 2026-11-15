@@ -54,9 +54,6 @@ fixing live in [NOTES.md](NOTES.md).
   counter that survives trims; rare, timeouts settle requests anyway.
 - **Network badge skips late body failure from previous batch.** Download
   breaking off after new batch started counts only in network logs modal.
-- **No size cap on user-URL `package.json` fetch** (`fetchText`). User
-  picks URL typed in input; share link case sits in
-  [NOTES.md](NOTES.md).
 - **Malformed tarball with both file `a` and directory `a/...`** gives
   duplicate Vue keys in file tree. Cosmetic.
 - **`URL.canParse`** needs Safari 17+.
