@@ -14,7 +14,7 @@ import {
 } from "../constants";
 import type { RepoSlug } from "../utils/repoUrl";
 import { githubRepoApiUrl } from "./github";
-import { fetchJson, fetchWithTimeout, HttpError } from "./http";
+import { discardBody, fetchJson, fetchWithTimeout, HttpError } from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 
 /** GitHub documents `committer` and its `date` as optional. */
@@ -157,6 +157,9 @@ export async function fetchRepoCommitActivity(
     const since = new Date(Date.now() - COMMIT_ACTIVITY_WINDOW_DAYS * MS_PER_DAY).toISOString();
     const url = `${githubRepoApiUrl(slug.owner, slug.repo)}/commits?since=${since}&per_page=${COMMIT_ACTIVITY_SAMPLE_SIZE}`;
     const response = await fetchWithTimeout(url, { headers: githubHeaders }, subject);
+    if (!response.ok) {
+        discardBody(response);
+    }
     if (response.status === HTTP_NOT_FOUND) {
         return EMPTY_COMMIT_ACTIVITY;
     }

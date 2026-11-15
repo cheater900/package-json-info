@@ -75,6 +75,16 @@ export function bearerAuthorization(token: string): string {
     return `Bearer ${token}`;
 }
 
+/**
+ * Cancels the body of a response the caller won't read. Node's fetch keeps
+ * an unread body's connection busy until garbage collection, so a run of
+ * 404s can exhaust sockets. A body that already broke off rejects the
+ * cancel; nothing is left to free then.
+ */
+export function discardBody(response: Response): void {
+    void settle(async () => response.body?.cancel());
+}
+
 /** Registers `observer` for every request sent from now on. Returns the unsubscribe. */
 export function observeRequests(observer: RequestObserver): () => void {
     requestObservers.add(observer);
@@ -207,9 +217,11 @@ export async function fetchJson<T>(
 ): Promise<T | null> {
     const response = await fetchWithTimeout(url, init, subject);
     if (response.status === HTTP_NOT_FOUND) {
+        discardBody(response);
         return null;
     }
     if (!response.ok) {
+        discardBody(response);
         throw new HttpError(response.status);
     }
     return response.json() as Promise<T>;
@@ -222,6 +234,7 @@ export async function fetchText(
 ): Promise<string> {
     const response = await fetchWithTimeout(url, {}, subject);
     if (!response.ok) {
+        discardBody(response);
         throw new HttpError(response.status);
     }
     return response.text();
@@ -244,6 +257,7 @@ export async function findFirstFound<T>(
         if (response.ok) {
             return { candidate, response };
         }
+        discardBody(response);
         if (response.status !== HTTP_NOT_FOUND) {
             throw new HttpError(response.status);
         }

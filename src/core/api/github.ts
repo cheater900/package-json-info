@@ -8,7 +8,13 @@ import {
 } from "../constants";
 import { t } from "../i18n";
 import { coreRuntime } from "../runtime";
-import { bearerAuthorization, fetchWithTimeout, findFirstFound, HttpError } from "./http";
+import {
+    bearerAuthorization,
+    discardBody,
+    fetchWithTimeout,
+    findFirstFound,
+    HttpError,
+} from "./http";
 import type { HttpHeaders, RequestSubject } from "./http";
 
 export type GithubRateLimit = {
@@ -63,9 +69,11 @@ export async function fetchGithubRateLimit(token: string): Promise<GithubRateLim
         headers: githubHeaders(token),
     });
     if (response.status === HTTP_UNAUTHORIZED) {
+        discardBody(response);
         return null;
     }
     if (!response.ok) {
+        discardBody(response);
         throw new HttpError(response.status);
     }
     const { rate } = (await response.json()) as GithubRateLimitResponse;
@@ -121,6 +129,7 @@ export async function fetchGithubTree(
         subject,
     );
     if (!response.ok) {
+        discardBody(response);
         throw new Error(t("errors.repoTreeFetch", { status: response.status }));
     }
     const data = (await response.json()) as GithubTreeResponse;

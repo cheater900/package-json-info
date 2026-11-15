@@ -7,7 +7,7 @@ import {
     GITHUB_ENTRY_SUBMODULE,
     githubRawFileUrl,
 } from "./github";
-import { fetchWithTimeout } from "./http";
+import { discardBody, fetchWithTimeout } from "./http";
 import type { RequestSubject } from "./http";
 import { BYTES_PER_MB, MAX_FILE_TREE_ENTRIES, MAX_VIEWED_FILE_BYTES } from "../constants";
 import { t } from "../i18n";
@@ -48,6 +48,7 @@ async function fetchNpmSourceTree(
 ): Promise<SourceTree> {
     const response = await fetchWithTimeout(tarballUrl, {}, subject);
     if (!response.ok) {
+        discardBody(response);
         throw new Error(t("errors.tarballDownload", { status: response.status }));
     }
     // 204/205 answers and some proxies succeed without a body.
@@ -107,6 +108,7 @@ async function fetchGithubSourceTree(
                 subject,
             );
             if (!fileResponse.ok) {
+                discardBody(fileResponse);
                 throw new Error(t("errors.fileContentFetch", { status: fileResponse.status }));
             }
             return fileResponse.text();

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import {
     fetchJson,
+    fetchText,
     fetchWithTimeout,
     findFirstFound,
     HttpError,
@@ -66,6 +67,42 @@ describe("fetchJson", () => {
         expect(!result.ok && result.error).toMatchObject({
             status: HTTP_STATUS.tooManyRequests,
             message: "Request failed with status 429",
+        });
+    });
+});
+
+describe("unread body", () => {
+    function stubStatusWithBody(status: number) {
+        const cancelSource = vi.fn();
+        const body = new ReadableStream<Uint8Array>({ cancel: cancelSource });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(body, { status })),
+        );
+        return cancelSource;
+    }
+
+    it.each([
+        ["fetchJson 404", HTTP_STATUS.notFound, () => fetchJson("https://a.test/x")],
+        ["fetchJson 500", HTTP_STATUS.serverError, () => fetchJson("https://a.test/x")],
+        ["fetchText 500", HTTP_STATUS.serverError, () => fetchText("https://a.test/x")],
+        [
+            "findFirstFound 404",
+            HTTP_STATUS.notFound,
+            () => findFirstFound(["a"], (c) => `https://a.test/${c}`),
+        ],
+        [
+            "findFirstFound 500",
+            HTTP_STATUS.serverError,
+            () => findFirstFound(["a"], (c) => `https://a.test/${c}`),
+        ],
+    ])("gets cancelled on %s", async (_label, status, request) => {
+        const cancelSource = stubStatusWithBody(status);
+
+        await settle(request);
+
+        await vi.waitFor(() => {
+            expect(cancelSource).toHaveBeenCalled();
         });
     });
 });
