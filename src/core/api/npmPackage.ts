@@ -243,14 +243,19 @@ function anyColumnVisible(visibleColumns: ReadonlySet<string>, keys: string[]): 
     return keys.some((key) => isColumnVisible(visibleColumns, key));
 }
 
+/** Own keys only, so a key like "constructor" can't read Object.prototype. */
+function isOwnKey(record: object, key: string | null | undefined): key is string {
+    return key != null && Object.hasOwn(record, key);
+}
+
 /**
  * Registry key `range` refers to: itself when published, else its leading
  * semver ("^1.2.3" -> "1.2.3") when published, else the latest version.
  */
 function resolveVersionKey(npmData: NpmRegistryData | null, range: string): string | undefined {
     const versions = npmData?.versions ?? {};
-    return [range, pinnedVersionOf(range), npmData?.["dist-tags"]?.latest].find(
-        (key) => key != null && Object.hasOwn(versions, key),
+    return [range, pinnedVersionOf(range), npmData?.["dist-tags"]?.latest].find((key) =>
+        isOwnKey(versions, key),
     );
 }
 
@@ -260,12 +265,12 @@ function resolveVersionData(npmData: NpmRegistryData | null, range: string): unk
     return key ? npmData?.versions?.[key] : undefined;
 }
 
-/** Publish time of registry key `key`; own keys only, so "constructor" can't read Object.prototype. */
+/** Publish time of registry key `key`; null when unpublished. */
 function publishTime(
     times: Record<string, string | undefined>,
     key: string | null | undefined,
 ): string | null {
-    return key != null && Object.hasOwn(times, key) ? (times[key] ?? null) : null;
+    return isOwnKey(times, key) ? (times[key] ?? null) : null;
 }
 
 function repositoryUrl(npmData: NpmRegistryData | null): string | undefined {
