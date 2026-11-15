@@ -18,6 +18,7 @@
             v-if="dependency.sourceCode"
             class="dependency-cell__source-link"
             :href="dependency.sourceCode"
+            referrerpolicy="strict-origin"
             :aria-label="t('table.sourceLink')"
             :title="t('table.sourceLink')"
             @click.stop

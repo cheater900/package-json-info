@@ -160,6 +160,18 @@ describe("fetchWithTimeout", () => {
         );
     });
 
+    it("sends referrer origin only", async () => {
+        const fetchMock = vi.fn(async () => jsonResponse({}));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await fetchWithTimeout("https://a.test/x");
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://a.test/x",
+            expect.objectContaining({ referrerPolicy: "strict-origin" }),
+        );
+    });
+
     it("keeps caller method and body", async () => {
         const fetchMock = vi.fn(async () => jsonResponse({}));
         vi.stubGlobal("fetch", fetchMock);

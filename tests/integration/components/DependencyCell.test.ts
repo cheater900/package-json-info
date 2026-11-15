@@ -85,6 +85,15 @@ describe("DependencyCell failed lookup", () => {
     });
 });
 
+describe("DependencyCell source link", () => {
+    it("sends referrer origin only", () => {
+        const column = DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === "sourceCode")!;
+        const wrapper = mount(DependencyCell, { props: { column, dependency: fullDependency } });
+
+        expect(wrapper.find("a").attributes("referrerpolicy")).toBe("strict-origin");
+    });
+});
+
 describe("DependencyCell pending", () => {
     it("renders loading status instead of value for pending column", () => {
         const column = DEPENDENCY_TABLE_COLUMNS.find((c) => c.key === "weeklyDownloads")!;

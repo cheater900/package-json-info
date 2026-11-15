@@ -47,6 +47,13 @@ export type RequestObserver = (request: ObservedRequest) => RequestHandle;
 
 const requestObservers = new Set<RequestObserver>();
 
+/**
+ * Origin only, never path or query: the page URL carries share steps and
+ * `?inputUrl=`, which may hold a secret query (`?token=`). A host header
+ * such as `unsafe-url` would otherwise send it to every API and tarball host.
+ */
+const REFERRER_POLICY = "strict-origin";
+
 export class HttpError extends Error {
     readonly status: number;
 
@@ -188,6 +195,7 @@ export async function fetchWithTimeout(
     const result = await settle(() =>
         fetch(isAuthorized ? url : proxiedUrl(url), {
             ...init,
+            referrerPolicy: REFERRER_POLICY,
             signal: AbortSignal.timeout(coreRuntime().settings().fetchTimeoutMs),
         }),
     );
