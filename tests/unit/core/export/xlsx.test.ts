@@ -60,6 +60,11 @@ describe("xlsxExporter", () => {
         expect(sheet.data[1][0]).toBe("x".repeat(32_767));
     });
 
+    it("cuts header cells to Excel limit of 32767 chars", async () => {
+        const [sheet] = await sheetsFor([{ title: "s", headers: ["x".repeat(40_000)], rows: [] }]);
+        expect(sheet.data[0][0]).toMatchObject({ value: "x".repeat(32_767) });
+    });
+
     it("cuts cells to Excel limit of 32767 chars", async () => {
         const [sheet] = await sheetsFor([
             { title: "s", headers: ["N"], rows: [["x".repeat(40_000)]] },

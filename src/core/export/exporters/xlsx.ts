@@ -15,6 +15,10 @@ function sheetName(title: string): string {
     return title.replace(SHEET_NAME_FORBIDDEN, " ").slice(0, SHEET_NAME_MAX_LENGTH);
 }
 
+function cutToCellLimit(text: string): string {
+    return text.slice(0, CELL_MAX_LENGTH);
+}
+
 function columnWidths(headers: string[], rows: string[][]) {
     return headers.map((header, index) => {
         const longest = Math.max(header.length, ...rows.map((row) => row[index]?.length ?? 0));
@@ -26,8 +30,11 @@ function columnWidths(headers: string[], rows: string[][]) {
 function renderXlsx(exportDocument: ExportDocument): Promise<Blob> {
     const sheets = exportDocument.sections.map((section) => {
         const data: SheetData = [
-            section.headers.map((header) => ({ value: header, fontWeight: "bold" as const })),
-            ...section.rows.map((row) => row.map((cell) => cell.slice(0, CELL_MAX_LENGTH))),
+            section.headers.map((header) => ({
+                value: cutToCellLimit(header),
+                fontWeight: "bold" as const,
+            })),
+            ...section.rows.map((row) => row.map(cutToCellLimit)),
         ];
         return {
             data,
