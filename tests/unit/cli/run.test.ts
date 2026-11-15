@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { readdir, writeFile } from "node:fs/promises";
+import { readdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultLookupCacheDir } from "../../../src/cli/fileLookupStore";
 import { USAGE } from "../../../src/cli/options";
 import { EXIT_BAD_ARGUMENTS, EXIT_LOAD_FAILURE, EXIT_OK } from "../../../src/cli/run";
 import { clearPackageInfoCache } from "../../../src/core/api/npmPackage";
+import { MAX_SOURCE_TEXT_BYTES } from "../../../src/core/constants";
 import { coreRuntime } from "../../../src/core/runtime";
 import { leftPadRegistryRoute } from "../../fixtures/dependencies";
 import { createTempDir, runCli } from "../../helpers/cli";
@@ -176,6 +177,28 @@ describe("load failures", () => {
 
         expect(result.code).toBe(EXIT_LOAD_FAILURE);
         expect(result.stderr).toMatch(/^Invalid package\.json: dependencies: /);
+    });
+
+    it("exits 1 for package.json symlinked to /dev/zero", async () => {
+        await symlink("/dev/zero", join(tempDir, "package.json"));
+
+        const result = await runCli([tempDir]);
+
+        expect(result).toEqual({
+            code: EXIT_LOAD_FAILURE,
+            stdout: "",
+            stderr: "This package.json is larger than 10 MB, too large to load.\n",
+        });
+    });
+
+    it("reads file of MAX_SOURCE_TEXT_BYTES", async () => {
+        const json = '{"name":"big-app"}';
+        const path = await writePackageJson(json.padEnd(MAX_SOURCE_TEXT_BYTES));
+
+        const result = await runCli([path]);
+
+        expect(result.code).toBe(EXIT_OK);
+        expect(result.stdout).toMatch(/^# big-app\n/);
     });
 });
 

@@ -1,9 +1,10 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { constants, statSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
+import { constants, createReadStream, statSync } from "node:fs";
 import { join } from "node:path";
 import { bindCore } from "./coreBinding";
 import { USAGE, parseOptions } from "./options";
 import type { CliOptions } from "./options";
+import { BYTES_PER_MB, MAX_SOURCE_TEXT_BYTES } from "../core/constants";
 import { fetchPackagesInfo } from "../core/api/npmPackage";
 import { fetchDependencySource, fetchUrlSource } from "../core/api/packageJsonSource";
 import type { LoadedSource } from "../core/api/packageJsonSource";
@@ -65,9 +66,23 @@ async function textOf(load: Promise<LoadedSource | null>, notFoundMessage: strin
     return source.text;
 }
 
-/** UTF-8 text of file `path`; drops a leading BOM, as the web app's `File.text()` does. */
+/**
+ * UTF-8 text of file `path`; drops a leading BOM, as the web app's
+ * `File.text()` does. Reads at most one byte past MAX_SOURCE_TEXT_BYTES and
+ * throws then: a cloned repo can symlink package.json to `/dev/zero`.
+ */
 async function readTextFile(path: string): Promise<string> {
-    return new TextDecoder().decode(await readFile(path));
+    const chunks: Buffer[] = [];
+    for await (const chunk of createReadStream(path, { end: MAX_SOURCE_TEXT_BYTES })) {
+        chunks.push(chunk);
+    }
+    const data = Buffer.concat(chunks);
+    if (data.length > MAX_SOURCE_TEXT_BYTES) {
+        throw new Error(
+            t("errors.sourceTooLarge", { megabytes: MAX_SOURCE_TEXT_BYTES / BYTES_PER_MB }),
+        );
+    }
+    return new TextDecoder().decode(data);
 }
 
 /**
