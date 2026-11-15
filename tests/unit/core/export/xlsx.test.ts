@@ -46,6 +46,13 @@ describe("xlsxExporter", () => {
         expect(sheet.columns).toEqual([{ width: 8 }, { width: 12 }, { width: 60 }]);
     });
 
+    it("sizes column by header when row has fewer cells", async () => {
+        const [sheet] = await sheetsFor([
+            { title: "s", headers: ["Longer header", "N"], rows: [["a"]] },
+        ]);
+        expect(sheet.columns).toEqual([{ width: 13 }, { width: 8 }]);
+    });
+
     it("keeps cell of exactly 32767 chars whole", async () => {
         const [sheet] = await sheetsFor([
             { title: "s", headers: ["N"], rows: [["x".repeat(32_767)]] },
