@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { fetchPackageJsonFromRepo } from "../../../../src/core/api/repoPackageJson";
-import { HTTP_STATUS, jsonResponse, statusResponse } from "../../../helpers/fetchMock";
+import {
+    HTTP_STATUS,
+    jsonResponse,
+    statusResponse,
+    stubFetchSized,
+} from "../../../helpers/fetchMock";
 
 describe("fetchPackageJsonFromRepo", () => {
     it("fetches from GitHub raw content URL on main branch", async () => {
@@ -257,5 +262,15 @@ describe("fetchPackageJsonFromRepo failures", () => {
 
         await expect(fetchPackageJsonFromRepo("https://github.com/o/r")).rejects.toThrow("429");
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ["repo root", "https://github.com/o/r"],
+        ["blob", "https://github.com/o/r/blob/main/package.json"],
+    ])("throws + cancels endless %s raw file past 10 MB", async (_label, url) => {
+        const cancelSource = stubFetchSized(Infinity);
+
+        await expect(fetchPackageJsonFromRepo(url)).rejects.toThrow("larger than 10 MB");
+        expect(cancelSource).toHaveBeenCalled();
     });
 });

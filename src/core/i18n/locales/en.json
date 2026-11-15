@@ -437,6 +437,7 @@
         "repoTreeFetch": "Could not fetch the repository tree (status {status}).",
         "fileTooLarge": "This file is larger than {megabytes} MB, too large to show.",
         "fileContentFetch": "Could not fetch file contents (status {status}).",
+        "sourceTooLarge": "This package.json is larger than {megabytes} MB, too large to load.",
         "workspaceNotFound": "Could not load the package.json of workspace \"{path}\"."
     },
     "workspaces": {

@@ -12,7 +12,7 @@ import { t } from "../i18n";
 import { parseRepoSlug, repoWebUrl } from "../utils/repoUrl";
 import type { RepoSlug } from "../utils/repoUrl";
 import { githubRawFileUrl } from "./github";
-import { findFirstFound } from "./http";
+import { findFirstFound, readSourceText } from "./http";
 
 /** A repo's package.json, with where it was found. */
 export type RepoPackageJson = {
@@ -93,7 +93,7 @@ async function fetchGithubFile(
     if (!found) {
         return null;
     }
-    return { text: await found.response.text(), slug, branch: rootRef };
+    return { text: await readSourceText(found.response), slug, branch: rootRef };
 }
 
 /**
@@ -132,5 +132,5 @@ export async function fetchPackageJsonFromRepo(repoUrl: string): Promise<RepoPac
     if (!found) {
         return null;
     }
-    return { text: await found.response.text(), slug, branch: found.candidate };
+    return { text: await readSourceText(found.response), slug, branch: found.candidate };
 }

@@ -8,7 +8,7 @@ import {
 } from "../utils/workspaces";
 import type { RepoRef, WorkspaceContext } from "../utils/workspaces";
 import { fetchGithubTree, GITHUB_ENTRY_FILE, githubRawFileUrl } from "./github";
-import { fetchText, findFirstFound } from "./http";
+import { fetchText, findFirstFound, readSourceText } from "./http";
 
 /** Invalid JSON reads as "no package.json"; the loader reports the syntax error itself. */
 function parseJsonOrNull(text: string): unknown {
@@ -28,7 +28,7 @@ async function fetchWorkspacePatterns(repo: RepoRef, packageJsonText: string): P
     const found = await findFirstFound([PNPM_WORKSPACE_FILE], (file) =>
         githubRawFileUrl(repo.owner, repo.repo, encodeURIComponent(repo.branch), file),
     );
-    return found ? parsePnpmWorkspacePatterns(await found.response.text()) : [];
+    return found ? parsePnpmWorkspacePatterns(await readSourceText(found.response)) : [];
 }
 
 async function listWorkspaces(

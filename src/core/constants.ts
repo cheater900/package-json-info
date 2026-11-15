@@ -53,6 +53,8 @@ export const MAX_FILE_TREE_DEPTH = 1000;
 export const MAX_FILE_TREE_ENTRIES = 20_000;
 /** Largest file the source viewer shows; bigger text stalls the tab. */
 export const MAX_VIEWED_FILE_BYTES = 2 * BYTES_PER_MB;
+/** Largest package.json or pnpm-workspace.yaml read from a URL or file; real ones stay far below it. */
+export const MAX_SOURCE_TEXT_BYTES = 10 * BYTES_PER_MB;
 
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /** Average month length (365.25 days / 12). */

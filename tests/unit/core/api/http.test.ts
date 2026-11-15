@@ -9,6 +9,7 @@ import {
     proxiedUrl,
 } from "../../../../src/core/api/http";
 import type { ObservedRequest } from "../../../../src/core/api/http";
+import { MAX_SOURCE_TEXT_BYTES } from "../../../../src/core/constants";
 import { settle } from "../../../../src/core/utils/settle";
 import { coreSettings } from "../../../helpers/core";
 import {
@@ -16,6 +17,7 @@ import {
     HTTP_STATUS,
     jsonResponse,
     statusResponse,
+    stubFetchSized,
     stubFetchStreamed,
 } from "../../../helpers/fetchMock";
 import { subjectOf } from "../../../helpers/requests";
@@ -98,6 +100,30 @@ describe("unread body", () => {
         await settle(request);
 
         await expectBodyCancelled(cancelSource);
+    });
+});
+
+describe("fetchText", () => {
+    it("returns body of MAX_SOURCE_TEXT_BYTES", async () => {
+        stubFetchSized(MAX_SOURCE_TEXT_BYTES);
+
+        expect((await fetchText("https://a.test/x")).length).toBe(MAX_SOURCE_TEXT_BYTES);
+    });
+
+    it("throws + cancels endless body past MAX_SOURCE_TEXT_BYTES", async () => {
+        const cancelSource = stubFetchSized(Infinity);
+
+        await expect(fetchText("https://a.test/x")).rejects.toThrow("larger than 10 MB");
+        expect(cancelSource).toHaveBeenCalled();
+    });
+
+    it("drops leading BOM, as Response text does", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response("\uFEFF{}")),
+        );
+
+        expect(await fetchText("https://a.test/x")).toBe("{}");
     });
 });
 

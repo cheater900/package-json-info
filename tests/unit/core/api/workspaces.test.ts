@@ -9,6 +9,7 @@ import {
     HTTP_STATUS,
     jsonResponse,
     statusResponse,
+    stubFetchSized,
     textResponse,
 } from "../../../helpers/fetchMock";
 import {
@@ -160,6 +161,14 @@ describe("fetchWorkspaceContext", () => {
         expect(context).toMatchObject({ paths: [], failed: true });
     });
 
+    it("flags failed for endless pnpm file", async () => {
+        stubFetchSized(Infinity);
+
+        const context = await fetchWorkspaceContext(monorepoRef, "{}");
+
+        expect(context).toMatchObject({ paths: [], failed: true });
+    });
+
     it("passes truncated flag from GitHub", async () => {
         stubRepo({ tree: jsonResponse({ ...TREE, truncated: true }) });
 
@@ -211,5 +220,13 @@ describe("fetchWorkspacePackageJson", () => {
         );
 
         await expect(fetchWorkspacePackageJson(monorepoRef, "packages/gone")).rejects.toThrow();
+    });
+
+    it("throws for endless workspace package.json", async () => {
+        stubFetchSized(Infinity);
+
+        await expect(fetchWorkspacePackageJson(monorepoRef, "packages/a")).rejects.toThrow(
+            "larger than 10 MB",
+        );
     });
 });

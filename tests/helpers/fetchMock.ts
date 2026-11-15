@@ -1,5 +1,6 @@
 import { expect, vi } from "vitest";
 import type { Mock } from "vitest";
+import { BYTES_PER_MB } from "../../src/core/constants";
 
 export const HTTP_STATUS = {
     ok: 200,
@@ -11,6 +12,8 @@ export const HTTP_STATUS = {
     serverError: 500,
     serviceUnavailable: 503,
 } as const;
+
+const BYTE_LETTER_A = 0x61;
 
 /** Minimal `Response` stand-in: `ok` true -> 200, false -> 404. */
 export function jsonResponse(body: unknown, ok = true) {
@@ -50,6 +53,32 @@ export function stubFetchStreamed(status: number) {
     vi.stubGlobal(
         "fetch",
         vi.fn(async () => response),
+    );
+    return cancelSource;
+}
+
+/**
+ * Stubs global `fetch` with a 200 response streaming `totalBytes` bytes
+ * (Infinity = endless) in chunks of at most 1 MB. Returns its `cancelSource`.
+ */
+export function stubFetchSized(totalBytes: number) {
+    const cancelSource = vi.fn();
+    let sentBytes = 0;
+    const body = new ReadableStream<Uint8Array>({
+        pull(controller) {
+            if (sentBytes >= totalBytes) {
+                controller.close();
+                return;
+            }
+            const size = Math.min(BYTES_PER_MB, totalBytes - sentBytes);
+            controller.enqueue(new Uint8Array(size).fill(BYTE_LETTER_A));
+            sentBytes += size;
+        },
+        cancel: cancelSource,
+    });
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(body)),
     );
     return cancelSource;
 }
