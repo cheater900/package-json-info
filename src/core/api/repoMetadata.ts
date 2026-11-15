@@ -141,6 +141,17 @@ export async function fetchRepoIssueCounts(
     return { openPRs, closedPRs, openIssues, closedIssues };
 }
 
+/** Commit activity for a failed commits request: none on 404, zero on 409 (empty repo). */
+function failedCommitActivity(status: number): RepoCommitActivity {
+    if (status === HTTP_NOT_FOUND) {
+        return EMPTY_COMMIT_ACTIVITY;
+    }
+    if (status === HTTP_CONFLICT) {
+        return { lastCommitDate: null, commitsLastYear: 0 };
+    }
+    throw new HttpError(status);
+}
+
 /**
  * Latest commit date and commit count (capped at COMMIT_ACTIVITY_SAMPLE_SIZE)
  * within COMMIT_ACTIVITY_WINDOW_DAYS via GitHub; other hosts have none.
@@ -159,15 +170,7 @@ export async function fetchRepoCommitActivity(
     const response = await fetchWithTimeout(url, { headers: githubHeaders }, subject);
     if (!response.ok) {
         discardBody(response);
-    }
-    if (response.status === HTTP_NOT_FOUND) {
-        return EMPTY_COMMIT_ACTIVITY;
-    }
-    if (response.status === HTTP_CONFLICT) {
-        return { lastCommitDate: null, commitsLastYear: 0 };
-    }
-    if (!response.ok) {
-        throw new HttpError(response.status);
+        return failedCommitActivity(response.status);
     }
     const commits = GithubCommitsSchema.parse(await response.json());
     // Newest first; a commit without committer date still counts.

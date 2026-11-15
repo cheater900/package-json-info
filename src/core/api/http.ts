@@ -216,15 +216,14 @@ export async function fetchJson<T>(
     subject: RequestSubject | null = null,
 ): Promise<T | null> {
     const response = await fetchWithTimeout(url, init, subject);
+    if (response.ok) {
+        return response.json() as Promise<T>;
+    }
+    discardBody(response);
     if (response.status === HTTP_NOT_FOUND) {
-        discardBody(response);
         return null;
     }
-    if (!response.ok) {
-        discardBody(response);
-        throw new HttpError(response.status);
-    }
-    return response.json() as Promise<T>;
+    throw new HttpError(response.status);
 }
 
 /** GETs a URL as text. Throws on non-2xx responses, network failure, and timeout. */
