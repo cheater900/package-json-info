@@ -34,8 +34,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   and pnpm likely do same; not checked against their source.
 - **`retryFailedRows` keeps fetching after navigation** to another
   entry. Only wastes requests.
-- **`times[range]` reads inherited keys**: range like `constructor` makes
-  `versionDate` a Function. Every formatter and filter shows "-".
 - **GitLab subgroup repos** (`group/sub/project`) parse as `group/sub`,
   so stars and source link point at wrong project. Fix needs slugs with
   more than two segments.
@@ -43,9 +41,6 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   `> /dev/full`) crashes with stack trace. Exit code stays 1.
 - **FIFO at default CLI export name blocks write forever.** `O_NONBLOCK`
   on open fixes it.
-- **Long package name breaks default CLI export name.**
-  `exportFileBaseName` in `src/core/export/buildExportDocument.ts` has no
-  length cap; name over about 235 characters fails with ENAMETOOLONG.
 
 ## Behavior to know
 

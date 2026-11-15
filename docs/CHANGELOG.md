@@ -233,6 +233,9 @@ Condensed from git history. Newest month first.
 - **Empty or dot package names** (`""`, `.`, `..`, also via `npm:`
   alias) show error row "is not a valid npm package name", no longer
   npm's total downloads as package's own.
+- **Publish times** read from registry `time` own keys only, so range or
+  latest tag named like `constructor` no longer turns version date into
+  Function.
 
 #### Source tree
 
@@ -254,6 +257,8 @@ Condensed from git history. Newest month first.
 
 - **XLSX cells** cut to Excel's 32,767-character limit, so long
   dependency list or deprecation notice no longer makes Excel repair file.
+- **Export file name** slug capped at 200 characters, so long package
+  name no longer fails default CLI export with ENAMETOOLONG.
 
 #### Table
 
@@ -292,6 +297,12 @@ Condensed from git history. Newest month first.
   longer looked up as npm package.
 - **Relative `XDG_CACHE_HOME`** ignored per XDG spec, so cache never lands
   under working dir.
+
+#### Network
+
+- **Unread bodies** of 404 and error responses cancelled, so Node fetch
+  frees their connections; run of registry 404s in CLI no longer exhausts
+  sockets.
 
 ### Security
 
