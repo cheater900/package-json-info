@@ -1,4 +1,4 @@
-import type { DependencyRow, PackageInput } from "../../core/types";
+import type { DependencyListId, DependencyRow, PackageInput } from "../../core/types";
 import type { PackageJson } from "../../core/utils/packageJson";
 import type { WorkspaceContext } from "../../core/utils/workspaces";
 
@@ -30,6 +30,22 @@ export type HistoryEntry = {
 export type FetchedHistoryEntry = HistoryEntry & {
     deps: DependencyRow[];
     devDeps: DependencyRow[];
+};
+
+/** Rows of one table holding every column in `columns`; null once the shown package.json changed. */
+export type LoadRows = (
+    list: DependencyListId,
+    columns: ReadonlySet<string>,
+) => Promise<DependencyRow[] | null>;
+
+/** Dependency table as dialogs list it. */
+export type TableRef = {
+    id: DependencyListId;
+    title: string;
+};
+
+export type TableWithRows = TableRef & {
+    dependencies: DependencyRow[];
 };
 
 export type HistoryPosition = {
@@ -137,4 +153,21 @@ export function isEntryCacheValid(
         !hasRowToRetry(entry.deps) &&
         !hasRowToRetry(entry.devDeps)
     );
+}
+
+/**
+ * `tables` with their rows for `columns`, loaded in parallel through
+ * `loadRows`; null when any list comes back null: the shown package.json
+ * changed mid-load, so no row set is valid.
+ */
+export async function loadTablesWithRows(
+    tables: readonly TableRef[],
+    columns: ReadonlySet<string>,
+    loadRows: LoadRows,
+): Promise<TableWithRows[] | null> {
+    const rows = await Promise.all(tables.map((table) => loadRows(table.id, columns)));
+    if (!rows.every((list) => list !== null)) {
+        return null;
+    }
+    return tables.map((table, i) => ({ id: table.id, title: table.title, dependencies: rows[i] }));
 }

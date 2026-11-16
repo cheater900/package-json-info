@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
     createHistoryEntry,
     pushHistoryEntry,
@@ -7,9 +7,10 @@ import {
     columnsMissingFrom,
     entryCoversColumns,
     isEntryCacheValid,
+    loadTablesWithRows,
     replaceRows,
 } from "../../../../src/app/utils/packageJsonHistory";
-import type { DependencyRow } from "../../../../src/core/types";
+import type { DependencyListId, DependencyRow } from "../../../../src/core/types";
 import { fullDependency } from "../../../fixtures/dependencies";
 import { rootWorkspaceContext } from "../../../fixtures/workspaces";
 
@@ -204,5 +205,32 @@ describe("replaceRows", () => {
             kept,
             otherVersion,
         ]);
+    });
+});
+
+describe("loadTablesWithRows", () => {
+    const tables = [
+        { id: "deps" as DependencyListId, title: "Deps" },
+        { id: "devDeps" as DependencyListId, title: "Dev Deps" },
+    ];
+    const columns = new Set(["license"]);
+
+    it("pairs each table with its rows + passes columns", async () => {
+        const loadRows = vi.fn(async (list: DependencyListId) =>
+            list === "deps" ? [fullDependency] : [],
+        );
+
+        expect(await loadTablesWithRows(tables, columns, loadRows)).toEqual([
+            { id: "deps", title: "Deps", dependencies: [fullDependency] },
+            { id: "devDeps", title: "Dev Deps", dependencies: [] },
+        ]);
+        expect(loadRows).toHaveBeenCalledWith("devDeps", columns);
+    });
+
+    it("returns null when any list is stale", async () => {
+        const loadRows = async (list: DependencyListId) =>
+            list === "deps" ? [fullDependency] : null;
+
+        expect(await loadTablesWithRows(tables, columns, loadRows)).toBeNull();
     });
 });

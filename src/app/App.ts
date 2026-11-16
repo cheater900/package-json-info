@@ -39,7 +39,7 @@ import appPackageJson from "../../package.json";
 import { JSON_INDENT } from "../core/constants";
 import { t } from "../core/i18n";
 import { WORKSPACE_ROOT, workspacePatternsOf } from "../core/utils/workspaces";
-import { isRowRetryable } from "./utils/packageJsonHistory";
+import { isRowRetryable, loadTablesWithRows } from "./utils/packageJsonHistory";
 import { isColumnVisible } from "../core/utils/tableColumns";
 import {
     activeHealthFilterCount,
@@ -275,24 +275,19 @@ export default defineComponent({
         /** Fetches the columns the report reads, then shows the report of the rows the tables show. */
         async function generateReport() {
             isGeneratingReport.value = true;
-            const sections = tableSections.value;
-            const columns = new Set(REPORT_COLUMN_KEYS);
-            const rows = await Promise.all(
-                sections.map((section) => fetchRowsWithColumns(section.id, columns)),
+            const tables = await loadTablesWithRows(
+                tableSections.value,
+                new Set(REPORT_COLUMN_KEYS),
+                fetchRowsWithColumns,
             );
             isGeneratingReport.value = false;
-            // A null list means the shown package.json changed mid-load: nothing valid to report.
-            if (!rows.every((list) => list !== null)) {
+            if (!tables) {
                 return;
             }
             const report = buildReport(
                 {
                     title: exportTitle.value,
-                    tables: sections.map((section, i) => ({
-                        id: section.id,
-                        title: section.title,
-                        dependencies: rows[i],
-                    })),
+                    tables,
                     searchQuery: searchQuery.value,
                     healthFilters: healthFilters.value,
                 },

@@ -2,17 +2,12 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { nextTick } from "vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import ExportDialog from "../../../src/app/components/ExportDialog.vue";
-import type { ExportDialogTable } from "../../../src/app/components/ExportDialog";
+import type { LoadRows, TableRef } from "../../../src/app/utils/packageJsonHistory";
 import { EXPORTERS } from "../../../src/core/export";
 import { DEFAULT_COLUMN_ORDER } from "../../../src/core/utils/tableColumns";
 import type { DependencyListId, DependencyRow } from "../../../src/core/types";
 import { fullDependency, sparseDependency } from "../../fixtures/dependencies";
 import { STUB_OBJECT_URL, stubDownload } from "../../helpers/download";
-
-type LoadRows = (
-    list: DependencyListId,
-    columns: ReadonlySet<string>,
-) => Promise<DependencyRow[] | null>;
 
 type LoadCall = {
     list: DependencyListId;
@@ -20,7 +15,7 @@ type LoadCall = {
     resolve: (rows: DependencyRow[] | null) => void;
 };
 
-const TABLES: ExportDialogTable[] = [
+const TABLES: TableRef[] = [
     { id: "deps", title: "Deps" },
     { id: "devDeps", title: "Dev Deps" },
 ];

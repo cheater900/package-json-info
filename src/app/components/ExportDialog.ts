@@ -4,22 +4,13 @@ import { t } from "../../core/i18n";
 import { COLUMN_ICONS } from "./columnIcons";
 import { EXPORTERS } from "../../core/export";
 import { buildExportDocument, exportFileBaseName } from "../../core/export/buildExportDocument";
-import type { ExportTableInput } from "../../core/export/buildExportDocument";
 import { useExportLock } from "../composables/useExportLock";
 import { downloadBlob } from "../utils/download";
+import { loadTablesWithRows } from "../utils/packageJsonHistory";
+import type { LoadRows, TableRef, TableWithRows } from "../utils/packageJsonHistory";
 import { TOGGLEABLE_COLUMNS, orderColumns } from "../../core/utils/tableColumns";
-import type { DependencyListId, DependencyRow } from "../../core/types";
+import type { DependencyListId } from "../../core/types";
 import IconDownload from "./IconDownload.vue";
-
-export type ExportDialogTable = {
-    id: DependencyListId;
-    title: string;
-};
-
-type LoadRows = (
-    list: DependencyListId,
-    columns: ReadonlySet<string>,
-) => Promise<DependencyRow[] | null>;
 
 /**
  * Export form: pick tables, columns and format, then download. Each pick
@@ -31,7 +22,7 @@ export default defineComponent({
     components: { IconDownload },
     props: {
         tables: {
-            type: Array as PropType<ExportDialogTable[]>,
+            type: Array as PropType<TableRef[]>,
             required: true,
         },
         /** Tables checked when the dialog opens. */
@@ -83,7 +74,7 @@ export default defineComponent({
         );
         const formatId = ref(EXPORTERS[0].id);
         // Selected tables with rows for the selected columns; null until loaded.
-        const loadedTables = shallowRef<ExportTableInput[] | null>(null);
+        const loadedTables = shallowRef<TableWithRows[] | null>(null);
         const isLoading = ref(false);
         const hasFailed = ref(false);
         const { isExporting, lock, unlockAfterQueuedClicks } = useExportLock();
@@ -111,19 +102,17 @@ export default defineComponent({
             const tables = props.tables.filter((table) =>
                 selectedTableIds.value.includes(table.id),
             );
-            const columns = new Set(selectedColumnKeys.value);
             isLoading.value = true;
-            const rows = await Promise.all(
-                tables.map((table) => props.loadRows(table.id, columns)),
+            const loaded = await loadTablesWithRows(
+                tables,
+                new Set(selectedColumnKeys.value),
+                props.loadRows,
             );
             if (latestLoad !== load) {
                 return;
             }
             isLoading.value = false;
-            // A null list means the shown package.json changed mid-load: nothing valid to save.
-            loadedTables.value = rows.every((list) => list !== null)
-                ? tables.map((table, i) => ({ title: table.title, dependencies: rows[i] }))
-                : null;
+            loadedTables.value = loaded;
         }
 
         watch([selectedTableIds, selectedColumnKeys], loadSelectedRows, { immediate: true });
