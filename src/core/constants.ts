@@ -32,6 +32,13 @@ export const MAX_CONFIG_INT = 2 ** 31 - 1;
 export const HTTP_HEADER_AUTHORIZATION = "Authorization";
 export const HTTP_NOT_FOUND = 404;
 export const HTTP_CONFLICT = 409;
+/**
+ * Referrer of every fetch and outbound link: origin only, never path or
+ * query. The page URL carries share steps and `?inputUrl=`, which may hold a
+ * secret query (`?token=`); a host header such as `unsafe-url` would
+ * otherwise send it to every API, tarball and repo host.
+ */
+export const REFERRER_POLICY = "strict-origin" as const;
 export const HTTP_UNAUTHORIZED = 401;
 /** Marks where a CORS proxy template puts the encoded target URL; without it the proxy is a prefix. */
 export const PROXY_URL_PLACEHOLDER = "{url}";

@@ -3,7 +3,7 @@ import { t } from "../../core/i18n";
 import { fmtList, formatCell } from "../../core/utils/dependencyRowFormatting";
 import { healthBand } from "../../core/utils/healthScore";
 import { hasLicenseWarning } from "../../core/utils/license";
-import { FAILED_VALUE, MISSING_VALUE } from "../../core/constants";
+import { FAILED_VALUE, MISSING_VALUE, REFERRER_POLICY } from "../../core/constants";
 import IconExternalLink from "./IconExternalLink.vue";
 import IconFolderTree from "./IconFolderTree.vue";
 import IconWarning from "./IconWarning.vue";
@@ -50,6 +50,7 @@ export default defineComponent({
             failedLookupError,
             FAILED_VALUE,
             MISSING_VALUE,
+            REFERRER_POLICY,
         };
     },
 });
