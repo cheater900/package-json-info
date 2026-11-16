@@ -1,10 +1,10 @@
 import { writeFile } from "node:fs/promises";
 import { constants, createReadStream, statSync } from "node:fs";
 import { join } from "node:path";
+import { Readable } from "node:stream";
 import { bindCore } from "./coreBinding";
 import { USAGE, parseOptions } from "./options";
 import type { CliOptions } from "./options";
-import { BYTES_PER_MB, MAX_SOURCE_TEXT_BYTES } from "../core/constants";
 import { fetchPackagesInfo } from "../core/api/npmPackage";
 import { fetchDependencySource, fetchUrlSource } from "../core/api/packageJsonSource";
 import type { LoadedSource } from "../core/api/packageJsonSource";
@@ -17,6 +17,7 @@ import { renderReportMarkdown } from "../core/report/renderMarkdown";
 import { renderReportPdf } from "../core/report/renderPdf";
 import type { DependencyListId } from "../core/types";
 import { splitNameAndRange } from "../core/utils/npmSpec";
+import { readSourceStreamText } from "../core/utils/bytes";
 import { parsePackageJsonText, toPackageInputs } from "../core/utils/packageJson";
 import type { DependencyMap, PackageJson } from "../core/utils/packageJson";
 import { settle } from "../core/utils/settle";
@@ -67,22 +68,13 @@ async function textOf(load: Promise<LoadedSource | null>, notFoundMessage: strin
 }
 
 /**
- * UTF-8 text of file `path`; drops a leading BOM, as the web app's
- * `File.text()` does. Reads at most one byte past MAX_SOURCE_TEXT_BYTES and
- * throws then: a cloned repo can symlink package.json to `/dev/zero`.
+ * Text of file `path`, capped and BOM-free like a fetched source (see
+ * readSourceStreamText). The cast bridges `node:stream/web` and DOM stream
+ * types, which differ only in typing: root tsconfig checks the CLI with DOM lib.
  */
-async function readTextFile(path: string): Promise<string> {
-    const chunks: Buffer[] = [];
-    for await (const chunk of createReadStream(path, { end: MAX_SOURCE_TEXT_BYTES })) {
-        chunks.push(chunk);
-    }
-    const data = Buffer.concat(chunks);
-    if (data.length > MAX_SOURCE_TEXT_BYTES) {
-        throw new Error(
-            t("errors.sourceTooLarge", { megabytes: MAX_SOURCE_TEXT_BYTES / BYTES_PER_MB }),
-        );
-    }
-    return new TextDecoder().decode(data);
+function readTextFile(path: string): Promise<string> {
+    const stream = Readable.toWeb(createReadStream(path)) as ReadableStream<Uint8Array>;
+    return readSourceStreamText(stream);
 }
 
 /**

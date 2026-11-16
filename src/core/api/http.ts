@@ -1,14 +1,12 @@
 import {
-    BYTES_PER_MB,
     GITHUB_API_URL,
     HTTP_HEADER_AUTHORIZATION,
     HTTP_NOT_FOUND,
-    MAX_SOURCE_TEXT_BYTES,
     PROXY_URL_PLACEHOLDER,
 } from "../constants";
 import { t } from "../i18n";
 import { coreRuntime } from "../runtime";
-import { concatBytes } from "../utils/bytes";
+import { readSourceStreamText } from "../utils/bytes";
 import { settle } from "../utils/settle";
 
 export type HttpHeaders = Record<string, string>;
@@ -237,32 +235,9 @@ export async function fetchJson<T>(
     throw new HttpError(response.status);
 }
 
-/**
- * Body of a package.json source response as text, like `response.text()`.
- * Throws once it passes MAX_SOURCE_TEXT_BYTES and cancels the rest: a share
- * link fetches its URL without a click, so the server picks the size.
- */
+/** Body of a package.json source response as text, capped like readSourceStreamText. */
 export async function readSourceText(response: Response): Promise<string> {
-    if (!response.body) {
-        return response.text();
-    }
-    const reader = response.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let totalBytes = 0;
-    for (;;) {
-        const chunk = await reader.read();
-        if (chunk.done) {
-            return new TextDecoder().decode(concatBytes(chunks));
-        }
-        totalBytes += chunk.value.length;
-        if (totalBytes > MAX_SOURCE_TEXT_BYTES) {
-            await reader.cancel();
-            throw new Error(
-                t("errors.sourceTooLarge", { megabytes: MAX_SOURCE_TEXT_BYTES / BYTES_PER_MB }),
-            );
-        }
-        chunks.push(chunk.value);
-    }
+    return response.body ? readSourceStreamText(response.body) : response.text();
 }
 
 /**

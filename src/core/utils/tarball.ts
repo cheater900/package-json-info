@@ -1,6 +1,7 @@
 import { BYTES_PER_MB, MAX_UNPACKED_TARBALL_BYTES } from "../constants";
 import { t } from "../i18n";
-import { concatBytes } from "./bytes";
+import { readBytesUpTo } from "./bytes";
+import { settle } from "./settle";
 
 /** lib.dom types `DecompressionStream` input as `BufferSource`, which rejects a plain `Uint8Array` stream. */
 type GzipTransform = ReadableWritablePair<Uint8Array, Uint8Array>;
@@ -51,29 +52,17 @@ export async function gunzip(
     compressed: ReadableStream<Uint8Array>,
     maxBytes: number = MAX_UNPACKED_TARBALL_BYTES,
 ): Promise<Uint8Array> {
-    const reader = compressed
-        .pipeThrough<Uint8Array>(new DecompressionStream("gzip") as GzipTransform)
-        .getReader();
-    const chunks: Uint8Array[] = [];
-    let totalBytes = 0;
-    for (;;) {
-        let chunk: Awaited<ReturnType<typeof reader.read>>;
-        try {
-            chunk = await reader.read();
-        } catch {
-            throw new Error(t("errors.tarballCorrupt"));
-        }
-        if (chunk.done) {
-            break;
-        }
-        totalBytes += chunk.value.length;
-        if (totalBytes > maxBytes) {
-            await reader.cancel();
-            throw new Error(t("errors.tarballTooLarge", { megabytes: maxBytes / BYTES_PER_MB }));
-        }
-        chunks.push(chunk.value);
+    const decompressed = compressed.pipeThrough<Uint8Array>(
+        new DecompressionStream("gzip") as GzipTransform,
+    );
+    const result = await settle(() => readBytesUpTo(decompressed, maxBytes));
+    if (!result.ok) {
+        throw new Error(t("errors.tarballCorrupt"));
     }
-    return concatBytes(chunks);
+    if (!result.value) {
+        throw new Error(t("errors.tarballTooLarge", { megabytes: maxBytes / BYTES_PER_MB }));
+    }
+    return result.value;
 }
 
 function readString(bytes: Uint8Array, offset: number, length: number): string {
