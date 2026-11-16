@@ -1,4 +1,10 @@
 import { parseArgs } from "node:util";
+import {
+    ENV_FETCH_CONCURRENCY,
+    ENV_FETCH_TIMEOUT_MS,
+    ENV_GITHUB_TOKEN,
+    ENV_PROXY_URL,
+} from "./coreBinding";
 import type { CoreSettingsInput } from "./coreBinding";
 import { EXPORTERS } from "../core/export";
 import type { Exporter } from "../core/export/types";
@@ -58,10 +64,10 @@ Options:
   -h, --help           Show this help
 
 Environment (a flag wins over its variable):
-  PJI_PROXY_URL          Same as --proxy-url
-  PJI_FETCH_TIMEOUT_MS   Same as --timeout
-  PJI_FETCH_CONCURRENCY  Same as --concurrency
-  GITHUB_TOKEN           GitHub token for higher API limits (env only)
+  ${ENV_PROXY_URL}          Same as --proxy-url
+  ${ENV_FETCH_TIMEOUT_MS}   Same as --timeout
+  ${ENV_FETCH_CONCURRENCY}  Same as --concurrency
+  ${ENV_GITHUB_TOKEN}           GitHub token for higher API limits (env only)
   XDG_CACHE_HOME         Cache base dir (default ~/.cache); cache in package-json-info/
 `;
 

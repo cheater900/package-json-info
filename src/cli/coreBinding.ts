@@ -13,10 +13,10 @@ export type CoreSettingsInput = {
     cache?: boolean;
 };
 
-const ENV_PROXY_URL = "PJI_PROXY_URL";
-const ENV_FETCH_TIMEOUT_MS = "PJI_FETCH_TIMEOUT_MS";
-const ENV_FETCH_CONCURRENCY = "PJI_FETCH_CONCURRENCY";
-const ENV_GITHUB_TOKEN = "GITHUB_TOKEN";
+export const ENV_PROXY_URL = "PJI_PROXY_URL";
+export const ENV_FETCH_TIMEOUT_MS = "PJI_FETCH_TIMEOUT_MS";
+export const ENV_FETCH_CONCURRENCY = "PJI_FETCH_CONCURRENCY";
+export const ENV_GITHUB_TOKEN = "GITHUB_TOKEN";
 
 /** Name + raw value of one setting source; the name labels the warning for an invalid value. */
 type SettingSource = [name: string, raw: string | undefined];
