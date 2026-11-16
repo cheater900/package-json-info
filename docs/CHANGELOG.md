@@ -448,6 +448,13 @@ Condensed from git history. Newest month first.
   pure `utils/packageJsonHistory.ts`.
 - **`splitNameAndRange`** in `npmSpec.ts` shared by share-step parse and
   npm alias resolve.
+- **Capped byte reads**: `readBytesUpTo` and `readSourceStreamText` in
+  `utils/bytes.ts` shared by `gunzip`, `readSourceText` and CLI file read.
+  Stream erroring while `gunzip` cancels it now reports corrupt tarball.
+- **`REFERRER_POLICY`** -> `constants.ts`, bound in `DependencyCell.vue`.
+  CLI usage text takes `ENV_*` names from `coreBinding.ts`.
+- **`loadTablesWithRows`** in `utils/packageJsonHistory.ts` shared by
+  export dialog and report. `fmtNumber` no longer exported.
 
 ### Tests
 
@@ -483,11 +490,13 @@ Condensed from git history. Newest month first.
   hooks repeating Vitest restore config dropped.
 - **Vitest config** restores spies and stubbed globals; e2e mock routes
   built from API constants.
+- **`stubFetchWith`** helper replaces 42 inline fetch stubs in 13 files.
 
 ### Build and tooling
 
 #### Tooling
 
+- **oxlint `curly: all`** enforces braces on every block.
 - **`npm run test:coverage`** reports coverage with `@vitest/coverage-v8`
   into `tests/coverage/`. `TEST_TIME_SCALE` env stretches timing-test
   bounds under instrumentation.

@@ -48,6 +48,10 @@ Gaps and decisions audits left open. Not planned yet; item moves to
   `> /dev/full`) crashes with stack trace. Exit code stays 1.
 - **FIFO at default CLI export name blocks write forever.** `O_NONBLOCK`
   on open fixes it.
+- **GitHub source-tree file read** (`readFile` in `sourceTree.ts`) uses
+  uncapped `text()` and trusts tree size. `readBytesUpTo` with
+  `MAX_VIEWED_FILE_BYTES` would cap it.
+- **File upload and clipboard loads** skip 10 MB source cap.
 
 ## Behavior to know
 

@@ -225,6 +225,9 @@ Run unit and component tests in watch mode:
 npm run test:watch
 ```
 
+Bare `npx vitest` fails app tests: only npm scripts set
+`NODE_OPTIONS=--no-experimental-webstorage`.
+
 ### Coverage
 
 Report covers `src/` and goes to `tests/coverage/` (open `index.html`).
