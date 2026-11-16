@@ -74,7 +74,7 @@ export function fmtBundleSize(gzipBytes: number | null | undefined): string {
     return formatKilobytes(gzipBytes);
 }
 
-export function fmtNumber(n: number | null | undefined): string {
+function fmtNumber(n: number | null | undefined): string {
     if (n == null) {
         return MISSING_VALUE;
     }
