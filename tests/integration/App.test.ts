@@ -15,6 +15,7 @@ import {
     countFetchCalls,
     jsonResponse,
     stubFetchPending,
+    stubFetchWith,
     textResponse,
 } from "../helpers/fetchMock";
 import { fullDependency, minimalRegistryDoc, npmSourceTree } from "../fixtures/dependencies";
@@ -45,10 +46,7 @@ function failedLogEntry(packageName: string, replay = vi.fn(async () => new Resp
 }
 
 beforeEach(() => {
-    vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => jsonResponse(minimalRegistryDoc)),
-    );
+    stubFetchWith(() => jsonResponse(minimalRegistryDoc));
     clearPackageInfoCache();
     // Column toggles persist; the next mount must start from default columns.
     localStorage.clear();

@@ -47,13 +47,17 @@ export function streamedResponse(status: number) {
     return { response: new Response(body, { status }), cancelSource };
 }
 
+/** Stubs global `fetch` with a mock answering every request with `answer()`. Returns the mock. */
+export function stubFetchWith(answer: () => unknown) {
+    const fetchMock = vi.fn(async () => answer());
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+}
+
 /** Stubs global `fetch` with a `streamedResponse(status)`. Returns its `cancelSource`. */
 export function stubFetchStreamed(status: number) {
     const { response, cancelSource } = streamedResponse(status);
-    vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => response),
-    );
+    stubFetchWith(() => response);
     return cancelSource;
 }
 
@@ -76,10 +80,7 @@ export function stubFetchSized(totalBytes: number) {
         },
         cancel: cancelSource,
     });
-    vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => new Response(body)),
-    );
+    stubFetchWith(() => new Response(body));
     return cancelSource;
 }
 

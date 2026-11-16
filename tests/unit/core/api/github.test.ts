@@ -8,11 +8,12 @@ import {
 import { GITHUB_RATE_LIMIT_URL } from "../../../../src/core/constants";
 import { coreSettings } from "../../../helpers/core";
 import {
-    jsonResponse,
     HTTP_STATUS,
+    expectBodyCancelled,
+    jsonResponse,
     statusResponse,
     stubFetchStreamed,
-    expectBodyCancelled,
+    stubFetchWith,
 } from "../../../helpers/fetchMock";
 import { githubRateLimit, githubRateLimitBody } from "../../../fixtures/github";
 
@@ -36,10 +37,7 @@ describe("findGithubReleaseTag", () => {
     });
 
     it("returns null without matching tag pattern", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         expect(await findGithubReleaseTag("o", "r", "1.2.3")).toBeNull();
     });
@@ -56,10 +54,7 @@ describe("findGithubReleaseTag", () => {
     });
 
     it("throws on rate limit instead of reporting missing tag", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.forbidden)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.forbidden));
 
         await expect(findGithubReleaseTag("o", "r", "1.2.3")).rejects.toThrow("403");
     });
@@ -104,19 +99,13 @@ describe("fetchGithubRateLimit", () => {
     });
 
     it("returns null on 401", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.unauthorized)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.unauthorized));
 
         expect(await fetchGithubRateLimit("bad")).toBeNull();
     });
 
     it("throws on 500", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.serverError));
 
         await expect(fetchGithubRateLimit("abc")).rejects.toThrow("500");
     });
@@ -161,10 +150,7 @@ describe("fetchGithubTree", () => {
     });
 
     it("throws with status on 403", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.forbidden)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.forbidden));
 
         await expect(fetchGithubTree("o", "r", "main")).rejects.toThrow("403");
     });

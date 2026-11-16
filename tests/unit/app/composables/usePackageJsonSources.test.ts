@@ -4,9 +4,10 @@ import { usePackageJsonSources } from "../../../../src/app/composables/usePackag
 import { URL_SYNC_DEBOUNCE_MS } from "../../../../src/app/constants";
 import { clearPackageInfoCache } from "../../../../src/core/api/npmPackage";
 import {
-    jsonResponse,
     HTTP_STATUS,
+    jsonResponse,
     statusResponse,
+    stubFetchWith,
     textResponse,
 } from "../../../helpers/fetchMock";
 import {
@@ -122,10 +123,7 @@ describe("loadFromUrlInput", () => {
         ["repo without package.json", "https://github.com/o/r", statusResponse(404)],
         ["empty response body", "https://example.com/package.json", textResponse("")],
     ])("shows not-found error for %s", async (_case, url, response) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => response),
-        );
+        stubFetchWith(() => response);
         const { urlInput, loadFromUrlInput, loadError, loadPackageJsonText } = setup();
         urlInput.value = url;
 
@@ -160,10 +158,7 @@ describe("loadFromUrlInput", () => {
     });
 
     it("surfaces request failure message", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.serverError));
         const { urlInput, loadFromUrlInput, loadError, isLoadingInput } = setup();
         urlInput.value = "https://example.com/package.json";
 
@@ -336,10 +331,7 @@ describe("workspaces", () => {
     });
 
     it("loadWorkspace shows error naming missing workspace", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
         const { loadWorkspace, loadPackageJsonText, loadError } = setup();
 
         await loadWorkspace(rootWorkspaceContext, "packages/gone");
@@ -353,10 +345,7 @@ describe("workspaces", () => {
 
 describe("load result", () => {
     it("loadUrl loads given URL, leaves URL input alone, resolves true", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => textResponse(PACKAGE_JSON)),
-        );
+        stubFetchWith(() => textResponse(PACKAGE_JSON));
         const { loadUrl, urlInput, loadPackageJsonText } = setup();
 
         const loaded = await loadUrl("https://example.com/package.json");
@@ -381,10 +370,7 @@ describe("load result", () => {
     });
 
     it("resolves false for invalid URL, failed fetch, missing file", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
         const { loadUrl, loadDependency, loadWorkspace, loadFromFile } = setup();
 
         expect(await loadUrl("example.com/package.json")).toBe(false);
@@ -442,10 +428,7 @@ describe("loadDependency", () => {
     });
 
     it("shows not-found error naming unknown package", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
         const { loadDependency, loadError, loadPackageJsonText } = setup();
 
         await loadDependency({ name: "ghost-pkg", version: "1.0.0" });

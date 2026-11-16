@@ -13,12 +13,13 @@ import { MAX_SOURCE_TEXT_BYTES } from "../../../../src/core/constants";
 import { settle } from "../../../../src/core/utils/settle";
 import { coreSettings } from "../../../helpers/core";
 import {
-    expectBodyCancelled,
     HTTP_STATUS,
+    expectBodyCancelled,
     jsonResponse,
     statusResponse,
     stubFetchSized,
     stubFetchStreamed,
+    stubFetchWith,
 } from "../../../helpers/fetchMock";
 import { subjectOf } from "../../../helpers/requests";
 
@@ -35,10 +36,7 @@ describe("findFirstFound", () => {
     });
 
     it("returns null when every candidate 404s", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         expect(await findFirstFound(["a"], (c) => c)).toBeNull();
     });
@@ -54,19 +52,13 @@ describe("findFirstFound", () => {
 
 describe("fetchJson", () => {
     it("returns null on 404", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         expect(await fetchJson("https://a.test/x")).toBeNull();
     });
 
     it("throws HttpError with status on other failure", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.tooManyRequests)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.tooManyRequests));
 
         const result = await settle(() => fetchJson("https://a.test/x"));
 
@@ -283,10 +275,7 @@ describe("observeRequests", () => {
     });
 
     it("calls measure with body size once caller reads body", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => new Response("hello")),
-        );
+        stubFetchWith(() => new Response("hello"));
 
         const response = await fetchWithTimeout("https://a.test/x");
 
@@ -303,10 +292,7 @@ describe("observeRequests", () => {
             },
             cancel: cancelSource,
         });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => new Response(source)),
-        );
+        stubFetchWith(() => new Response(source));
 
         const response = await fetchWithTimeout("https://a.test/x");
         const reader = response.body!.getReader();
@@ -330,10 +316,7 @@ describe("observeRequests", () => {
                 controller.enqueue(new Uint8Array(8));
             },
         });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => new Response(source)),
-        );
+        stubFetchWith(() => new Response(source));
 
         const response = await fetchWithTimeout("https://a.test/x");
 

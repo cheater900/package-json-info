@@ -5,6 +5,7 @@ import {
     jsonResponse,
     statusResponse,
     stubFetchSized,
+    stubFetchWith,
 } from "../../../helpers/fetchMock";
 
 describe("fetchPackageJsonFromRepo", () => {
@@ -45,10 +46,7 @@ describe("fetchPackageJsonFromRepo", () => {
     });
 
     it("returns null without package.json on either branch", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         const content = await fetchPackageJsonFromRepo("https://github.com/owner/repo");
 

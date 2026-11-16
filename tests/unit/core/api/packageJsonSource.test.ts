@@ -5,7 +5,12 @@ import {
     fetchWorkspaceSource,
 } from "../../../../src/core/api/packageJsonSource";
 import { HttpError } from "../../../../src/core/api/http";
-import { jsonResponse, stubFetchByUrl, textResponse } from "../../../helpers/fetchMock";
+import {
+    jsonResponse,
+    stubFetchByUrl,
+    stubFetchWith,
+    textResponse,
+} from "../../../helpers/fetchMock";
 
 const WORKSPACE_CONTEXT = {
     repo: { owner: "o", repo: "r", branch: "main" },
@@ -30,10 +35,7 @@ describe("fetchUrlSource", () => {
     });
 
     it("throws HttpError for 404 of raw URL", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         await expect(fetchUrlSource("https://example.com/package.json")).rejects.toThrow(HttpError);
     });
@@ -104,10 +106,7 @@ describe("fetchDependencySource", () => {
     });
 
     it("returns null for unknown package", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         expect(await fetchDependencySource({ name: "missing-pkg", version: "^1.0.0" })).toBeNull();
     });

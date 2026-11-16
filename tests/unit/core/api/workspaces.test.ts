@@ -5,11 +5,12 @@ import {
 } from "../../../../src/core/api/workspaces";
 import { MAX_WORKSPACE_DIRS } from "../../../../src/core/constants";
 import {
-    countFetchCalls,
     HTTP_STATUS,
+    countFetchCalls,
     jsonResponse,
     statusResponse,
     stubFetchSized,
+    stubFetchWith,
     textResponse,
 } from "../../../helpers/fetchMock";
 import {
@@ -214,10 +215,7 @@ describe("fetchWorkspacePackageJson", () => {
     });
 
     it("throws for missing workspace package.json", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
 
         await expect(fetchWorkspacePackageJson(monorepoRef, "packages/gone")).rejects.toThrow();
     });

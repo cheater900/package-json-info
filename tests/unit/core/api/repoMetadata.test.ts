@@ -6,10 +6,11 @@ import {
 import { HttpError } from "../../../../src/core/api/http";
 import {
     HTTP_STATUS,
+    expectBodyCancelled,
     jsonResponse,
     statusResponse,
     stubFetchStreamed,
-    expectBodyCancelled,
+    stubFetchWith,
 } from "../../../helpers/fetchMock";
 
 const GITHUB_SLUG = { host: "github.com", owner: "o", repo: "r" };
@@ -44,19 +45,13 @@ describe("fetchRepoCommitActivity", () => {
     });
 
     it("returns empty activity on 404", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
 
         expect(await fetchRepoCommitActivity(GITHUB_SLUG, {})).toBe(EMPTY_COMMIT_ACTIVITY);
     });
 
     it("returns 0 commits + null date on 409 empty repo", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.conflict)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.conflict));
 
         expect(await fetchRepoCommitActivity(GITHUB_SLUG, {})).toEqual({
             lastCommitDate: null,
@@ -65,10 +60,7 @@ describe("fetchRepoCommitActivity", () => {
     });
 
     it("throws HttpError on other non-2xx status", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.serverError));
 
         await expect(fetchRepoCommitActivity(GITHUB_SLUG, {})).rejects.toBeInstanceOf(HttpError);
     });

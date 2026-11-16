@@ -12,11 +12,12 @@ import type { LookupKind } from "../../../../src/core/utils/memoizeLookup";
 import { coreSettings } from "../../../helpers/core";
 import { columnKeysExcept } from "../../../helpers/columns";
 import {
+    HTTP_STATUS,
     countFetchCalls,
     jsonResponse,
-    HTTP_STATUS,
     statusResponse,
     stubFetchByUrl,
+    stubFetchWith,
 } from "../../../helpers/fetchMock";
 import { fakeLookupStore } from "../../../helpers/lookupStore";
 import type { FakeLookupStore } from "../../../helpers/lookupStore";
@@ -1274,10 +1275,7 @@ describe("fetchPackageJsonForVersion", () => {
     });
 
     it("returns null for unresolvable package", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(null, false)),
-        );
+        stubFetchWith(() => jsonResponse(null, false));
 
         const json = await fetchPackageJsonForVersion("missing-pkg", "1.0.0");
 

@@ -5,11 +5,12 @@ import { coreSettings } from "../../../helpers/core";
 import {
     HTTP_STATUS,
     binaryResponse,
+    expectBodyCancelled,
     jsonResponse,
     statusResponse,
     streamedResponse,
     stubFetchStreamed,
-    expectBodyCancelled,
+    stubFetchWith,
     textResponse,
 } from "../../../helpers/fetchMock";
 import { recordRequests, subjectOf, subjectsOf } from "../../../helpers/requests";
@@ -38,10 +39,7 @@ describe("fetchSourceTree - npm provider", () => {
             "index.js": "module.exports = 1;",
             "src/helper.js": "export const x = 1;",
         });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { tree, readFile } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -53,10 +51,7 @@ describe("fetchSourceTree - npm provider", () => {
 
     it("strips tarball package/ prefix from paths", async () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { tree } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -65,10 +60,7 @@ describe("fetchSourceTree - npm provider", () => {
 
     it("reads file listed under repeated slashes by normalized path", async () => {
         const tarball = buildNpmTarball({ "/lib//a.js": "a" });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { tree, readFile } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -77,10 +69,7 @@ describe("fetchSourceTree - npm provider", () => {
     });
 
     it("throws on tarball download failure", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
 
         await expect(
             fetchSourceTree({ provider: "npm", tarballUrl: "https://example.com/missing.tgz" }),
@@ -109,10 +98,7 @@ describe("fetchSourceTree - npm provider", () => {
             Array.from({ length: MAX_FILE_TREE_ENTRIES + 1 }, (_, i) => [`f${i}.js`, ""]),
         );
         const tarball = buildNpmTarball(files);
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { tree, truncated } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -125,10 +111,7 @@ describe("fetchSourceTree - npm provider", () => {
             "at-cap.txt": "x".repeat(MAX_VIEWED_FILE_BYTES),
             "over-cap.txt": "x".repeat(MAX_VIEWED_FILE_BYTES + 1),
         });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { readFile } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -140,10 +123,7 @@ describe("fetchSourceTree - npm provider", () => {
 
     it("readFile rejects for path missing from tarball", async () => {
         const tarball = buildNpmTarball({ "index.js": "x" });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { readFile } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -161,10 +141,7 @@ describe("fetchSourceTree - npm provider", () => {
                 ]),
             ),
         );
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(tarball)),
-        );
+        stubFetchWith(() => binaryResponse(tarball));
 
         const { tree } = await fetchSourceTree(NPM_TREE_REF);
 
@@ -174,10 +151,7 @@ describe("fetchSourceTree - npm provider", () => {
     });
 
     it("throws corrupt-tarball error for non-gzip download", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => binaryResponse(new TextEncoder().encode("<html>").buffer)),
-        );
+        stubFetchWith(() => binaryResponse(new TextEncoder().encode("<html>").buffer));
 
         await expect(fetchSourceTree(NPM_TREE_REF)).rejects.toThrow(/corrupt or incomplete/);
     });
@@ -346,10 +320,7 @@ describe("fetchSourceTree - github provider", () => {
     });
 
     it("throws on tree request failure", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.notFound)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.notFound));
 
         await expect(fetchSourceTree(GITHUB_TREE_REF)).rejects.toThrow(/404/);
     });

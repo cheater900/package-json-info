@@ -11,6 +11,7 @@ import {
     fetchCallsTo,
     jsonResponse,
     statusResponse,
+    stubFetchWith,
 } from "../../../helpers/fetchMock";
 import { resetSettings } from "../../../helpers/settings";
 import { GITHUB_API_URL, NPM_REGISTRY_URL } from "../../../../src/core/constants";
@@ -22,10 +23,7 @@ import { recordRequests } from "../../../helpers/requests";
 /** Every fetch resolves with an empty-ish, valid-shaped response - enough
  * for fetchPackageInfo to complete without needing per-package data. */
 function stubFetchResolvesEmpty() {
-    vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => jsonResponse(minimalRegistryDoc)),
-    );
+    stubFetchWith(() => jsonResponse(minimalRegistryDoc));
 }
 
 const validPackageJson = JSON.stringify({

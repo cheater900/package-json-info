@@ -11,6 +11,7 @@ import {
     jsonResponse,
     statusResponse,
     stubFetchByUrl,
+    stubFetchWith,
 } from "../../helpers/fetchMock";
 import { resetSettings } from "../../helpers/settings";
 import { stubIndexedDb } from "../../helpers/indexedDb";
@@ -192,10 +193,7 @@ describe("SettingsMenu token", () => {
     });
 
     it("shows remaining / limit on verify", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => jsonResponse(githubRateLimitBody)),
-        );
+        stubFetchWith(() => jsonResponse(githubRateLimitBody));
         const wrapper = mountMenu();
         githubToken.value = TOKEN;
         await flushPromises();
@@ -230,10 +228,7 @@ describe("SettingsMenu token", () => {
     });
 
     it("shows invalid on verify 401", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.unauthorized)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.unauthorized));
         const wrapper = mountMenu();
         githubToken.value = TOKEN;
         await flushPromises();
@@ -245,10 +240,7 @@ describe("SettingsMenu token", () => {
     });
 
     it("shows failure reason on verify server error", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => statusResponse(HTTP_STATUS.serverError)),
-        );
+        stubFetchWith(() => statusResponse(HTTP_STATUS.serverError));
         const wrapper = mountMenu();
         githubToken.value = TOKEN;
         await flushPromises();
