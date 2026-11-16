@@ -138,6 +138,11 @@ describe("matchWorkspaceDirs", () => {
         expect(matchDirs(["./tools/cli/"], files)).toEqual(["tools/cli"]);
     });
 
+    it("trailing ** matches the folder itself", () => {
+        const nested = packageJsonPaths(["apps", "apps/web"]);
+        expect(matchDirs(["apps/**"], nested)).toEqual(["apps", "apps/web"]);
+    });
+
     it("matches partial folder name wildcard", () => {
         expect(matchDirs(["*/w*b"], files)).toEqual(["apps/web"]);
     });
